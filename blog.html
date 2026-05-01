@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Growvelt Blog - Insights, Tutorials & Career Guides</title>
+  <meta name="description" content="Growvelt Technologies Blog: Expert insights, data analytics tutorials, career guides, and industry updates to help you grow your skills and career.">
+  <meta name="keywords" content="Growvelt Blog, Data Analytics, Tutorials, Career Guides, Tech Insights, Learning Resources">
+  <meta name="author" content="Growvelt Technologies">
+
+  <!-- CSS & Icons -->
+  <link rel="stylesheet" href="./style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+
+  <!-- Open Graph for social media -->
+  <meta property="og:title" content="Growvelt Blog - Insights, Tutorials & Career Guides" />
+  <meta property="og:description" content="Stay updated with expert insights, tutorials, and resources from Growvelt Technologies." />
+  <meta property="og:image" content="images/favicon-512x512.png" />
+  <meta property="og:url" content="https://growvelt.com/blog.html" />
+  <meta property="og:type" content="website" />
+
+  <!-- Favicon -->
+<link rel="apple-touch-icon" sizes="180x180" href="https://www.growvelt.com/images/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://www.growvelt.com/images/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="https://www.growvelt.com/images/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="192x192" href="https://www.growvelt.com/images/android-chrome-192x192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="https://www.growvelt.com/images/android-chrome-512x512.png">
+<link rel="shortcut icon" href="https://www.growvelt.com/favicon.ico" type="image/x-icon">
+<link rel="manifest" href="https://www.growvelt.com/images/site.webmanifest">
+
+  <style>
+/* ---------- Global / Reset ---------- */
+html { box-sizing: border-box; }
+*, *::before, *::after { box-sizing: inherit; }
+body { overflow-x: hidden; }
+
+body {
+  font-family: 'Inter', sans-serif;
+  margin: 0;
+  padding: 0;
+  color: #333;
+  line-height: 1.6;
+}
+
+.container {
+  width: 90%;
+  max-width: 1200px;
+  margin: auto;
+}
+
+/* Utility: full-bleed background */
+.full-bleed {
+  position: relative;
+  left: 50%;
+  right: 50%;
+  margin-left: -50vw;
+  margin-right: -50vw;
+  width: 100vw;
+}
+
+/* ✅ Hero Section (Fixed Background + Gap Fix) */
+.blog-hero {
+  position: relative;
+  background: url("images/chart-2785864_1280.jpg") center/cover no-repeat fixed;
+  color: #fff;
+  text-align: center;
+  padding: 250px 30px;
+  overflow: hidden;
+  margin-top: 0; /* removed top gap */
+  z-index: 1;
+}
+
+@media (min-width: 1025px) {
+  .blog-hero {
+    padding: 300px 30px;
+  }
+}
+
+/* Overlay */
+.blog-hero::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.55);
+  z-index: 1;
+}
+
+.blog-hero h1,
+.blog-hero p {
+  position: relative;
+  z-index: 2;
+}
+
+.blog-hero h1 {
+  font-size: 2.5rem;
+  margin-bottom: 10px;
+}
+
+.blog-hero p {
+  font-size: 1.2rem;
+}
+
+/* ✅ Featured Post */
+.featured-post {
+  padding: 40px 0;
+  padding-top: 85px;
+  background: #f9f9f9;
+}
+
+.featured-post h2 { margin-bottom: 20px; }
+
+.featured-post .post-card {
+  display: flex;
+  gap: 20px;
+  background: #fff;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.featured-post img {
+  width: 40%;
+  object-fit: cover;
+}
+
+.featured-post .post-content { padding: 20px; }
+
+.featured-post h3 a {
+  text-decoration: none;
+  color: #0077b6;
+}
+
+/* ✅ Blog Post Cards */
+.post-card {
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 10px;
+  overflow: hidden;
+  transition: transform 0.3s;
+  position: relative;
+  cursor: pointer;
+}
+
+.post-card:hover {
+  transform: translateY(-5px);
+}
+
+.post-card img {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+}
+
+.post-card h3 { margin: 10px; }
+
+.post-card h3 a {
+  color: #1a1919;
+  text-decoration: none;
+}
+
+.post-card p {
+  margin: 10px;
+  font-size: 0.9rem;
+}
+
+/* ✅ Clickable overlay */
+.card-link {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 2;
+  text-indent: -9999px;
+  background: transparent;
+}
+
+/* ✅ Categories */
+.blog-categories {
+  background: #f1f1f1;
+  padding: 30px 0;
+  text-align: center;
+}
+
+.blog-categories .categories a {
+  display: inline-block;
+  margin: 10px;
+  padding: 10px 20px;
+  background: #4B0082;
+  color: #fff;
+  border-radius: 20px;
+  text-decoration: none;
+  transition: background 0.3s;
+}
+
+.blog-categories .categories a:hover {
+  background: #a736ee;
+}
+
+/* ✅ Blog Layout */
+.blog-layout {
+  display: flex;
+  gap: 30px;
+  margin: 40px 15px;
+}
+
+.recent-posts { flex: 3; }
+
+.post-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+/* ✅ Sidebar */
+.blog-sidebar { flex: 1; }
+
+.search-box input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  margin-bottom: 20px;
+}
+
+.popular-posts h3, .newsletter h3 { margin-bottom: 10px; }
+
+.popular-posts ul { list-style: none; padding: 0; }
+
+.popular-posts li { margin-bottom: 10px; }
+
+.popular-posts a { text-decoration: none; color: #333; }
+
+.popular-posts a:hover { color: #08010e; }
+
+.newsletter input {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 10px;
+}
+
+.newsletter button {
+  width: 100%;
+  padding: 10px;
+  background: #4B0082;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  border-radius: 5px;
+}
+
+.newsletter button:hover { background: #9f19f1; }
+
+/* ✅ Author Section */
+.author-section {
+  background: #f9f9f9;
+  padding: 40px 20px;
+  text-align: center;
+}
+
+.author-section h2 { margin-bottom: 10px; }
+
+/* ✅ Post Meta */
+.post-meta {
+  font-size: 0.9rem;
+  color: #555;
+  display: flex;
+  gap: 16px;
+  margin: 8px 0 12px;
+  flex-wrap: wrap;
+}
+
+.post-meta i {
+  margin-right: 6px;
+  color: #0077b6;
+}
+
+.post-meta .author {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.post-meta .verified {
+  color: #1d9bf0;
+  font-size: 0.8em;
+  vertical-align: middle;
+  margin-left: 1px;
+}
+
+/* ✅ CTA Section */
+.cta {
+  background: #ffffff;
+  color: #0e0c0c;
+  text-align: center;
+  padding: 50px 20px;
+}
+
+.cta h2 { margin-bottom: 20px; }
+
+.cta .btn {
+  display: inline-block;
+  background: #ff920f;
+  color: #ffffff;
+  padding: 12px 25px;
+  border-radius: 25px;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.cta .btn:hover { background: #f56a0e; }
+
+/* ✅ Pagination */
+.pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 40px 0 60px;
+}
+
+.pagination a { text-decoration: none; }
+
+/* ✅ Single Post: Next/Prev Navigation */
+.post-navigation {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin: 50px 0;
+  padding: 20px;
+  border-top: 1px solid #eee;
+  border-bottom: 1px solid #eee;
+  background: #fafafa;
+  border-radius: 10px;
+}
+
+.post-navigation a {
+  text-decoration: none;
+  color: #8f03e6;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: color 0.25s, transform 0.1s;
+}
+
+.post-navigation a:hover {
+  color: #ac3cf1;
+  transform: translateY(-1px);
+}
+
+/* ✅ Read More */
+.see-more {
+  color: #4B0082;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.see-more a:hover {
+  text-decoration: underline;
+}
+
+/* ✅ Newsletter Main */
+#main-newsletter {
+  background: #f5f5f5;
+  padding: 40px 20px;
+  border-radius: 12px;
+}
+
+#main-newsletter h3,
+#main-newsletter p {
+  color: #000;
+}
+
+/* ================= Responsive Design ================= */
+@media (max-width: 992px) {
+  .featured-post .post-card { flex-direction: column; }
+  .featured-post img { width: 100%; height: 220px; }
+  .blog-layout { flex-direction: column; }
+  .blog-sidebar { order: -1; }
+}
+
+@media (max-width: 768px) {
+  .blog-hero {
+    background-attachment: scroll; /* smooth scroll for mobile */
+    margin-top: -1px !important;
+    padding: 120px 20px 100px;
+  }
+  .blog-hero h1 { font-size: 2rem; }
+  .blog-hero p { font-size: 1rem; }
+  .post-grid { grid-template-columns: 1fr; }
+  .cta h2 { font-size: 1.5rem; }
+}
+
+@media (max-width: 480px) {
+  .blog-hero {
+    padding: 100px 15px 80px;
+    margin-top: -1px !important; /* fixes space below nav */
+  }
+  .blog-hero h1 { font-size: 1.6rem; }
+  .featured-post img { height: 180px; }
+  .newsletter input, .newsletter button {
+    font-size: 0.9rem;
+    padding: 8px;
+  }
+}
+</style>
+
+
+
+</head>
+<body>
+  <!-- Navigation Bar -->
+  <nav class="navbar" aria-label="Main Navigation">
+    <div class="container">
+      <!-- Logo Section -->
+      <div class="nav-logo">
+        <a href="index.html">
+          <img src="images/growvelt new logo .png" alt="Growvelt Logo" class="logo">
+        </a>
+      </div>
+
+      <!-- Hamburger Icon for Mobile -->
+        <button class="nav-toggle" aria-label="toggle navigation" onclick="toggleMenu()">
+            <span class="hamburger"></span>
+        </button>
+
+      <!-- Navigation Links -->
+      <ul class="nav-menu">
+        <li><a href="index.html">Home</a></li>
+        <li class="dropdown">
+          <a href="courses.html">Courses <img src="images1/dropDown.png" alt="dropdown" class="drop-icon"></a>
+          <ul class="dropdown-menu">
+            <li><a href="courses.html">Data Analysis</a></li>
+        <li><a href="courses.html">Business Analysis</a></li>
+        <li><a href="courses.html">Data Science</a></li>
+        <li><a href="courses.html">Social Media Marketing</a></li>
+        <li><a href="courses.html">Graphics Design</a></li>
+        <li><a href="courses.html">And More...</a></li>
+          </ul>
+        </li>
+        <li><a href="aboutus.html">About</a></li>
+        <li><a href="reviews.html">Reviews</a></li>
+        <li><a href="partnerwithus.html">Partner with us</a></li>
+        <li><a href="contact.html">Contact</a></li>
+        <li><a href="verification.html">Verify Certificate</a></li>
+        <li class="nav-careers">
+    <a href="https://jobs.growvelt.com" target="_blank" class="careers-link careers-highlight">
+        Careers
+        <span class="careers-sub">Find jobs & get hired</span>
+    </a>
+</li>
+
+<li><a href="blog.html">Blogs</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <main>
+    <!-- Hero Section -->
+    <section class="blog-hero" style="background-image: url(images/chart-2785864_1280.jpg);">
+      <div class="container">
+        <h1>Growvelt Blog</h1>
+        <p>Insights, strategies, and lessons from the world of tech & data.</p>
+      </div>
+    </section>
+
+    <!-- Featured Post (full-bleed) -->
+<section class="featured-post full-bleed">
+  <div class="container">
+    <h2>Featured Post</h2>
+    <div class="post-card">
+      <img src="images/finance-7529921_1280.jpg" alt="Featured Blog">
+      <div class="post-content">
+        <h3>How to Stand Out as a Data Analyst in 2025</h3>
+        <div class="post-meta">
+          <span class="date"><i class="fa-regular fa-calendar"></i> Aug 31, 2025</span>
+          <span class="author"><i class="fa-regular fa-user"></i> Leo from Growvelt <i class="fa-solid fa-circle-check verified"></i></span>
+        </div>
+        <p>Discover strategies to position yourself as a top data professional in today’s competitive job market.</p>
+        <div class="see-more">Read More →</div>
+      </div>
+
+      <!-- invisible full-card link -->
+      <a href="how-to-stand-out-as-a-data-analyst-2025.html" class="card-link"></a>
+    </div>
+  </div>
+</section>
+
+
+    <!-- Categories (full-bleed) -->
+    <section class="blog-categories full-bleed">
+      <div class="container">
+        <h2>Browse by Category</h2>
+        <div class="categories">
+          <a href="courses.html">Data Analytics</a>
+          <a href="data-analyst-career-path.html">Career Growth</a>
+          <a href="top-5-data-analytics-trends-2025.html">Tech Trends</a>
+          <a href="courses.html">Courses</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Main Blog Layout -->
+    <div class="container blog-layout">
+      <!-- Recent Posts -->
+      <section class="recent-posts">
+        <h2>Latest Articles</h2>
+        <div class="post-grid">
+          <div class="post-card">
+            <a href="top-5-data-analytics-trends-2025.html">
+              <img src="images/startup-3267505_1280.jpg" alt="Blog 1">
+            </a>
+            <h3><a href="top-5-data-analytics-trends-2025.html">Top 5 Data Analytics Trends in 2025</a></h3>
+            <div class="post-meta">
+              <span class="date"><i class="fa-regular fa-calendar"></i> Aug 31, 2025</span>
+              <span class="author"><i class="fa-regular fa-user"></i> Growvelt Team <i class="fa-solid fa-circle-check verified"></i></span>
+            </div>
+            <p>Boost your productivity with these advanced Excel techniques.</p>
+          </div>
+
+          <div class="post-card">
+            <a href="SQL-Tricks-Every-Analyst-Must-Know.html">
+              <img src="images/data-5933101_1280.jpg" alt="Blog 2">
+            </a>
+            <h3><a href="SQL-Tricks-Every-Analyst-Must-Know.html">SQL Tricks Every Analyst Must Know</a></h3>
+            <div class="post-meta">
+              <span class="date"><i class="fa-regular fa-calendar"></i> Aug 31, 2025</span>
+              <span class="author"><i class="fa-regular fa-user"></i> Growvelt Team <i class="fa-solid fa-circle-check verified"></i></span>
+            </div>
+            <p>A beginner-friendly roadmap to learning SQL step by step.</p>
+          </div>
+        </div>
+
+        <!-- Pagination -->
+        <nav class="pagination" aria-label="Blog pagination">
+          <a class="prev disabled" href="how-to-stand-out-as-a-data-analyst-2025.html" aria-disabled="true" rel="prev"><i class="fa-solid fa-arrow-left"></i> Previous</a>
+        
+          <a class="next" href="top-5-data-analytics-trends-2025.html" rel="next">Next <i class="fa-solid fa-arrow-right"></i></a>
+        </nav>
+      </section>
+
+      <!-- Sidebar -->
+      <aside class="blog-sidebar">
+        <div class="search-box">
+          <input type="text" placeholder="Search blog...">
+        </div>
+
+        <div class="popular-posts">
+          <h3>Popular Posts</h3>
+          <ul>
+            <li><a href="break_into_Data_Analytics.html">Breaking into Data Analytics</a></li>
+            <li><a href="blog-powerbi-vs-tableau.html">Power BI vs Tableau</a></li>
+            <li><a href="data-analyst-career-path.html">Data Analyst Career Path</a></li>
+          </ul>
+        </div>
+
+        <!-- Newsletter Subscription Section -->
+        <div id="main-newsletter" class="newsletter-subscription">
+          <h3>Subscribe</h3>
+          <p>Get updates on new courses, job tips, and exclusive offers.</p>
+
+          <form class="newsletter-form" action="https://getform.io/f/azyngdob" method="POST" onsubmit="showThankYou(event)">
+            <input type="email" name="email" placeholder="Enter your email" required>
+            <button type="submit">Subscribe</button>
+            <input type="hidden" name="_gotcha" style="display:none !important">
+          </form>
+
+          <p id="thank-you-msg" class="thank-you" style="display: none;">✅ Thank you! Your submission has been received!</p>
+        </div>
+      </aside>
+    </div>
+
+    <!-- CTA Section (full-bleed) -->
+    <section class="cta full-bleed">
+      <div class="container">
+        <h2>Join Our Community</h2>
+        <a href="https://wa.me/2349034876746" class="btn">Get Started</a>
+      </div>
+    </section>
+
+    <!-- Info Section (full-bleed) -->
+    <section id="info-section" class="info-section full-bleed">
+      <div class="container">
+        <div class="info-content">
+          <!-- Logo and Description -->
+          <div class="logo-desc">
+            <img src="images/growvelt new logo .png" alt="Leo's Logo" class="logo">
+            <p>Growvelt Technologies is a Data Analytics Tutoring and IT Career Path Training Company. We are the leading provider of expert Data Analytics tutoring services, with Google-certified instructors. Whether you're a beginner or looking to enhance your skills, we have the perfect package for you. Gain insights and practical knowledge from industry professionals.</p>
+          </div>
+
+          <!-- Useful Links -->
+          <div class="links">
+            <h3>Useful Links</h3>
+            <ul>
+              <li><a href="https://wa.me/2349034876746">Get Started</a></li>
+              <li><a href="contact.html">Contact Us</a></li>
+              <li><a href="reviews.html">Reviews</a></li>
+              <li><a href="courses.html">Our Courses</a></li>
+              <li><a href="https://wa.me/2349034876746">Register Now</a></li>
+              <li><a href="verification.html">Verify Certificate</a></li>
+              <li><a href="aboutus.html">About Us</a></li>
+            </ul>
+          </div>
+
+          <!-- Growvelt Careers Links -->
+<div class="links">
+    <h3>Growvelt Careers</h3>
+
+    <h4>For Recruiters</h4>
+    <ul>
+        <li><a href="https://jobs.growvelt.com" target="_blank" rel="noopener noreferrer">Post a Job</a></li>
+        <li><a href="https://jobs.growvelt.com" target="_blank" rel="noopener noreferrer">Manage Jobs</a></li>
+    </ul>
+<br>
+    <h4>For Job Seekers</h4>
+    <ul>
+      <li><a href="https://jobs.growvelt.com" target="_blank" rel="noopener noreferrer">Apply for Jobs</a></li>
+        <li><a href="https://jobs.growvelt.com" target="_blank" rel="noopener noreferrer">Track Applications</a></li>
+        <li><a href="https://jobs.growvelt.com" target="_blank" rel="noopener noreferrer">Upgrade</a></li>
+    </ul>
+</div>
+
+          <!-- Live Chat Support -->
+          <div class="chat-support">
+            <h3>Live Chat Support</h3>
+            <a href="https://www.instagram.com/growvelt" target="_blank"><p><img src="images/OIP__1__IG-removebg-preview.png" alt="Instagram Icon">Instagram Support</p></a>
+            <a href="https://wa.me/2349034876746" target="_blank" rel="noopener noreferrer"><p><img src="images/OIP-removebg-preview.png" alt="Whatsapp Icon">Whatsapp Support</p></a>
+            <a href="mailto:admin@growvelt.com" target="_blank"><p><img src="images/Gmail.png" alt="Email Icon">Email Support</p></a>
+          </div>
+
+          <!-- WhatsApp Chat Button -->
+<a href="https://wa.me/2349034876746" target="_blank" id="whatsapp-chat">
+  <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="Chat on WhatsApp">
+</a>
+
+          <!-- Follow Us -->
+          <div class="follow-us">
+            <h3>Follow Us On</h3>
+            <ul>
+              <li><a href="https://www.linkedin.com/company/growvelt">LinkedIn</a></li>
+              <li><a href="https://www.instagram.com/growvelt">Instagram</a></li>
+              <li><a href="https://www.facebook.com/growvelttechnologies09">Facebook</a></li>
+              <li><a href="https://www.tiktok.com/@growvelt">Tiktok</a></li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Newsletter Subscription Section -->
+        <div class="newsletter-subscription">
+          <h3>Subscribe to Our Newsletter</h3>
+          <p>Get updates on new courses, job tips, and exclusive offers.</p>
+
+          <form class="newsletter-form" action="https://getform.io/f/azyngdob" method="POST" onsubmit="showThankYou(event)">
+            <input type="email" name="email" placeholder="Enter your email" required>
+            <button type="submit">Subscribe</button>
+            <input type="hidden" name="_gotcha" style="display:none !important">
+          </form>
+
+          <p id="thank-you-msg" class="thank-you" style="display: none;">✅ Thank you! Your submission has been received!</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <p class="left-text">&copy; 2024 Growvelt Technologies Limited (RC - 8738218) | All rights reserved</p>
+      <ul class="center-links">
+        <li><a href="privacy-policy.html">Privacy</a></li>
+        <li><a href="terms-of-service.html">Terms</a></li>
+      </ul>
+    </div>
+  </footer>
+
+  <!-- ✅ Navbar Toggle + Dropdown + Active Link -->
+<script>
+  function toggleMenu() {
+    const navMenu = document.querySelector('.nav-menu');
+    const hamburger = document.querySelector('.hamburger');
+    navMenu.classList.toggle('active');
+    hamburger.classList.toggle('open'); // toggle "X" animation
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    // ✅ Active nav link highlighting
+    const navLinks = document.querySelectorAll(".nav-menu a");
+    const currentUrl = window.location.href;
+    navLinks.forEach(link => {
+      link.classList.remove("active");
+      if (currentUrl.includes(link.getAttribute("href"))) {
+        link.classList.add("active");
+      }
+    });
+
+    // ✅ Dropdown handling for mobile
+    document.querySelectorAll('.dropdown > a').forEach(link => {
+      link.addEventListener('click', e => {
+        if (window.innerWidth <= 768) {
+          e.preventDefault();
+          const parent = link.parentElement;
+          document.querySelectorAll('.dropdown').forEach(d => {
+            if (d !== parent) d.classList.remove('open');
+          });
+          parent.classList.toggle('open');
+        }
+      });
+    });
+
+    // ✅ Close dropdown when clicking outside (mobile)
+    document.addEventListener('click', e => {
+      if (window.innerWidth <= 768) {
+        document.querySelectorAll('.dropdown').forEach(drop => {
+          if (!drop.contains(e.target)) drop.classList.remove('open');
+        });
+      }
+    });
+  });
+</script>
+
+<!-- ✅ Newsletter Form Handler -->
+<script>
+  function showThankYou(event) {
+    event.preventDefault();
+    const form = event.target;
+
+    fetch(form.action, { 
+      method: "POST", 
+      body: new FormData(form) 
+    })
+      .then(() => {
+        form.style.display = "none"; // hide form
+        document.getElementById("thank-you-msg").style.display = "block"; // show thank-you
+      })
+      .catch(() => alert("Something went wrong. Please try again."));
+  }
+</script>
+
+<!-- ✅ Beamer Integration -->
+<script>
+  var beamer_config = {
+    product_id : 'LWLxHVRG78518', // DO NOT CHANGE
+    user_id: "user's unique id"
+  };
+</script>
+<script src="https://app.getbeamer.com/js/beamer-embed.js" defer></script>
+
+</body>
+</html>

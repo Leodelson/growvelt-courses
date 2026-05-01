@@ -1,0 +1,1180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>About Us - Growvelt Technologies</title>
+
+  <!-- Basic SEO -->
+  <meta name="description" content="Growvelt Technologies is a tech training and consulting company helping people and businesses thrive with data analytics, Excel, and SQL." />
+  <meta name="keywords" content="Growvelt Technologies, about Growvelt, tech training company, data analytics training, Excel SQL Power BI training, Abuja tech company">
+  <meta name="author" content="Growvelt Technologies">
+  <link rel="canonical" href="https://www.growvelt.com/about" />
+  <meta name="robots" content="index, follow">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="About Us | Growvelt Technologies">
+  <meta property="og:description" content="Growvelt Technologies empowers people and organizations with hands-on tech training in Data Analytics, Excel, SQL, Power BI, and more.">
+  <meta property="og:image" content="https://www.growvelt.com/images/Social.png">
+  <meta property="og:url" content="https://www.growvelt.com/about">
+  <meta property="og:type" content="website">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="About Us | Growvelt Technologies">
+  <meta name="twitter:description" content="Discover Growvelt Technologies - driving growth and skills development through expert-led tech training.">
+  <meta name="twitter:image" content="https://www.growvelt.com/images/Social.png">
+
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- Favicon -->
+<link rel="apple-touch-icon" sizes="180x180" href="https://www.growvelt.com/images/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://www.growvelt.com/images/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="https://www.growvelt.com/images/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="192x192" href="https://www.growvelt.com/images/android-chrome-192x192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="https://www.growvelt.com/images/android-chrome-512x512.png">
+<link rel="shortcut icon" href="https://www.growvelt.com/favicon.ico" type="image/x-icon">
+<link rel="manifest" href="https://www.growvelt.com/images/site.webmanifest">
+
+
+  <!-- JSON-LD Schema -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "name": "Growvelt Technologies",
+        "url": "https://www.growvelt.com",
+        "logo": "https://www.growvelt.com/images/Growvelt New Logob.png",
+        "description": "Growvelt Technologies is a data analytics and technology training company based in Nigeria, providing expert-led courses in Excel, SQL, Power BI, and more.",
+        "sameAs": [
+          "https://www.linkedin.com/company/growvelt",
+          "https://www.instagram.com/growvelt_technologies",
+          "https://www.facebook.com/growvelttechnologies09"
+        ],
+        "foundingDate": "2024",
+        "founder": {
+          "@type": "Person",
+          "name": "Leo"
+        }
+      },
+      {
+        "@type": "WebPage",
+        "name": "About Us - Growvelt Technologies",
+        "url": "https://www.growvelt.com/about",
+        "description": "Learn more about Growvelt Technologies, our mission, values, and the impact we’re making in the tech training space."
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Home",
+            "item": "https://www.growvelt.com"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "About",
+            "item": "https://www.growvelt.com/about"
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+</head>
+
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', sans-serif;
+  line-height: 1.6;
+  background-color: #f4f4f4;
+  color: #333;
+}
+
+/* =========================
+   HERO IMAGE SLIDER
+========================= */
+.about-slider {
+  position: relative;
+  width: 100%;
+  height: 800px;
+  overflow: hidden;
+  margin-top: 0; /* ensures image touches navbar */
+  z-index: 1;
+}
+
+.slider-img {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  opacity: 0;
+  transition: opacity 1.5s ease-in-out;
+}
+
+.slider-img.active {
+  opacity: 1;
+  z-index: 1;
+}
+
+@media (min-width: 1200px) {
+  .about-slider {
+    height: 700px !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .about-slider {
+    height: 530px;
+    margin-top: 0; /* no gap on mobile */
+  }
+}
+
+@media (max-width: 480px) {
+  .about-slider {
+    height: 480px;
+    margin-top: 0;
+  }
+}
+
+/* =========================
+   ABOUT US PAGE SECTIONS
+========================= */
+.about-hero {
+  background: url('images/hero-banner.jpg') center center/cover no-repeat;
+  height: 300px;
+  position: relative;
+  padding-top: 150px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.about-hero .overlay {
+  background-color: #f9f9f9;
+  color: rgb(243, 12, 12);
+  padding: 30px;
+  width: 100%;
+}
+
+.about-hero h1 {
+  font-size: 36px;
+}
+
+.about-hero p {
+  font-size: 18px;
+  font-style: italic;
+}
+
+.about-section {
+  padding: 60px 20px;
+  background-color: white;
+}
+
+.reverse {
+  background-color: #f0f4ff;
+}
+
+.about-container {
+  max-width: 1100px;
+  margin: auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 30px;
+}
+
+.about-text {
+  flex: 1;
+  min-width: 280px;
+  padding-left: 48px;
+}
+
+.about-text h2 {
+  color: #ff920f;
+}
+
+.about-text p,
+.about-text ul {
+  margin-top: 10px;
+  font-size: 15px;
+  color: #444;
+}
+
+.about-text ul {
+  list-style: none;
+  padding-left: 0;
+}
+
+.about-text ul li {
+  margin-bottom: 8px;
+  position: relative;
+  padding-left: 20px;
+}
+
+.about-text ul li::before {
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+.about-image {
+  flex: 1;
+  min-width: 280px;
+  transition: transform 0.5s ease;
+}
+
+.about-image img {
+  width: 100%;
+  max-height: 425px;
+  object-fit: cover;
+  border-radius: 10px;
+  box-shadow: 0 0 12px rgba(0, 0, 0, 0.1);
+}
+
+.about-image:hover {
+  transform: scale(1.02);
+}
+
+/* =========================
+   CTA SECTION
+========================= */
+.cta-section {
+  background-color: #f9f9f9;
+  padding: 60px 20px;
+  text-align: center;
+  margin-top: 40px;
+  border-top: 2px solid #eee;
+}
+
+.cta-btn {
+  display: inline-block;
+  margin-top: 20px;
+  background-color: #ff920f;
+  color: #fff;
+  padding: 12px 25px;
+  text-decoration: none;
+  border-radius: 6px;
+  transition: background-color 0.3s ease;
+}
+
+.cta-btn:hover {
+  background-color: #f79a0f;
+}
+
+/* =========================
+   WHY CHOOSE US
+========================= */
+#why-choose-us {
+  background-color: #f0f4ff;
+}
+
+#why-choose-us .about-text h2 {
+  color: #ff920f;
+}
+
+/* =========================
+   PARTNERS SECTION
+========================= */
+.partners h1 {
+  text-align: center;
+  color: #ff920f;
+}
+
+/* =========================
+   TEAM SECTION
+========================= */
+.team-section {
+  position: relative;
+  padding: 80px 20px;
+  width: 100%;
+  background-color: #f8f9fc;
+  overflow: visible;
+}
+
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.text-center { text-align: center; }
+
+.section-title { font-size: 2.5rem; font-weight: 700; margin: 20px 0; }
+.section-title .highlight {
+  background: linear-gradient(to right, #4B0082, #ff920f);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.section-subtitle {
+  max-width: 680px;
+  margin: 0 auto 8px;
+  color: #6c757d;
+  font-size: 1.05rem;
+}
+
+.badge {
+  display: inline-block;
+  background: #eee;
+  color: #333;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  margin-bottom: 10px;
+}
+
+/* wrapper holds grid + nav arrows */
+.team-wrapper {
+  position: relative;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 32px;
+  z-index: 1;
+}
+
+/* scroll row */
+.team-grid {
+  display: flex;
+  gap: 24px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  padding: 16px 0;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.team-grid::-webkit-scrollbar { display: none; }
+
+/* each card */
+.team-card {
+  flex: 0 0 360px;
+  background: linear-gradient(135deg,#ffffff,#f9f9f9);
+  border-radius: 16px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: transform .25s ease, box-shadow .25s ease;
+  min-height: 300px;
+}
+
+.team-card:hover {
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+}
+
+/* avatar / name / role */
+.avatar {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  overflow: hidden;
+  margin: 0 auto 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg,#4B0082,#ff920f);
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.member-name {
+  font-weight: bold;
+  text-align: center;
+}
+
+.member-role {
+  color: #ff920f;
+  text-align: center;
+}
+
+/* ===== Social Icons Section ===== */
+.social-icons {
+  display: flex;
+  justify-content: center;   /* centers horizontally */
+  align-items: center;       /* centers vertically */
+  gap: 12px;
+  margin-top: 20px;          /* space above icons */
+  margin-bottom: 10px;       /* keeps it from sticking to the card edge */
+}
+
+/* LinkedIn Icon */
+.icon {
+  width: 30px;
+  height: 30px;
+  background: #0077B5; /* LinkedIn blue */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  border-radius: 6px;
+  font-size: 20px;
+  text-decoration: none;
+  transition: transform 0.3s ease, background 0.3s ease;
+}
+
+.icon:hover {
+  background: #005582; /* Darker LinkedIn blue */
+  transform: scale(1.1);
+}
+
+
+/* =========================
+   RESPONSIVE FIXES
+========================= */
+@media (max-width: 1024px) {
+  .about-hero h1 { font-size: 1.8rem; }
+  .about-hero p { font-size: 0.95rem; }
+  .team-card { flex: 0 0 320px; }
+}
+
+@media (max-width: 768px) {
+  .about-hero h1 { font-size: 1.5rem; }
+  .about-hero p { font-size: 0.9rem; }
+  .about-container { flex-direction: column; text-align: center; }
+  .about-text { padding-left: 0; }
+  .about-image img { max-height: 300px; }
+  .team-card { flex: 0 0 280px; }
+}
+
+@media (max-width: 480px) {
+  .about-hero { padding: 1.5rem 1rem; }
+  .about-hero h1 { font-size: 1.3rem; }
+  .about-hero p { font-size: 0.85rem; }
+  .about-image img { max-height: 250px; }
+  .team-card { flex: 0 0 240px; padding: 1rem; }
+  .avatar { width: 80px; height: 80px; }
+}
+</style>
+
+  
+</head>
+<body>
+
+    <!-- Navigation Bar -->
+<nav class="navbar">
+    <div class="container">
+        <!-- Logo Section -->
+        <div class="nav-logo">
+            <a href="#home">
+                <img src="images/growvelt new logo .png" alt="Growvelt Logo" class="logo">
+            </a>
+        </div>
+
+        <!-- Hamburger Icon for Mobile -->
+        <button class="nav-toggle" aria-label="toggle navigation" onclick="toggleMenu()">
+            <span class="hamburger"></span>
+        </button>
+
+        <!-- Navigation Links -->
+<ul class="nav-menu">
+    <li><a href="index.html">Home</a></li>
+    
+    <!-- Courses Dropdown -->
+    <li class="dropdown">
+    <a href="courses.html">
+        Courses 
+        <img src="images1/dropDown.png" alt="dropdown icon" class="drop-icon">
+    </a>
+    <ul class="dropdown-menu">
+        <li><a href="courses.html">Data Analysis</a></li>
+        <li><a href="courses.html">Business Analysis</a></li>
+        <li><a href="courses.html">Data Science</a></li>
+        <li><a href="courses.html">Social Media Marketing</a></li>
+        <li><a href="courses.html">Graphics Design</a></li>
+        <li><a href="courses.html">And More...</a></li>
+    </ul>
+</li>
+    
+    <li><a href="aboutus.html">About</a></li>
+    <li><a href="reviews.html">Reviews</a></li>
+    <li><a href="partnerwithus.html" class="active">Partner with us</a></li>
+    <li><a href="contact.html">Contact</a></li>
+    <li><a href="verification.html">Verify Certificate</a></li>
+    <li class="nav-careers">
+    <a href="https://jobs.growvelt.com" target="_blank" class="careers-link careers-highlight">
+        Careers
+        <span class="careers-sub">Find jobs & get hired</span>
+    </a>
+</li>
+
+<li><a href="blog.html">Blogs</a></li>
+</ul>
+</nav>
+
+    
+    <!-- Image Transitions Under Nav -->
+    <div class="about-slider">
+  <img src="images1/ANALYTICS14.jpg" class="slider-img active" alt="Slide 1">
+  <img src="images1/campaign-creators-pypeCEaJeZY-unsplash.jpg" class="slider-img" alt="Slide 2">
+  <img src="images/pexels-olia-danilevich-8145342.jpg" class="slider-img" alt="Slide 3">
+</div>
+
+
+  <!-- About Us Content -->
+  <section class="about-section">
+    <div class="about-container">
+      <div class="about-text">
+        <h2>Who We Are</h2>
+        <p>
+          Growvelt Technologies is a data-focused tutoring company founded in 2024. We're on a mission to bridge the skill gap in tech by offering hands-on, career-oriented training in data analytics and beyond.
+        </p>
+      </div>
+      <div class="about-image">
+        <img src="images/ai-generated-9040782_1280.jpg" alt="Tutoring session" />
+      </div>
+    </div>
+  </section>
+
+  <!-- Vision and Mission Section -->
+  <section class="about-section reverse">
+    <div class="about-container">
+      <div class="about-image">
+        <img src="images1/book-2592057_1280.jpg" alt="Vision and strategy" />
+      </div>
+      <div class="about-text">
+        <h2>Our Vision</h2>
+        <p>
+          To become Africa’s leading tutoring brand, producing exceptional talent with global impact in tech and data.
+        </p>
+        <br>
+        To be a leading technology hub where innovation meets practical learning, helping individuals and businesses unlock their full potential in the digital era.</p>
+        <br>
+        <h2>Our mission</h2>
+        Equip learners with industry-relevant skills, provide hands-on experiences, and deliver customized solutions that help organizations leverage technology and data to drive growth.</p>  
+  </section>
+
+  <!-- What We Offer -->
+<section class="about-section">
+  <div class="about-container">
+    <div class="about-text">
+      <h2>What We Offer</h2>
+      <ul>
+        <li>
+          <span class="insta-verified">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 512 512">
+              <circle cx="256" cy="256" r="256" fill="#3897f0"/>
+              <path fill="#fff" d="M378.1 177.3L226.3 329 145.9 248.6l35.4-35.4 45 45L342.7 142z"/>
+            </svg>
+          </span>
+          Real-world projects & mentorship
+        </li>
+        <li>
+          <span class="insta-verified">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 512 512">
+              <circle cx="256" cy="256" r="256" fill="#3897f0"/>
+              <path fill="#fff" d="M378.1 177.3L226.3 329 145.9 248.6l35.4-35.4 45 45L342.7 142z"/>
+            </svg>
+          </span>
+          Career Consultation & job support
+        </li>
+        <li>
+          <span class="insta-verified">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 512 512">
+              <circle cx="256" cy="256" r="256" fill="#3897f0"/>
+              <path fill="#fff" d="M378.1 177.3L226.3 329 145.9 248.6l35.4-35.4 45 45L342.7 142z"/>
+            </svg>
+          </span>
+          Supportive, beginner-friendly teaching
+        </li>
+        <li>
+          <span class="insta-verified">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 512 512">
+              <circle cx="256" cy="256" r="256" fill="#3897f0"/>
+              <path fill="#fff" d="M378.1 177.3L226.3 329 145.9 248.6l35.4-35.4 45 45L342.7 142z"/>
+            </svg>
+          </span>
+          Remote & onsite learning options
+        </li>
+      </ul>
+    </div>
+    <div class="about-image">
+      <img src="images1/ChatGPT Image Aug 24, 2025, 10_55_08 AM.png" alt="Tutoring session" />
+    </div>
+  </div>
+</section>
+
+
+  <!-- Why Choose Growvelt? -->
+<section class="about-section" id="why-choose-us">
+  <div class="about-container">
+    <div class="about-text">
+      <h2>Why Choose Growvelt?</h2>
+      <p>
+        Our experienced instructors, hands-on learning approach, flexible training models, and proven track record ensure that you receive the best tech education possible. We prepare you for success in the rapidly evolving digital landscape.
+      </p>
+      <a href="partnerwithus.html" class="button cta-btn">Partner with us</a>
+    </div>
+    <div class="about-image">
+      <img src="images1/digital-4369232_1280.jpg" alt="Why Choose Growvelt" />
+    </div>
+  </div>
+</section>
+
+
+<!-- Team Section (Horizontal scroll) -->
+<section id="team" class="team-section">
+  <div class="container">
+    <div class="text-center">
+      <span class="badge">Our Team</span>
+      <h2 class="section-title">Meet the <span class="highlight">Experts</span></h2>
+      <p class="section-subtitle">Industry veterans and rising stars working together to deliver exceptional results</p>
+    </div>
+
+    <div class="team-wrapper" aria-hidden="false">
+      <!-- left -->
+      <button class="team-btn team-left" aria-label="Scroll left" type="button">
+        <!-- inline chevron left -->
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+
+      
+      <!-- scroll row -->
+      <div class="team-grid" role="list">
+        <div class="team-card" role="listitem">
+  <div>
+    <div class="avatar">
+      <img src="images1/Faithy.jpg" alt="Sarah Chen" />
+    </div>
+    <h3 class="member-name">Faith Chinaenye</h3>
+    <div class="member-role">CEO & Co-Founder</div>
+    <p class="member-bio">
+    Founder with a strong background in mass communication. Passionate about building high-performing teams and driving impactful, world-class initiatives.
+    </p>
+    <div class="skills">
+      <span class="badge">Leadership</span>
+      <span class="badge">Strategy</span>
+      <span class="badge">Public Relations</span>
+    </div>
+  </div>
+  <div class="social-icons">
+  <a class="icon" href="#" title="LinkedIn" target="_blank">
+    <i class="fab fa-linkedin-in"></i>
+  </a>
+</div>
+</div>
+
+
+<!-- Card 2 -->
+<div class="team-card" role="listitem">
+  <div>
+    <div class="avatar">
+      <img src="images1/Queen.jpg" alt="Marcus Rodriguez" />
+    </div>
+    <h3 class="member-name">Queeneth Ezinne</h3>
+    <div class="member-role">Head of Admin</div>
+    <p class="member-bio">
+      Oversees office operations and administrative processes. Manages staff coordination, schedules, and ensures smooth organizational workflows.
+    </p>
+    <div class="skills">
+      <span class="badge">Office Management</span>
+      <span class="badge">Staff Coordination</span>
+      <span class="badge">Communication & Reporting</span>
+    </div>
+  </div>
+  <div class="social-icons">
+  <a class="icon" href="#" title="LinkedIn" target="_blank">
+    <i class="fab fa-linkedin-in"></i>
+  </a>
+</div>
+</div>
+
+
+        <!-- Card 3 -->
+<div class="team-card" role="listitem">
+  <div>
+    <div class="avatar">
+      <img src="images1/Joy.jpg" alt="Joy Ezedo" />
+    </div>
+    <h3 class="member-name">Joy Ezedo</h3>
+    <div class="member-role">Data Analytics Instructor</div>
+    <p class="member-bio">
+      Experienced data analytics instructor passionate about turning raw data into actionable insights and empowering learners to excel in analytics careers.
+    </p>
+    <div class="skills">
+      <span class="badge">Data Analysis</span>
+      <span class="badge">Excel</span>
+      <span class="badge">SQL</span>
+      <span class="badge">Power BI</span>
+    </div>
+  </div>
+  <div class="social-icons">
+  <a class="icon" href="https://www.linkedin.com/in/ezedojoyanalyst?" title="LinkedIn" target="_blank">
+    <i class="fab fa-linkedin-in"></i>
+  </a>
+</div>
+</div>
+
+
+        <!-- Card 4 -->
+<div class="team-card" role="listitem">
+  <div>
+    <div class="avatar">
+      <img src="images1/Chidimma .jpg" alt="Ogugua Chidinma" />
+    </div>
+    <h3 class="member-name">Ogugua Chidinma</h3>
+    <div class="member-role">Social Media Marketing Coach</div>
+    <p class="member-bio">
+      Social media strategist skilled in creating engaging campaigns that boost brand presence, drive audience growth, and increase engagement.
+    </p>
+    <div class="skills">
+      <span class="badge">Content Creation</span>
+      <span class="badge">Brand Strategy</span>
+      <span class="badge">Analytics</span>
+      <span class="badge">Campaign Management</span>
+    </div>
+  </div>
+  <div class="social-icons">
+  <a class="icon" href="http://linkedin.com/in/chidinma-ogugua-b58154273" title="LinkedIn" target="_blank">
+    <i class="fab fa-linkedin-in"></i>
+  </a>
+</div>
+</div>
+
+
+        <!-- Card 5 -->
+<div class="team-card" role="listitem">
+  <div>
+    <div class="avatar">
+      <img src="images1/Godwills2.jpg" alt="Godswill" />
+    </div>
+    <h3 class="member-name">Godswill Ukoha</h3>
+    <div class="member-role">Graphics Design Instructor</div>
+    <p class="member-bio">
+      Creative graphics designer passionate about visual storytelling, brand identity, and delivering compelling designs across digital and print media.
+    </p>
+    <div class="skills">
+      <span class="badge">Adobe Photoshop</span>
+      <span class="badge">Illustrator</span>
+      <span class="badge">Brand Design</span>
+    </div>
+  </div>
+  <div class="social-icons">
+  <a class="icon" href="#" title="LinkedIn" target="_blank">
+    <i class="fab fa-linkedin-in"></i>
+  </a>
+</div>
+</div>
+
+        <!-- Add more .team-card blocks as needed -->
+      </div>
+
+      <!-- right -->
+      <button class="team-btn team-right" aria-label="Scroll right" type="button">
+        <!-- inline chevron right -->
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+  </div>
+</section>
+
+
+  <!-- Partners Section -->
+<section>
+        <div class="partners">
+            <h1>Global Internship Opportunities</h1>
+            <p>Our students received Data Analyst internship contracts from these leading organizations:</p>
+            <div class="logos">
+                <img src="images1/VOSYN LOGO.png" alt="Vosyn" title="Vosyn">
+                <img src="images1/Accenture_logo-1536x768.png" alt="Accenture" title="Accenture">
+                <img src="images/download-removebg-preview.png" alt="Adobe" title="IBM">
+                <img src="images1/interncareers_logo-removebg-preview.png" alt="Adobe" title="IBM">
+            </div>
+        </div>
+    </div>
+    </section>
+
+
+<!-- Call to Action -->
+<section class="cta-section">
+  <h2>Ready to Start Learning?</h2>
+  <a href="/courses.html" class="cta-btn">View Our Courses</a>
+</section>
+
+  <!-- Info Section (New Section) -->
+    <section id="info-section" class="section info-section">
+        <div class="container">
+            <div class="info-content">
+                <!-- Logo and Description -->
+                <div class="logo-desc">
+                    <img src="images/growvelt new logo .png" alt="Leo's Logo" class="logo">
+                    <p>Growvelt Technologies is a Data Analytics Tutoring and IT Career Path Training Company. We are the leading provider of expert Data Analytics tutoring services, with Google-certified instructors. Whether you're a beginner or looking to enhance your skills, we have the perfect package for you. Gain insights and practical knowledge from industry professionals.</p>
+                </div>
+
+                <!-- Useful Links -->
+                <div class="links">
+                    <h3>Useful Links</h3>
+                    <ul>
+            <li><a href="https://wa.me/2349034876746">Get Started</a></li>
+            <li><a href="contact.html">Contact Us</a></li>
+            <li><a href="reviews.html">Reviews</a></li>
+            <li><a href="courses.html">Our Courses</a></li>
+            <li><a href="https://wa.me/2349034876746">Register Now</a></li>
+            <li><a href="verification.html">Verify Certificate</a></li>
+            <li><a href="aboutus.html">About Us</a></li>
+                    </ul>
+                </div>
+
+                <!-- Growvelt Careers Links -->
+<div class="links">
+    <h3>Growvelt Careers</h3>
+
+    <h4>For Recruiters</h4>
+    <ul>
+        <li><a href="https://jobs.growvelt.com" target="_blank" rel="noopener noreferrer">Post a Job</a></li>
+        <li><a href="https://jobs.growvelt.com" target="_blank" rel="noopener noreferrer">Manage Jobs</a></li>
+    </ul>
+<br>
+    <h4>For Job Seekers</h4>
+    <ul>
+      <li><a href="https://jobs.growvelt.com" target="_blank" rel="noopener noreferrer">Apply for Jobs</a></li>
+        <li><a href="https://jobs.growvelt.com" target="_blank" rel="noopener noreferrer">Track Applications</a></li>
+        <li><a href="https://jobs.growvelt.com" target="_blank" rel="noopener noreferrer">Upgrade</a></li>
+    </ul>
+</div>
+
+                <!-- Live Chat Support -->
+                <div class="chat-support">
+                    <h3>Live Chat Support</h3>
+                    <a href="https://www.instagram.com/growvelt" target="_blank" rel="noopener noreferrer">
+                        <p><img src="images/OIP__1__IG-removebg-preview.png" alt="Instagram Icon">Instagram Support</p>
+                    </a>
+                    <a href="https://wa.me/2349034876746" target="_blank" rel="noopener noreferrer">
+                        <p><img src="images/OIP-removebg-preview.png" alt="Whatsapp Icon">Whatsapp Support</p>
+                    </a>
+                    <a href="mailto:admin@growvelt.com" target="_blank" rel="noopener noreferrer">
+                        <p><img src="images/Gmail.png" alt="Email Icon">Email Support</p>
+                    </a>
+                </div>
+
+                <!-- WhatsApp Chat Button -->
+<a href="https://wa.me/2349034876746" target="_blank" rel="noopener noreferrer" id="whatsapp-chat">
+  <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="Chat on WhatsApp">
+</a>
+
+                <!-- Follow Us -->
+                <div class="follow-us">
+                    <h3>Follow Us On</h3>
+                    <ul>
+                        <li><a href="https://www.linkedin.com/company/growvelt" rel="noopener noreferrer">LinkedIn</a></li>
+                        <li><a href="https://www.instagram.com/growvelt" rel="noopener noreferrer">Instagram</a></li>
+                        <li><a href="https://www.facebook.com/growvelttechnologies09" rel="noopener noreferrer">Facebook</a></li>
+                        <li><a href="https://www.tiktok.com/@growvelt" rel="noopener noreferrer">Tiktok</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Newsletter Subscription Section -->
+<div class="newsletter-subscription">
+  <h3>Subscribe to Our Newsletter</h3>
+  <p>Get updates on new courses, job tips, and exclusive offers.</p>
+
+  <form class="newsletter-form" action="https://getform.io/f/azyngdob" method="POST" onsubmit="showThankYou(event)">
+    <input type="email" name="email" placeholder="Enter your email" required>
+    <button type="submit">Subscribe</button>
+    <!-- hidden anti-spam field -->
+    <input type="hidden" name="_gotcha" style="display:none !important">
+  </form>
+
+  <!-- Thank You message (hidden by default) -->
+  <p id="thank-you-msg" class="thank-you" style="display: none;">
+  ✅ Thank you! Your submission has been received!
+</p>
+</div>
+</section>
+</main>
+
+    <!-- Footer -->
+<!-- Footer -->
+<footer class="footer">
+    <div class="container">
+        <p class="left-text">&copy; 2024 Growvelt Technologies Limited (RC - 8738218) | All rights reserved</p>
+
+        <ul class="center-links">
+            <li><a href="privacy-policy.html">Privacy</a></li>
+            <li><a href="terms-of-service.html">Terms</a></li>
+        </ul>
+    </div>
+</footer>
+
+<!-- ✅ JavaScript for Typing Animation in Announcement Bar -->
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const messages = [
+      {
+        text: "New batch starts Monday! Enroll now at Growvelt Technologies.",
+        link: "https://growvelt.com/contact",
+        cta: "Enroll Now"
+      },
+      {
+        text: "💻 Learn Data Analytics, Excel, Power BI, Tech Skills & more! Join our next session!",
+        link: "https://growvelt.com/courses",
+        cta: "View Courses"
+      },
+      {
+        text: "Get certified with hands-on tech skills. Your career growth starts here!",
+        link: "https://growvelt.com/contact",
+        cta: "Get Started"
+      },
+      {
+       text: "We’re offering Data Consultation Services!",
+       link: "https://growvelt.com/contact",
+        cta: "Book Now"
+      },
+    ];
+
+    const textEl = document.getElementById("announcement-text");
+    const ctaEl = document.getElementById("announcement-cta");
+
+    let messageIndex = 0;
+    let charIndex = 0;
+    let isDeleting = false;
+
+    function type() {
+      const current = messages[messageIndex];
+      const speed = isDeleting ? 60 : 100;
+
+      // Update text
+      textEl.textContent = current.text.substring(0, charIndex);
+
+      if (!isDeleting && charIndex < current.text.length) {
+        charIndex++;
+      } else if (isDeleting && charIndex > 0) {
+        charIndex--;
+      } else {
+        if (!isDeleting) {
+          // Show CTA after typing finishes
+          ctaEl.innerHTML = `<a href="${current.link}" class="announcement-btn">${current.cta}</a>`;
+          isDeleting = true;
+          setTimeout(type, 2500);
+          return;
+        } else {
+          // Clear CTA and move to next message
+          ctaEl.innerHTML = "";
+          isDeleting = false;
+          messageIndex = (messageIndex + 1) % messages.length;
+        }
+      }
+
+      setTimeout(type, speed);
+    }
+
+    type();
+  });
+</script>
+
+
+  <!-- ✅ JavaScript for Falling Flowers in Announcement Bar -->
+<script>
+  // Create falling flowers
+  const flowerContainer = document.querySelector('.flowers');
+  const flowerEmojis = ['🌸', '🌺', '🌷', '🌼'];
+
+  function createFlower() {
+    const flower = document.createElement('div');
+    flower.classList.add('flower');
+    flower.textContent = flowerEmojis[Math.floor(Math.random() * flowerEmojis.length)];
+    flower.style.left = Math.random() * 100 + '%';
+    flower.style.fontSize = Math.random() * 12 + 12 + 'px';
+    flower.style.animationDuration = Math.random() * 3 + 4 + 's';
+    flowerContainer.appendChild(flower);
+
+    // Remove flower after animation
+    setTimeout(() => flower.remove(), 7000);
+  }
+
+  // Continuously create flowers
+  setInterval(createFlower, 500);
+</script>
+
+<!-- ✅ Navbar + Dropdown (Mobile & Desktop Friendly) -->
+<script>
+  function toggleMenu() {
+    const navMenu = document.querySelector('.nav-menu');
+    const hamburger = document.querySelector('.hamburger');
+    navMenu.classList.toggle('active');
+    hamburger.classList.toggle('open'); // toggle "X" effect
+  }
+
+  // Handle dropdown toggle on mobile
+  document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll('.dropdown > a').forEach(link => {
+      link.addEventListener('click', e => {
+        if (window.innerWidth <= 768) {
+          e.preventDefault();
+          const parent = link.parentElement;
+
+          // Close others
+          document.querySelectorAll('.dropdown').forEach(d => {
+            if (d !== parent) d.classList.remove('open');
+          });
+
+          parent.classList.toggle('open');
+        }
+      });
+    });
+
+    // Close dropdowns if clicked outside (mobile)
+    document.addEventListener('click', e => {
+      if (window.innerWidth <= 768) {
+        document.querySelectorAll('.dropdown').forEach(drop => {
+          if (!drop.contains(e.target)) drop.classList.remove('open');
+        });
+      }
+    });
+  });
+</script>
+
+<!-- ✅ Active Nav Link Highlight -->
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const navLinks = document.querySelectorAll(".nav-menu a");
+  const currentUrl = window.location.href;
+  navLinks.forEach(link => {
+    link.classList.remove("active");
+    if (currentUrl.includes(link.getAttribute("href"))) {
+      link.classList.add("active");
+    }
+  });
+});
+</script>
+
+<!-- ✅ Newsletter Form (Getform Integration) -->
+<script>
+function showThankYou(event) {
+  event.preventDefault();
+  const form = event.target;
+
+  fetch(form.action, {
+    method: "POST",
+    body: new FormData(form)
+  })
+  .then(response => {
+    form.style.display = "none";
+    document.getElementById("thank-you-msg").style.display = "block";
+  })
+  .catch(() => {
+    alert("Something went wrong. Please try again.");
+  });
+}
+</script>
+
+<!-- ✅ Image Transition under Navbar -->
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const slides = document.querySelectorAll('.slider-img');
+  if (!slides.length) return;
+  let index = 0;
+
+  setInterval(() => {
+    slides.forEach(img => img.classList.remove('active'));
+    index = (index + 1) % slides.length;
+    slides[index].classList.add('active');
+  }, 12000);
+});
+</script>
+
+<!-- ✅ Horizontal Scroll (Team Section) -->
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const scrollBox = document.querySelector('.team-scroll');
+  const leftBtn = document.querySelector('.team-left');
+  const rightBtn = document.querySelector('.team-right');
+  if (!scrollBox || !leftBtn || !rightBtn) return;
+
+  leftBtn.addEventListener('click', () => {
+    scrollBox.scrollBy({ left: -260, behavior: 'smooth' });
+  });
+  rightBtn.addEventListener('click', () => {
+    scrollBox.scrollBy({ left: 260, behavior: 'smooth' });
+  });
+});
+</script>
+
+<!-- ✅ Advanced Team Scroll (Smooth Dynamic Scroll) -->
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const grid = document.querySelector('.team-grid');
+  const leftBtn = document.querySelector('.team-left');
+  const rightBtn = document.querySelector('.team-right');
+  if (!grid || !leftBtn || !rightBtn) return;
+
+  function getStep() {
+    const card = grid.querySelector('.team-card');
+    if (!card) return 300;
+    const gridStyle = window.getComputedStyle(grid);
+    const gap = parseFloat(gridStyle.gap || gridStyle.columnGap || 24) || 24;
+    return Math.round(card.getBoundingClientRect().width + gap);
+  }
+
+  function smoothTo(element, target, duration = 420) {
+    const start = element.scrollLeft;
+    const change = target - start;
+    const startTime = performance.now();
+    function easeInOut(t){ return 0.5 - Math.cos(t * Math.PI) / 2; }
+    function animate(now){
+      const elapsed = now - startTime;
+      let t = Math.min(1, elapsed / duration);
+      element.scrollLeft = Math.round(start + change * easeInOut(t));
+      if (t < 1) requestAnimationFrame(animate);
+    }
+    requestAnimationFrame(animate);
+  }
+
+  function updateButtons() {
+    leftBtn.disabled = grid.scrollLeft <= 1;
+    rightBtn.disabled = Math.ceil(grid.scrollLeft + grid.clientWidth) >= grid.scrollWidth - 1;
+  }
+
+  leftBtn.addEventListener('click', () => {
+    const step = getStep();
+    smoothTo(grid, Math.max(0, grid.scrollLeft - step));
+    setTimeout(updateButtons, 500);
+  });
+
+  rightBtn.addEventListener('click', () => {
+    const step = getStep();
+    const max = grid.scrollWidth - grid.clientWidth;
+    smoothTo(grid, Math.min(max, grid.scrollLeft + step));
+    setTimeout(updateButtons, 500);
+  });
+
+  grid.addEventListener('scroll', updateButtons, { passive: true });
+  window.addEventListener('resize', updateButtons);
+  updateButtons();
+});
+</script>
+
+<!-- ✅ Beamer Integration -->
+<script>
+var beamer_config = {
+  product_id : 'LWLxHVRG78518', // DO NOT CHANGE: Beamer product code
+  user_id: "user's unique id",
+};
+</script>
+<script src="https://app.getbeamer.com/js/beamer-embed.js" defer></script>
+
+</body>
+</html>
