@@ -762,54 +762,40 @@
 
 
   <!-- Navigation Bar -->
-<nav class="navbar">
-    <div class="container">
-        <!-- Logo Section -->
-        <div class="nav-logo">
-            <a href="#home">
-                <img src="images/growvelt new logo .png" alt="Growvelt Logo" class="logo">
-            </a>
-        </div>
+<nav class="navbar" aria-label="Main navigation">
+  <div class="container nav-container">
+    <div class="nav-logo">
+      <a href="index.html" aria-label="Growvelt home">
+        <img src="images/growvelt new logo .png" alt="Growvelt Logo" class="logo">
+      </a>
+    </div>
 
-        <!-- Hamburger Icon for Mobile -->
-        <button class="nav-toggle" aria-label="toggle navigation" onclick="toggleMenu()">
-            <span class="hamburger"></span>
-        </button>
+    <button class="nav-toggle" type="button" onclick="toggleMenu()" aria-label="Open navigation" aria-expanded="false" aria-controls="primary-navigation">
+      <span class="hamburger" aria-hidden="true"></span>
+    </button>
 
-<!-- Navigation Links -->
-<ul class="nav-menu">
-    <li><a href="index.html">Home</a></li>
-    
-    <!-- Courses Dropdown -->
-    <li class="dropdown">
-    <a href="courses.html">
-        Courses 
-        <img src="images1/dropDown.png" alt="dropdown icon" class="drop-icon">
-    </a>
-    <ul class="dropdown-menu">
-        <li><a href="courses.html">Data Analysis</a></li>
-        <li><a href="courses.html">Business Analysis</a></li>
-        <li><a href="courses.html">Data Science</a></li>
-        <li><a href="courses.html">Social Media Marketing</a></li>
-        <li><a href="courses.html">Graphics Design</a></li>
-        <li><a href="courses.html">And More...</a></li>
+    <ul class="nav-menu" id="primary-navigation">
+      <li><a href="index.html">Home</a></li>
+      <li class="dropdown">
+        <a href="courses.html" class="dropbtn" aria-haspopup="true" aria-expanded="false">Courses <span class="drop-icon" aria-hidden="true"></span></a>
+        <ul class="dropdown-menu">
+          <li><a href="courses.html#data-analysis">Data Analysis</a></li>
+          <li><a href="courses.html#business-analysis">Business Analysis</a></li>
+          <li><a href="courses.html#data-science">Data Science</a></li>
+          <li><a href="courses.html#social-media-marketing">Social Media Marketing</a></li>
+          <li><a href="courses.html#graphics-design">Graphics Design</a></li>
+          <li><a href="courses.html">All Courses</a></li>
+        </ul>
+      </li>
+      <li><a href="aboutus.html">About</a></li>
+      <li><a href="reviews.html">Reviews</a></li>
+      <li><a href="partnerwithus.html">Partner</a></li>
+      <li><a href="contact.html">Contact</a></li>
+      <li><a href="verification.html">Verify Certificate</a></li>
+      <li><a href="blog.html">Blog</a></li>
+      <li class="nav-careers"><a href="https://growvelt.com" target="_blank" rel="noopener noreferrer" class="careers-link careers-highlight">Careers<span class="careers-sub">Apply for jobs</span></a></li>
     </ul>
-</li>
-    
-    <li><a href="aboutus.html">About</a></li>
-    <li><a href="reviews.html">Reviews</a></li>
-    <li><a href="partnerwithus.html" class="active">Partner with us</a></li>
-    <li><a href="contact.html">Contact</a></li>
-    <li><a href="verification.html">Verify Certificate</a></li>
-    <li class="nav-careers">
-    <a href="https://www.courses.growvelt.com" target="_blank" class="careers-link careers-highlight">
-        Careers
-        <span class="careers-sub">Find jobs & get hired</span>
-    </a>
-</li>
-
-<li><a href="blog.html">Blogs</a></li>
-</ul>
+  </div>
 </nav>
 
 
@@ -885,7 +871,7 @@
       <p>Learn how to analyze and interpret data effectively for business decisions.</p>
       <div class="course-footer">
         <span class="duration"><i class="fa-regular fa-clock"></i> 3 Months</span>
-        <a href="https://wa.me/2349034876746" class="enroll-btn" target="_blank">Enroll Now</a>
+        <a href="registration.html" class="enroll-btn" target="_blank">Enroll Now</a>
       </div>
     </div>
   </div>
@@ -898,7 +884,7 @@
       <p>Master data science concepts including Python, SQL, and Machine Learning.</p>
       <div class="course-footer">
         <span class="duration"><i class="fa-regular fa-clock"></i> 3 Months</span>
-        <a href="https://wa.me/2349034876746" class="enroll-btn" target="_blank">Enroll Now</a>
+        <a href="registration.html" class="enroll-btn" target="_blank">Enroll Now</a>
       </div>
     </div>
   </div>
@@ -911,7 +897,7 @@
       <p>Grow your brand and engage audiences with powerful digital strategies.</p>
       <div class="course-footer">
         <span class="duration"><i class="fa-regular fa-clock"></i> 2 Months</span>
-        <a href="https://wa.me/2349034876746" class="enroll-btn" target="_blank">Enroll Now</a>
+        <a href="registration.html" class="enroll-btn" target="_blank">Enroll Now</a>
       </div>
     </div>
   </div>
@@ -924,7 +910,7 @@
       <p>Create professional designs with Canva, Photoshop, and modern design tools.</p>
       <div class="course-footer">
         <span class="duration"><i class="fa-regular fa-clock"></i> 1 Month</span>
-        <a href="https://wa.me/2349034876746" class="enroll-btn" target="_blank">Enroll Now</a>
+        <a href="registration.html" class="enroll-btn" target="_blank">Enroll Now</a>
       </div>
     </div>
   </div>
@@ -937,7 +923,7 @@
       <p>Master Power BI to build interactive dashboards and business insights.</p>
       <div class="course-footer">
         <span class="duration"><i class="fa-regular fa-clock"></i> 3 Weeks</span>
-        <a href="https://wa.me/2349034876746" class="enroll-btn" target="_blank">Enroll Now</a>
+        <a href="registration.html" class="enroll-btn" target="_blank">Enroll Now</a>
       </div>
     </div>
   </div>
@@ -950,7 +936,7 @@
       <p>Learn SQL to query, transform, and analyze real datasets effectively.</p>
       <div class="course-footer">
         <span class="duration"><i class="fa-regular fa-clock"></i> 1 Month</span>
-        <a href="https://wa.me/2349034876746" class="enroll-btn" target="_blank">Enroll Now</a>
+        <a href="registration.html" class="enroll-btn" target="_blank">Enroll Now</a>
       </div>
     </div>
   </div>
@@ -963,7 +949,7 @@
       <p>Learn everything you need to know about Microsoft Word for productivity.</p>
       <div class="course-footer">
         <span class="duration"><i class="fa-regular fa-clock"></i> 3 Weeks</span>
-        <a href="https://wa.me/2349034876746" class="enroll-btn" target="_blank">Enroll Now</a>
+        <a href="registration.html" class="enroll-btn" target="_blank">Enroll Now</a>
       </div>
     </div>
   </div>
@@ -976,7 +962,7 @@
       <p>Master the fundamentals of PowerPoint and create impactful presentations.</p>
       <div class="course-footer">
         <span class="duration"><i class="fa-regular fa-clock"></i> 3 Weeks</span>
-        <a href="https://wa.me/2349034876746" class="enroll-btn" target="_blank">Enroll Now</a>
+        <a href="registration.html" class="enroll-btn" target="_blank">Enroll Now</a>
       </div>
     </div>
   </div>
@@ -989,7 +975,7 @@
       <p>Collaborate, organize, and share with Google Drive for work and business.</p>
       <div class="course-footer">
         <span class="duration"><i class="fa-regular fa-clock"></i> 1 Month</span>
-        <a href="https://wa.me/2349034876746" class="enroll-btn" target="_blank">Enroll Now</a>
+        <a href="registration.html" class="enroll-btn" target="_blank">Enroll Now</a>
       </div>
     </div>
   </div>
@@ -1002,7 +988,7 @@
       <p>Analyze and transform raw data into insights with hands-on Python projects.</p>
       <div class="course-footer">
         <span class="duration"><i class="fa-regular fa-clock"></i> 2 Months</span>
-        <a href="https://wa.me/2349034876746" class="enroll-btn" target="_blank">Enroll Now</a>
+        <a href="registration.html" class="enroll-btn" target="_blank">Enroll Now</a>
       </div>
     </div>
   </div>
@@ -1015,7 +1001,7 @@
       <p>Learn Python programming from beginner to advanced levels.</p>
       <div class="course-footer">
         <span class="duration"><i class="fa-regular fa-clock"></i> 1 Month</span>
-        <a href="https://wa.me/2349034876746" class="enroll-btn" target="_blank">Enroll Now</a>
+        <a href="registration.html" class="enroll-btn" target="_blank">Enroll Now</a>
       </div>
     </div>
   </div>
@@ -1028,7 +1014,7 @@
       <p>Master R programming for statistics, analysis, and data visualization.</p>
       <div class="course-footer">
         <span class="duration"><i class="fa-regular fa-clock"></i> 2 Months</span>
-        <a href="https://wa.me/2349034876746" class="enroll-btn" target="_blank">Enroll Now</a>
+        <a href="registration.html" class="enroll-btn" target="_blank">Enroll Now</a>
       </div>
     </div>
   </div>
@@ -1153,11 +1139,11 @@
                 <div class="links">
                     <h3>Useful Links</h3>
                     <ul>
-                        <li><a href="https://wa.me/2349034876746">Get Started</a></li>
+                        <li><a href="registration.html">Get Started</a></li>
                         <li><a href="contact.html">Contact Us</a></li>
                         <li><a href="reviews.html">Reviews</a></li>
                         <li><a href="#explore-courses">Our Courses</a></li>
-                        <li><a href="https://wa.me/2349034876746">Register Now</a></li>
+                        <li><a href="registration.html">Register Now</a></li>
                         <li><a href="verification.html">Verify Certificate</a></li>
                         <li><a href="aboutus.html">About Us</a></li>
                     </ul>
@@ -1167,7 +1153,7 @@
 <div class="links">
     <h3>Growvelt Careers</h3>
 
-    <h4>For Recruiters</h4>
+    <h4>For Employers</h4>
     <ul>
         <li><a href="https://growvelt.com" target="_blank">Post a Job</a></li>
         <li><a href="https://growvelt.com" target="_blank">Manage Jobs</a></li>
@@ -1237,14 +1223,13 @@
     <!-- Footer -->
 <!-- Footer -->
 <footer class="footer">
-    <div class="container">
-        <p class="left-text">&copy; 2024 Growvelt Technologies Limited (RC - 8738218) | All rights reserved</p>
-
-        <ul class="center-links">
-            <li><a href="privacy-policy.html">Privacy</a></li>
-            <li><a href="terms-of-service.html">Terms</a></li>
-        </ul>
-    </div>
+  <div class="container footer-container">
+    <p class="left-text">&copy; 2026 Growvelt Technologies Limited (RC - 8738218) | All rights reserved</p>
+    <ul class="center-links" aria-label="Legal links">
+      <li><a href="privacy-policy.html">Privacy</a></li>
+      <li><a href="terms-of-service.html">Terms</a></li>
+    </ul>
+  </div>
 </footer>
 
   <!-- ✅ JavaScript for Typing Animation in Announcement Bar -->
@@ -1499,5 +1484,7 @@ var beamer_config = {
 <script src="https://app.getbeamer.com/js/beamer-embed.js" defer></script>
 
 
+  <script src="supabase-config.js"></script>
+  <script src="main.js"></script>
 </body>
 </html>

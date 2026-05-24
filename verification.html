@@ -64,54 +64,40 @@
   </div>
 
     <!-- Navigation Bar -->
-<nav class="navbar">
-    <div class="container">
-        <!-- Logo Section -->
-        <div class="nav-logo">
-            <a href="#home">
-                <img src="images/growvelt new logo .png" alt="Growvelt Logo" class="logo">
-            </a>
-        </div>
+<nav class="navbar" aria-label="Main navigation">
+  <div class="container nav-container">
+    <div class="nav-logo">
+      <a href="index.html" aria-label="Growvelt home">
+        <img src="images/growvelt new logo .png" alt="Growvelt Logo" class="logo">
+      </a>
+    </div>
 
-        <!-- Hamburger Icon for Mobile -->
-        <button class="nav-toggle" aria-label="toggle navigation" onclick="toggleMenu()">
-            <span class="hamburger"></span>
-        </button>
+    <button class="nav-toggle" type="button" onclick="toggleMenu()" aria-label="Open navigation" aria-expanded="false" aria-controls="primary-navigation">
+      <span class="hamburger" aria-hidden="true"></span>
+    </button>
 
-        <!-- Navigation Links -->
-<ul class="nav-menu">
-    <li><a href="index.html">Home</a></li>
-    
-    <!-- Courses Dropdown -->
-    <li class="dropdown">
-    <a href="courses.html">
-        Courses 
-        <img src="images1/dropDown.png" alt="dropdown icon" class="drop-icon">
-    </a>
-    <ul class="dropdown-menu">
-        <li><a href="courses.html">Data Analysis</a></li>
-        <li><a href="courses.html">Business Analysis</a></li>
-        <li><a href="courses.html">Data Science</a></li>
-        <li><a href="courses.html">Social Media Marketing</a></li>
-        <li><a href="courses.html">Graphics Design</a></li>
-        <li><a href="courses.html">And More...</a></li>
+    <ul class="nav-menu" id="primary-navigation">
+      <li><a href="index.html">Home</a></li>
+      <li class="dropdown">
+        <a href="courses.html" class="dropbtn" aria-haspopup="true" aria-expanded="false">Courses <span class="drop-icon" aria-hidden="true"></span></a>
+        <ul class="dropdown-menu">
+          <li><a href="courses.html#data-analysis">Data Analysis</a></li>
+          <li><a href="courses.html#business-analysis">Business Analysis</a></li>
+          <li><a href="courses.html#data-science">Data Science</a></li>
+          <li><a href="courses.html#social-media-marketing">Social Media Marketing</a></li>
+          <li><a href="courses.html#graphics-design">Graphics Design</a></li>
+          <li><a href="courses.html">All Courses</a></li>
+        </ul>
+      </li>
+      <li><a href="aboutus.html">About</a></li>
+      <li><a href="reviews.html">Reviews</a></li>
+      <li><a href="partnerwithus.html">Partner</a></li>
+      <li><a href="contact.html">Contact</a></li>
+      <li><a href="verification.html">Verify Certificate</a></li>
+      <li><a href="blog.html">Blog</a></li>
+      <li class="nav-careers"><a href="https://growvelt.com" target="_blank" rel="noopener noreferrer" class="careers-link careers-highlight">Careers<span class="careers-sub">Apply for jobs</span></a></li>
     </ul>
-</li>
-    
-    <li><a href="aboutus.html">About</a></li>
-    <li><a href="reviews.html">Reviews</a></li>
-    <li><a href="partnerwithus.html" class="active">Partner with us</a></li>
-    <li><a href="contact.html">Contact</a></li>
-    <li><a href="verification.html">Verify Certificate</a></li>
-    <li class="nav-careers">
-    <a href="https://growvelt.com" target="_blank" class="careers-link careers-highlight">
-        Careers
-        <span class="careers-sub">Find jobs & get hired</span>
-    </a>
-</li>
-
-<li><a href="blog.html">Blogs</a></li>
-</ul>
+  </div>
 </nav>
 
 
@@ -142,9 +128,15 @@
 
 
     <!-- Footer -->
-    <footer style="text-align:center; font-weight: 200; margin-top:30px; padding:10px; background-color:#f1f1f1;">
-        <p>&copy; 2024 Growvelt Technologies Limited (RC - 8738218) | All rights reserved</p>
-    </footer>
+    <footer class="footer">
+  <div class="container footer-container">
+    <p class="left-text">&copy; 2026 Growvelt Technologies Limited (RC - 8738218) | All rights reserved</p>
+    <ul class="center-links" aria-label="Legal links">
+      <li><a href="privacy-policy.html">Privacy</a></li>
+      <li><a href="terms-of-service.html">Terms</a></li>
+    </ul>
+  </div>
+</footer>
 
     <!-- ✅ Navbar Toggle + Dropdown + Active Link -->
 <script>
@@ -231,5 +223,7 @@
 <script src="https://app.getbeamer.com/js/beamer-embed.js" defer></script>
 
 
+  <script src="supabase-config.js"></script>
+  <script src="main.js"></script>
 </body>
 </html>

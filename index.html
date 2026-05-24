@@ -520,60 +520,46 @@ html, body {
         <div class="container">
             <h1>Empowering future tech talent through digital skills training and job opportunities.</h1>
             <p>Learn job-ready data analytics and IT skills from Google-certified experts with hands-on experience, all at your own pace.</p>
-            <a href="https://wa.me/2349034876746" class="cta-btn">Enroll Now</a>
+            <a href="registration.html" class="cta-btn">Enroll Now</a>
         </div>
     </div>
 </header>
 
 <!-- Navigation Bar -->
-<nav class="navbar">
-    <div class="container">
-        <!-- Logo Section -->
-        <div class="nav-logo">
-            <a href="#home">
-                <img src="images/growvelt new logo .png" alt="Growvelt Logo" class="logo">
-            </a>
-        </div>
+<nav class="navbar" aria-label="Main navigation">
+  <div class="container nav-container">
+    <div class="nav-logo">
+      <a href="index.html" aria-label="Growvelt home">
+        <img src="images/growvelt new logo .png" alt="Growvelt Logo" class="logo">
+      </a>
+    </div>
 
-        <!-- Hamburger Icon for Mobile -->
-        <button class="nav-toggle" aria-label="toggle navigation" onclick="toggleMenu()">
-            <span class="hamburger"></span>
-        </button>
+    <button class="nav-toggle" type="button" onclick="toggleMenu()" aria-label="Open navigation" aria-expanded="false" aria-controls="primary-navigation">
+      <span class="hamburger" aria-hidden="true"></span>
+    </button>
 
-        <!-- Navigation Links -->
-<ul class="nav-menu">
-    <li><a href="index.html">Home</a></li>
-    
-    <!-- Courses Dropdown -->
-    <li class="dropdown">
-    <a href="courses.html" class="dropbtn">
-        Courses 
-        <img src="images1/dropDown.png" alt="dropdown icon" class="drop-icon">
-    </a>
-    <ul class="dropdown-menu">
-        <li><a href="courses.html">Data Analysis</a></li>
-        <li><a href="courses.html">Business Analysis</a></li>
-        <li><a href="courses.html">Data Science</a></li>
-        <li><a href="courses.html">Social Media Marketing</a></li>
-        <li><a href="courses.html">Graphics Design</a></li>
-        <li><a href="courses.html">And More...</a></li>
+    <ul class="nav-menu" id="primary-navigation">
+      <li><a href="index.html">Home</a></li>
+      <li class="dropdown">
+        <a href="courses.html" class="dropbtn" aria-haspopup="true" aria-expanded="false">Courses <span class="drop-icon" aria-hidden="true"></span></a>
+        <ul class="dropdown-menu">
+          <li><a href="courses.html#data-analysis">Data Analysis</a></li>
+          <li><a href="courses.html#business-analysis">Business Analysis</a></li>
+          <li><a href="courses.html#data-science">Data Science</a></li>
+          <li><a href="courses.html#social-media-marketing">Social Media Marketing</a></li>
+          <li><a href="courses.html#graphics-design">Graphics Design</a></li>
+          <li><a href="courses.html">All Courses</a></li>
+        </ul>
+      </li>
+      <li><a href="aboutus.html">About</a></li>
+      <li><a href="reviews.html">Reviews</a></li>
+      <li><a href="partnerwithus.html">Partner</a></li>
+      <li><a href="contact.html">Contact</a></li>
+      <li><a href="verification.html">Verify Certificate</a></li>
+      <li><a href="blog.html">Blog</a></li>
+      <li class="nav-careers"><a href="https://growvelt.com" target="_blank" rel="noopener noreferrer" class="careers-link careers-highlight">Careers<span class="careers-sub">Apply for jobs</span></a></li>
     </ul>
-</li>
-    
-    <li><a href="aboutus.html">About</a></li>
-    <li><a href="reviews.html">Reviews</a></li>
-    <li><a href="partnerwithus.html" class="active">Partner with us</a></li>
-    <li><a href="contact.html">Contact</a></li>
-    <li><a href="verification.html">Verify Certificate</a></li>
-    <li class="nav-careers">
-    <a href="https://growvelt.com" target="_blank" class="careers-link careers-highlight">
-        Careers
-        <span class="careers-sub">Find jobs & get hired</span>
-    </a>
-</li>
-
-<li><a href="blog.html">Blogs</a></li>
-</ul>
+  </div>
 </nav>
 
     <!-- Main Content -->
@@ -731,7 +717,7 @@ html, body {
 
     <section class="hero-animation-section">
   <div class="typing-container">
-    <span id="typing-text"></span><span class="cursor"></span>
+    <span id="typing-text" data-inline-typing="true"></span><span class="cursor"></span>
   </div>
 </section>
 
@@ -754,7 +740,7 @@ html, body {
                     </ul>
                     <div class="course-footer">
                         <span class="duration"><i class="fa-regular fa-clock"></i> 2 Months</span>
-                        <a href="https://wa.me/2349034876746" class="enroll-btn" target="_blank">Enroll Now</a>
+                        <a href="registration.html" class="enroll-btn" target="_blank">Enroll Now</a>
                     </div>
                 </div>
             </a>
@@ -773,7 +759,7 @@ html, body {
                     </ul>
                     <div class="course-footer">
                         <span class="duration"><i class="fa-regular fa-clock"></i> 1 Month</span>
-                        <a href="https://wa.me/2349034876746" class="enroll-btn" target="_blank">Enroll Now</a>
+                        <a href="registration.html" class="enroll-btn" target="_blank">Enroll Now</a>
                     </div>
                 </div>
             </a>
@@ -792,7 +778,7 @@ html, body {
                     </ul>
                     <div class="course-footer">
                         <span class="duration"><i class="fa-regular fa-clock"></i> 1 Month</span>
-                        <a href="https://wa.me/2349034876746" class="enroll-btn" target="_blank">Enroll Now</a>
+                        <a href="registration.html" class="enroll-btn" target="_blank">Enroll Now</a>
                     </div>
                 </div>
             </a>
@@ -866,7 +852,7 @@ html, body {
         <h3>Do You Know?</h3>
         <h2>With Growvelt, you get more practical projects, more support, and better career outcomes. Discover the Growvelt difference!</h2>
         <p>Join a community that cares! At Growvelt, you’re never alone. Get the support you need to succeed!</p>
-        <a href="https://wa.me/2349034876746" class="btn btn-primary">Enroll now</a>
+        <a href="registration.html" class="btn btn-primary">Enroll now</a>
     </div>
     <div class="certification-image">
         <img src="images/animate.jpeg" alt="Certificate Preview">
@@ -1033,7 +1019,7 @@ html, body {
         <h3>Get Certified!</h3>
         <h2>Showcase your resume and certificate to catch recruiters' interest</h2>
         <p>Upon completion of all course lessons, you will receive a certificate with your credentials. Furthermore, you will also receive guides for creating a standout resume that helps you land your dream job. You can add them to your LinkedIn to showcase your skills to recruiters!</p>
-        <a href="https://wa.me/2349034876746" class="btn btn-primary">Register now</a>
+        <a href="registration.html" class="btn btn-primary">Register now</a>
     </div>
     <div class="certification-image">
         <img src="images/Resume.jpeg" alt="Certificate Preview">
@@ -1259,11 +1245,11 @@ html, body {
                 <div class="links">
                     <h3>Useful Links</h3>
                     <ul>
-                        <li><a href="https://wa.me/2349034876746">Get Started</a></li>
+                        <li><a href="registration.html">Get Started</a></li>
                         <li><a href="contact.html">Contact Us</a></li>
                         <li><a href="reviews.html">Reviews</a></li>
                         <li><a href="courses.html">Our Courses</a></li>
-                        <li><a href="https://wa.me/2349034876746">Register Now</a></li>
+                        <li><a href="registration.html">Register Now</a></li>
                         <li><a href="verification.html">Verify Certificate</a></li>
                         <li><a href="aboutus.html">About Us</a></li>
                     </ul>
@@ -1273,7 +1259,7 @@ html, body {
 <div class="links">
     <h3>Growvelt Careers</h3>
 
-    <h4>For Recruiters</h4>
+    <h4>For Employers</h4>
     <ul>
         <li><a href="https://growvelt.com" target="_blank" rel="noopener noreferrer">Post a Job</a></li>
         <li><a href="https://growvelt.com" target="_blank" rel="noopener noreferrer">Manage Jobs</a></li>
@@ -1343,14 +1329,13 @@ html, body {
     <!-- Footer -->
 <!-- Footer -->
 <footer class="footer">
-    <div class="container">
-        <p class="left-text">&copy; 2024 Growvelt Technologies Limited (RC - 8738218) | All rights reserved</p>
-
-        <ul class="center-links">
-            <li><a href="privacy-policy.html">Privacy</a></li>
-            <li><a href="terms-of-service.html">Terms</a></li>
-        </ul>
-    </div>
+  <div class="container footer-container">
+    <p class="left-text">&copy; 2026 Growvelt Technologies Limited (RC - 8738218) | All rights reserved</p>
+    <ul class="center-links" aria-label="Legal links">
+      <li><a href="privacy-policy.html">Privacy</a></li>
+      <li><a href="terms-of-service.html">Terms</a></li>
+    </ul>
+  </div>
 </footer>
 
 <!-- ✅ JavaScript for Promotional Modal -->
@@ -1577,7 +1562,7 @@ const typingEl = document.getElementById("typing-text");
 
 function typeEffect() {
   const currentText = slogans[textIndex];
-  const speed = isDeleting ? 70 : 120;
+  const speed = isDeleting ? 120 : 210;
 
   typingEl.textContent = currentText.substring(0, charIndex);
 
@@ -1588,12 +1573,12 @@ function typeEffect() {
   } else {
     if (!isDeleting) {
       isDeleting = true;
-      setTimeout(typeEffect, 1000);
+      setTimeout(typeEffect, 1800);
       return;
     } else {
       isDeleting = false;
       textIndex = (textIndex + 1) % slogans.length;
-      setTimeout(typeEffect, 500);
+      setTimeout(typeEffect, 900);
       return;
     }
   }
@@ -1692,5 +1677,7 @@ var beamer_config = {
 <script src="https://app.getbeamer.com/js/beamer-embed.js" defer></script>
 
 
+  <script src="supabase-config.js"></script>
+  <script src="main.js"></script>
 </body>
 </html>
