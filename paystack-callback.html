@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Payment Confirmation - Growvelt</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="payment-status-page">
+  <main class="payment-status">
+    <div class="payment-status-card">
+      <span class="eyebrow">Growvelt Courses</span>
+      <h1>Confirming your payment</h1>
+      <p id="paymentStatusMessage">Please wait while we confirm your Paystack payment.</p>
+      <a href="index.html" class="btn btn-primary">Back to Home</a>
+    </div>
+  </main>
+
+  <script src="supabase-config.js"></script>
+  <script>
+    async function verifyPayment() {
+      const message = document.getElementById("paymentStatusMessage");
+      const params = new URLSearchParams(window.location.search);
+      const reference = params.get("reference") || params.get("trxref");
+
+      if (!reference) {
+        message.textContent = "We could not find a Paystack payment reference. Please contact Growvelt support.";
+        return;
+      }
+
+      try {
+        const config = window.GROWVELT_SUPABASE;
+        const response = await fetch(`${config.url.replace(/\/$/, "")}/functions/v1/verify-paystack-transaction`, {
+          method: "POST",
+          headers: {
+            apikey: config.anonKey,
+            Authorization: `Bearer ${config.anonKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ reference }),
+        });
+
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.details || data.error || "Payment verification failed");
+
+        message.textContent =
+          data.status === "success"
+            ? "Payment confirmed. Thank you! Our team will follow up with your class details."
+            : "Your payment was not marked successful yet. Please contact Growvelt support if money left your account.";
+      } catch (error) {
+        console.error(error);
+        message.textContent =
+          "Your Paystack return was received, but we could not confirm the payment automatically. Please contact Growvelt support.";
+      }
+    }
+
+    verifyPayment();
+  </script>
+</body>
+</html>
