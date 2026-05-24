@@ -2669,7 +2669,7 @@ main > section {
 }
 
 .nav-logo img {
-  max-height: 64px;
+  max-height: 72px;
   width: auto;
   margin: 0;
   border-radius: 0;
@@ -3362,8 +3362,147 @@ body {
   font-weight: 800;
 }
 
+.required-star {
+  color: #dc2626;
+}
+
 .registration-form button {
   margin-top: 8px;
+}
+
+.course-price-preview {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 16px;
+  border: 1px solid #e4e7ec;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.course-price-label {
+  color: #667085;
+  font-size: 0.92rem;
+  font-weight: 800;
+}
+
+.course-price-preview strong {
+  color: #2b0648;
+  font-size: 1.06rem;
+  text-align: right;
+}
+
+@media (max-width: 520px) {
+  .course-price-preview {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .course-price-preview strong {
+    text-align: left;
+  }
+}
+
+.payment-prompt {
+  margin-top: 18px;
+  padding: 18px;
+  border: 1px solid #d6bbfb;
+  border-radius: 8px;
+  background: #f9f5ff;
+}
+
+.payment-prompt h3 {
+  margin-bottom: 6px;
+  color: #2b0648;
+}
+
+.payment-prompt p {
+  color: #475467;
+}
+
+.paystack-button {
+  width: 100%;
+  min-height: 48px;
+  margin-top: 12px;
+  border: 0;
+  border-radius: 8px;
+  background: #05a357;
+  color: #fff;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.paystack-button:hover {
+  background: #04894a;
+}
+
+.paystack-button:disabled {
+  cursor: progress;
+  opacity: 0.72;
+}
+
+.payment-note {
+  margin-top: 10px;
+  font-size: 0.9rem;
+}
+
+.payment-status-page {
+  padding-top: 0;
+  background: #f7f8fb;
+}
+
+.payment-status {
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  padding: clamp(28px, 6vw, 72px) 18px;
+  background:
+    radial-gradient(circle at 18% 12%, rgba(255, 146, 15, 0.12), transparent 28%),
+    linear-gradient(135deg, #f7f8fb 0%, #ffffff 48%, #f3eafd 100%);
+}
+
+.payment-status-card {
+  display: grid;
+  gap: clamp(14px, 2vw, 20px);
+  width: min(640px, 100%);
+  padding: clamp(24px, 5vw, 46px);
+  border: 1px solid #e4e7ec;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 22px 55px rgba(20, 20, 43, 0.11);
+}
+
+.payment-status-card h1 {
+  margin: 0;
+  color: #172033;
+  font-size: clamp(1.8rem, 4vw, 2.55rem);
+  line-height: 1.1;
+}
+
+.payment-status-card p {
+  margin: 0;
+  color: #475467;
+  font-size: clamp(1rem, 2.5vw, 1.08rem);
+  line-height: 1.7;
+  max-width: 58ch;
+}
+
+.payment-status-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+
+.payment-status-card .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 46px;
+  margin: 0;
+  white-space: normal;
 }
 
 @media (max-width: 900px) {
@@ -3385,6 +3524,22 @@ body {
   .registration-hero {
     padding-left: 14px;
     padding-right: 14px;
+  }
+
+  .payment-status {
+    align-items: start;
+    padding-top: 24px;
+    padding-bottom: 24px;
+  }
+
+  .payment-status-card {
+    gap: 16px;
+    padding: 24px 18px;
+  }
+
+  .payment-status-actions,
+  .payment-status-card .btn {
+    width: 100%;
   }
 }
 
@@ -3432,7 +3587,7 @@ body {
   }
 
   .nav-logo img {
-    max-height: 54px;
+    max-height: 60px;
   }
 
   .nav-toggle {

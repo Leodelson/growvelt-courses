@@ -55,25 +55,42 @@
       </div>
 
       <form id="registrationForm" class="contact-form registration-form" action="https://getform.io/f/azyngdob" method="POST">
-        <label for="full_name">Full Name *</label>
+        <label for="full_name">Full Name <span class="required-star" aria-hidden="true">*</span></label>
         <input type="text" id="full_name" name="full_name" autocomplete="name" required>
 
-        <label for="email">Email Address *</label>
+        <label for="email">Email Address <span class="required-star" aria-hidden="true">*</span></label>
         <input type="email" id="email" name="email" autocomplete="email" required>
 
         <label for="phone">Phone Number</label>
         <input type="tel" id="phone" name="phone" autocomplete="tel">
 
-        <label for="course">Course of Interest *</label>
+        <label for="course">Course of Interest <span class="required-star" aria-hidden="true">*</span></label>
         <select id="course" name="course" required>
           <option value="">Select a course</option>
           <option value="Data Analysis">Data Analysis</option>
+          <option value="Data Analysis with Excel">Data Analysis with Excel</option>
+          <option value="Excel for Data Analysis">Excel for Data Analysis</option>
           <option value="Business Analysis">Business Analysis</option>
           <option value="Data Science">Data Science</option>
+          <option value="Power BI for Business Analysis">Power BI for Business Analysis</option>
+          <option value="SQL for Data Analytics">SQL for Data Analytics</option>
+          <option value="Python for Data Analysis">Python for Data Analysis</option>
+          <option value="Python">Python</option>
+          <option value="R for Data Analysis">R for Data Analysis</option>
+          <option value="Web Development">Web Development</option>
+          <option value="Cybersecurity">Cybersecurity</option>
           <option value="Social Media Marketing">Social Media Marketing</option>
           <option value="Graphics Design">Graphics Design</option>
+          <option value="Basic Computer Literacy">Basic Computer Literacy</option>
+          <option value="Microsoft Word">Microsoft Word</option>
+          <option value="Microsoft PowerPoint">Microsoft PowerPoint</option>
+          <option value="Google Drive">Google Drive</option>
           <option value="Other">Other</option>
         </select>
+        <div class="course-price-preview" id="coursePricePreview" aria-live="polite">
+          <span class="course-price-label">Course Price</span>
+          <strong>Select a course to see the price</strong>
+        </div>
 
         <label for="learning_mode">Preferred Learning Mode</label>
         <select id="learning_mode" name="learning_mode">
@@ -95,6 +112,8 @@
         <textarea id="message" name="message" rows="5" placeholder="Tell us your goals, preferred class timing, or questions."></textarea>
 
         <input type="hidden" name="payment_status" value="pending">
+        <input type="hidden" id="payment_amount" name="payment_amount" value="">
+        <input type="hidden" id="payment_currency" name="payment_currency" value="">
         <input type="hidden" name="_gotcha" style="display:none !important">
 
         <button type="submit">Submit Registration</button>

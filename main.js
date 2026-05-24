@@ -5,6 +5,7 @@
     whatsapp: "https://wa.me/2349034876746",
     getformAction: "https://getform.io/f/azyngdob",
     supabase: window.GROWVELT_SUPABASE || null,
+    coursePrices: window.GROWVELT_COURSE_PRICES || { currency: "NGN", items: {} },
   };
 
   const ready = (callback) => {
@@ -91,7 +92,31 @@
       throw new Error(`Supabase insert failed: ${response.status}`);
     }
 
-    return true;
+    return { ok: true, data: null };
+  };
+
+  const callEdgeFunction = async (name, body) => {
+    const config = site.supabase;
+    if (!config || !config.url || !config.anonKey) {
+      throw new Error("Supabase config is missing");
+    }
+
+    const response = await fetch(`${config.url.replace(/\/$/, "")}/functions/v1/${name}`, {
+      method: "POST",
+      headers: {
+        apikey: config.anonKey,
+        Authorization: `Bearer ${config.anonKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(data.details || data.error || `${name} failed`);
+    }
+
+    return data;
   };
 
   const submitToGetform = async (form) => {
@@ -124,6 +149,104 @@
     }
   };
 
+  const getCoursePrice = (course) => {
+    const prices = site.coursePrices?.items || {};
+    const amount = prices[course];
+    if (amount === null || amount === undefined || amount === "") return null;
+
+    const numericAmount = Number(amount);
+    if (!Number.isFinite(numericAmount) || numericAmount <= 0) return null;
+
+    return {
+      amount: numericAmount,
+      currency: site.coursePrices?.currency || "NGN",
+    };
+  };
+
+  const formatCoursePrice = (price) => {
+    if (!price) return "Price will be confirmed by our team";
+
+    try {
+      return new Intl.NumberFormat("en-NG", {
+        style: "currency",
+        currency: price.currency,
+        maximumFractionDigits: 0,
+      }).format(price.amount);
+    } catch {
+      return `${price.currency} ${price.amount.toLocaleString()}`;
+    }
+  };
+
+  const initCoursePricing = () => {
+    const form = document.getElementById("registrationForm");
+    const courseSelect = form?.querySelector("#course");
+    const preview = form?.querySelector("#coursePricePreview strong");
+    const amountInput = form?.querySelector("#payment_amount");
+    const currencyInput = form?.querySelector("#payment_currency");
+    if (!form || !courseSelect || !preview) return;
+
+    const updatePrice = () => {
+      const price = getCoursePrice(courseSelect.value);
+      preview.textContent = courseSelect.value ? formatCoursePrice(price) : "Select a course to see the price";
+
+      if (amountInput) amountInput.value = price ? String(price.amount) : "";
+      if (currencyInput) currencyInput.value = price ? price.currency : "";
+    };
+
+    courseSelect.addEventListener("change", updatePrice);
+    updatePrice();
+  };
+
+  const renderPaymentPrompt = (form, registration) => {
+    if (!registration?.registration_ref) return;
+
+    const existing = form.querySelector(".payment-prompt");
+    existing?.remove();
+
+    const wrapper = document.createElement("div");
+    wrapper.className = "payment-prompt";
+    wrapper.innerHTML = `
+      <h3>Registration received</h3>
+      <p>Your registration has been saved. You can continue to Paystack now, or wait for our team to follow up by email.</p>
+      <button type="button" class="paystack-button">Continue to Paystack</button>
+      <p class="payment-note">Payment is processed securely by Paystack.</p>
+    `;
+
+    const button = wrapper.querySelector(".paystack-button");
+    button.addEventListener("click", async () => {
+      const originalText = button.textContent;
+      button.disabled = true;
+      button.textContent = "Opening Paystack...";
+
+      try {
+        const transaction = await callEdgeFunction("create-paystack-transaction", {
+          registrationRef: registration.registration_ref,
+        });
+        if (!transaction.authorizationUrl) throw new Error("Paystack payment link was not returned");
+        window.location.href = transaction.authorizationUrl;
+      } catch (error) {
+        console.error(error);
+        button.disabled = false;
+        button.textContent = originalText;
+        showFormMessage(form, "Paystack could not open right now. Please try again or wait for our email.", "error");
+      }
+    });
+
+    form.appendChild(wrapper);
+  };
+
+  const notifyRegistration = async (registration) => {
+    if (!registration?.email || !registration?.course) return false;
+
+    try {
+      await callEdgeFunction("send-registration-email", { registration });
+      return true;
+    } catch (error) {
+      console.warn("Registration email notification failed", error);
+      return false;
+    }
+  };
+
   const handleManagedSubmit = async (event) => {
     event.preventDefault();
 
@@ -140,6 +263,11 @@
 
     if (payload._gotcha) return;
 
+    if (table === "course_registrations" && !payload.registration_ref) {
+      payload.registration_ref =
+        window.crypto?.randomUUID?.() || `reg_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+    }
+
     if (submitButton) {
       submitButton.disabled = true;
       if (submitButton.tagName === "BUTTON") submitButton.textContent = "Sending...";
@@ -152,8 +280,23 @@
         await submitToGetform(form);
       }
 
+      let emailSent = false;
+      if (table === "course_registrations" && savedToDatabase) {
+        emailSent = await notifyRegistration(payload);
+        renderPaymentPrompt(form, payload);
+      }
+
       form.reset();
-      showFormMessage(form, "Thank you. Your submission has been received.", "success");
+      form.querySelector("#course")?.dispatchEvent(new Event("change"));
+      showFormMessage(
+        form,
+        table === "course_registrations"
+          ? emailSent
+            ? "Thank you. Your registration has been received. We have sent the next steps to your email."
+            : "Thank you. Your registration has been received. We will email your next steps shortly."
+          : "Thank you. Your submission has been received.",
+        "success",
+      );
     } catch (error) {
       console.error(error);
       saveFallbackLead(table, payload);
@@ -333,6 +476,7 @@
   ready(() => {
     initNavigation();
     initForms();
+    initCoursePricing();
     initFaqs();
     initTyping();
     initAboutSlideshow();
