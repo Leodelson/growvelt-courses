@@ -17,7 +17,7 @@ const adminEmail = Deno.env.get("ADMIN_EMAIL") || "admin@growvelt.com";
 const fromEmail = Deno.env.get("EMAIL_FROM") || "Growvelt Courses <onboarding@resend.dev>";
 const siteUrl = (Deno.env.get("SITE_URL") || "https://courses.growvelt.com").replace(/\/$/, "");
 const contactUrl = `${siteUrl}/contact.html`;
-const logoUrl = Deno.env.get("EMAIL_LOGO_URL") || `${siteUrl}/images/growveltlogo.png`;
+const logoUrl = Deno.env.get("EMAIL_LOGO_URL") || `${siteUrl}/images/growveltlogo%20new.png`;
 
 function escapeHtml(value?: string) {
   return String(value || "")
