@@ -197,6 +197,45 @@
     updatePrice();
   };
 
+  const initCourseSearch = () => {
+    const searchInput = document.getElementById("courseSearch");
+    const searchButton = document.getElementById("searchBtn");
+    const courseContainer = document.querySelector(".courses-container");
+    const courseCards = Array.from(document.querySelectorAll(".course-card"));
+    if (!searchInput || !courseContainer || !courseCards.length) return;
+
+    let noResults = document.querySelector(".courses-no-results");
+    if (!noResults) {
+      noResults = document.createElement("p");
+      noResults.className = "courses-no-results";
+      noResults.textContent = "No courses match your search yet. Try another course name or contact us for guidance.";
+      noResults.hidden = true;
+      courseContainer.insertAdjacentElement("afterend", noResults);
+    }
+
+    const searchableText = (card) => {
+      const imageAlt = card.querySelector("img")?.getAttribute("alt") || "";
+      return `${card.textContent || ""} ${imageAlt}`.toLowerCase();
+    };
+
+    const filterCourses = () => {
+      const query = searchInput.value.trim().toLowerCase();
+      let visibleCount = 0;
+
+      courseCards.forEach((card) => {
+        const isVisible = !query || searchableText(card).includes(query);
+        card.hidden = !isVisible;
+        visibleCount += isVisible ? 1 : 0;
+      });
+
+      noResults.hidden = visibleCount > 0;
+    };
+
+    searchInput.addEventListener("input", filterCourses);
+    searchButton?.addEventListener("click", filterCourses);
+    filterCourses();
+  };
+
   const renderPaymentPrompt = (form, registration) => {
     if (!registration?.registration_ref) return;
 
@@ -477,6 +516,7 @@
     initNavigation();
     initForms();
     initCoursePricing();
+    initCourseSearch();
     initFaqs();
     initTyping();
     initAboutSlideshow();
