@@ -17,6 +17,7 @@ const adminEmail = Deno.env.get("ADMIN_EMAIL") || "admin@growvelt.com";
 const fromEmail = Deno.env.get("EMAIL_FROM") || "Growvelt Courses <onboarding@resend.dev>";
 const siteUrl = (Deno.env.get("SITE_URL") || "https://courses.growvelt.com").replace(/\/$/, "");
 const contactUrl = `${siteUrl}/contact.html`;
+const coursesUrl = `${siteUrl}/courses.html`;
 const logoUrl = Deno.env.get("EMAIL_LOGO_URL") || `${siteUrl}/images/growveltlogo%20new.png`;
 
 function escapeHtml(value?: string) {
@@ -55,48 +56,114 @@ async function sendEmail(to: string, subject: string, html: string) {
   return response.json();
 }
 
+function emailShell(content: string, reason: string) {
+  return `
+<!DOCTYPE html>
+<html>
+  <body style="margin:0;padding:0;background:#f6f7fb;font-family:Arial,sans-serif;">
+    <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:#f6f7fb;">
+      <tr>
+        <td align="center" style="padding:40px 12px;">
+          <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="max-width:600px;background:#ffffff;border-radius:12px;padding:32px;border-collapse:separate;">
+            <tr>
+              <td align="center" style="padding:0 0 24px;">
+                <img
+                  src="${logoUrl}"
+                  alt="Growvelt"
+                  style="display:block;width:100%;max-width:600px;height:auto;border:0;outline:none;text-decoration:none;"
+                />
+              </td>
+            </tr>
+            ${content}
+            <tr>
+              <td style="color:#374151;font-size:14px;line-height:1.6;padding-top:16px;">
+                <p style="margin:0 0 10px;">
+                  <strong>Need help?</strong>
+                  <a href="${contactUrl}" target="_blank" style="color:#6d28d9;text-decoration:none;font-weight:bold;">Contact Us</a>
+                </p>
+                <p style="margin:0;">
+                  <strong>Follow us:</strong>
+                  <a href="https://www.linkedin.com/company/growvelt" target="_blank" style="margin-right:10px;color:#6d28d9;text-decoration:none;">LinkedIn</a>
+                  <a href="https://web.facebook.com/growvelttechnologies09?_rdc=1&_rdr#" target="_blank" style="margin-right:10px;color:#6d28d9;text-decoration:none;">Facebook</a>
+                  <a href="https://www.instagram.com/growvelt/#" target="_blank" style="color:#6d28d9;text-decoration:none;">Instagram</a>
+                </p>
+              </td>
+            </tr>
+            <tr>
+              <td style="font-size:12px;color:#6b7280;text-align:center;padding-top:24px;">
+                <p style="margin:0;">${reason}</p>
+                <p style="margin:12px 0 0;">
+                  &copy; ${new Date().getFullYear()} Growvelt Technologies Limited (RC - 8738218) | All rights reserved
+                  <br />
+                  Tech skills made practical
+                </p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
+`;
+}
+
 function studentHtml(registration: Registration) {
   const name = escapeHtml(registration.full_name || "there");
   const course = escapeHtml(registration.course || "a Growvelt course");
   const learningMode = escapeHtml(registration.learning_mode || "Not specified");
-  return `
-    <div style="margin:0;padding:0;background:#f4f6f8;font-family:Arial,sans-serif;color:#172033">
-      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f4f6f8;padding:28px 12px">
-        <tr>
-          <td align="center">
-            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:640px;background:#ffffff;border:1px solid #e4e7ec;border-radius:12px;overflow:hidden">
-              <tr>
-                <td style="padding:26px 28px 18px;background:#2b0648">
-                  <img src="${logoUrl}" alt="Growvelt" width="190" style="display:block;max-width:190px;height:auto;margin-bottom:18px">
-                  <h1 style="margin:0;color:#ffffff;font-size:24px;line-height:1.3">Registration received</h1>
-                  <p style="margin:8px 0 0;color:#e9d7fe;font-size:15px">Your Growvelt course registration is now in our system.</p>
-                </td>
-              </tr>
-              <tr>
-                <td style="padding:28px">
-                  <p style="margin:0 0 14px;font-size:16px;line-height:1.7">Hello ${name},</p>
-                  <p style="margin:0 0 18px;font-size:16px;line-height:1.7">Thank you for registering for <strong>${course}</strong>. Our team has received your application and will contact you with the class schedule, payment confirmation, and next steps.</p>
-                  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:20px 0;border:1px solid #e4e7ec;border-radius:10px;background:#f9fafb">
-                    <tr>
-                      <td style="padding:16px 18px">
-                        <p style="margin:0 0 8px;color:#667085;font-size:13px;font-weight:bold;text-transform:uppercase">Course</p>
-                        <p style="margin:0;color:#172033;font-size:17px;font-weight:bold">${course}</p>
-                        <p style="margin:12px 0 0;color:#475467;font-size:14px">Preferred mode: ${learningMode}</p>
-                      </td>
-                    </tr>
-                  </table>
-                  <p style="margin:0 0 22px;font-size:15px;line-height:1.7;color:#475467">If you have a question before we reach out, contact the Growvelt Courses team directly.</p>
-                  <a href="${contactUrl}" style="display:inline-block;background:#ff920f;color:#ffffff;text-decoration:none;font-weight:bold;padding:13px 22px;border-radius:8px">Contact Us</a>
-                  <p style="margin:28px 0 0;font-size:15px;line-height:1.7">Warm regards,<br><strong>Growvelt Courses Team</strong></p>
-                </td>
-              </tr>
-            </table>
-            <p style="margin:18px 0 0;color:#667085;font-size:12px">Growvelt Technologies Limited</p>
-          </td>
-        </tr>
-      </table>
-    </div>
-  `;
+
+  return emailShell(
+    `
+            <tr>
+              <td style="color:#111827;font-size:16px;line-height:1.6;">
+                <p style="margin:0 0 14px;">Hello <strong>${name}</strong>,</p>
+                <p style="margin:0 0 16px;">
+                  Thank you for registering for <strong>${course}</strong>. We have received your course registration and our team will contact you with the class schedule, payment confirmation, and next steps.
+                </p>
+              </td>
+            </tr>
+            <tr>
+              <td align="center" style="padding:18px 0;">
+                <span style="display:inline-block;padding:10px 18px;border-radius:999px;background:#ede9fe;color:#6d28d9;font-weight:bold;font-size:14px;">
+                  Registration received
+                </span>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:4px 0 18px;">
+                <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;">
+                  <tr>
+                    <td style="padding:16px 18px;color:#374151;font-size:14px;line-height:1.6;">
+                      <p style="margin:0 0 8px;color:#6b7280;font-size:12px;font-weight:bold;text-transform:uppercase;">Course</p>
+                      <p style="margin:0;color:#111827;font-size:17px;font-weight:bold;">${course}</p>
+                      <p style="margin:12px 0 0;">Preferred learning mode: <strong>${learningMode}</strong></p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td align="center" style="padding:20px 0 24px;">
+                <a href="${contactUrl}" target="_blank" style="background:#6d28d9;color:#ffffff;padding:14px 24px;text-decoration:none;border-radius:8px;font-weight:bold;display:inline-block;">
+                  Contact Us
+                </a>
+              </td>
+            </tr>
+            <tr>
+              <td style="color:#374151;font-size:14px;line-height:1.6;">
+                <hr style="margin:0 0 20px;border:none;border-top:1px solid #e5e7eb;" />
+                <p style="margin:0 0 10px;">Want to explore more in-demand tech skills with Growvelt?</p>
+                <p style="margin:0;">
+                  <a href="${coursesUrl}" target="_blank" style="color:#6d28d9;font-weight:bold;text-decoration:none;">
+                    Explore our courses
+                  </a>
+                </p>
+              </td>
+            </tr>
+    `,
+    "You received this email because you registered for a course on Growvelt.",
+  );
 }
 
 function adminHtml(registration: Registration) {
@@ -107,44 +174,52 @@ function adminHtml(registration: Registration) {
   const learningMode = escapeHtml(registration.learning_mode);
   const experienceLevel = escapeHtml(registration.experience_level);
   const message = escapeHtml(registration.message);
-  return `
-    <div style="margin:0;padding:0;background:#f4f6f8;font-family:Arial,sans-serif;color:#172033">
-      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f4f6f8;padding:28px 12px">
-        <tr>
-          <td align="center">
-            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:680px;background:#ffffff;border:1px solid #e4e7ec;border-radius:12px;overflow:hidden">
-              <tr>
-                <td style="padding:24px 28px;background:#2b0648">
-                  <img src="${logoUrl}" alt="Growvelt" width="190" style="display:block;max-width:190px;height:auto;margin-bottom:16px">
-                  <h1 style="margin:0;color:#ffffff;font-size:23px;line-height:1.3">New course registration</h1>
-                  <p style="margin:8px 0 0;color:#e9d7fe;font-size:15px">${course || "Course not specified"}</p>
-                </td>
-              </tr>
-              <tr>
-                <td style="padding:28px">
-                  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse">
-                    <tr><td style="padding:10px 0;color:#667085;width:160px">Name</td><td style="padding:10px 0;font-weight:bold">${name}</td></tr>
-                    <tr><td style="padding:10px 0;color:#667085">Email</td><td style="padding:10px 0"><a href="mailto:${email}" style="color:#4b0082">${email}</a></td></tr>
-                    <tr><td style="padding:10px 0;color:#667085">Phone</td><td style="padding:10px 0">${phone}</td></tr>
-                    <tr><td style="padding:10px 0;color:#667085">Course</td><td style="padding:10px 0;font-weight:bold">${course}</td></tr>
-                    <tr><td style="padding:10px 0;color:#667085">Learning mode</td><td style="padding:10px 0">${learningMode}</td></tr>
-                    <tr><td style="padding:10px 0;color:#667085">Experience level</td><td style="padding:10px 0">${experienceLevel}</td></tr>
-                  </table>
-                  <div style="margin-top:18px;padding:16px 18px;background:#f9fafb;border:1px solid #e4e7ec;border-radius:10px">
-                    <p style="margin:0 0 8px;color:#667085;font-size:13px;font-weight:bold;text-transform:uppercase">Message</p>
-                    <p style="margin:0;color:#172033;line-height:1.7">${message || "No message provided."}</p>
-                  </div>
-                  <div style="margin-top:22px">
-                    <a href="mailto:${email}" style="display:inline-block;background:#ff920f;color:#ffffff;text-decoration:none;font-weight:bold;padding:12px 20px;border-radius:8px">Reply to Applicant</a>
-                  </div>
-                </td>
-              </tr>
-            </table>
-          </td>
-        </tr>
-      </table>
-    </div>
-  `;
+
+  return emailShell(
+    `
+            <tr>
+              <td style="color:#111827;font-size:16px;line-height:1.6;">
+                <p style="margin:0 0 14px;"><strong>New course registration received.</strong></p>
+                <p style="margin:0 0 16px;">A student submitted a registration for <strong>${course || "a Growvelt course"}</strong>.</p>
+              </td>
+            </tr>
+            <tr>
+              <td align="center" style="padding:18px 0;">
+                <span style="display:inline-block;padding:10px 18px;border-radius:999px;background:#ede9fe;color:#6d28d9;font-weight:bold;font-size:14px;">
+                  New registration
+                </span>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:4px 0 18px;">
+                <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="border-collapse:collapse;color:#374151;font-size:14px;line-height:1.6;">
+                  <tr><td style="padding:10px 0;color:#6b7280;width:150px;">Name</td><td style="padding:10px 0;font-weight:bold;color:#111827;">${name}</td></tr>
+                  <tr><td style="padding:10px 0;color:#6b7280;">Email</td><td style="padding:10px 0;"><a href="mailto:${email}" style="color:#6d28d9;text-decoration:none;font-weight:bold;">${email}</a></td></tr>
+                  <tr><td style="padding:10px 0;color:#6b7280;">Phone</td><td style="padding:10px 0;">${phone}</td></tr>
+                  <tr><td style="padding:10px 0;color:#6b7280;">Course</td><td style="padding:10px 0;font-weight:bold;color:#111827;">${course}</td></tr>
+                  <tr><td style="padding:10px 0;color:#6b7280;">Learning mode</td><td style="padding:10px 0;">${learningMode}</td></tr>
+                  <tr><td style="padding:10px 0;color:#6b7280;">Experience level</td><td style="padding:10px 0;">${experienceLevel}</td></tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td style="color:#374151;font-size:14px;line-height:1.6;">
+                <div style="padding:16px 18px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;">
+                  <p style="margin:0 0 8px;color:#6b7280;font-size:12px;font-weight:bold;text-transform:uppercase;">Message</p>
+                  <p style="margin:0;">${message || "No message provided."}</p>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td align="center" style="padding:24px 0;">
+                <a href="mailto:${email}" style="background:#6d28d9;color:#ffffff;padding:14px 24px;text-decoration:none;border-radius:8px;font-weight:bold;display:inline-block;">
+                  Reply to Applicant
+                </a>
+              </td>
+            </tr>
+    `,
+    "You received this email because a student registered for a course on Growvelt.",
+  );
 }
 
 Deno.serve(async (req) => {
