@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://growvelt.com/sitemap.xml
+Sitemap: https://www.courses.growvelt.com/sitemap.xml
