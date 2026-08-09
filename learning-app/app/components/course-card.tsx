@@ -1,4 +1,3 @@
-import Link from "next/link";
 import type { MockCourse } from "@/app/lib/mock-data";
 
 export function CourseCard({ course }: { course: MockCourse }) {
@@ -14,7 +13,7 @@ export function CourseCard({ course }: { course: MockCourse }) {
       <div className="course-meta"><span>{course.category}</span><span>{course.level}</span></div>
       <h3>{course.title}</h3><p>{course.outcome}</p>
       <div className="course-details"><span>{course.duration}</span><span>{course.proof}</span></div>
-      <div className="course-card-footer"><strong>{course.price}</strong><Link href="/learn" aria-label={`Explore ${course.title}`}>View course <span aria-hidden="true">→</span></Link></div>
+      <div className="course-card-footer"><strong>{course.price}</strong><span className="course-card-preview">Course details coming later</span></div>
     </div>
   </article>;
 }

@@ -19,6 +19,7 @@ export function AuthForm({ mode, next }: { mode: AuthMode; next?: string | null 
   const isSignUp = mode === "sign-up";
   const safeNext = getSafeNextPath(next);
   const postAuthDestination = isSignUp && intent === "teach" ? "/teach" : safeNext;
+  const authModeHref = (path: "/sign-in" | "/sign-up") => `${path}?next=${encodeURIComponent(safeNext)}`;
 
   async function withClient(action: () => Promise<void>) { setMessage(""); setIsBusy(true); try { await action(); } catch { setMessage("Authentication is not configured on this environment yet. Please try again later."); setIsBusy(false); } }
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -29,7 +30,7 @@ export function AuthForm({ mode, next }: { mode: AuthMode; next?: string | null 
   async function continueWithGoogle() { await withClient(async () => { const callback = new URL("/auth/callback", window.location.origin); callback.searchParams.set("next", postAuthDestination); const { error } = await createClient().auth.signInWithOAuth({ provider: "google", options: { redirectTo: callback.href } }); if (error) { setMessage("Google sign-in could not be started. Please try again."); setIsBusy(false); } }); }
 
   return <form className="auth-card" onSubmit={submit} noValidate>
-    <nav className="auth-mode-tabs" aria-label="Account access"><Link className={isSignUp ? "is-active" : ""} href="/sign-up">Create account</Link><Link className={!isSignUp ? "is-active" : ""} href="/sign-in">Sign in</Link></nav>
+    <nav className="auth-mode-tabs" aria-label="Account access"><Link className={isSignUp ? "is-active" : ""} aria-current={isSignUp ? "page" : undefined} href={authModeHref("/sign-up")}>Create account</Link><Link className={!isSignUp ? "is-active" : ""} aria-current={!isSignUp ? "page" : undefined} href={authModeHref("/sign-in")}>Sign in</Link></nav>
     <div className="auth-card-heading"><p className="eyebrow">{isSignUp ? "Start learning" : "Welcome back"}</p><h1>{isSignUp ? "Build your next proof point." : "Continue your learning."}</h1><p>{isSignUp ? "Create your Growvelt Learning account. Learn new skills or apply to teach on Growvelt." : "Sign in to return to your Growvelt Learning space."}</p></div>
     {isSignUp && <fieldset className="intent-picker"><legend>I want to:</legend><div className="intent-options"><button className={intent === "learn" ? "intent-option intent-learn is-selected" : "intent-option intent-learn"} type="button" onClick={() => setIntent("learn")} aria-pressed={intent === "learn"}><strong>Learn</strong><span>Build practical skills, complete courses and earn proof of learning.</span></button><button className={intent === "teach" ? "intent-option intent-teach is-selected" : "intent-option intent-teach"} type="button" onClick={() => setIntent("teach")} aria-pressed={intent === "teach"}><strong>Teach</strong><span>Share your expertise and create courses for Growvelt learners.</span></button></div><small>Teaching access requires a separate Instructor application and Growvelt approval.</small></fieldset>}
     <button className="google-button" type="button" onClick={continueWithGoogle} disabled={isBusy}><GoogleMark /> Continue with Google</button><div className="auth-divider" aria-hidden="true"><span>or continue with email</span></div>

@@ -9,7 +9,6 @@ const allowedExactPaths = new Set([
   "/teach/apply",
   "/teach/application",
   "/instructor",
-  "/admin",
   "/reset-password",
 ]);
 
@@ -45,7 +44,7 @@ export function getSafeNextPath(value: string | null | undefined) {
     const isDashboardPath = pathname === "/dashboard" || pathname.startsWith("/dashboard/");
     const isSettingsPath = pathname === "/settings" || pathname.startsWith("/settings/");
     const isInstructorPath = pathname === "/instructor" || pathname.startsWith("/instructor/");
-    const isAdminPath = pathname === "/admin" || pathname.startsWith("/admin/");
+    const isAdminPath = pathname.startsWith("/admin/");
 
     if (!isDashboardPath && !isSettingsPath && !isInstructorPath && !isAdminPath && !allowedExactPaths.has(pathname)) {
       return defaultDestination;
