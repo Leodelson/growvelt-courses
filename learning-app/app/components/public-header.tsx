@@ -28,8 +28,8 @@ export function PublicHeader() {
         <Link href="/teach">Teach on Growvelt</Link>
       </nav>
       <div className="header-actions">
-        <Link className="text-link sign-in-link" href="/dashboard">Sign in</Link>
-        <Link className="button button-small" href="/dashboard">My Learning</Link>
+        <Link className="text-link sign-in-link" href="/sign-in">Sign in</Link>
+        <Link className="button button-small" href="/sign-up">Get started</Link>
         <button type="button" className="mobile-menu-button" aria-label={isOpen ? "Close navigation menu" : "Open navigation menu"} aria-expanded={isOpen} aria-controls="mobile-public-navigation" onClick={() => setIsOpen((open) => !open)}>
           <LearningIcon name={isOpen ? "close" : "menu"} />
         </button>
@@ -43,8 +43,8 @@ export function PublicHeader() {
         <Link href="/teach" onClick={closeMenu}>Teach on Growvelt</Link>
       </nav>
       <div>
-        <Link className="text-link" href="/dashboard" onClick={closeMenu}>Sign in</Link>
-        <Link className="button button-primary" href="/dashboard" onClick={closeMenu}>Get started</Link>
+        <Link className="text-link" href="/sign-in" onClick={closeMenu}>Sign in</Link>
+        <Link className="button button-primary" href="/sign-up" onClick={closeMenu}>Get started</Link>
       </div>
     </div>
   </header>;
