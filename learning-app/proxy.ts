@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { defaultAuthenticatedPath, getSafeNextPath } from "@/app/lib/auth/redirect";
 
-const protectedPrefixes = ["/dashboard", "/settings"];
+const protectedPrefixes = ["/dashboard", "/settings", "/teach/apply", "/teach/application", "/instructor"];
 const guestOnlyPaths = new Set(["/sign-in", "/sign-up"]);
 
 function copySessionCookies(from: NextResponse, to: NextResponse) {
@@ -59,5 +59,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/settings/:path*", "/sign-in", "/sign-up"],
+  matcher: ["/dashboard/:path*", "/settings/:path*", "/teach/apply/:path*", "/teach/application/:path*", "/instructor/:path*", "/sign-in", "/sign-up"],
 };

@@ -6,6 +6,9 @@ const allowedExactPaths = new Set([
   "/learn",
   "/certificates",
   "/teach",
+  "/teach/apply",
+  "/teach/application",
+  "/instructor",
   "/reset-password",
 ]);
 
@@ -40,8 +43,9 @@ export function getSafeNextPath(value: string | null | undefined) {
     const { pathname } = candidate;
     const isDashboardPath = pathname === "/dashboard" || pathname.startsWith("/dashboard/");
     const isSettingsPath = pathname === "/settings" || pathname.startsWith("/settings/");
+    const isInstructorPath = pathname === "/instructor" || pathname.startsWith("/instructor/");
 
-    if (!isDashboardPath && !isSettingsPath && !allowedExactPaths.has(pathname)) {
+    if (!isDashboardPath && !isSettingsPath && !isInstructorPath && !allowedExactPaths.has(pathname)) {
       return defaultDestination;
     }
 
