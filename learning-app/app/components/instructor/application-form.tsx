@@ -1,17 +1,23 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useRef, useState } from "react";
+import { ActionButton } from "@/app/components/ui/action-button";
+import { InlineFeedback } from "@/app/components/ui/inline-feedback";
 import { createClient } from "@/app/lib/supabase/browser";
 
 export function InstructorApplicationForm() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
+  const pendingRef = useRef(false);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (pendingRef.current) return;
     const values = new FormData(event.currentTarget);
     const expertise = String(values.get("expertise") ?? "").split(",").map((item) => item.trim()).filter(Boolean).slice(0, 12);
-    setBusy(true); setMessage("");
+    pendingRef.current = true;
+    setBusy(true);
+    setMessage("");
     try {
       const supabase = createClient();
       const { data: { session } } = await supabase.auth.getSession();
@@ -27,6 +33,7 @@ export function InstructorApplicationForm() {
     } catch {
       setMessage("We couldn’t submit your application. If you have already applied, view your application status instead.");
       setBusy(false);
+      pendingRef.current = false;
     }
   }
 
@@ -35,7 +42,7 @@ export function InstructorApplicationForm() {
     <label>Areas of expertise<input name="expertise" required placeholder="e.g. SQL, data analysis, Power BI" disabled={busy} /><small>Separate areas with commas.</small></label>
     <label>About your experience and teaching goals<textarea name="bio" required maxLength={2000} rows={7} placeholder="Share the experience you bring, who you hope to help, and how you approach practical learning." disabled={busy} /></label>
     <p className="instructor-form-note">Applications are reviewed before teaching access is granted. Submitting this form does not create Instructor access.</p>
-    {message && <p className="auth-message" role="status">{message}</p>}
-    <button className="button button-primary" type="submit" disabled={busy}>{busy ? "Submitting…" : "Submit application"}</button>
+    {message && <InlineFeedback variant="error">{message}</InlineFeedback>}
+    <ActionButton className="button button-primary" type="submit" isPending={busy} pendingLabel="Submitting application…">Submit application</ActionButton>
   </form>;
 }

@@ -240,3 +240,8 @@ p { color: var(--muted); line-height: 1.65; }
 .certificate-space h1 { max-width: 590px; font-size: clamp(32px, 4vw, 52px); }
 .certificate-space-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; }
 @media (max-width: 720px) { .workspace-header { align-items: flex-start; flex-direction: column; }.certificate-space-actions .button { width: 100%; } }
+
+/* Phase 1D-B: shared, accessible action feedback. */
+.action-button { position: relative; gap: 8px; }.action-button[aria-busy="true"] { cursor: wait; }.action-spinner { width: 1em; height: 1em; flex: 0 0 auto; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: action-spin .7s linear infinite; }.inline-feedback { display: grid; gap: 5px; margin: 0; padding: 12px 14px; border: 1px solid var(--line); border-left-width: 3px; background: var(--surface-muted); color: var(--ink); font-size: 13px; line-height: 1.5; }.inline-feedback p { margin: 0; color: var(--muted); font-size: inherit; }.inline-feedback-error { border-left-color: #b34b4b; }.inline-feedback-success { border-left-color: #278756; }.inline-feedback-warning { border-left-color: var(--orange); }.inline-feedback-info { border-left-color: var(--purple); }
+@keyframes action-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .action-spinner { animation-duration: 1.8s; } }

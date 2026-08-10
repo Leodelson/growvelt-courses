@@ -1,32 +1,38 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
+import { ActionButton } from "@/app/components/ui/action-button";
+import { InlineFeedback } from "@/app/components/ui/inline-feedback";
 import { createClient } from "@/app/lib/supabase/browser";
 
 export function ForgotPasswordForm() {
   const [isBusy, setIsBusy] = useState(false);
   const [sent, setSent] = useState(false);
+  const pendingRef = useRef(false);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const email = String(new FormData(event.currentTarget).get("email") ?? "").trim();
+    if (pendingRef.current) return;
+    pendingRef.current = true;
     setIsBusy(true);
+    const email = String(new FormData(event.currentTarget).get("email") ?? "").trim();
+
     try {
       const supabase = createClient();
-      await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: new URL("/auth/callback?next=/reset-password", window.location.origin).href,
-      });
+      await supabase.auth.resetPasswordForEmail(email, { redirectTo: new URL("/auth/callback?next=/reset-password", window.location.origin).href });
     } catch {
-      // Keep the response neutral to avoid account enumeration.
+      // Keep the outcome neutral to avoid account enumeration.
     }
+
     setSent(true);
     setIsBusy(false);
+    pendingRef.current = false;
   }
 
   return <form className="auth-card" onSubmit={submit}>
     <div className="auth-card-heading"><p className="eyebrow">Account recovery</p><h1>Reset your password.</h1><p>Enter your email and we’ll send recovery instructions if an account can use them.</p></div>
-    {sent ? <div className="auth-notice" role="status"><strong>Check your email.</strong><p>If the address can receive a reset, recovery instructions are on their way. Check spam or junk folders too.</p></div> : <><label className="field-label">Email address<input name="email" type="email" autoComplete="email" required disabled={isBusy} /></label><button className="button button-primary auth-submit" type="submit" disabled={isBusy}>{isBusy ? "Sending…" : "Send recovery instructions"}</button></>}
+    {sent ? <InlineFeedback variant="success"><strong>Check your email.</strong><p>If the address can receive a reset, recovery instructions are on their way. Check spam or junk folders too.</p></InlineFeedback> : <><label className="field-label">Email address<input name="email" type="email" autoComplete="email" required disabled={isBusy} /></label><ActionButton className="button button-primary auth-submit" type="submit" isPending={isBusy} pendingLabel="Sending recovery link…">Send recovery instructions</ActionButton></>}
     <p className="auth-switch"><Link href="/sign-in">Back to sign in</Link></p>
   </form>;
 }
@@ -35,6 +41,7 @@ export function ResetPasswordForm() {
   const [isReady, setIsReady] = useState<boolean | null>(null);
   const [isBusy, setIsBusy] = useState(false);
   const [message, setMessage] = useState("");
+  const pendingRef = useRef(false);
 
   useEffect(() => {
     const checkRecovery = async () => {
@@ -50,6 +57,7 @@ export function ResetPasswordForm() {
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (pendingRef.current) return;
     const form = new FormData(event.currentTarget);
     const password = String(form.get("password") ?? "");
     const confirmation = String(form.get("password_confirmation") ?? "");
@@ -57,7 +65,10 @@ export function ResetPasswordForm() {
       setMessage("Your passwords do not match.");
       return;
     }
+
+    pendingRef.current = true;
     setIsBusy(true);
+    setMessage("");
     try {
       const supabase = createClient();
       const { error } = await supabase.auth.updateUser({ password });
@@ -67,14 +78,15 @@ export function ResetPasswordForm() {
     } catch {
       setMessage("This recovery link is no longer valid. Request another password reset.");
       setIsBusy(false);
+      pendingRef.current = false;
     }
   }
 
   return <form className="auth-card" onSubmit={submit}>
     <div className="auth-card-heading"><p className="eyebrow">Account recovery</p><h1>Choose a new password.</h1><p>Use a strong password you do not reuse elsewhere.</p></div>
-    {isReady === null && <p className="auth-message" role="status">Checking your recovery link…</p>}
-    {isReady === false && <div className="auth-notice" role="alert"><strong>This recovery link is unavailable.</strong><p>It may have expired or already been used.</p><Link className="auth-inline-link" href="/forgot-password">Request another reset</Link></div>}
-    {isReady && <><label className="field-label">New password<input name="password" type="password" autoComplete="new-password" required minLength={8} disabled={isBusy} /></label><label className="field-label">Confirm new password<input name="password_confirmation" type="password" autoComplete="new-password" required minLength={8} disabled={isBusy} /></label>{message && <p className="auth-message" role="status">{message}</p>}<button className="button button-primary auth-submit" type="submit" disabled={isBusy}>{isBusy ? "Updating…" : "Update password"}</button></>}
+    {isReady === null && <InlineFeedback variant="info">Checking your recovery link…</InlineFeedback>}
+    {isReady === false && <InlineFeedback variant="error"><strong>This recovery link is unavailable.</strong><p>It may have expired or already been used.</p><Link className="auth-inline-link" href="/forgot-password">Request another reset</Link></InlineFeedback>}
+    {isReady && <><label className="field-label">New password<input name="password" type="password" autoComplete="new-password" required minLength={8} disabled={isBusy} /></label><label className="field-label">Confirm new password<input name="password_confirmation" type="password" autoComplete="new-password" required minLength={8} disabled={isBusy} /></label>{message && <InlineFeedback variant="error">{message}</InlineFeedback>}<ActionButton className="button button-primary auth-submit" type="submit" isPending={isBusy} pendingLabel="Updating password…">Update password</ActionButton></>}
     <p className="auth-switch"><Link href="/sign-in">Back to sign in</Link></p>
   </form>;
 }
