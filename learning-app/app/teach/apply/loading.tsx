@@ -1,0 +1,5 @@
+import { Skeleton } from "@/app/components/ui/skeleton";
+
+export default function TeachApplyLoading() {
+  return <main className="instructor-page section-shell" aria-busy="true"><p className="sr-only" role="status">Loading Instructor application…</p><section className="instructor-loading-intro"><Skeleton className="skeleton-link" /><Skeleton className="skeleton-eyebrow" /><Skeleton className="skeleton-title skeleton-title-wide" /><Skeleton className="skeleton-copy" /><Skeleton className="skeleton-copy skeleton-copy-short" /></section><section className="instructor-application-form skeleton-card"><div className="skeleton-field"><Skeleton className="skeleton-label" /><Skeleton className="skeleton-input" /></div><div className="skeleton-field"><Skeleton className="skeleton-label" /><Skeleton className="skeleton-input" /></div><div className="skeleton-field"><Skeleton className="skeleton-label" /><Skeleton className="skeleton-textarea" /></div><Skeleton className="skeleton-note" /><Skeleton className="skeleton-button" /></section></main>;
+}
