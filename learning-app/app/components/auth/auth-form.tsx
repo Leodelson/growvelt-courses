@@ -4,7 +4,7 @@ import Link from "next/link";
 import { FormEvent, useRef, useState } from "react";
 import { ActionButton } from "@/app/components/ui/action-button";
 import { InlineFeedback } from "@/app/components/ui/inline-feedback";
-import { getSafeNextPath } from "@/app/lib/auth/redirect";
+import { getExplicitSafeNextPath, getSafeNextPath } from "@/app/lib/auth/redirect";
 import { createClient } from "@/app/lib/supabase/browser";
 
 type AuthMode = "sign-in" | "sign-up";
@@ -18,11 +18,21 @@ export function AuthForm({ mode, next }: { mode: AuthMode; next?: string | null 
   const [message, setMessage] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [intent, setIntent] = useState<OnboardingIntent>("learn");
+  const intentRef = useRef<OnboardingIntent>("learn");
   const pendingRef = useRef(false);
   const isSignUp = mode === "sign-up";
+  const explicitSafeNext = getExplicitSafeNextPath(next);
   const safeNext = getSafeNextPath(next);
-  const postAuthDestination = isSignUp && intent === "teach" ? "/teach" : safeNext;
   const authModeHref = (path: "/sign-in" | "/sign-up") => `${path}?next=${encodeURIComponent(safeNext)}`;
+
+  function getPostAuthDestination() {
+    return explicitSafeNext ?? (isSignUp && intentRef.current === "teach" ? "/teach/apply" : safeNext);
+  }
+
+  function selectIntent(nextIntent: OnboardingIntent) {
+    intentRef.current = nextIntent;
+    setIntent(nextIntent);
+  }
 
   async function begin(action: () => Promise<void>) {
     if (pendingRef.current) return;
@@ -55,6 +65,7 @@ export function AuthForm({ mode, next }: { mode: AuthMode; next?: string | null 
     await begin(async () => {
       const supabase = createClient();
       if (isSignUp) {
+        const postAuthDestination = getPostAuthDestination();
         const { error } = await supabase.auth.signUp({ email, password, options: { data: { full_name: fullName }, emailRedirectTo: new URL(`/auth/callback?next=${encodeURIComponent(postAuthDestination)}`, window.location.origin).href } });
         if (error) {
           setMessage(friendlyAuthError);
@@ -62,7 +73,7 @@ export function AuthForm({ mode, next }: { mode: AuthMode; next?: string | null 
           pendingRef.current = false;
           return;
         }
-        window.location.assign("/check-email");
+        window.location.assign(`/check-email?next=${encodeURIComponent(postAuthDestination)}`);
         return;
       }
 
@@ -78,6 +89,7 @@ export function AuthForm({ mode, next }: { mode: AuthMode; next?: string | null 
   }
 
   async function continueWithGoogle() {
+    const postAuthDestination = getPostAuthDestination();
     await begin(async () => {
       const callback = new URL("/auth/callback", window.location.origin);
       callback.searchParams.set("next", postAuthDestination);
@@ -93,7 +105,7 @@ export function AuthForm({ mode, next }: { mode: AuthMode; next?: string | null 
   return <form className="auth-card" onSubmit={submit} noValidate>
     <nav className="auth-mode-tabs" aria-label="Account access"><Link className={isSignUp ? "is-active" : ""} aria-current={isSignUp ? "page" : undefined} href={authModeHref("/sign-up")}>Create account</Link><Link className={!isSignUp ? "is-active" : ""} aria-current={!isSignUp ? "page" : undefined} href={authModeHref("/sign-in")}>Sign in</Link></nav>
     <div className="auth-card-heading"><p className="eyebrow">{isSignUp ? "Start learning" : "Welcome back"}</p><h1>{isSignUp ? "Build your next proof point." : "Continue your learning."}</h1><p>{isSignUp ? "Create your Growvelt Learning account. Learn new skills or apply to teach on Growvelt." : "Sign in to return to your Growvelt Learning space."}</p></div>
-    {isSignUp && <fieldset className="intent-picker"><legend>I want to:</legend><div className="intent-options"><button className={intent === "learn" ? "intent-option intent-learn is-selected" : "intent-option intent-learn"} type="button" onClick={() => setIntent("learn")} aria-pressed={intent === "learn"} disabled={isBusy}><strong>Learn</strong><span>Build practical skills, complete courses and earn proof of learning.</span></button><button className={intent === "teach" ? "intent-option intent-teach is-selected" : "intent-option intent-teach"} type="button" onClick={() => setIntent("teach")} aria-pressed={intent === "teach"} disabled={isBusy}><strong>Teach</strong><span>Share your expertise and create courses for Growvelt learners.</span></button></div><small>Teaching access requires a separate Instructor application and Growvelt approval.</small></fieldset>}
+    {isSignUp && <fieldset className="intent-picker"><legend>I want to:</legend><div className="intent-options"><button className={intent === "learn" ? "intent-option intent-learn is-selected" : "intent-option intent-learn"} type="button" onClick={() => selectIntent("learn")} aria-pressed={intent === "learn"} disabled={isBusy}><strong>Learn</strong><span>Build practical skills, complete courses and earn proof of learning.</span></button><button className={intent === "teach" ? "intent-option intent-teach is-selected" : "intent-option intent-teach"} type="button" onClick={() => selectIntent("teach")} aria-pressed={intent === "teach"} disabled={isBusy}><strong>Teach</strong><span>Share your expertise and create courses for Growvelt learners.</span></button></div><small>Teaching access requires a separate Instructor application and Growvelt approval.</small></fieldset>}
     <ActionButton className="google-button" type="button" onClick={continueWithGoogle} isPending={isBusy} pendingLabel="Opening Google…"><GoogleMark /> Continue with Google</ActionButton><div className="auth-divider" aria-hidden="true"><span>or continue with email</span></div>
     {isSignUp && <label className="field-label">Display name<input name="full_name" type="text" autoComplete="name" required maxLength={160} disabled={isBusy} /></label>}<label className="field-label">Email address<input name="email" type="email" autoComplete="email" required disabled={isBusy} /></label><label className="field-label">Password<span className="password-field"><input name="password" type={showPassword ? "text" : "password"} autoComplete={isSignUp ? "new-password" : "current-password"} required minLength={8} disabled={isBusy} /><button type="button" onClick={() => setShowPassword((value) => !value)} aria-label={showPassword ? "Hide password" : "Show password"} disabled={isBusy}>{showPassword ? "Hide" : "Show"}</button></span></label>{isSignUp && <label className="field-label">Confirm password<input name="password_confirmation" type={showPassword ? "text" : "password"} autoComplete="new-password" required minLength={8} disabled={isBusy} /></label>}
     {!isSignUp && <Link className="auth-inline-link" href="/forgot-password">Forgot password?</Link>}{message && <InlineFeedback variant="error">{message}</InlineFeedback>}<ActionButton className="button button-primary auth-submit" type="submit" isPending={isBusy} pendingLabel={isSignUp ? "Creating account…" : "Signing in…"}>{isSignUp ? "Create account" : "Sign in"}</ActionButton>

@@ -1,0 +1,5 @@
+import { Skeleton } from "@/app/components/ui/skeleton";
+
+export default function InstructorCoursesLoading() {
+  return <><header className="protected-page-header skeleton-protected-header" aria-hidden="true"><div className="protected-page-header-inner"><Skeleton className="skeleton-brand" /><Skeleton className="skeleton-link" /></div></header><main className="course-management-page section-shell" aria-busy="true"><p className="sr-only" role="status">Loading your courses…</p><header className="course-management-heading"><div><Skeleton className="skeleton-eyebrow" /><Skeleton className="skeleton-title" /><Skeleton className="skeleton-copy" /></div><Skeleton className="skeleton-button" /></header><section className="instructor-course-list skeleton-list" aria-hidden="true">{Array.from({ length: 3 }, (_, index) => <article className="instructor-course-row" key={index}><div><Skeleton className="skeleton-status" /><Skeleton className="skeleton-row-title" /><Skeleton className="skeleton-copy" /></div><Skeleton className="skeleton-button" /></article>)}</section></main></>;
+}

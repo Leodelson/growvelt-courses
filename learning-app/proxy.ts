@@ -1,6 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import { defaultAuthenticatedPath, getSafeNextPath } from "@/app/lib/auth/redirect";
+import { defaultAuthenticatedPath, getExplicitSafeNextPath, getSafeNextPath } from "@/app/lib/auth/redirect";
 
 const protectedPrefixes = ["/dashboard", "/settings", "/teach/apply", "/teach/application", "/instructor", "/admin"];
 const guestOnlyPaths = new Set(["/sign-in", "/sign-up"]);
@@ -52,7 +52,8 @@ export async function proxy(request: NextRequest) {
   }
 
   if (guestOnlyPaths.has(pathname) && isAuthenticated) {
-    return copySessionCookies(response, NextResponse.redirect(new URL(defaultAuthenticatedPath, request.url)));
+    const destination = getExplicitSafeNextPath(request.nextUrl.searchParams.get("next")) ?? defaultAuthenticatedPath;
+    return copySessionCookies(response, NextResponse.redirect(new URL(destination, request.url)));
   }
 
   return response;

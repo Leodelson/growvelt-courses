@@ -28,17 +28,17 @@ function decodeSafely(value: string) {
   return decoded;
 }
 
-export function getSafeNextPath(value: string | null | undefined) {
-  if (!value || value.length > 512) return defaultDestination;
+export function getExplicitSafeNextPath(value: string | null | undefined) {
+  if (!value || value.length > 512) return null;
 
   const decoded = decodeSafely(value);
   if (!decoded || decoded.includes("\\") || !decoded.startsWith("/") || decoded.startsWith("//")) {
-    return defaultDestination;
+    return null;
   }
 
   try {
     const candidate = new URL(decoded, "https://learning.invalid");
-    if (candidate.origin !== "https://learning.invalid") return defaultDestination;
+    if (candidate.origin !== "https://learning.invalid") return null;
 
     const { pathname } = candidate;
     const isDashboardPath = pathname === "/dashboard" || pathname.startsWith("/dashboard/");
@@ -47,13 +47,17 @@ export function getSafeNextPath(value: string | null | undefined) {
     const isAdminPath = pathname.startsWith("/admin/");
 
     if (!isDashboardPath && !isSettingsPath && !isInstructorPath && !isAdminPath && !allowedExactPaths.has(pathname)) {
-      return defaultDestination;
+      return null;
     }
 
     return `${pathname}${candidate.search}${candidate.hash}`;
   } catch {
-    return defaultDestination;
+    return null;
   }
+}
+
+export function getSafeNextPath(value: string | null | undefined) {
+  return getExplicitSafeNextPath(value) ?? defaultDestination;
 }
 
 export const defaultAuthenticatedPath = defaultDestination;
