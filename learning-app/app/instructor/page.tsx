@@ -1,10 +1,10 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
+import { ProtectedPageHeader } from "@/app/components/protected-page-header";
 import { isApprovedInstructor } from "@/app/lib/instructor/authorization";
 
 export const metadata = { title: "Instructor workspace" };
 
 export default async function InstructorPage() {
   if (!await isApprovedInstructor()) redirect("/teach/application");
-  return <main className="instructor-page section-shell"><header className="workspace-header"><p className="eyebrow">Instructor workspace</p><Link className="back-link" href="/dashboard">Learning dashboard</Link></header><section className="application-status"><h1>Instructor access is active.</h1><p>You’re approved to teach on Growvelt. Course creation and review tools are coming in the next phase.</p></section></main>;
+  return <><ProtectedPageHeader context="Instructor workspace" backHref="/dashboard" backLabel="Learning dashboard" /><main id="main-content" className="instructor-page section-shell"><section className="application-status instructor-workspace-status"><p className="eyebrow">Approved Instructor</p><h1>Your teaching workspace is ready.</h1><p>You have approved Instructor access. Course creation and management tools are the next product phase.</p><p className="workspace-note">Your learner dashboard remains available while you prepare to teach.</p></section></main></>;
 }
