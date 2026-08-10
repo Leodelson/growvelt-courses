@@ -85,7 +85,7 @@ export function CourseDraftForm({ mode, courseId, initialValues = defaultValues,
         const { data, error } = await supabase.rpc("create_instructor_course_draft", input);
         const created = data?.[0] as { course_id?: number } | undefined;
         if (error || !created?.course_id) throw new Error("create_failed");
-        router.replace(`/instructor/courses/${created.course_id}`);
+        router.replace(`/dashboard/instructor/courses/${created.course_id}`);
         router.refresh();
         return;
       }
