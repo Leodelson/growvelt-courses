@@ -1,0 +1,5 @@
+import { Skeleton } from "@/app/components/ui/skeleton";
+
+export default function PublishedCatalogLoading() {
+  return <section className="catalog-page section-shell" aria-busy="true"><span className="sr-only">Loading published courses…</span><header className="catalog-hero"><Skeleton className="skeleton-line skeleton-short" /><Skeleton className="skeleton-line skeleton-title" /><Skeleton className="skeleton-line skeleton-wide" /></header><div className="course-grid published-course-grid">{Array.from({ length: 6 }, (_, index) => <Skeleton className="skeleton-card catalog-course-skeleton" key={index} />)}</div></section>;
+}
