@@ -1,7 +1,7 @@
 import { createClient } from "@/app/lib/supabase/server";
 
 export type EnrollmentState = { isEnrolled: boolean; status: string | null; enrolledAt: string | null };
-type EnrollmentRow = { course_id: number; slug: string; title: string; summary: string | null; category: string | null; level: string | null; is_free: boolean; instructor_name: string | null; enrolled_at: string };
+type EnrollmentRow = { course_id: number; slug: string; title: string; summary: string | null; category: string | null; level: string | null; is_free: boolean; instructor_name: string | null; enrolled_at: string; enrollment_status: "active" | "completed"; completed_lessons: number; total_lessons: number; progress_percent: number };
 type EnrolledCourseRow = {
   course_id: number;
   slug: string;
@@ -13,6 +13,11 @@ type EnrolledCourseRow = {
   is_free: boolean;
   instructor_name: string | null;
   enrolled_at: string;
+  enrollment_status: "active" | "completed";
+  enrollment_completed_at: string | null;
+  completed_lessons: number;
+  total_lessons: number;
+  progress_percent: number;
   module_id: number | null;
   module_title: string | null;
   module_position: number | null;
@@ -33,6 +38,11 @@ export type EnrolledLearningCourse = {
   isFree: boolean;
   instructorName: string | null;
   enrolledAt: string;
+  enrollmentStatus: "active" | "completed";
+  enrollmentCompletedAt: string | null;
+  completedLessons: number;
+  totalLessons: number;
+  progressPercent: number;
   modules: Array<{
     id: number;
     title: string;
@@ -49,13 +59,13 @@ export async function getEnrollmentState(courseId: number): Promise<EnrollmentSt
 }
 
 export async function listOwnLearningEnrollments() {
-  const { data, error } = await (await createClient()).rpc("list_own_learning_enrollments", { p_limit: 24, p_offset: 0 });
+  const { data, error } = await (await createClient()).rpc("list_own_learning_course_progress", { p_limit: 24, p_offset: 0 });
   if (error) throw new Error("Unable to load your enrolled courses.");
-  return ((data ?? []) as EnrollmentRow[]).map((row) => ({ id: row.course_id, slug: row.slug, title: row.title, summary: row.summary, category: row.category, level: row.level, isFree: row.is_free, instructorName: row.instructor_name, enrolledAt: row.enrolled_at }));
+  return ((data ?? []) as EnrollmentRow[]).map((row) => ({ id: row.course_id, slug: row.slug, title: row.title, summary: row.summary, category: row.category, level: row.level, isFree: row.is_free, instructorName: row.instructor_name, enrolledAt: row.enrolled_at, enrollmentStatus: row.enrollment_status, completedLessons: row.completed_lessons, totalLessons: row.total_lessons, progressPercent: row.progress_percent }));
 }
 
 export async function getOwnEnrolledLearningCourse(slug: string): Promise<EnrolledLearningCourse | null> {
-  const { data, error } = await (await createClient()).rpc("get_own_enrolled_learning_course_by_slug", { p_slug: slug });
+  const { data, error } = await (await createClient()).rpc("get_own_enrolled_learning_course_progress_by_slug", { p_slug: slug });
   if (error) throw new Error("Unable to load this enrolled course.");
   const rows = (data ?? []) as EnrolledCourseRow[];
   const first = rows[0];
@@ -82,6 +92,11 @@ export async function getOwnEnrolledLearningCourse(slug: string): Promise<Enroll
     isFree: first.is_free,
     instructorName: first.instructor_name,
     enrolledAt: first.enrolled_at,
+    enrollmentStatus: first.enrollment_status,
+    enrollmentCompletedAt: first.enrollment_completed_at,
+    completedLessons: first.completed_lessons,
+    totalLessons: first.total_lessons,
+    progressPercent: first.progress_percent,
     modules: [...modules.values()],
   };
 }
