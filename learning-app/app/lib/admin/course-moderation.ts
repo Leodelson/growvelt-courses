@@ -1,0 +1,133 @@
+import { createClient } from "@/app/lib/supabase/server";
+
+type RpcError = {
+  code?: string;
+  message?: string;
+  details?: string | null;
+  hint?: string | null;
+};
+
+function throwAdminCourseReaderError(message: string, error: RpcError): never {
+  if (process.env.NODE_ENV !== "production") {
+    const diagnostic = {
+      code: error.code ?? null,
+      message: error.message ?? null,
+      details: error.details ?? null,
+      hint: error.hint ?? null,
+    };
+    console.error("Growvelt Learning Admin course reader RPC failed", diagnostic);
+    throw new Error(`${message} ${JSON.stringify(diagnostic)}`);
+  }
+
+  throw new Error(message);
+}
+
+export type PendingCourse = {
+  course_id: number;
+  course_title: string;
+  instructor_name: string | null;
+  instructor_email: string | null;
+  category: string | null;
+  level: string | null;
+  is_free: boolean;
+  price_amount: number | null;
+  price_currency: string | null;
+  submitted_at: string | null;
+};
+
+export type CourseReviewLesson = {
+  id: number;
+  title: string;
+  type: "video" | "text";
+  content: string | null;
+  videoProvider: string | null;
+  videoReference: string | null;
+  videoVisibility: string | null;
+  durationSeconds: number | null;
+  isPreview: boolean;
+  position: number;
+};
+
+export type CourseReviewSnapshot = {
+  courseId: number;
+  title: string;
+  summary: string | null;
+  description: string | null;
+  category: string | null;
+  level: string | null;
+  isFree: boolean;
+  priceAmount: number | null;
+  priceCurrency: string | null;
+  status: "pending_review";
+  submittedAt: string | null;
+  reviewedAt: string | null;
+  reviewedBy: string | null;
+  reviewNote: string | null;
+  instructor: { id: string | null; name: string | null; email: string | null };
+  declaration: { version: string | null; basis: string | null; acceptedAt: string | null };
+  modules: Array<{ id: number; title: string; position: number; lessons: CourseReviewLesson[] }>;
+};
+
+type ReviewRow = {
+  course_id: number;
+  course_title: string;
+  summary: string | null;
+  description: string | null;
+  category: string | null;
+  level: string | null;
+  is_free: boolean;
+  price_amount: number | null;
+  price_currency: string | null;
+  course_status: "pending_review";
+  submitted_at: string | null;
+  reviewed_at: string | null;
+  reviewed_by: string | null;
+  review_note: string | null;
+  instructor_id: string | null;
+  instructor_name: string | null;
+  instructor_email: string | null;
+  declaration_version: string | null;
+  rights_basis: string | null;
+  declaration_accepted_at: string | null;
+  module_id: number | null;
+  module_title: string | null;
+  module_position: number | null;
+  lesson_id: number | null;
+  lesson_title: string | null;
+  lesson_type: "video" | "text" | null;
+  lesson_content: string | null;
+  video_provider: string | null;
+  video_reference: string | null;
+  video_visibility: string | null;
+  duration_seconds: number | null;
+  is_preview: boolean | null;
+  lesson_position: number | null;
+};
+
+export async function getPendingLearningCourses() {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("list_pending_learning_courses", { p_limit: 20, p_offset: 0 });
+  if (error) throwAdminCourseReaderError("Unable to load submitted courses.", error);
+  return (data ?? []) as PendingCourse[];
+}
+
+export async function getLearningCourseForReview(courseId: number): Promise<CourseReviewSnapshot | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("get_learning_course_for_review", { p_course_id: courseId });
+  if (error) throwAdminCourseReaderError("Unable to load this submitted course.", error);
+  const rows = (data ?? []) as ReviewRow[];
+  const first = rows[0];
+  if (!first) return null;
+
+  const modules = new Map<number, CourseReviewSnapshot["modules"][number]>();
+  for (const row of rows) {
+    if (row.module_id === null || row.module_title === null) continue;
+    const courseModule = modules.get(row.module_id) ?? { id: row.module_id, title: row.module_title, position: row.module_position ?? 0, lessons: [] };
+    if (row.lesson_id !== null && row.lesson_title !== null && (row.lesson_type === "video" || row.lesson_type === "text")) {
+      courseModule.lessons.push({ id: row.lesson_id, title: row.lesson_title, type: row.lesson_type, content: row.lesson_content, videoProvider: row.video_provider, videoReference: row.video_reference, videoVisibility: row.video_visibility, durationSeconds: row.duration_seconds, isPreview: Boolean(row.is_preview), position: row.lesson_position ?? 0 });
+    }
+    modules.set(row.module_id, courseModule);
+  }
+
+  return { courseId: first.course_id, title: first.course_title, summary: first.summary, description: first.description, category: first.category, level: first.level, isFree: first.is_free, priceAmount: first.price_amount, priceCurrency: first.price_currency, status: first.course_status, submittedAt: first.submitted_at, reviewedAt: first.reviewed_at, reviewedBy: first.reviewed_by, reviewNote: first.review_note, instructor: { id: first.instructor_id, name: first.instructor_name, email: first.instructor_email }, declaration: { version: first.declaration_version, basis: first.rights_basis, acceptedAt: first.declaration_accepted_at }, modules: [...modules.values()] };
+}
