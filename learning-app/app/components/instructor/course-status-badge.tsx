@@ -2,7 +2,7 @@ import type { CourseStatus } from "@/app/lib/instructor/course-options";
 
 const labels: Record<CourseStatus, string> = {
   draft: "Draft",
-  pending_review: "In review",
+  pending_review: "Pending review",
   published: "Published",
   archived: "Archived",
 };
