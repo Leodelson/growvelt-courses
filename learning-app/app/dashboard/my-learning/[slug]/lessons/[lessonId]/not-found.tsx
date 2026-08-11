@@ -1,0 +1,2 @@
+import Link from "next/link";
+export default function LessonNotFound() { return <section className="route-feedback-page section-shell"><section className="route-feedback-panel"><p className="eyebrow">Lesson unavailable</p><h1>This lesson isn’t available to this account.</h1><p>It may no longer be published, or this account does not have active enrollment.</p><Link className="button button-primary" href="/dashboard/my-learning">Return to My Learning</Link></section></section>; }

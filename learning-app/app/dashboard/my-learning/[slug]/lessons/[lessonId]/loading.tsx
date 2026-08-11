@@ -1,0 +1,2 @@
+import { Skeleton } from "@/app/components/ui/skeleton";
+export default function LessonLoading() { return <section className="lesson-player-page section-shell" aria-busy="true"><span className="sr-only">Loading lesson…</span><header className="lesson-player-heading"><Skeleton className="skeleton-line skeleton-short" /><Skeleton className="skeleton-line skeleton-title" /></header><div className="lesson-player-layout"><Skeleton className="skeleton-card lesson-player-skeleton" /><Skeleton className="skeleton-card lesson-player-skeleton" /></div></section>; }
