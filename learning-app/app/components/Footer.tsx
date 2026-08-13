@@ -6,7 +6,7 @@ import { NewsletterForm } from "@/app/components/newsletter-form";
 const jobsHref = "https://growvelt.com";
 
 const learningLinks = [
-  { label: "Explore courses", href: "/dashboard/explore" },
+  { label: "Explore courses", href: "/learn" },
   { label: "Teach on Growvelt", href: "/teach" },
   { label: "My Learning", href: "/dashboard/my-learning" },
   { label: "Certificates", href: "/dashboard/certificates" },
@@ -37,7 +37,7 @@ export default function Footer() {
               <h2>A home for jobs, career growth, and learning support.</h2>
               <p>Growvelt brings practical learning, career development, employers, and opportunities together in one connected ecosystem.</p>
               <div className="growvelt-footer-actions">
-                <Link className="growvelt-footer-button is-light" href="/dashboard/explore">Explore courses</Link>
+                <Link className="growvelt-footer-button is-light" href="/learn">Explore courses</Link>
                 <a className="growvelt-footer-button is-quiet" href={jobsHref} target="_blank" rel="noreferrer">Apply for jobs<span className="sr-only"> in a new tab</span></a>
               </div>
             </div>
@@ -86,7 +86,7 @@ export default function Footer() {
       </div>
       <div className="growvelt-footer-legal">
         <div className="section-shell">
-          <p>© {new Date().getFullYear()} Growvelt Technologies Limited (RC - 8738218). All rights reserved.</p>
+          <p>© 2025-{new Date().getFullYear()} Growvelt Technologies Limited (RC - 8738218). All rights reserved.</p>
           <nav aria-label="Legal links">
             <a href="https://www.courses.growvelt.com/privacy-policy.html" target="_blank" rel="noreferrer">Privacy policy</a>
             <a href="https://www.courses.growvelt.com/terms-of-service.html" target="_blank" rel="noreferrer">Terms of service</a>

@@ -2,13 +2,10 @@ import Link from "next/link";
 import { LearningMark } from "@/app/components/learning-mark";
 import { PublicHeader } from "@/app/components/public-header";
 import FooterWrapper from "@/app/components/FooterWrapper";
-import { createClient } from "@/app/lib/supabase/server";
 
 const jobsHref = "https://growvelt.com";
 
-export default async function HomePage() {
-  const { data: { user } } = await (await createClient()).auth.getUser();
-  const exploreHref = user ? "/dashboard/explore" : "/sign-up?next=%2Fdashboard%2Fexplore";
+export default function HomePage() {
 
   return <div className="public-page">
     <PublicHeader />
@@ -19,7 +16,7 @@ export default async function HomePage() {
           <h1 id="hero-title">Learn practical skills. Complete real courses. Carry proof forward.</h1>
           <p className="hero-lede">Growvelt Learning brings reviewed Instructor-led courses, structured lessons, assessments, and earned certificates into one focused learning experience.</p>
           <div className="hero-actions">
-            <Link className="button button-primary" href={exploreHref}>Explore courses</Link>
+            <Link className="button button-primary" href="/learn">Explore courses</Link>
             <a className="button button-secondary" href="#how-it-works">How learning works</a>
           </div>
         </div>
@@ -58,7 +55,7 @@ export default async function HomePage() {
         <a className="button button-primary" href={jobsHref} target="_blank" rel="noreferrer">Apply for jobs<span className="sr-only"> in a new tab</span></a>
       </section>
 
-      <section className="final-cta section-shell"><p className="eyebrow">Your next focused step</p><h2>Choose a published course and begin where you are.</h2><Link className="button button-primary" href={exploreHref}>Explore courses</Link></section>
+      <section className="final-cta section-shell"><p className="eyebrow">Your next focused step</p><h2>Choose a published course and begin where you are.</h2><Link className="button button-primary" href="/learn">Explore courses</Link></section>
     </main>
     <FooterWrapper />
   </div>;

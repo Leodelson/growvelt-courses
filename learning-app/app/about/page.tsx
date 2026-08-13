@@ -36,7 +36,7 @@ export default function AboutPage() {
             <h1 id="about-title">Practical learning, career growth, and opportunity in one connected ecosystem.</h1>
             <p className="about-hero-lede">Growvelt connects skills development, career intelligence, and employment helping people move from learning to career readiness, verified skills, and opportunity.</p>
             <div className="hero-actions">
-              <Link href="/dashboard/explore" className="button button-primary">Explore courses</Link>
+              <Link href="/learn" className="button button-primary">Explore courses</Link>
               <a href="https://growvelt.com" target="_blank" rel="noreferrer" className="button button-secondary">Explore careers<span className="sr-only"> in a new tab</span></a>
             </div>
           </div>
@@ -47,7 +47,7 @@ export default function AboutPage() {
               <p>We bring learning, career development, intelligent hiring tools, and real job opportunities together in one platform.</p>
             </div>
             <dl>
-              <div><dt>Founded</dt><dd>2026</dd></div>
+              <div><dt>Founded</dt><dd>2025-2026</dd></div>
               <div><dt>Focus</dt><dd>Skills to opportunity</dd></div>
             </dl>
           </aside>
@@ -77,7 +77,7 @@ export default function AboutPage() {
 
         <section className="about-split section-shell" aria-labelledby="why-title">
           <Image src="/images/about/why-growvelt.jpg" alt="Digital learning and technology workspace" width={1280} height={853} />
-          <div><p className="eyebrow">Why Growvelt</p><h2 id="why-title">A supportive route from learning to real application.</h2><p>Our Instructor-led approach, hands-on learning model, and flexible training options are designed to help learners gain practical knowledge they can carry into their next opportunity.</p><Link href="/dashboard/explore" className="text-link">Find a course to begin <span aria-hidden="true">→</span></Link></div>
+          <div><p className="eyebrow">Why Growvelt</p><h2 id="why-title">A supportive route from learning to real application.</h2><p>Our Instructor-led approach, hands-on learning model, and flexible training options are designed to help learners gain practical knowledge they can carry into their next opportunity.</p><Link href="/learn" className="text-link">Find a course to begin <span aria-hidden="true">→</span></Link></div>
         </section>
 
         <section className="about-team section-shell" aria-labelledby="team-title">
@@ -87,7 +87,7 @@ export default function AboutPage() {
           </div>
         </section>
 
-        <section className="about-final section-shell" aria-labelledby="about-cta-title"><p className="eyebrow">Build what comes next</p><h2 id="about-cta-title">Learn practical skills. Apply them with confidence.</h2><Link href="/dashboard/explore" className="button button-primary">Explore Growvelt Learning</Link></section>
+        <section className="about-final section-shell" aria-labelledby="about-cta-title"><p className="eyebrow">Build what comes next</p><h2 id="about-cta-title">Learn practical skills. Apply them with confidence.</h2><Link href="/learn" className="button button-primary">Explore Growvelt Learning</Link></section>
       </main>
       <FooterWrapper />
     </div>

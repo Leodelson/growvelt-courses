@@ -1,4 +1,8 @@
 import { createClient } from "@/app/lib/supabase/server";
+import { PublicCatalogQuery, normalizePublicCatalogQuery, publicCatalogHref } from "@/app/lib/catalog/public-catalog-query";
+
+export { normalizePublicCatalogQuery, publicCatalogHref };
+export type { PublicCatalogQuery };
 
 export type PublishedCourse = {
   id: number;
@@ -13,6 +17,12 @@ export type PublishedCourse = {
   instructorName: string | null;
 };
 
+export type PublicCatalogResult = {
+  courses: PublishedCourse[];
+  total: number;
+  pageSize: number;
+};
+
 type PublishedCourseRow = {
   course_id: number;
   slug: string;
@@ -25,6 +35,27 @@ type PublishedCourseRow = {
   price_currency: string | null;
   instructor_name: string | null;
 };
+
+type PublicCatalogCourseRow = PublishedCourseRow & {
+  total_courses: number;
+};
+
+const publicCatalogPageSize = 12;
+
+function mapPublishedCourse(course: PublishedCourseRow): PublishedCourse {
+  return {
+    id: course.course_id,
+    slug: course.slug,
+    title: course.title,
+    summary: course.summary,
+    category: course.category,
+    level: course.level,
+    isFree: course.is_free,
+    priceAmount: course.price_amount,
+    priceCurrency: course.price_currency,
+    instructorName: course.instructor_name,
+  };
+}
 
 type PublishedCourseDetailRow = {
   course_id: number;
@@ -81,18 +112,26 @@ export async function listPublishedLearningCourses(): Promise<PublishedCourse[]>
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("list_published_learning_courses", { p_limit: 24, p_offset: 0 });
   if (error) throw new Error("Unable to load published courses.");
-  return ((data ?? []) as PublishedCourseRow[]).map((course) => ({
-    id: course.course_id,
-    slug: course.slug,
-    title: course.title,
-    summary: course.summary,
-    category: course.category,
-    level: course.level,
-    isFree: course.is_free,
-    priceAmount: course.price_amount,
-    priceCurrency: course.price_currency,
-    instructorName: course.instructor_name,
-  }));
+  return ((data ?? []) as PublishedCourseRow[]).map(mapPublishedCourse);
+}
+
+export async function searchPublicPublishedLearningCourses(query: PublicCatalogQuery): Promise<PublicCatalogResult> {
+  const { data, error } = await (await createClient()).rpc("search_public_published_learning_courses", {
+    p_query: query.query || null,
+    p_category: query.category || null,
+    p_level: query.level || null,
+    p_is_free: query.access === "all" ? null : query.access === "free",
+    p_sort: query.sort,
+    p_limit: publicCatalogPageSize,
+    p_offset: (query.page - 1) * publicCatalogPageSize,
+  });
+  if (error) throw new Error("Unable to load published courses.");
+  const rows = (data ?? []) as PublicCatalogCourseRow[];
+  return {
+    courses: rows.map(mapPublishedCourse),
+    total: rows[0]?.total_courses ?? 0,
+    pageSize: publicCatalogPageSize,
+  };
 }
 
 export async function getPublishedLearningCourse(slug: string): Promise<PublishedCourseDetail | null> {

@@ -34,6 +34,7 @@ button, input { font: inherit; }
 button { cursor: pointer; }
 button:disabled { cursor: not-allowed; opacity: .58; }
 :focus-visible { outline: 3px solid var(--orange); outline-offset: 3px; }
+input:focus-visible, select:focus-visible { outline: 0; border-color: color-mix(in srgb, var(--purple) 46%, var(--line)); box-shadow: 0 0 0 3px color-mix(in srgb, var(--purple) 16%, transparent); }
 
 .section-shell { width: min(1180px, calc(100% - 40px)); margin-inline: auto; }
 .public-page { overflow: clip; }
@@ -194,6 +195,21 @@ p { color: var(--muted); line-height: 1.65; }
 .catalog-controls label { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 12px; font-weight: 700; }
 .catalog-controls input { width: 100%; min-width: 0; padding: 12px; border: 0; background: transparent; color: var(--ink); }
 .catalog-controls button { padding: 10px 13px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-muted); color: var(--ink); font-size: 13px; }
+.public-catalog-controls { display: grid; grid-template-columns: minmax(180px, 1.55fr) repeat(4, minmax(120px, .72fr)) auto; gap: 10px; align-items: end; padding: 14px; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); box-shadow: var(--shadow); }
+.public-catalog-controls label { display: grid; gap: 7px; min-width: 0; color: var(--muted); font-size: 11px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+.public-catalog-controls input, .public-catalog-controls select { width: 100%; min-width: 0; height: 43px; padding: 0 11px; border: 1px solid var(--line); border-radius: 9px; background: var(--canvas); color: var(--ink); font: inherit; font-size: 14px; letter-spacing: normal; text-transform: none; }
+.public-catalog-actions { display: flex; gap: 8px; }
+.public-catalog-actions .button { min-height: 43px; white-space: nowrap; }
+.live-catalog-chip { display: inline-flex; align-items: center; gap: 8px; padding: 7px 12px; border: 1px solid color-mix(in srgb, #20c997 46%, var(--line)); border-radius: 999px; background: color-mix(in srgb, #20c997 12%, var(--surface)); color: #159570; font-size: 12px; font-weight: 800; white-space: nowrap; }
+.live-catalog-chip span { width: 8px; height: 8px; border-radius: 50%; background: #20c997; box-shadow: 0 0 0 0 rgba(32, 201, 151, .65); animation: live-catalog-pulse 1.7s ease-out infinite; }
+.public-catalog-load-more { display: grid; min-height: 52px; place-items: center; margin-top: 30px; }
+.public-catalog-load-more p { display: inline-flex; align-items: center; gap: 9px; margin: 0; color: var(--muted); font-size: 14px; font-weight: 750; }
+.catalog-loader { width: 17px; height: 17px; border: 2px solid color-mix(in srgb, var(--purple) 24%, var(--line)); border-top-color: var(--purple); border-radius: 50%; animation: catalog-spin .7s linear infinite; }
+.published-course-card mark { padding: 0 2px; border-radius: 3px; background: color-mix(in srgb, var(--orange) 34%, transparent); color: var(--ink); }
+@keyframes live-catalog-pulse { 70% { box-shadow: 0 0 0 7px rgba(32, 201, 151, 0); } 100% { box-shadow: 0 0 0 0 rgba(32, 201, 151, 0); } }
+@keyframes catalog-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .live-catalog-chip span, .catalog-loader { animation: none; } }
+.public-catalog-skeleton-controls { display: grid; grid-template-columns: 1.6fr repeat(2, 1fr); gap: 12px; margin-bottom: 28px; }
 .catalog-layout { display: grid; grid-template-columns: 210px 1fr; gap: 32px; margin-top: 35px; }
 .catalog-aside { display: grid; align-content: start; gap: 4px; }
 .catalog-aside button { padding: 11px 0; border: 0; border-bottom: 1px solid var(--line); background: transparent; color: var(--muted); text-align: left; font-size: 14px; }
@@ -573,6 +589,15 @@ p { color: var(--muted); line-height: 1.65; }
   .growvelt-footer-subscribe-row { grid-template-columns: 1fr; }
   .growvelt-footer-subscribe-row input, .growvelt-footer-subscribe-row button { width: 100%; }
   .growvelt-footer-legal > div { align-items: flex-start; flex-direction: column; }
+  .public-catalog-controls { grid-template-columns: 1fr 1fr; padding: 12px; }
+  .public-catalog-search, .public-catalog-actions { grid-column: 1 / -1; }
+  .public-catalog-actions { flex-wrap: nowrap; }
+  .public-catalog-actions .button { flex: 1; }
+}
+
+@media (max-width: 390px) {
+  .public-catalog-controls { grid-template-columns: 1fr; }
+  .public-catalog-controls label, .public-catalog-search, .public-catalog-actions { grid-column: auto; }
 }
 
 /* Keep the migrated About page readable without shrinking the desktop composition. */
