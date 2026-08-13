@@ -23,10 +23,10 @@ export function AuthForm({ mode, next }: { mode: AuthMode; next?: string | null 
   const isSignUp = mode === "sign-up";
   const explicitSafeNext = getExplicitSafeNextPath(next);
   const safeNext = getSafeNextPath(next);
-  const authModeHref = (path: "/sign-in" | "/sign-up") => `${path}?next=${encodeURIComponent(safeNext)}`;
+  const authModeHref = (path: "/sign-in" | "/sign-up") => `${path}?next=${encodeURIComponent(intent === "teach" ? "/teach/application" : safeNext)}`;
 
   function getPostAuthDestination() {
-    return explicitSafeNext ?? (isSignUp && intentRef.current === "teach" ? "/teach/apply" : safeNext);
+    return explicitSafeNext ?? (intentRef.current === "teach" ? "/teach/application" : safeNext);
   }
 
   function selectIntent(nextIntent: OnboardingIntent) {
@@ -103,6 +103,7 @@ export function AuthForm({ mode, next }: { mode: AuthMode; next?: string | null 
   }
 
   return <form className="auth-card" onSubmit={submit} noValidate>
+    <Link className="auth-home-link" href="/">← Back to Home</Link>
     <nav className="auth-mode-tabs" aria-label="Account access"><Link className={isSignUp ? "is-active" : ""} aria-current={isSignUp ? "page" : undefined} href={authModeHref("/sign-up")}>Create account</Link><Link className={!isSignUp ? "is-active" : ""} aria-current={!isSignUp ? "page" : undefined} href={authModeHref("/sign-in")}>Sign in</Link></nav>
     <div className="auth-card-heading"><p className="eyebrow">{isSignUp ? "Start learning" : "Welcome back"}</p><h1>{isSignUp ? "Build your next proof point." : "Continue your learning."}</h1><p>{isSignUp ? "Create your Growvelt Learning account. Learn new skills or apply to teach on Growvelt." : "Sign in to return to your Growvelt Learning space."}</p></div>
     {isSignUp && <fieldset className="intent-picker"><legend>I want to:</legend><div className="intent-options"><button className={intent === "learn" ? "intent-option intent-learn is-selected" : "intent-option intent-learn"} type="button" onClick={() => selectIntent("learn")} aria-pressed={intent === "learn"} disabled={isBusy}><strong>Learn</strong><span>Build practical skills, complete courses and earn proof of learning.</span></button><button className={intent === "teach" ? "intent-option intent-teach is-selected" : "intent-option intent-teach"} type="button" onClick={() => selectIntent("teach")} aria-pressed={intent === "teach"} disabled={isBusy}><strong>Teach</strong><span>Share your expertise and create courses for Growvelt learners.</span></button></div><small>Teaching access requires a separate Instructor application and Growvelt approval.</small></fieldset>}

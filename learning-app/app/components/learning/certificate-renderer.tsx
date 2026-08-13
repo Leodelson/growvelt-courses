@@ -106,7 +106,7 @@ export function CertificateRenderer({ certificate }: CertificateRendererProps) {
           <a className="button button-secondary" href={verificationUrl} target="_blank" rel="noreferrer">
             Verify Certificate
           </a>
-          <a className="button button-secondary" href="https://growvelt.com/jobs" target="_blank" rel="noreferrer">
+          <a className="button button-secondary" href="https://growvelt.com" target="_blank" rel="noreferrer">
             Explore Jobs
           </a>
         </div>
