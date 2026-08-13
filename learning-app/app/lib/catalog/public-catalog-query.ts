@@ -27,7 +27,7 @@ export function normalizePublicCatalogQuery(searchParams: Record<string, string 
   };
 }
 
-export function publicCatalogHref(query: PublicCatalogQuery, changes: Partial<PublicCatalogQuery> = {}) {
+export function publicCatalogHref(query: PublicCatalogQuery, changes: Partial<PublicCatalogQuery> = {}, basePath = "/learn") {
   const next = { ...query, ...changes };
   const params = new URLSearchParams();
   if (next.query) params.set("q", next.query);
@@ -37,5 +37,5 @@ export function publicCatalogHref(query: PublicCatalogQuery, changes: Partial<Pu
   if (next.sort !== "newest") params.set("sort", next.sort);
   if (next.page > 1) params.set("page", String(next.page));
   const suffix = params.toString();
-  return suffix ? `/learn?${suffix}` : "/learn";
+  return suffix ? `${basePath}?${suffix}` : basePath;
 }

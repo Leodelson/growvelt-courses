@@ -79,7 +79,7 @@ export async function getEnrollmentState(courseId: number): Promise<EnrollmentSt
 }
 
 export async function listOwnLearningEnrollments() {
-  const { data, error } = await (await createClient()).rpc("list_own_learning_course_experience", { p_limit: 24, p_offset: 0 });
+  const { data, error } = await (await createClient()).rpc("list_own_learning_course_experience", { p_limit: 48, p_offset: 0 });
   if (error) throw new Error("Unable to load your enrolled courses.");
   return ((data ?? []) as EnrollmentRow[]).map((row) => ({
     id: row.course_id,
