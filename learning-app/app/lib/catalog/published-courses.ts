@@ -75,7 +75,7 @@ type PublishedCourseDetailRow = {
   module_position: number | null;
   lesson_id: number | null;
   lesson_title: string | null;
-  lesson_type: "video" | "text" | null;
+  lesson_type: "video" | "text" | "quiz" | "project" | null;
   is_preview: boolean | null;
   preview_text_content: string | null;
   preview_video_provider: string | null;
@@ -95,7 +95,7 @@ export type PublishedCourseDetail = PublishedCourse & {
     lessons: Array<{
       id: number;
       title: string;
-      type: "video" | "text";
+      type: "video" | "text" | "quiz" | "project";
       isPreview: boolean;
       preview: {
         textContent: string | null;
@@ -146,7 +146,7 @@ export async function getPublishedLearningCourse(slug: string): Promise<Publishe
   for (const row of rows) {
     if (row.module_id === null || row.module_title === null) continue;
     const courseModule = modules.get(row.module_id) ?? { id: row.module_id, title: row.module_title, position: row.module_position ?? 0, lessons: [] };
-    if (row.lesson_id !== null && row.lesson_title !== null && (row.lesson_type === "video" || row.lesson_type === "text")) {
+    if (row.lesson_id !== null && row.lesson_title !== null && (row.lesson_type === "video" || row.lesson_type === "text" || row.lesson_type === "quiz" || row.lesson_type === "project")) {
       courseModule.lessons.push({
         id: row.lesson_id,
         title: row.lesson_title,
