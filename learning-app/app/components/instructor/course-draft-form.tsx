@@ -106,7 +106,7 @@ export function CourseDraftForm({ mode, courseId, initialValues = defaultValues,
     {feedback && <InlineFeedback variant={feedback.variant}>{feedback.message}</InlineFeedback>}
     <fieldset disabled={isPending || !isEditable}>
       <label className="course-field">Course title<input name="title" defaultValue={initialValues.title} minLength={3} maxLength={160} required /><span>Use a clear, outcome-led title. Your course URL is created once and stays stable.</span></label>
-      <label className="course-field">Short summary<textarea name="summary" defaultValue={initialValues.summary} minLength={10} maxLength={320} rows={3} required /><span>Used later for course discovery. Keep it focused and practical.</span></label>
+      <label className="course-field">Short summary<textarea name="summary" defaultValue={initialValues.summary} minLength={10} maxLength={320} rows={3} required /><span>Shown in course discovery. Keep it focused and practical.</span></label>
       <label className="course-field">Course description<textarea name="description" defaultValue={initialValues.description} minLength={40} maxLength={10000} rows={7} required /><span>Explain the practical outcome, intended learner, and learning approach.</span></label>
       <div className="course-form-grid">
         <label className="course-field">Category<select name="category" defaultValue={initialValues.category} required>{courseCategories.map((category) => <option key={category} value={category}>{category}</option>)}</select></label>
@@ -114,8 +114,8 @@ export function CourseDraftForm({ mode, courseId, initialValues = defaultValues,
       </div>
       <fieldset className="course-pricing-fieldset">
         <legend>Course access</legend>
-        <label className="course-choice"><input type="radio" name="access" checked={isFree} onChange={() => setIsFree(true)} />Free course<span>Available without a price when publishing and enrollment arrive later.</span></label>
-        <label className="course-choice"><input type="radio" name="access" checked={!isFree} onChange={() => setIsFree(false)} />Paid course<span>Pricing metadata only. Payments and enrollment are not active yet.</span></label>
+        <label className="course-choice"><input type="radio" name="access" checked={isFree} onChange={() => setIsFree(true)} />Free course<span>Eligible for review, publication, and learner enrollment when the course is complete.</span></label>
+        <label className="course-choice"><input type="radio" name="access" checked={!isFree} onChange={() => setIsFree(false)} />Paid course<span>Pricing metadata only. Paid checkout and access are not enabled yet.</span></label>
         {!isFree && <label className="course-field course-price-field">Price (NGN)<input name="price_amount" type="number" min="1" max="10000000" step="0.01" defaultValue={initialValues.price_amount ?? ""} required /><span>Setting a price does not publish the course or grant learner access.</span></label>}
       </fieldset>
     </fieldset>

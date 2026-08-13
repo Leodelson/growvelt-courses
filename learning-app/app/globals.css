@@ -542,6 +542,49 @@ p { color: var(--muted); line-height: 1.65; }
 .quiz-player, .quiz-builder { min-width: 0; }.quiz-player { display: grid; gap: 18px; }.quiz-instructions, .quiz-questions legend, .quiz-option { overflow-wrap: anywhere; }.quiz-threshold { color: var(--muted); font-weight: 700; }.quiz-questions, .quiz-builder-questions { display: grid; gap: 18px; margin: 0; padding: 0; list-style-position: inside; }.quiz-questions fieldset { display: grid; gap: 10px; min-width: 0; border: 0; padding: 0; }.quiz-questions legend { font-weight: 800; margin-bottom: 8px; }.quiz-option { display: flex; align-items: flex-start; gap: 10px; min-width: 0; padding: 12px 14px; border: 1px solid color-mix(in srgb, var(--purple) 22%, var(--line)); border-radius: 12px; background: var(--surface); color: var(--ink); cursor: pointer; }.quiz-option:focus-within, .quiz-option.is-selected { border-color: var(--purple); background: color-mix(in srgb, var(--purple) 10%, var(--surface)); box-shadow: 0 0 0 3px color-mix(in srgb, var(--purple) 22%, transparent); }.quiz-option input[type="radio"] { margin-top: 4px; flex: 0 0 auto; accent-color: var(--purple); }.quiz-option input:not([type="radio"]) { min-width: 0; flex: 1; background: var(--canvas); color: var(--ink); }.quiz-result { display: grid; gap: 4px; padding: 15px; border-radius: 12px; font-weight: 750; }.quiz-result.is-passed { background: #e9f8ef; color: #185f3b; }.quiz-result.is-failed { background: #fff3ed; color: #8b3a16; }.quiz-actions { display: flex; flex-wrap: wrap; gap: 12px; }.quiz-builder { margin: 12px 0 22px; padding: 18px; border: 1px solid color-mix(in srgb, var(--purple) 18%, transparent); border-radius: 14px; background: var(--surface-muted); }.quiz-builder h3, .quiz-builder h4 { margin: 0 0 12px; }.quiz-builder-config, .quiz-builder-add, .quiz-builder-questions form { display: grid; gap: 12px; }.quiz-builder-questions > li { padding: 16px; border: 1px solid color-mix(in srgb, var(--purple) 15%, transparent); border-radius: 12px; background: var(--surface); }
 @media (max-width: 620px) { .quiz-actions { flex-wrap: nowrap; max-width: 100%; overflow-x: auto; }.quiz-actions .button, .quiz-builder .button { width: auto; min-width: max-content; justify-content: center; white-space: nowrap; }.quiz-option { padding: 11px; } }
 
+/* Phase 2D-F: premium Instructor workspace and deliberate 2–6 option quiz authoring. */
+.dashboard-main > .instructor-page, .dashboard-main > .course-management-page, .dashboard-main > .course-editor-page, .dashboard-main > .curriculum-page { width: 100%; max-width: none; }
+.dashboard-main > .instructor-page { grid-template-columns: minmax(0, 1fr); }
+.instructor-workspace-status { width: 100%; max-width: none; min-height: clamp(460px, 66vh, 650px); align-content: center; padding: clamp(34px, 7vw, 76px); border-radius: 28px; background: linear-gradient(135deg, var(--surface), color-mix(in srgb, var(--purple) 10%, var(--surface))); }
+.instructor-workspace-status h1 { max-width: 880px; font-size: clamp(42px, 6.5vw, 78px); }
+.instructor-workspace-status > p:not(.eyebrow, .workspace-note) { max-width: 760px; font-size: clamp(16px, 2vw, 20px); }
+.instructor-workspace-steps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 12px 0; }
+.instructor-workspace-steps span { display: grid; gap: 9px; padding: 18px; border: 1px solid var(--line); border-radius: 15px; background: color-mix(in srgb, var(--surface) 84%, transparent); color: var(--ink); font-size: 13px; font-weight: 800; }
+.instructor-workspace-steps strong { color: var(--purple); font-size: 11px; letter-spacing: .08em; }
+.instructor-course-summary { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 24px; }
+.instructor-course-summary span { display: inline-flex; align-items: baseline; gap: 6px; padding: 10px 14px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--muted); font-size: 12px; }
+.instructor-course-summary strong { color: var(--ink); font-size: 16px; }
+.instructor-course-list { gap: 16px; border-top: 0; }
+.instructor-courses-end-marker { display: flex; margin: 24px auto 0; }
+.instructor-course-row { padding: clamp(24px, 4vw, 36px); border: 1px solid var(--line); border-radius: 20px; background: var(--surface); box-shadow: var(--shadow); }
+.instructor-course-empty { width: 100%; max-width: none; min-height: 430px; align-content: center; }
+.course-editor-workspace { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(300px, .6fr); gap: 24px; align-items: start; }
+.course-editor-page > .course-draft-form { width: 100%; max-width: none; }
+.course-editor-workspace .course-draft-form, .course-editor-workspace .course-editor-next, .course-submission-panel { width: 100%; max-width: none; margin-top: 0; }
+.course-editor-workspace .course-editor-next { position: sticky; top: 96px; }
+.curriculum-editor, .curriculum-loading-list { width: 100%; max-width: none; }
+.curriculum-module { padding: clamp(24px, 4vw, 38px); }
+.quiz-builder { display: grid; gap: 18px; margin: 18px 0 28px; padding: clamp(20px, 4vw, 30px); }
+.quiz-builder-heading { display: flex; justify-content: space-between; gap: 18px; align-items: end; }
+.quiz-builder-heading h3, .quiz-builder-heading p { margin: 0; }
+.quiz-builder-heading > span { color: var(--muted); font-size: 12px; font-weight: 800; }
+.quiz-builder-config { grid-template-columns: minmax(0, 1fr) minmax(150px, .3fr) auto; align-items: end; padding-bottom: 20px; border-bottom: 1px solid var(--line); }
+.quiz-builder-add { padding: 20px; border: 1px dashed color-mix(in srgb, var(--purple) 35%, var(--line)); border-radius: 14px; background: color-mix(in srgb, var(--purple) 4%, var(--surface)); }
+.quiz-question-editor { display: grid; gap: 13px; }
+.quiz-question-heading { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+.quiz-save-state { flex: 0 0 auto; color: #278756; font-size: 11px; font-weight: 800; }
+.quiz-save-state.is-unsaved { color: color-mix(in srgb, var(--orange) 72%, var(--ink)); }
+.quiz-option-editor { display: grid; gap: 9px; min-width: 0; margin: 0; padding: 0; border: 0; }
+.quiz-option-editor legend { margin-bottom: 8px; color: var(--ink); font-size: 13px; font-weight: 800; }
+.quiz-author-option { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; min-width: 0; }
+.quiz-author-option .quiz-option { align-items: center; }
+.quiz-author-option .quiz-option input[type="radio"] { margin-top: 0; }
+.quiz-option-toolbar, .quiz-question-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+.quiz-option-toolbar small { color: var(--muted); font-size: 11px; }
+.quiz-question-actions > .row-actions { margin-left: auto; }
+@media (max-width: 900px) { .course-editor-workspace { grid-template-columns: 1fr; }.course-editor-workspace .course-editor-next { position: static; }.quiz-builder-config { grid-template-columns: 1fr 1fr; }.quiz-builder-config .button { justify-self: start; }.instructor-workspace-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 620px) { .instructor-workspace-status { min-height: 0; padding: 26px; border-radius: 22px; }.instructor-workspace-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }.instructor-workspace-steps span { padding: 14px; }.instructor-course-row { align-items: stretch; }.course-row-actions { display: flex; flex-wrap: nowrap; align-items: center; justify-content: space-between; overflow-x: auto; }.course-row-actions .button { width: auto; flex: 0 0 auto; }.quiz-builder-config { grid-template-columns: 1fr; }.quiz-author-option { grid-template-columns: minmax(0, 1fr); }.quiz-author-option > .text-button { justify-self: start; }.quiz-question-actions { align-items: flex-start; flex-direction: column; }.quiz-question-actions > .row-actions { width: 100%; margin-left: 0; }.quiz-option-toolbar { align-items: flex-start; flex-direction: column; } }
+
 /* Phase 2D-B refinement: public header and ecosystem footer align with Growvelt Jobs. */
 .header-inner { min-height: 92px; }
 .learning-mark { gap: 5px; }

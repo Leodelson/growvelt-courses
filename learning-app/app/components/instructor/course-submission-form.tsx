@@ -8,6 +8,7 @@ import { InlineFeedback } from "@/app/components/ui/inline-feedback";
 import { createClient } from "@/app/lib/supabase/browser";
 
 type RightsBasis = "original" | "licensed" | "authorized";
+type SubmissionFeedback = { variant: "error" | "success"; message: string } | null;
 
 export function CourseSubmissionForm({ courseId }: { courseId: number }) {
   const router = useRouter();
@@ -15,12 +16,12 @@ export function CourseSubmissionForm({ courseId }: { courseId: number }) {
   const [accepted, setAccepted] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [isPending, setIsPending] = useState(false);
-  const [feedback, setFeedback] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<SubmissionFeedback>(null);
 
   function prepareSubmission(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!accepted) {
-      setFeedback("Confirm that you have the rights to submit these course materials before continuing.");
+      setFeedback({ variant: "error", message: "Confirm that you have the rights to submit these course materials before continuing." });
       return;
     }
     setFeedback(null);
@@ -41,16 +42,16 @@ export function CourseSubmissionForm({ courseId }: { courseId: number }) {
     if (error) {
       if (error.message.includes("Quiz assessment is incomplete")) {
         setShowConfirmation(false);
-        setFeedback("This course cannot be submitted yet. Complete and save every quiz question and its answer options before submitting for review.");
+        setFeedback({ variant: "error", message: "This course cannot be submitted yet. Complete and save every quiz question and its answer options before submitting for review." });
         return;
       }
       setShowConfirmation(false);
-      setFeedback("We couldn’t submit this course for review. Complete the course details and curriculum, then try again.");
+      setFeedback({ variant: "error", message: "We couldn’t submit this course for review. Complete the course details and curriculum, then try again." });
       return;
     }
 
     setShowConfirmation(false);
-    setFeedback("Course submitted successfully. It is now awaiting Growvelt review.");
+    setFeedback({ variant: "success", message: "Course submitted successfully. It is now awaiting Growvelt review." });
     router.refresh();
   }
 
@@ -61,7 +62,7 @@ export function CourseSubmissionForm({ courseId }: { courseId: number }) {
       <p>Submission checks the course details and curriculum, then locks this draft while Growvelt reviews it. Only free courses can be submitted in this MVP because secure paid delivery is not available yet.</p>
     </div>
     <form onSubmit={prepareSubmission} className="course-submission-form">
-      {feedback && <InlineFeedback variant="error">{feedback}</InlineFeedback>}
+      {feedback && <InlineFeedback variant={feedback.variant}>{feedback.message}</InlineFeedback>}
       <label className="course-field">Rights basis
         <select value={rightsBasis} onChange={(event) => setRightsBasis(event.target.value as RightsBasis)} disabled={isPending}>
           <option value="original">I created the course materials</option>
@@ -75,6 +76,6 @@ export function CourseSubmissionForm({ courseId }: { courseId: number }) {
       </label>
       <ActionButton className="button button-primary" type="submit" disabled={isPending} isPending={isPending} pendingLabel="Submitting for review…">Submit for review</ActionButton>
     </form>
-    {showConfirmation && <ConfirmationDialog title="Submit course for review?" description={<p>This course will become read-only while Growvelt reviews it. It will not be published until a future review decision.</p>} confirmLabel="Submit for review" pendingLabel="Submitting for review…" isPending={isPending} onCancel={() => !isPending && setShowConfirmation(false)} onConfirm={submitForReview} />}
+    {showConfirmation && <ConfirmationDialog title="Submit course for review?" description={<p>This course will become read-only while Growvelt reviews it. An Admin can approve it for publication or return it for changes.</p>} confirmLabel="Submit for review" pendingLabel="Submitting for review…" isPending={isPending} onCancel={() => !isPending && setShowConfirmation(false)} onConfirm={submitForReview} />}
   </section>;
 }
