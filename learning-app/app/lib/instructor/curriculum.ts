@@ -3,7 +3,7 @@ import { createClient } from "@/app/lib/supabase/server";
 export type CurriculumLesson = {
   id: number;
   title: string;
-  type: "video" | "text";
+  type: "video" | "text" | "quiz";
   content: string | null;
   videoProvider: "youtube" | null;
   videoReference: string | null;
@@ -54,7 +54,7 @@ export async function getOwnInstructorCurriculum(courseId: number) {
       lessons: [],
     };
     const lessonTitle = typeof row.lesson_title === "string" ? row.lesson_title : typeof row.title === "string" ? row.title : null;
-    if (row.lesson_id !== null && lessonTitle !== null && (row.lesson_type === "video" || row.lesson_type === "text")) {
+    if (row.lesson_id !== null && lessonTitle !== null && (row.lesson_type === "video" || row.lesson_type === "text" || row.lesson_type === "quiz")) {
       courseModule.lessons.push({
         id: row.lesson_id,
         title: lessonTitle,

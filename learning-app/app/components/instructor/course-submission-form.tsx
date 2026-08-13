@@ -39,12 +39,18 @@ export function CourseSubmissionForm({ courseId }: { courseId: number }) {
     setIsPending(false);
 
     if (error) {
+      if (error.message.includes("Quiz assessment is incomplete")) {
+        setShowConfirmation(false);
+        setFeedback("This course cannot be submitted yet. Complete and save every quiz question and its answer options before submitting for review.");
+        return;
+      }
       setShowConfirmation(false);
       setFeedback("We couldn’t submit this course for review. Complete the course details and curriculum, then try again.");
       return;
     }
 
     setShowConfirmation(false);
+    setFeedback("Course submitted successfully. It is now awaiting Growvelt review.");
     router.refresh();
   }
 
