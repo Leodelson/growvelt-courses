@@ -1,7 +1,13 @@
 import Link from "next/link";
 
-export const metadata = { title: "Admin Operations" };
+export const metadata = { title: "Admin Reviews" };
 
 export default function DashboardAdminPage() {
-  return <section className="admin-page section-shell"><header className="admin-page-header"><p className="eyebrow">Admin Operations</p><h1>Operational tools for Growvelt Learning.</h1><p>Review Instructor applications and submitted courses through protected database workflows.</p></header><section className="admin-empty-state"><p className="eyebrow">Available now</p><h2>Instructor applications</h2><p>Review pending applications and grant teaching capability only through the atomic database decision.</p><Link className="button button-primary" href="/dashboard/admin/instructors">Open Instructor applications</Link></section><section className="course-editor-next"><p className="eyebrow">Available now</p><h2>Course reviews</h2><p>Review submitted free courses, inspect their curriculum and rights declaration, then publish or return them for changes.</p><Link className="button button-secondary" href="/dashboard/admin/courses">Open Course Reviews</Link></section></section>;
+  return <section className="admin-page admin-operations-page section-shell">
+    <header className="admin-page-header admin-review-hero"><p className="eyebrow">Admin Reviews</p><h1>Protect the quality of Growvelt Learning.</h1><p>Review Instructor applications and submitted courses through separate, protected moderation workflows.</p></header>
+    <div className="admin-operations-grid">
+      <section className="admin-operation-card"><span className="admin-operation-number">01</span><div><p className="eyebrow">Instructor Reviews</p><h2>Review teaching applications.</h2><p>Inspect pending applications and grant teaching capability only through the authoritative Admin decision.</p></div><Link className="button button-primary" href="/dashboard/admin/instructors">Open Instructor Reviews <span aria-hidden="true">→</span></Link></section>
+      <section className="admin-operation-card"><span className="admin-operation-number">02</span><div><p className="eyebrow">Course Reviews</p><h2>Moderate submitted learning.</h2><p>Inspect course metadata, rights declarations, curriculum, and secure quiz structure before publishing or returning a draft.</p></div><Link className="button button-secondary" href="/dashboard/admin/courses">Open Course Reviews <span aria-hidden="true">→</span></Link></section>
+    </div>
+  </section>;
 }

@@ -38,7 +38,7 @@ export type PendingCourse = {
 export type CourseReviewLesson = {
   id: number;
   title: string;
-  type: "video" | "text";
+  type: "video" | "text" | "quiz";
   content: string | null;
   videoProvider: string | null;
   videoReference: string | null;
@@ -46,6 +46,19 @@ export type CourseReviewLesson = {
   durationSeconds: number | null;
   isPreview: boolean;
   position: number;
+  quiz: CourseReviewQuiz | null;
+};
+
+export type CourseReviewQuiz = {
+  id: number;
+  instructions: string | null;
+  passingPercentage: number;
+  questions: Array<{
+    id: number;
+    text: string;
+    position: number;
+    options: Array<{ id: number; text: string; position: number; isCorrect: boolean }>;
+  }>;
 };
 
 export type CourseReviewSnapshot = {
@@ -94,7 +107,7 @@ type ReviewRow = {
   module_position: number | null;
   lesson_id: number | null;
   lesson_title: string | null;
-  lesson_type: "video" | "text" | null;
+  lesson_type: "video" | "text" | "quiz" | null;
   lesson_content: string | null;
   video_provider: string | null;
   video_reference: string | null;
@@ -102,6 +115,21 @@ type ReviewRow = {
   duration_seconds: number | null;
   is_preview: boolean | null;
   lesson_position: number | null;
+};
+
+type QuizReviewRow = {
+  course_id: number;
+  lesson_id: number;
+  quiz_id: number;
+  instructions: string | null;
+  passing_percentage: number;
+  question_id: number;
+  question_text: string;
+  question_position: number;
+  option_id: number;
+  option_text: string;
+  option_position: number;
+  is_correct: boolean;
 };
 
 export async function getPendingLearningCourses() {
@@ -113,18 +141,37 @@ export async function getPendingLearningCourses() {
 
 export async function getLearningCourseForReview(courseId: number): Promise<CourseReviewSnapshot | null> {
   const supabase = await createClient();
-  const { data, error } = await supabase.rpc("get_learning_course_for_review", { p_course_id: courseId });
-  if (error) throwAdminCourseReaderError("Unable to load this submitted course.", error);
+  const [courseResult, quizResult] = await Promise.all([
+    supabase.rpc("get_learning_course_for_review", { p_course_id: courseId }),
+    supabase.rpc("get_learning_course_quiz_for_review", { p_course_id: courseId }),
+  ]);
+  if (courseResult.error) throwAdminCourseReaderError("Unable to load this submitted course.", courseResult.error);
+  if (quizResult.error) throwAdminCourseReaderError("Unable to load this course’s quiz structure.", quizResult.error);
+
+  const data = courseResult.data;
   const rows = (data ?? []) as ReviewRow[];
   const first = rows[0];
   if (!first) return null;
+
+  const quizRows = (quizResult.data ?? []) as QuizReviewRow[];
+  const quizzes = new Map<number, CourseReviewQuiz>();
+  for (const row of quizRows) {
+    const quiz = quizzes.get(row.lesson_id) ?? { id: row.quiz_id, instructions: row.instructions, passingPercentage: row.passing_percentage, questions: [] };
+    let question = quiz.questions.find((item) => item.id === row.question_id);
+    if (!question) {
+      question = { id: row.question_id, text: row.question_text, position: row.question_position, options: [] };
+      quiz.questions.push(question);
+    }
+    question.options.push({ id: row.option_id, text: row.option_text, position: row.option_position, isCorrect: row.is_correct });
+    quizzes.set(row.lesson_id, quiz);
+  }
 
   const modules = new Map<number, CourseReviewSnapshot["modules"][number]>();
   for (const row of rows) {
     if (row.module_id === null || row.module_title === null) continue;
     const courseModule = modules.get(row.module_id) ?? { id: row.module_id, title: row.module_title, position: row.module_position ?? 0, lessons: [] };
-    if (row.lesson_id !== null && row.lesson_title !== null && (row.lesson_type === "video" || row.lesson_type === "text")) {
-      courseModule.lessons.push({ id: row.lesson_id, title: row.lesson_title, type: row.lesson_type, content: row.lesson_content, videoProvider: row.video_provider, videoReference: row.video_reference, videoVisibility: row.video_visibility, durationSeconds: row.duration_seconds, isPreview: Boolean(row.is_preview), position: row.lesson_position ?? 0 });
+    if (row.lesson_id !== null && row.lesson_title !== null && row.lesson_type && ["video", "text", "quiz"].includes(row.lesson_type)) {
+      courseModule.lessons.push({ id: row.lesson_id, title: row.lesson_title, type: row.lesson_type, content: row.lesson_content, videoProvider: row.video_provider, videoReference: row.video_reference, videoVisibility: row.video_visibility, durationSeconds: row.duration_seconds, isPreview: Boolean(row.is_preview), position: row.lesson_position ?? 0, quiz: quizzes.get(row.lesson_id) ?? null });
     }
     modules.set(row.module_id, courseModule);
   }
