@@ -7,6 +7,7 @@ const jobsHref = "https://growvelt.com";
 
 const learningLinks = [
   { label: "Explore courses", href: "/learn" },
+  { label: "Growvelt Blog", href: "/blog" },
   { label: "Teach on Growvelt", href: "/teach" },
   { label: "My Learning", href: "/dashboard/my-learning" },
   { label: "Certificates", href: "/dashboard/certificates" },
@@ -88,8 +89,8 @@ export default function Footer() {
         <div className="section-shell">
           <p>© 2025-{new Date().getFullYear()} Growvelt Technologies Limited (RC - 8738218). All rights reserved.</p>
           <nav aria-label="Legal links">
-            <a href="https://www.courses.growvelt.com/privacy-policy.html" target="_blank" rel="noreferrer">Privacy policy</a>
-            <a href="https://www.courses.growvelt.com/terms-of-service.html" target="_blank" rel="noreferrer">Terms of service</a>
+            <Link href="/privacy-policy">Privacy policy</Link>
+            <Link href="/terms-of-service">Terms of service</Link>
           </nav>
         </div>
       </div>

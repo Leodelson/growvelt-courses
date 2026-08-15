@@ -21,6 +21,7 @@ const mobileNavigation = navigation.filter((item) => item.href !== "/dashboard/s
 const futureLanguages = ["English (United States)", "English (United Kingdom)", "French", "German", "Spanish", "Portuguese", "Dutch"];
 type WorkspaceAccess = { isInstructor: boolean; isAdmin: boolean };
 type OpenPanel = "language" | "notifications" | "account" | "mobile" | null;
+const sidebarPreferenceKey = "growvelt-learning-sidebar-collapsed";
 
 function WorkspaceLinks({ isInstructor, isAdmin, pathname, onNavigate }: WorkspaceAccess & { pathname: string; onNavigate?: () => void }) {
   if (!isInstructor && !isAdmin) return null;
@@ -53,9 +54,9 @@ function AccountMenu({ userEmail, displayName, avatarUrl, open, onToggle, menuRe
   </div>;
 }
 
-export function LearningShellNavigation({ children, isInstructor, isAdmin, userEmail, displayName, avatarUrl }: { children: React.ReactNode; userEmail: string; displayName: string | null; avatarUrl: string | null } & WorkspaceAccess) {
+export function LearningShellNavigation({ children, initialSidebarCollapsed, isInstructor, isAdmin, userEmail, displayName, avatarUrl }: { children: React.ReactNode; initialSidebarCollapsed: boolean; userEmail: string; displayName: string | null; avatarUrl: string | null } & WorkspaceAccess) {
   const pathname = usePathname();
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(initialSidebarCollapsed);
   const [openPanel, setOpenPanel] = useState<OpenPanel>(null);
   const languageRef = useRef<HTMLDivElement>(null);
   const notificationsRef = useRef<HTMLDivElement>(null);
@@ -80,7 +81,7 @@ export function LearningShellNavigation({ children, isInstructor, isAdmin, userE
   return <div className={collapsed ? "app-shell is-sidebar-collapsed" : "app-shell"}>
     <SkipLink />
     <aside className="learning-sidebar">
-      <button className="sidebar-collapse-button" type="button" aria-label={collapsed ? "Expand dashboard navigation" : "Collapse dashboard navigation"} aria-expanded={!collapsed} onClick={() => setCollapsed((current) => !current)}><LearningIcon name="collapse" /></button>
+      <button className="sidebar-collapse-button" type="button" aria-label={collapsed ? "Expand dashboard navigation" : "Collapse dashboard navigation"} aria-expanded={!collapsed} onClick={() => setCollapsed((current) => { const next = !current; document.cookie = `${sidebarPreferenceKey}=${next}; path=/; max-age=31536000; samesite=lax`; return next; })}><LearningIcon name="collapse" /></button>
       <LanguageMenu open={openPanel === "language"} onToggle={() => togglePanel("language")} menuRef={languageRef} />
       <nav aria-label="Learning navigation">{navigation.map((item) => { const active = isActive(item.href); return <Link className={active ? "active" : ""} data-tooltip={item.label} aria-current={active ? "page" : undefined} href={item.href} key={item.label}><LearningIcon name={item.icon} /><span>{item.label}</span></Link>; })}</nav>
       <WorkspaceLinks isInstructor={isInstructor} isAdmin={isAdmin} pathname={pathname} />
