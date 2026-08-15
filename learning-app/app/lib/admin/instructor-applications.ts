@@ -24,6 +24,7 @@ export type AdminInstructorApplication = {
   created_at: string;
   reviewed_at: string | null;
   review_note: string | null;
+  total_applications?: number;
 };
 
 function throwAdminReaderError(message: string, error: RpcError): never {
@@ -48,6 +49,18 @@ export async function getPendingInstructorApplications() {
 
   if (error) throwAdminReaderError("Unable to load Instructor applications.", error);
   return (data ?? []) as AdminInstructorApplication[];
+}
+
+export async function searchPendingInstructorApplications(query: string, page: number) {
+  const safePage = Number.isFinite(page) && page > 0 ? Math.min(page, 100000) : 1;
+  const { data, error } = await (await createClient()).rpc("search_pending_instructor_applications", {
+    p_query: query || null,
+    p_limit: 12,
+    p_offset: (safePage - 1) * 12,
+  });
+  if (error) throwAdminReaderError("Unable to search Instructor applications.", error);
+  const applications = (data ?? []) as AdminInstructorApplication[];
+  return { applications, total: applications[0]?.total_applications ?? 0, page: safePage, pageSize: 12 };
 }
 
 export async function getInstructorApplicationForAdmin(userId: string) {

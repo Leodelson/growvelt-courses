@@ -592,6 +592,47 @@ p { color: var(--muted); line-height: 1.65; }
 .admin-review-summary { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 20px; }
 .admin-review-summary span, .admin-course-meta span, .admin-quiz-summary span { display: inline-flex; align-items: baseline; gap: 6px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--muted); font-size: 12px; font-weight: 750; }
 .admin-review-summary strong, .admin-quiz-summary strong { color: var(--ink); font-size: 15px; }
+
+/* Phase 2D-H: server-filtered operational queues share a compact, responsive control bar. */
+.course-status-badge { color: var(--ink); }
+.course-status-draft { border-color: color-mix(in srgb, var(--purple) 48%, var(--line)); background: color-mix(in srgb, var(--purple) 12%, var(--surface)); color: var(--purple); }
+.course-status-pending_review { border-color: color-mix(in srgb, var(--orange) 60%, var(--line)); background: color-mix(in srgb, var(--orange) 14%, var(--surface)); color: color-mix(in srgb, var(--orange) 86%, var(--ink)); }
+.course-status-published { border-color: color-mix(in srgb, #278756 56%, var(--line)); background: color-mix(in srgb, #278756 12%, var(--surface)); color: #23764d; }
+.course-status-archived { border-color: color-mix(in srgb, var(--muted) 52%, var(--line)); background: color-mix(in srgb, var(--muted) 12%, var(--surface)); color: var(--ink); opacity: 1; }
+.operations-controls {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.8fr) repeat(2, minmax(140px, .75fr)) auto auto;
+  gap: 12px;
+  align-items: end;
+  width: 100%;
+  margin: 0 0 22px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+.operations-controls label { display: grid; gap: 7px; min-width: 0; color: var(--muted); font-size: 11px; font-weight: 850; letter-spacing: .06em; text-transform: uppercase; }
+.operations-controls input, .operations-controls select { width: 100%; min-width: 0; min-height: 46px; }
+.operations-controls .button { min-height: 46px; white-space: nowrap; }
+.operations-controls select { color: var(--ink); background-color: var(--canvas); }
+.operations-controls option { color: #171326; background: #ffffff; }
+.dark .operations-controls option { color: #f5efff; background: #1c142c; }
+.operations-controls + * mark, .instructor-course-list mark { padding: 0; background: transparent; color: var(--orange); font: inherit; font-weight: 850; }
+.operations-pagination { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 20px; }
+.operations-pagination .button { min-width: 112px; }
+
+@media (max-width: 960px) {
+  .operations-controls { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .operations-controls label:first-child { grid-column: 1 / -1; }
+}
+@media (max-width: 620px) {
+  .operations-controls { grid-template-columns: minmax(0, 1fr); padding: 14px; }
+  .operations-controls label:first-child { grid-column: auto; }
+  .operations-controls .button { width: 100%; justify-content: center; }
+  .operations-pagination { flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; padding-bottom: 2px; }
+  .operations-pagination .button { width: auto; min-width: max-content; }
+}
 .admin-course-review-list { gap: 16px; border-top: 0; }
 .admin-course-review-row { padding: clamp(24px, 4vw, 36px); border: 1px solid var(--line); border-radius: 20px; background: var(--surface); box-shadow: var(--shadow); }
 .admin-course-review-row h2 { margin: 8px 0; font-size: clamp(24px, 3vw, 34px); overflow-wrap: anywhere; }

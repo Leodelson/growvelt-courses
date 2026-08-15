@@ -33,6 +33,7 @@ export type PendingCourse = {
   price_amount: number | null;
   price_currency: string | null;
   submitted_at: string | null;
+  total_courses?: number;
 };
 
 export type CourseReviewLesson = {
@@ -137,6 +138,20 @@ export async function getPendingLearningCourses() {
   const { data, error } = await supabase.rpc("list_pending_learning_courses", { p_limit: 20, p_offset: 0 });
   if (error) throwAdminCourseReaderError("Unable to load submitted courses.", error);
   return (data ?? []) as PendingCourse[];
+}
+
+export async function searchPendingLearningCourses(query: string, category: string, level: string, page: number) {
+  const safePage = Number.isFinite(page) && page > 0 ? Math.min(page, 100000) : 1;
+  const { data, error } = await (await createClient()).rpc("search_pending_learning_courses", {
+    p_query: query || null,
+    p_category: category || null,
+    p_level: level || null,
+    p_limit: 12,
+    p_offset: (safePage - 1) * 12,
+  });
+  if (error) throwAdminCourseReaderError("Unable to search submitted courses.", error);
+  const courses = (data ?? []) as PendingCourse[];
+  return { courses, total: courses[0]?.total_courses ?? 0, page: safePage, pageSize: 12 };
 }
 
 export async function getLearningCourseForReview(courseId: number): Promise<CourseReviewSnapshot | null> {

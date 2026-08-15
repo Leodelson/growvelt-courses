@@ -12,6 +12,7 @@ export type InstructorCourseListItem = {
   price_currency: string | null;
   status: CourseStatus;
   updated_at: string;
+  total_courses?: number;
 };
 
 export type InstructorCourse = InstructorCourseListItem & {
@@ -26,6 +27,19 @@ export async function getOwnInstructorCourses() {
 
   if (error) throw new Error("Unable to load your courses.");
   return (data ?? []) as InstructorCourseListItem[];
+}
+
+export async function searchOwnInstructorCourses(query: string, status: string, page: number) {
+  const safePage = Number.isFinite(page) && page > 0 ? Math.min(page, 100000) : 1;
+  const { data, error } = await (await createClient()).rpc("search_own_instructor_courses", {
+    p_query: query || null,
+    p_status: status || null,
+    p_limit: 12,
+    p_offset: (safePage - 1) * 12,
+  });
+  if (error) throw new Error("Unable to search your courses.");
+  const courses = (data ?? []) as InstructorCourseListItem[];
+  return { courses, total: courses[0]?.total_courses ?? 0, page: safePage, pageSize: 12 };
 }
 
 export async function getOwnInstructorCourse(courseId: number) {
