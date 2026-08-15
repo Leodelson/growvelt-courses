@@ -29,7 +29,7 @@ function toCourse(row: PublicCatalogCourseRow): PublishedCourse {
   return { id: row.course_id, slug: row.slug, title: row.title, summary: row.summary, category: row.category, level: row.level, isFree: row.is_free, priceAmount: row.price_amount, priceCurrency: row.price_currency, instructorName: row.instructor_name };
 }
 
-export function PublicCatalog({ catalog, query, authenticated, basePath = "/learn", dashboard = false }: { catalog: PublicCatalogResult; query: PublicCatalogQuery; authenticated: boolean; basePath?: string; dashboard?: boolean }) {
+export function PublicCatalog({ catalog, query, authenticated, savedCourseIds = [], basePath = "/learn", dashboard = false }: { catalog: PublicCatalogResult; query: PublicCatalogQuery; authenticated: boolean; savedCourseIds?: number[]; basePath?: string; dashboard?: boolean }) {
   const router = useRouter();
   const sentinelRef = useRef<HTMLDivElement>(null);
   const [typedQuery, setTypedQuery] = useState(query.query);
@@ -94,7 +94,7 @@ export function PublicCatalog({ catalog, query, authenticated, basePath = "/lear
 
     {catalog.total === 0 ? <section className="course-empty-state catalog-empty-state"><p className="eyebrow">No matching courses</p><h2>{hasActiveFilters ? "Try a different search or filter." : "Published courses will appear here as they become available."}</h2><p>{hasActiveFilters ? "Clear one or more filters to see the current published catalog." : "Growvelt is preparing practical learning experiences for this catalog."}</p>{hasActiveFilters ? <Link className="button button-secondary" href={basePath}>Clear filters</Link> : null}</section> : <section aria-labelledby="public-catalog-title">
       <div className="section-heading"><div><p className="eyebrow">Published courses</p><h2 id="public-catalog-title">{catalog.total} {catalog.total === 1 ? "course" : "courses"} available</h2></div><p className="live-catalog-chip"><span aria-hidden="true" />Live catalog</p></div>
-      <div className="course-grid published-course-grid public-published-course-grid">{courses.map((course, index) => <PublishedCourseCard course={course} highlightQuery={query.query} href={courseHref(course.slug)} index={index} key={course.id} />)}</div>
+      <div className="course-grid published-course-grid public-published-course-grid">{courses.map((course, index) => <PublishedCourseCard course={course} highlightQuery={query.query} href={courseHref(course.slug)} index={index} key={course.id} authenticated={authenticated} isSaved={savedCourseIds.includes(course.id)} />)}</div>
       <div className="public-catalog-load-more" ref={sentinelRef} aria-live="polite">{isLoadingMore ? <p><span className="catalog-loader" aria-hidden="true" />Loading more courses</p> : null}{loadMoreError ? <button className="button button-secondary" type="button" onClick={() => void loadMore()}>Try loading more</button> : null}{!hasMore && !isLoadingMore && !loadMoreError ? <p className="results-end-marker">End of course catalog</p> : null}</div>
     </section>}
   </section>;

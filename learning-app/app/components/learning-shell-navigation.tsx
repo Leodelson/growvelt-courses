@@ -13,8 +13,10 @@ const navigation = [
   { href: "/dashboard", label: "Home", icon: "home" as const },
   { href: "/dashboard/my-learning", label: "My Learning", icon: "learning" as const },
   { href: "/dashboard/explore", label: "Explore catalog", mobileLabel: "Explore", icon: "explore" as const },
+  { href: "/dashboard/saved-courses", label: "Saved Courses", icon: "heart" as const },
   { href: "/dashboard/certificates", label: "Certificates", icon: "certificate" as const },
 ];
+const mobileNavigation = navigation.filter((item) => item.href !== "/dashboard/saved-courses");
 
 const futureLanguages = ["English (United States)", "English (United Kingdom)", "French", "German", "Spanish", "Portuguese", "Dutch"];
 type WorkspaceAccess = { isInstructor: boolean; isAdmin: boolean };
@@ -93,7 +95,7 @@ export function LearningShellNavigation({ children, isInstructor, isAdmin, userE
             <header><LearningMark href="/dashboard" /><button type="button" aria-label="Close dashboard menu" onClick={() => setOpenPanel(null)}><LearningIcon name="close" /></button></header>
             <div className="mobile-dashboard-identity"><span className="dashboard-avatar" aria-hidden="true">{avatarUrl ? <img src={avatarUrl} alt="" /> : (displayName || userEmail).trim().charAt(0).toUpperCase() || "G"}</span><div><small>Signed in as</small><strong>{userEmail}</strong></div></div>
             <div className="mobile-dashboard-language"><strong>Language &amp; region</strong><span>English (Global)</span><small>More languages require translated Learning content.</small></div>
-            <nav aria-label="Mobile dashboard links"><Link onClick={() => setOpenPanel(null)} href="/dashboard/profile"><LearningIcon name="profile" />Profile</Link><Link onClick={() => setOpenPanel(null)} href="/dashboard/settings"><LearningIcon name="settings" />Settings</Link></nav>
+            <nav aria-label="Mobile dashboard links"><Link onClick={() => setOpenPanel(null)} href="/dashboard/profile"><LearningIcon name="profile" />Profile</Link><Link onClick={() => setOpenPanel(null)} href="/dashboard/saved-courses"><LearningIcon name="heart" />Saved Courses</Link><Link onClick={() => setOpenPanel(null)} href="/dashboard/settings"><LearningIcon name="settings" />Settings</Link></nav>
             <WorkspaceLinks isInstructor={isInstructor} isAdmin={isAdmin} pathname={pathname} onNavigate={() => setOpenPanel(null)} />
             <ThemeControl /><SignOutButton />
           </aside></>}
@@ -109,6 +111,6 @@ export function LearningShellNavigation({ children, isInstructor, isAdmin, userE
       </div></header>
       <main id="main-content" className="dashboard-main">{children}</main>
     </div>
-    <nav className="mobile-nav" aria-label="Learning navigation">{navigation.map((item) => { const active = isActive(item.href); return <Link className={active ? "active" : ""} aria-current={active ? "page" : undefined} href={item.href} key={item.label}><LearningIcon name={item.icon} size={18} /><small>{item.mobileLabel ?? item.label}</small></Link>; })}</nav>
+    <nav className="mobile-nav" aria-label="Learning navigation">{mobileNavigation.map((item) => { const active = isActive(item.href); return <Link className={active ? "active" : ""} aria-current={active ? "page" : undefined} href={item.href} key={item.label}><LearningIcon name={item.icon} size={18} /><small>{item.mobileLabel ?? item.label}</small></Link>; })}</nav>
   </div>;
 }

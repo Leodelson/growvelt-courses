@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { EnrollmentButton } from "@/app/components/learning/enrollment-button";
+import { SaveCourseButton } from "@/app/components/learning/save-course-button";
 import { getPublishedLearningCourse } from "@/app/lib/catalog/published-courses";
 import { getEnrollmentState } from "@/app/lib/learning/enrollments";
+import { getOwnSavedLearningCourseIds } from "@/app/lib/learning/saved-courses";
 
 export const metadata = { title: "Course" };
 
@@ -22,7 +24,7 @@ export default async function PublishedCourseDetailPage({ params }: { params: Pr
   if (!slug || slug.length > 220) notFound();
   const course = await getPublishedLearningCourse(slug);
   if (!course) notFound();
-  const enrollment = await getEnrollmentState(course.id);
+  const [enrollment, savedCourseIds] = await Promise.all([getEnrollmentState(course.id), getOwnSavedLearningCourseIds()]);
   const pricing = course.isFree ? "Free" : `${course.priceCurrency || "NGN"} ${Number(course.priceAmount ?? 0).toLocaleString("en-NG")}`;
   const activityCount = course.modules.reduce((total, module) => total + module.lessons.filter((lesson) => lesson.type !== "project").length, 0);
 
@@ -46,6 +48,7 @@ export default async function PublishedCourseDetailPage({ params }: { params: Pr
         </section>
       </article>
       <aside className="published-course-aside">
+        <div className="published-course-save"><SaveCourseButton courseId={course.id} authenticated isSaved={savedCourseIds.includes(course.id)} /><span>Save course</span></div>
         <p className="eyebrow">Course access</p>
         <h2>{enrollment.isEnrolled ? "You’re enrolled" : course.isFree ? "Start learning for free" : "Paid access is coming later"}</h2>
         <p>{enrollment.isEnrolled ? "Open My Learning to continue lessons, complete quizzes, and follow your saved course progress." : course.isFree ? "Enroll to access the lesson player, complete text and video lessons, take quizzes, and track your progress." : "Growvelt has not enabled paid enrollment or checkout yet."}</p>

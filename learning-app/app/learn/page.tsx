@@ -3,6 +3,7 @@ import { PublicHeader } from "@/app/components/public-header";
 import { searchPublicPublishedLearningCourses } from "@/app/lib/catalog/published-courses";
 import { normalizePublicCatalogQuery } from "@/app/lib/catalog/public-catalog-query";
 import { createClient } from "@/app/lib/supabase/server";
+import { getOwnSavedLearningCourseIds } from "@/app/lib/learning/saved-courses";
 
 export const metadata = { title: "Explore courses" };
 
@@ -13,6 +14,7 @@ export default async function LearnPage({ searchParams }: { searchParams: Promis
     (await createClient()).auth.getUser(),
   ]);
 
+  const savedCourseIds = auth.data.user ? await getOwnSavedLearningCourseIds() : [];
   const catalogKey = `${query.query}|${query.category}|${query.level}|${query.access}|${query.sort}`;
-  return <div className="public-page"><PublicHeader /><main><PublicCatalog key={catalogKey} catalog={catalog} query={query} authenticated={Boolean(auth.data.user)} /></main></div>;
+  return <div className="public-page"><PublicHeader /><main><PublicCatalog key={catalogKey} catalog={catalog} query={query} authenticated={Boolean(auth.data.user)} savedCourseIds={savedCourseIds} /></main></div>;
 }

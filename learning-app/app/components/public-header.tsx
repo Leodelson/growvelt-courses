@@ -6,7 +6,7 @@ import { createPortal } from "react-dom";
 import { LearningIcon } from "@/app/components/learning-icon";
 import { LearningMark } from "@/app/components/learning-mark";
 
-const jobsHref = "https://growvelt.com";
+const jobsHref = "https://www.growvelt.com";
 
 function AccountIcon() {
   return <svg aria-hidden="true" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="3.5" /><path d="M4.5 20a7.5 7.5 0 0 1 15 0" /></svg>;
@@ -33,6 +33,7 @@ export function PublicHeader() {
     <Link href="/" onClick={closeMenu}>Home</Link>
     <Link href="/learn" onClick={closeMenu}>Explore Learning</Link>
     <Link href="/sign-up?next=%2Fteach%2Fapplication" onClick={closeMenu}>Teach on Growvelt</Link>
+    <a href={jobsHref} target="_blank" rel="noreferrer" onClick={closeMenu}>Hire Talent<span className="sr-only"> in a new tab</span></a>
     <div className="public-careers-menu"><strong>Careers</strong><a href={jobsHref} target="_blank" rel="noreferrer" onClick={closeMenu}>Apply for jobs<span className="sr-only"> in a new tab</span></a></div>
   </>;
 
