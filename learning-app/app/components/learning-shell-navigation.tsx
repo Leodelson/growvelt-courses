@@ -10,7 +10,7 @@ import { ThemeControl } from "@/app/components/theme-control";
 import { SkipLink } from "@/app/components/ui/skip-link";
 
 const navigation = [
-  { href: "/dashboard", label: "Overview", icon: "overview" as const },
+  { href: "/dashboard", label: "Home", icon: "home" as const },
   { href: "/dashboard/my-learning", label: "My Learning", icon: "learning" as const },
   { href: "/dashboard/explore", label: "Explore catalog", mobileLabel: "Explore", icon: "explore" as const },
   { href: "/dashboard/certificates", label: "Certificates", icon: "certificate" as const },

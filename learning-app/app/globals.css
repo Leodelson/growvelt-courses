@@ -744,18 +744,19 @@ p { color: var(--muted); line-height: 1.65; }
 .mobile-dashboard-language span { color: var(--ink); font-size: 13px; font-weight: 750; }
 .mobile-dashboard-language small { color: var(--muted); font-size: 10px; line-height: 1.4; }
 @media (max-width: 900px) {
-  .mobile-dashboard-control { display: inline-flex; align-items: center; }
-  .dashboard-notifications { display: none; }
+  .mobile-dashboard-control { display: inline-flex; align-items: center; order: 2; }
+  .dashboard-notifications { display: block; order: 1; margin: 0; padding: 0; border: 0; }
   .header-tools > .dashboard-account-menu { display: none; }
   .header-tools {
-    gap: 0;
+    gap: 12px;
     overflow: visible;
-    padding: 2px;
-    border: 1px solid var(--line);
-    border-radius: 999px;
-    background: var(--surface);
-    box-shadow: 0 4px 12px color-mix(in srgb, var(--ink) 8%, transparent);
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
   }
+  .mobile-dashboard-control { overflow: hidden; padding: 2px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); box-shadow: 0 4px 12px color-mix(in srgb, var(--ink) 8%, transparent); }
   .mobile-dashboard-menu-button {
     border: 0;
     border-right: 1px solid var(--line);
@@ -854,7 +855,7 @@ p { color: var(--muted); line-height: 1.65; }
 .button-login { display: inline-flex; align-items: center; gap: 9px; border-color: rgba(255,255,255,.3); background: #080d1b; color: #fff; box-shadow: 0 8px 18px rgba(8, 13, 27, .28); }
 .button-login:hover { background: #202a40; color: #fff; }
 .auth-form-area { align-content: center; }
-.auth-home-link { justify-self: start; width: max-content; margin: 0 0 3px; color: var(--purple); font-size: 13px; font-weight: 800; }
+.auth-home-link { display: inline-flex; align-items: center; gap: 7px; justify-self: start; width: max-content; margin: 0 0 3px; color: var(--purple); font-size: 13px; font-weight: 800; }
 .auth-home-link:hover { color: color-mix(in srgb, var(--purple) 72%, var(--ink)); text-decoration: none; }
 
 .growvelt-footer { margin-top: 72px; color: #fff; }

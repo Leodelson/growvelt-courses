@@ -1,7 +1,8 @@
-type IconName = "overview" | "learning" | "explore" | "certificate" | "settings" | "menu" | "close" | "bell" | "collapse" | "profile" | "chevron";
+type IconName = "overview" | "home" | "learning" | "explore" | "certificate" | "settings" | "menu" | "close" | "bell" | "collapse" | "profile" | "chevron" | "arrow-left";
 
 const paths: Record<IconName, React.ReactNode> = {
   overview: <><rect x="3" y="3" width="18" height="18" rx="4" /><path d="M7 15h3v3H7zM14 7h3v3h-3zM14 14h3v4h-3z" /></>,
+  home: <><path d="m3 11 9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1v-9Z" /></>,
   learning: <><path d="M4 5.5A3.5 3.5 0 0 1 7.5 4H20v15.5H7.5A3.5 3.5 0 0 0 4 23V5.5Z" /><path d="M4 5.5V20" /><path d="M8 8h8M8 12h8" /></>,
   explore: <><circle cx="10.8" cy="10.8" r="6.3" /><path d="m16 16 4.2 4.2M8 10.8h5.6M10.8 8v5.6" /></>,
   certificate: <><path d="M6 3.5h12v11H6z" /><path d="m9 14.5-1.2 6 4.2-2.2 4.2 2.2-1.2-6" /><path d="m9 8 1.8 1.7L14.5 6" /></>,
@@ -12,6 +13,7 @@ const paths: Record<IconName, React.ReactNode> = {
   collapse: <><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M9 4v16M14 9l-3 3 3 3" /></>,
   profile: <><circle cx="12" cy="8" r="4" /><path d="M4.5 21a7.5 7.5 0 0 1 15 0" /></>,
   chevron: <path d="m6 9 6 6 6-6" />,
+  "arrow-left": <><path d="M19 12H5" /><path d="m11 18-6-6 6-6" /></>,
 };
 
 export function LearningIcon({ name, size = 20 }: { name: IconName; size?: number }) {
