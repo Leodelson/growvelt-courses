@@ -1,4 +1,6 @@
-type IconName = "overview" | "home" | "learning" | "explore" | "certificate" | "settings" | "menu" | "close" | "bell" | "collapse" | "profile" | "chevron" | "arrow-left";
+import { Settings } from "lucide-react";
+
+type IconName = "overview" | "home" | "learning" | "explore" | "certificate" | "settings" | "menu" | "close" | "bell" | "collapse" | "profile" | "chevron" | "arrow-left" | "courses" | "add-course" | "instructor-review" | "course-review" | "image" | "camera";
 
 const paths: Record<IconName, React.ReactNode> = {
   overview: <><rect x="3" y="3" width="18" height="18" rx="4" /><path d="M7 15h3v3H7zM14 7h3v3h-3zM14 14h3v4h-3z" /></>,
@@ -14,8 +16,18 @@ const paths: Record<IconName, React.ReactNode> = {
   profile: <><circle cx="12" cy="8" r="4" /><path d="M4.5 21a7.5 7.5 0 0 1 15 0" /></>,
   chevron: <path d="m6 9 6 6 6-6" />,
   "arrow-left": <><path d="M19 12H5" /><path d="m11 18-6-6 6-6" /></>,
+  courses: <><path d="M4 5.5A3.5 3.5 0 0 1 7.5 4H20v15.5H7.5A3.5 3.5 0 0 0 4 23V5.5Z" /><path d="M4 5.5V20M8 8h8M8 12h8M8 16h5" /></>,
+  "add-course": <><path d="M4 5.5A3.5 3.5 0 0 1 7.5 4H15v11H7.5A3.5 3.5 0 0 0 4 20.5V5.5Z" /><path d="M4 5.5v15M8 8h4M18 10v8M14 14h8" /></>,
+  "instructor-review": <><circle cx="9" cy="8" r="3" /><path d="M3.5 20a5.5 5.5 0 0 1 11 0M16 10l1.7 1.7L21 8.5M15 19h6" /></>,
+  "course-review": <><path d="M5 3.5h11l3 3V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-15a1.5 1.5 0 0 1 1-1.5Z" /><path d="M15 3.5V7h4M8 11h8M8 15h5" /><path d="m16 18 1.5 1.5L21 16" /></>,
+  image: <><rect x="3" y="4" width="18" height="16" rx="2" /><circle cx="8.5" cy="9" r="1.5" /><path d="m3 17 5-5 4 4 3-3 6 6" /></>,
+  camera: <><path d="M4 8h3l1.4-2h7.2L17 8h3a1 1 0 0 1 1 1v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9a1 1 0 0 1 1-1Z" /><circle cx="12" cy="14" r="3.2" /></>,
 };
 
 export function LearningIcon({ name, size = 20 }: { name: IconName; size?: number }) {
+  if (name === "settings") {
+    return <Settings aria-hidden="true" className="learning-icon" size={size} strokeWidth={1.8} />;
+  }
+
   return <svg aria-hidden="true" className="learning-icon" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">{paths[name]}</svg>;
 }
