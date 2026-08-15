@@ -98,7 +98,13 @@ export function LearningShellNavigation({ children, isInstructor, isAdmin, userE
             <ThemeControl /><SignOutButton />
           </aside></>}
         </div>
-        <div className="dashboard-notifications" ref={notificationsRef} data-shell-popover><button type="button" aria-label="Learning notifications" aria-expanded={openPanel === "notifications"} onClick={() => togglePanel("notifications")}><LearningIcon name="bell" size={23} /></button>{openPanel === "notifications" && <div><strong>Learning notifications</strong><p>Notifications are not connected yet.</p></div>}</div>
+        <div className="dashboard-notifications" ref={notificationsRef} data-shell-popover>
+          <button type="button" aria-label="Learning notifications" aria-expanded={openPanel === "notifications"} onClick={() => togglePanel("notifications")}><LearningIcon name="bell" size={23} /></button>
+          {openPanel === "notifications" && <section className="dashboard-notifications-popover" aria-label="Learning notifications">
+            <header><div><p>Notifications</p><span>Learning updates</span></div><button type="button" aria-label="Close notifications" onClick={() => setOpenPanel(null)}><LearningIcon name="close" size={18} /></button></header>
+            <div className="dashboard-notifications-empty"><span className="dashboard-notifications-empty-icon"><LearningIcon name="bell" size={28} /></span><h2>You&rsquo;re all caught up.</h2><p>Course, quiz, certificate, and review updates will appear here when there is something new for you.</p></div>
+          </section>}
+        </div>
         <AccountMenu userEmail={userEmail} displayName={displayName} open={openPanel === "account"} onToggle={() => togglePanel("account")} menuRef={accountRef} />
       </div></header>
       <main id="main-content" className="dashboard-main">{children}</main>
