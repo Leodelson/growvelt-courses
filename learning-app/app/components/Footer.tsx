@@ -90,7 +90,7 @@ export default function Footer() {
       </div>
       <div className="growvelt-footer-legal">
         <div className="section-shell">
-          <p>© 2025-{new Date().getFullYear()} Growvelt Technologies Limited (RC - 8738218). All rights reserved.</p>
+          <p>© {new Date().getFullYear()} Growvelt Technologies Limited (RC - 8738218). All rights reserved.</p>
           <nav aria-label="Legal links">
             <Link href="/privacy-policy">Privacy policy</Link>
             <Link href="/terms-of-service">Terms of service</Link>
