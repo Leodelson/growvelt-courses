@@ -1,7 +1,8 @@
+import type { Metadata } from "next";
 import { LearningMark } from "@/app/components/learning-mark";
 import { PublicHeader } from "@/app/components/public-header";
 
-export const metadata = { title: "Certificates" };
+export const metadata: Metadata = { title: "Certificates", robots: { index: false, follow: false } };
 
 export default function CertificatesPage() {
   return <div className="public-page">

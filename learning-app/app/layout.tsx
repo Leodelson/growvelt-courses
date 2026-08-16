@@ -1,13 +1,36 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { ThemeProvider } from "@/app/components/theme-provider";
+import { defaultSocialImage, growveltLearningUrl } from "@/app/lib/seo";
 
 export const metadata: Metadata = {
+  metadataBase: growveltLearningUrl,
   title: {
     default: "Growvelt Learning",
     template: "%s | Growvelt Learning",
   },
   description: "Learn practical skills, build proof, and grow into opportunity.",
+  applicationName: "Growvelt Learning",
+  keywords: ["Growvelt Learning", "online courses", "practical skills", "career development", "data analytics courses", "tech learning"],
+  alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    locale: "en_NG",
+    url: "/",
+    siteName: "Growvelt Learning",
+    title: "Growvelt Learning | Practical skills for real opportunity",
+    description: "Learn practical skills, build proof, and grow into opportunity with Growvelt Learning.",
+    images: [{ url: defaultSocialImage, width: 1200, height: 630, alt: "Growvelt Learning" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Growvelt Learning | Practical skills for real opportunity",
+    description: "Learn practical skills, build proof, and grow into opportunity with Growvelt Learning.",
+    images: [defaultSocialImage],
+  },
+  verification: {
+    google: process.env.GOOGLE_SITE_VERIFICATION || undefined,
+  },
   icons: { icon: "/favicon-32x32.png", shortcut: "/favicon.ico", apple: "/apple-touch-icon.png" },
 };
 

@@ -8,6 +8,8 @@ import { PublicHeader } from "@/app/components/public-header";
 export const metadata: Metadata = {
   title: "About Growvelt",
   description: "Learn about Growvelt, our practical learning approach, career support, and mission to connect skills with opportunity.",
+  alternates: { canonical: "/about" },
+  openGraph: { url: "/about", title: "About Growvelt | Practical learning and opportunity" },
 };
 
 const offerings = [

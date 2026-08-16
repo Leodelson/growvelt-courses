@@ -77,7 +77,7 @@ export function PublicCatalog({ catalog, query, authenticated, savedCourseIds = 
     return () => observer.disconnect();
   }, [hasMore, loadMore]);
 
-  const courseHref = (slug: string) => authenticated ? `/dashboard/courses/${encodeURIComponent(slug)}` : `/sign-up?next=${encodeURIComponent(`/dashboard/courses/${slug}`)}`;
+  const courseHref = (slug: string) => `/courses/${encodeURIComponent(slug)}`;
   const hasActiveFilters = Boolean(query.query || query.category || query.level || query.access !== "all");
 
   return <section className="catalog-page section-shell">

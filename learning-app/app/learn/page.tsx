@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { PublicCatalog } from "@/app/components/public-catalog";
 import { PublicHeader } from "@/app/components/public-header";
 import { searchPublicPublishedLearningCourses } from "@/app/lib/catalog/published-courses";
@@ -5,7 +6,12 @@ import { normalizePublicCatalogQuery } from "@/app/lib/catalog/public-catalog-qu
 import { createClient } from "@/app/lib/supabase/server";
 import { getOwnSavedLearningCourseIds } from "@/app/lib/learning/saved-courses";
 
-export const metadata = { title: "Explore courses" };
+export const metadata: Metadata = {
+  title: "Explore practical courses",
+  description: "Browse live Growvelt Learning courses in data, technology, business, and practical career skills.",
+  alternates: { canonical: "/learn" },
+  openGraph: { url: "/learn", title: "Explore practical courses | Growvelt Learning" },
+};
 
 export default async function LearnPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const query = normalizePublicCatalogQuery(await searchParams);

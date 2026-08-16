@@ -19,10 +19,10 @@ export function PublishedCourseCard({ course, index, href, highlightQuery = "", 
   return <article className="course-card published-course-card">
     <div className={`course-visual course-visual-${visual}`} aria-hidden="true"><span className="course-visual-index">GROWVELT</span><span className="course-visual-word">{course.category || "Learning"}</span><span className="course-visual-grid" /><span className="course-visual-shape course-visual-shape-one" /><span className="course-visual-shape course-visual-shape-two" /></div>
     <div className="course-card-body">
-      <div className="course-meta"><span>{course.category || "Learning"}</span><span>{course.level || "All levels"}</span><SaveCourseButton courseId={course.id} isSaved={isSaved} authenticated={authenticated} signInHref={`/sign-up?next=${encodeURIComponent(`/dashboard/courses/${course.slug}`)}`} onSavedChange={onSavedChange} /></div>
+      <div className="course-meta"><span>{course.category || "Learning"}</span><span>{course.level || "All levels"}</span><SaveCourseButton courseId={course.id} isSaved={isSaved} authenticated={authenticated} signInHref={`/sign-up?next=${encodeURIComponent(`/courses/${course.slug}`)}`} onSavedChange={onSavedChange} /></div>
       <h2>{highlight(course.title, highlightQuery)}</h2><p>{highlight(course.summary || "A practical Growvelt Learning course.", highlightQuery)}</p>
       <div className="course-details"><span>{course.instructorName ? `By ${course.instructorName}` : "Growvelt Instructor"}</span><span>{pricing}</span></div>
-      <div className="course-card-footer"><strong>{course.isFree ? "Open to learn" : pricing}</strong><Link href={href ?? `/dashboard/courses/${encodeURIComponent(course.slug)}`}>View course</Link></div>
+      <div className="course-card-footer"><strong>{course.isFree ? "Open to learn" : pricing}</strong><Link href={href ?? `/courses/${encodeURIComponent(course.slug)}`}>View course</Link></div>
     </div>
   </article>;
 }

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { LearningMark } from "@/app/components/learning-mark";
 import { PublicHeader } from "@/app/components/public-header";
 import FooterWrapper from "@/app/components/FooterWrapper";
+import { growveltOrganizationJsonLd } from "@/app/lib/seo";
 
 const jobsHref = "https://growvelt.com";
 
@@ -58,5 +59,6 @@ export default function HomePage() {
       <section className="final-cta section-shell"><p className="eyebrow">Your next focused step</p><h2>Choose a published course and begin where you are.</h2><Link className="button button-primary" href="/learn">Explore courses</Link></section>
     </main>
     <FooterWrapper />
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(growveltOrganizationJsonLd) }} />
   </div>;
 }
