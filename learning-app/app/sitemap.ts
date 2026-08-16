@@ -15,6 +15,9 @@ const staticPages: MetadataRoute.Sitemap = [
   { url: absoluteLearningUrl("/teach"), changeFrequency: "monthly", priority: 0.7 },
   { url: absoluteLearningUrl("/about"), changeFrequency: "monthly", priority: 0.7 },
   { url: absoluteLearningUrl("/blog"), changeFrequency: "weekly", priority: 0.7 },
+    { url: absoluteLearningUrl("/contact"), changeFrequency: "monthly", priority: 0.6 },
+    { url: absoluteLearningUrl("/partner-with-growvelt"), changeFrequency: "monthly", priority: 0.6 },
+    { url: absoluteLearningUrl("/frequently-asked-questions"), changeFrequency: "monthly", priority: 0.6 },
   { url: absoluteLearningUrl("/privacy-policy"), changeFrequency: "yearly", priority: 0.3 },
   { url: absoluteLearningUrl("/terms-of-service"), changeFrequency: "yearly", priority: 0.3 },
 ];

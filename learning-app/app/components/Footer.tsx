@@ -8,7 +8,10 @@ const jobsHref = "https://growvelt.com";
 const learningLinks = [
   { label: "Explore courses", href: "/learn" },
   { label: "Growvelt Blog", href: "/blog" },
+  { label: "Frequently asked questions", href: "/frequently-asked-questions" },
   { label: "Teach on Growvelt", href: "/teach" },
+  { label: "Contact us", href: "/contact" },
+  { label: "Partner with Growvelt", href: "/partner-with-growvelt" },
   { label: "My Learning", href: "/dashboard/my-learning" },
   { label: "Certificates", href: "/dashboard/certificates" },
 ];

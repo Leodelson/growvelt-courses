@@ -33,6 +33,7 @@ export function PublicHeader() {
     <Link href="/" onClick={closeMenu}>Home</Link>
     <Link href="/learn" onClick={closeMenu}>Explore Learning</Link>
     <Link href="/sign-up?next=%2Fteach%2Fapplication" onClick={closeMenu}>Teach on Growvelt</Link>
+    <Link href="/contact" onClick={closeMenu}>Contact</Link>
     <a href={jobsHref} target="_blank" rel="noreferrer" onClick={closeMenu}>Hire Talent<span className="sr-only"> in a new tab</span></a>
     <div className="public-careers-menu"><strong>Careers</strong><a href={jobsHref} target="_blank" rel="noreferrer" onClick={closeMenu}>Apply for jobs<span className="sr-only"> in a new tab</span></a></div>
   </>;
