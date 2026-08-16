@@ -21,5 +21,5 @@ export function SignOutButton() {
     window.location.assign("/");
   }
 
-  return <ActionButton className="profile-button profile-sign-out" type="button" onClick={signOut} isPending={isBusy} pendingLabel="Signing out…">Sign out</ActionButton>;
+  return <ActionButton className="profile-button profile-sign-out" type="button" onClick={signOut} isPending={isBusy} pendingLabel="Logging Out…">Log Out</ActionButton>;
 }

@@ -52,7 +52,7 @@ export function PublicHeader() {
       <div className="section-shell header-inner">
         <LearningMark />
         <nav className="desktop-public-nav" aria-label="Primary navigation">{navigation}</nav>
-        <div className="desktop-auth-actions"><Link className="button button-outline" href="/sign-up">Sign Up</Link><Link className="button button-login" href="/sign-up">Login <span aria-hidden="true"></span></Link></div>
+        <div className="desktop-auth-actions"><Link className="button button-outline" href="/sign-up">Sign Up</Link><Link className="button button-login" href="/sign-up">Log In <span aria-hidden="true"></span></Link></div>
         <div className="mobile-header-controls">
           <button type="button" className="mobile-menu-button" aria-label={isOpen ? "Close navigation menu" : "Open navigation menu"} aria-expanded={isOpen} aria-controls="mobile-public-navigation" onClick={() => setIsOpen((open) => !open)}><LearningIcon name={isOpen ? "close" : "menu"} /></button>
           <button type="button" className="mobile-account-button" aria-label={isOpen ? "Close navigation menu" : "Open navigation menu"} aria-expanded={isOpen} aria-controls="mobile-public-navigation" onClick={() => setIsOpen((open) => !open)}><AccountIcon /></button>
