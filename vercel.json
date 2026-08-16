@@ -5,6 +5,7 @@
   "routes": [
     {
       "src": "^/$",
+      "has": [{ "type": "host", "value": "^(?:www\\.)?courses\\.growvelt\\.com$" }],
       "status": 301,
       "headers": {
         "Location": "https://learn.growvelt.com/"
@@ -12,6 +13,7 @@
     },
     {
       "src": "^/courses(?:\\.html)?$",
+      "has": [{ "type": "host", "value": "^(?:www\\.)?courses\\.growvelt\\.com$" }],
       "status": 301,
       "headers": {
         "Location": "https://learn.growvelt.com/learn"
@@ -19,6 +21,7 @@
     },
     {
       "src": "^/aboutus(?:\\.html)?$",
+      "has": [{ "type": "host", "value": "^(?:www\\.)?courses\\.growvelt\\.com$" }],
       "status": 301,
       "headers": {
         "Location": "https://learn.growvelt.com/about"
@@ -26,6 +29,7 @@
     },
     {
       "src": "^/partnerwithus(?:\\.html)?$",
+      "has": [{ "type": "host", "value": "^(?:www\\.)?courses\\.growvelt\\.com$" }],
       "status": 301,
       "headers": {
         "Location": "https://learn.growvelt.com/partner-with-growvelt"
@@ -33,6 +37,7 @@
     },
     {
       "src": "^/contact(?:\\.html)?$",
+      "has": [{ "type": "host", "value": "^(?:www\\.)?courses\\.growvelt\\.com$" }],
       "status": 301,
       "headers": {
         "Location": "https://learn.growvelt.com/contact"
@@ -40,6 +45,7 @@
     },
     {
       "src": "^/registration(?:\\.html)?$",
+      "has": [{ "type": "host", "value": "^(?:www\\.)?courses\\.growvelt\\.com$" }],
       "status": 301,
       "headers": {
         "Location": "https://learn.growvelt.com/sign-up"
@@ -47,6 +53,7 @@
     },
     {
       "src": "^/auth(?:\\.html)?$",
+      "has": [{ "type": "host", "value": "^(?:www\\.)?courses\\.growvelt\\.com$" }],
       "status": 301,
       "headers": {
         "Location": "https://learn.growvelt.com/sign-in"
@@ -54,6 +61,7 @@
     },
     {
       "src": "^/blog(?:\\.html)?$",
+      "has": [{ "type": "host", "value": "^(?:www\\.)?courses\\.growvelt\\.com$" }],
       "status": 301,
       "headers": {
         "Location": "https://learn.growvelt.com/blog"
@@ -61,6 +69,7 @@
     },
     {
       "src": "^/privacy-policy(?:\\.html)?$",
+      "has": [{ "type": "host", "value": "^(?:www\\.)?courses\\.growvelt\\.com$" }],
       "status": 301,
       "headers": {
         "Location": "https://learn.growvelt.com/privacy-policy"
@@ -68,6 +77,7 @@
     },
     {
       "src": "^/terms-of-service(?:\\.html)?$",
+      "has": [{ "type": "host", "value": "^(?:www\\.)?courses\\.growvelt\\.com$" }],
       "status": 301,
       "headers": {
         "Location": "https://learn.growvelt.com/terms-of-service"
@@ -75,6 +85,7 @@
     },
     {
       "src": "/.*",
+      "has": [{ "type": "host", "value": "^(?:www\\.)?courses\\.growvelt\\.com$" }],
       "status": 410
     }
   ]
