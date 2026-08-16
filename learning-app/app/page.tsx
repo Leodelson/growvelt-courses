@@ -8,7 +8,7 @@ import { growveltOrganizationJsonLd } from "@/app/lib/seo";
 const jobsHref = "https://growvelt.com";
 
 const growveltVideos = [
-  { id: "5PG1CrJfZYU", title: "Introducing Growvelt Careers for Employers" },
+  { id: "b_hmIZRnD1Q", title: "Growvelt assistant now available with live support" },
   { id: "cFJt2gytwjY", title: "How to install the Growvelt app" },
   { id: "Xac1qNAcKHc", title: "How employers hire on Growvelt" },
 ];
