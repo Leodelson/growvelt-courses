@@ -11,63 +11,63 @@
       }
     },
     {
-      "src": "^/courses\\.html$",
+      "src": "^/courses(?:\\.html)?$",
       "status": 301,
       "headers": {
         "Location": "https://learn.growvelt.com/learn"
       }
     },
     {
-      "src": "^/aboutus\\.html$",
+      "src": "^/aboutus(?:\\.html)?$",
       "status": 301,
       "headers": {
         "Location": "https://learn.growvelt.com/about"
       }
     },
     {
-      "src": "^/partnerwithus\\.html$",
+      "src": "^/partnerwithus(?:\\.html)?$",
       "status": 301,
       "headers": {
         "Location": "https://learn.growvelt.com/partner-with-growvelt"
       }
     },
     {
-      "src": "^/contact\\.html$",
+      "src": "^/contact(?:\\.html)?$",
       "status": 301,
       "headers": {
         "Location": "https://learn.growvelt.com/contact"
       }
     },
     {
-      "src": "^/registration\\.html$",
+      "src": "^/registration(?:\\.html)?$",
       "status": 301,
       "headers": {
         "Location": "https://learn.growvelt.com/sign-up"
       }
     },
     {
-      "src": "^/auth\\.html$",
+      "src": "^/auth(?:\\.html)?$",
       "status": 301,
       "headers": {
         "Location": "https://learn.growvelt.com/sign-in"
       }
     },
     {
-      "src": "^/blog\\.html$",
+      "src": "^/blog(?:\\.html)?$",
       "status": 301,
       "headers": {
         "Location": "https://learn.growvelt.com/blog"
       }
     },
     {
-      "src": "^/privacy-policy\\.html$",
+      "src": "^/privacy-policy(?:\\.html)?$",
       "status": 301,
       "headers": {
         "Location": "https://learn.growvelt.com/privacy-policy"
       }
     },
     {
-      "src": "^/terms-of-service\\.html$",
+      "src": "^/terms-of-service(?:\\.html)?$",
       "status": 301,
       "headers": {
         "Location": "https://learn.growvelt.com/terms-of-service"
