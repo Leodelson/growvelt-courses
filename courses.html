@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <title>Growvelt Courses - Data Analytics, Excel, SQL & Power BI</title>
+  <title>Growvelt Learning - Data Analytics, Excel, SQL & Power BI</title>
 
   <!-- Basic SEO -->
   <meta name="description" content="Explore Growvelt courses in Data Analytics, Excel, SQL, Power BI, Python, business analysis, digital skills, and hands-on tech training.">
@@ -14,7 +14,7 @@
   <meta name="robots" content="index, follow">
 
   <!-- Open Graph -->
-  <meta property="og:title" content="Growvelt Courses | Data Analytics, Excel, SQL & Power BI">
+  <meta property="og:title" content="Growvelt Learning | Data Analytics, Excel, SQL & Power BI">
   <meta property="og:description" content="Browse practical Growvelt courses designed to help learners build job-ready data, business, and technology skills.">
   <meta property="og:image" content="https://www.courses.growvelt.com/images/Social%20new.png">
   <meta property="og:url" content="https://www.courses.growvelt.com/courses.html">
@@ -793,6 +793,7 @@
       <li><a href="contact.html">Contact</a></li>
       <li><a href="verification.html">Verify Certificate</a></li>
       <li><a href="blog.html">Blog</a></li>
+      <li><a href="auth.html">Learning Portal</a></li>
       <li class="nav-careers"><a href="https://growvelt.com" target="_blank" rel="noopener noreferrer" class="careers-link careers-highlight">Careers<span class="careers-sub">Apply for jobs</span></a></li>
     </ul>
   </div>
@@ -831,6 +832,9 @@
     <p class="courses-subtitle">
       Practical, hands-on training designed to help you grow in data, business, and technology.
     </p>
+    <p class="courses-data-status" data-course-catalog-status aria-live="polite">
+      Loading published Growvelt Learning courses when available.
+    </p>
 
     <!-- Search bar -->
 <div class="courses-search">
@@ -861,7 +865,7 @@
 </section>
 
 
-  <div class="courses-container">
+  <div class="courses-container" data-course-catalog>
 
   <!-- Course Card 1 -->
   <div class="course-card">
@@ -1562,7 +1566,9 @@ var beamer_config = {
 <script src="https://app.getbeamer.com/js/beamer-embed.js" defer></script>
 
 
-  <script src="supabase-config.js"></script>
-  <script src="main.js"></script>
+<script src="supabase-config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="main.js"></script>
+<script src="learning-platform.js"></script>
 </body>
 </html>

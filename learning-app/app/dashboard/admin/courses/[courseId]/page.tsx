@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { CourseModerationForm } from "@/app/components/admin/course-moderation-form";
+import { CourseVideoCover } from "@/app/components/course-video-cover";
 import type { CourseReviewLesson } from "@/app/lib/admin/course-moderation";
 import { getLearningCourseForReview } from "@/app/lib/admin/course-moderation";
 import { isLearningAdmin } from "@/app/lib/admin/authorization";
@@ -57,7 +58,8 @@ export default async function AdminCourseDetailPage({ params }: { params: Promis
           <div><p className="eyebrow">Instructor</p><p className="admin-identity"><strong>{course.instructor.name || "Name unavailable"}</strong><span>{course.instructor.email || "Email unavailable"}</span></p></div>
           <div><p className="eyebrow">Course metadata</p><p><strong>{course.category || "Uncategorized"}</strong> · {course.level || "Level not set"} · {course.isFree ? "Free" : `${course.priceCurrency || "NGN"} ${Number(course.priceAmount ?? 0).toLocaleString("en-NG")}`}</p></div>
         </section>
-        <section><p className="eyebrow">Course overview</p><h2>{course.summary || "No summary supplied."}</h2><p className="admin-bio">{course.description || "No description supplied."}</p></section>
+        <section className="admin-course-cover-review"><p className="eyebrow">Course video cover</p><div className="admin-course-video-cover"><CourseVideoCover courseId={course.courseId} alt={`Course video cover for ${course.title}`} loading="eager" /></div></section>
+        <section><p className="eyebrow">Course overview</p><h2 className="course-review-overview-title">{course.summary || "No summary supplied."}</h2><p className="admin-bio course-review-overview-copy">{course.description || "No description supplied."}</p></section>
         <section><p className="eyebrow">Rights declaration</p><p>{course.declaration.version || "Declaration unavailable"} · {course.declaration.basis || "Basis unavailable"}</p><p>{course.declaration.acceptedAt ? `Accepted ${new Intl.DateTimeFormat("en", { dateStyle: "medium" }).format(new Date(course.declaration.acceptedAt))}` : "Acceptance time unavailable"}</p></section>
         <section><p className="eyebrow">Curriculum review</p><div className="course-review-curriculum">{course.modules.map((module, moduleIndex) => <section className="course-review-module" key={module.id}><header><span>Module {String(moduleIndex + 1).padStart(2, "0")}</span><h2>{module.title}</h2><small>{module.lessons.length} {module.lessons.length === 1 ? "lesson" : "lessons"}</small></header><div>{module.lessons.map((lesson, lessonIndex) => <LessonReview lesson={lesson} lessonIndex={lessonIndex} key={lesson.id} />)}</div></section>)}</div></section>
       </article>

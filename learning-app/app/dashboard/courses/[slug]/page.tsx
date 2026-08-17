@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { EnrollmentButton } from "@/app/components/learning/enrollment-button";
 import { SaveCourseButton } from "@/app/components/learning/save-course-button";
+import { CourseVideoCover } from "@/app/components/course-video-cover";
 import { getPublishedLearningCourse } from "@/app/lib/catalog/published-courses";
 import { getEnrollmentState } from "@/app/lib/learning/enrollments";
 import { getOwnSavedLearningCourseIds } from "@/app/lib/learning/saved-courses";
@@ -35,6 +36,10 @@ export default async function PublishedCourseDetailPage({ params }: { params: Pr
       <h1>{course.title}</h1>
       <p className="published-course-summary">{course.summary || "A practical Growvelt Learning course."}</p>
       <div className="published-course-meta"><span>{course.level || "All levels"}</span><span>{pricing}</span><span>{course.instructorName ? `By ${course.instructorName}` : "Growvelt Instructor"}</span></div>
+      <div className="published-course-video-cover">
+        <div className="published-course-video-cover-fallback" aria-hidden="true"><span>Growvelt Learning</span><strong>{course.category || "Practical learning"}</strong></div>
+        <CourseVideoCover courseId={course.id} alt="" loading="eager" />
+      </div>
     </header>
     <div className="published-course-layout">
       <article className="published-course-content">

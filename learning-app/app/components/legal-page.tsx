@@ -5,13 +5,13 @@ import { PublicHeader } from "@/app/components/public-header";
 type LegalSection = { heading: string; paragraphs: string[]; bullets?: string[] };
 
 function LegalParagraph({ children }: { children: string }) {
-  const [beforeContact, afterContact] = children.split("Contact us");
-  if (afterContact !== undefined) return <p>{beforeContact}<Link className="legal-contact-link" href="/contact">Contact us</Link>{afterContact}</p>;
-
-  const [beforeEmail, afterEmail] = children.split("support@growvelt.com");
-  if (afterEmail !== undefined) return <p>{beforeEmail}<a className="legal-contact-link" href="mailto:support@growvelt.com">support@growvelt.com</a>{afterEmail}</p>;
-
-  return <p>{children}</p>;
+  const links = { "Privacy Policy": "/privacy-policy", "Cookie Policy": "/cookie-policy", "Contact us": "/contact" } as const;
+  const parts = children.split(/(Privacy Policy|Cookie Policy|Contact us|support@growvelt\.com)/g);
+  return <p>{parts.map((part, index) => {
+    if (part === "support@growvelt.com") return <a className="legal-contact-link" href="mailto:support@growvelt.com" key={index}>{part}</a>;
+    if (part in links) return <Link className="legal-contact-link" href={links[part as keyof typeof links]} key={index}>{part}</Link>;
+    return part;
+  })}</p>;
 }
 
 export function LegalPage({ title, summary, updated, sections }: { title: string; summary: string; updated: string; sections: LegalSection[] }) {

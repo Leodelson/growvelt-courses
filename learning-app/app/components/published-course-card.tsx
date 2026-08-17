@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { SaveCourseButton } from "@/app/components/learning/save-course-button";
+import { CourseVideoCover } from "@/app/components/course-video-cover";
 import type { PublishedCourse } from "@/app/lib/catalog/published-courses";
 
 const visualStyles = ["data", "sql", "ai", "product"] as const;
@@ -17,7 +18,7 @@ export function PublishedCourseCard({ course, index, href, highlightQuery = "", 
   const pricing = course.isFree ? "Free" : `${course.priceCurrency || "NGN"} ${Number(course.priceAmount ?? 0).toLocaleString("en-NG")}`;
 
   return <article className="course-card published-course-card">
-    <div className={`course-visual course-visual-${visual}`} aria-hidden="true"><span className="course-visual-index">GROWVELT</span><span className="course-visual-word">{course.category || "Learning"}</span><span className="course-visual-grid" /><span className="course-visual-shape course-visual-shape-one" /><span className="course-visual-shape course-visual-shape-two" /></div>
+    <div className={`course-visual course-visual-${visual}`}><CourseVideoCover courseId={course.id} alt="" /><span className="course-visual-index">GROWVELT</span><span className="course-visual-word">{course.category || "Learning"}</span><span className="course-visual-grid" /><span className="course-visual-shape course-visual-shape-one" /><span className="course-visual-shape course-visual-shape-two" /></div>
     <div className="course-card-body">
       <div className="course-meta"><span>{course.category || "Learning"}</span><span>{course.level || "All levels"}</span><SaveCourseButton courseId={course.id} isSaved={isSaved} authenticated={authenticated} signInHref={`/sign-up?next=${encodeURIComponent(`/courses/${course.slug}`)}`} onSavedChange={onSavedChange} /></div>
       <h2>{highlight(course.title, highlightQuery)}</h2><p>{highlight(course.summary || "A practical Growvelt Learning course.", highlightQuery)}</p>

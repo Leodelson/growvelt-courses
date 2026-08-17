@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Continue a Growvelt Learning course and track lesson progress.">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Learning Room | Growvelt Learning</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="learning-page dashboard-page">
+<nav class="navbar" aria-label="Main navigation">
+  <div class="container nav-container">
+    <div class="nav-logo">
+      <a href="index.html" aria-label="Growvelt Learning home">
+        <img src="images/growvelt-white-text.png" alt="Growvelt Logo" class="logo">
+      </a>
+    </div>
+    <button class="nav-toggle" type="button" onclick="toggleMenu()" aria-label="Open navigation" aria-expanded="false" aria-controls="primary-navigation">
+      <span class="hamburger" aria-hidden="true"></span>
+    </button>
+    <ul class="nav-menu" id="primary-navigation">
+      <li><a href="courses.html">Courses</a></li>
+      <li><a href="learner-dashboard.html">Learner</a></li>
+      <li><a href="auth.html">Learning Portal</a></li>
+      <li class="nav-careers"><a href="https://growvelt.com" target="_blank" rel="noopener noreferrer" class="careers-link careers-highlight">Careers<span class="careers-sub">Apply for jobs</span></a></li>
+    </ul>
+  </div>
+</nav>
+
+<main class="dashboard-shell" data-learning-room>
+  <section class="container dashboard-grid">
+    <aside class="dashboard-sidebar">
+      <span class="eyebrow">Learning Room</span>
+      <h1 data-learn-title>Course</h1>
+      <nav aria-label="Learning room">
+        <a href="learner-dashboard.html">My Learning</a>
+        <a href="#lessons">Lessons</a>
+        <a href="#progress">Progress</a>
+        <a href="courses.html">Browse Courses</a>
+      </nav>
+    </aside>
+    <section class="dashboard-main">
+      <div class="dashboard-header">
+        <div>
+          <span class="eyebrow">Continue course</span>
+          <h2 data-learn-heading>Loading your course...</h2>
+          <p class="dashboard-status" data-learning-room-status>Checking your enrollment and lessons...</p>
+        </div>
+        <div class="dashboard-header-actions">
+          <a class="btn btn-secondary" href="learner-dashboard.html">Back to Dashboard</a>
+          <button type="button" class="btn-secondary dashboard-signout" data-sign-out>Sign Out</button>
+        </div>
+      </div>
+
+      <div class="dashboard-card profile-card" id="progress">
+        <h3>Course Progress</h3>
+        <div class="progress-bar" aria-label="Course progress">
+          <span data-learning-progress-bar style="width: 0%"></span>
+        </div>
+        <p><strong data-learning-progress-text>0%</strong> complete</p>
+      </div>
+
+      <div class="dashboard-card" id="lessons">
+        <h3>Lessons</h3>
+        <div class="lesson-list" data-learning-lessons>
+          <p>Lessons will appear here once the course loads.</p>
+        </div>
+      </div>
+    </section>
+  </section>
+</main>
+
+<script src="supabase-config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="main.js"></script>
+<script src="learning-platform.js"></script>
+</body>
+</html>

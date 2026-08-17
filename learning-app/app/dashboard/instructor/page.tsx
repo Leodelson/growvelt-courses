@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getOwnInstructorLearningAnalytics } from "@/app/lib/instructor/analytics";
 import { isApprovedInstructor } from "@/app/lib/instructor/authorization";
+import { InstructorCourseActions } from "@/app/components/instructor/instructor-course-actions";
 
 export const metadata = { title: "Instructor workspace" };
 
@@ -41,7 +42,7 @@ export default async function DashboardInstructorPage() {
         {analytics.courses.map((course) => <article key={course.courseId}>
           <div className="instructor-analytics-course-heading">
             <div><span className={`course-status-badge is-${course.status}`}>{statusLabel(course.status)}</span><h3>{course.title}</h3></div>
-            <Link className="button button-secondary" href={`/dashboard/instructor/courses/${course.courseId}`}>View course</Link>
+            <InstructorCourseActions courseId={course.courseId} status={course.status} title={course.title} />
           </div>
           <dl>
             <div><dt>Enrolled</dt><dd>{course.enrolledLearnerCount}</dd></div>

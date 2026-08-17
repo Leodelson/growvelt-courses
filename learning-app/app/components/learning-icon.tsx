@@ -1,6 +1,6 @@
 import { Heart, Settings } from "lucide-react";
 
-type IconName = "overview" | "home" | "learning" | "explore" | "heart" | "certificate" | "settings" | "menu" | "close" | "bell" | "collapse" | "profile" | "chevron" | "arrow-left" | "courses" | "add-course" | "instructor-review" | "course-review" | "image" | "camera";
+type IconName = "overview" | "home" | "learning" | "explore" | "heart" | "certificate" | "settings" | "menu" | "close" | "bell" | "collapse" | "profile" | "chevron" | "arrow-left" | "courses" | "add-course" | "instructor-review" | "course-review" | "image" | "camera" | "jobs";
 
 const paths: Record<IconName, React.ReactNode> = {
   overview: <><rect x="3" y="3" width="18" height="18" rx="4" /><path d="M7 15h3v3H7zM14 7h3v3h-3zM14 14h3v4h-3z" /></>,
@@ -23,6 +23,7 @@ const paths: Record<IconName, React.ReactNode> = {
   "course-review": <><path d="M5 3.5h11l3 3V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-15a1.5 1.5 0 0 1 1-1.5Z" /><path d="M15 3.5V7h4M8 11h8M8 15h5" /><path d="m16 18 1.5 1.5L21 16" /></>,
   image: <><rect x="3" y="4" width="18" height="16" rx="2" /><circle cx="8.5" cy="9" r="1.5" /><path d="m3 17 5-5 4 4 3-3 6 6" /></>,
   camera: <><path d="M4 8h3l1.4-2h7.2L17 8h3a1 1 0 0 1 1 1v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9a1 1 0 0 1 1-1Z" /><circle cx="12" cy="14" r="3.2" /></>,
+  jobs: <><rect x="3" y="7" width="18" height="13" rx="2" /><path d="M8 7V5.5A1.5 1.5 0 0 1 9.5 4h5A1.5 1.5 0 0 1 16 5.5V7M3 12h18M10 12v2h4v-2" /></>,
 };
 
 export function LearningIcon({ name, size = 20 }: { name: IconName; size?: number }) {

@@ -194,6 +194,13 @@
     };
 
     courseSelect.addEventListener("change", updatePrice);
+    const requestedCourse = new URLSearchParams(window.location.search).get("course");
+    if (requestedCourse) {
+      const matchingOption = Array.from(courseSelect.options).find(
+        (option) => option.value.toLowerCase() === requestedCourse.toLowerCase(),
+      );
+      if (matchingOption) courseSelect.value = matchingOption.value;
+    }
     updatePrice();
   };
 

@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Growvelt Learning instructor dashboard for course submissions, lessons, learners, and approvals.">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Instructor Dashboard | Growvelt Learning</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="learning-page dashboard-page">
+<nav class="navbar" aria-label="Main navigation">
+  <div class="container nav-container">
+    <div class="nav-logo">
+      <a href="index.html" aria-label="Growvelt Learning home">
+        <img src="images/growvelt-white-text.png" alt="Growvelt Logo" class="logo">
+      </a>
+    </div>
+    <button class="nav-toggle" type="button" onclick="toggleMenu()" aria-label="Open navigation" aria-expanded="false" aria-controls="primary-navigation">
+      <span class="hamburger" aria-hidden="true"></span>
+    </button>
+    <ul class="nav-menu" id="primary-navigation">
+      <li><a href="courses.html">Courses</a></li>
+      <li><a href="auth.html">Learning Portal</a></li>
+      <li><a href="learner-dashboard.html">Learner</a></li>
+      <li><a href="admin-dashboard.html">Admin</a></li>
+      <li class="nav-careers"><a href="https://growvelt.com" target="_blank" rel="noopener noreferrer" class="careers-link careers-highlight">Careers<span class="careers-sub">Apply for jobs</span></a></li>
+    </ul>
+  </div>
+</nav>
+
+<main class="dashboard-shell" data-dashboard-role="instructor">
+  <section class="container dashboard-grid">
+    <aside class="dashboard-sidebar">
+      <span class="eyebrow">Instructor</span>
+      <h1>Course Studio</h1>
+      <nav aria-label="Instructor dashboard">
+        <a href="#courses">Courses</a>
+        <a href="#lessons">Lessons</a>
+        <a href="#learners">Learners</a>
+        <a href="#earnings">Earnings</a>
+      </nav>
+    </aside>
+    <section class="dashboard-main">
+      <div class="dashboard-header">
+        <div>
+          <span class="eyebrow">Instructor workspace</span>
+          <h2>Create courses for admin approval</h2>
+          <p class="dashboard-status" data-dashboard-status>Checking your instructor account...</p>
+        </div>
+        <div class="dashboard-header-actions">
+          <a class="btn btn-primary" href="#new-course">New Course</a>
+          <button type="button" class="btn-secondary dashboard-signout" data-sign-out>Sign Out</button>
+        </div>
+      </div>
+      <div class="dashboard-card profile-card">
+        <h3><span data-user-name>Growvelt instructor</span></h3>
+        <p><span data-user-email></span></p>
+        <p>Account type: <strong data-user-role>instructor</strong></p>
+        <p>Instructor approval: <strong data-instructor-approval-status>pending</strong></p>
+      </div>
+      <div class="metric-grid">
+        <article><span>Courses</span><strong data-instructor-course-count>0</strong></article>
+        <article><span>Pending Approval</span><strong data-instructor-pending-count>0</strong></article>
+        <article><span>Learners</span><strong>0</strong></article>
+      </div>
+      <div class="dashboard-card" id="courses" data-instructor-courses>
+        <h3>Your submitted courses</h3>
+        <p>Your course drafts and pending approvals will appear here.</p>
+      </div>
+      <form class="dashboard-card learning-form" id="new-course" data-instructor-course-form>
+        <h3>Submit a course for review</h3>
+        <label for="course-title">Course Title</label>
+        <input id="course-title" name="title" type="text" placeholder="Example: Excel for Business Reporting" required>
+
+        <div class="form-grid-two">
+          <div>
+            <label for="course-category">Category</label>
+            <input id="course-category" name="category" type="text" placeholder="Data Analytics" required>
+          </div>
+          <div>
+            <label for="course-level">Level</label>
+            <select id="course-level" name="level" required>
+              <option value="">Select level</option>
+              <option value="Beginner">Beginner</option>
+              <option value="Beginner to intermediate">Beginner to intermediate</option>
+              <option value="Intermediate">Intermediate</option>
+              <option value="Advanced">Advanced</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-grid-two">
+          <div>
+            <label for="course-price">Price Amount</label>
+            <input id="course-price" name="price_amount" type="number" min="0" step="1000" placeholder="120000">
+          </div>
+          <div>
+            <label for="course-currency">Currency</label>
+            <select id="course-currency" name="price_currency">
+              <option value="NGN">NGN</option>
+              <option value="USD">USD</option>
+            </select>
+          </div>
+        </div>
+
+        <label class="checkbox-row" for="course-free">
+          <input id="course-free" name="is_free" type="checkbox">
+          Free course
+        </label>
+
+        <label for="course-thumbnail">Thumbnail URL</label>
+        <input id="course-thumbnail" name="thumbnail_url" type="url" placeholder="https://... or images/Data Analysis.png">
+
+        <label for="course-summary">Course Summary</label>
+        <textarea id="course-summary" name="summary" rows="3" placeholder="Short catalog description." required></textarea>
+
+        <label for="course-description">Course Description</label>
+        <textarea id="course-description" name="description" rows="5" placeholder="Describe the outcome, curriculum, projects, and who should enroll."></textarea>
+
+        <button type="submit">Submit for Admin Review</button>
+        <p class="form-message" data-instructor-course-message aria-live="polite"></p>
+      </form>
+    </section>
+  </section>
+</main>
+
+<script src="supabase-config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="main.js"></script>
+<script src="learning-platform.js"></script>
+</body>
+</html>

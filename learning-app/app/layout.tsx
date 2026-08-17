@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { ThemeProvider } from "@/app/components/theme-provider";
+import { CookieConsentProvider } from "@/app/components/privacy/cookie-consent-provider";
 import { defaultSocialImage, growveltLearningUrl } from "@/app/lib/seo";
 
 export const metadata: Metadata = {
@@ -62,7 +63,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         />
       </head>
       <body>
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider><CookieConsentProvider>{children}</CookieConsentProvider></ThemeProvider>
       </body>
     </html>
   );

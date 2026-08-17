@@ -43,6 +43,16 @@
   <priority>0.80</priority>
 </url>
 <url>
+  <loc>https://www.courses.growvelt.com/auth.html</loc>
+  <lastmod>2026-07-14T00:00:00+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://www.courses.growvelt.com/course-details.html</loc>
+  <lastmod>2026-07-14T00:00:00+00:00</lastmod>
+  <priority>0.72</priority>
+</url>
+<url>
   <loc>https://www.courses.growvelt.com/verification.html</loc>
   <lastmod>2026-05-05T23:14:08+00:00</lastmod>
   <priority>0.80</priority>

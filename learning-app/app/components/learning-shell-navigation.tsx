@@ -13,6 +13,7 @@ const navigation = [
   { href: "/dashboard", label: "Home", icon: "home" as const },
   { href: "/dashboard/my-learning", label: "My Learning", icon: "learning" as const },
   { href: "/dashboard/explore", label: "Explore catalog", mobileLabel: "Explore", icon: "explore" as const },
+  { href: "https://www.growvelt.com", label: "Jobs", icon: "jobs" as const, external: true },
   { href: "/dashboard/saved-courses", label: "Saved Courses", icon: "heart" as const },
   { href: "/dashboard/certificates", label: "Certificates", icon: "certificate" as const },
 ];
@@ -83,7 +84,7 @@ export function LearningShellNavigation({ children, initialSidebarCollapsed, isI
     <aside className="learning-sidebar">
       <button className="sidebar-collapse-button" type="button" aria-label={collapsed ? "Expand dashboard navigation" : "Collapse dashboard navigation"} aria-expanded={!collapsed} onClick={() => setCollapsed((current) => { const next = !current; document.cookie = `${sidebarPreferenceKey}=${next}; path=/; max-age=31536000; samesite=lax`; return next; })}><LearningIcon name="collapse" /></button>
       <LanguageMenu open={openPanel === "language"} onToggle={() => togglePanel("language")} menuRef={languageRef} />
-      <nav aria-label="Learning navigation">{navigation.map((item) => { const active = isActive(item.href); return <Link className={active ? "active" : ""} data-tooltip={item.label} aria-current={active ? "page" : undefined} href={item.href} key={item.label}><LearningIcon name={item.icon} /><span>{item.label}</span></Link>; })}</nav>
+      <nav aria-label="Learning navigation">{navigation.map((item) => { const active = !item.external && isActive(item.href); return item.external ? <a data-tooltip={item.label} href={item.href} target="_blank" rel="noreferrer" key={item.label}><LearningIcon name={item.icon} /><span>{item.label}</span><span className="sr-only"> (opens Growvelt Jobs in a new tab)</span></a> : <Link className={active ? "active" : ""} data-tooltip={item.label} aria-current={active ? "page" : undefined} href={item.href} key={item.label}><LearningIcon name={item.icon} /><span>{item.label}</span></Link>; })}</nav>
       <WorkspaceLinks isInstructor={isInstructor} isAdmin={isAdmin} pathname={pathname} />
       <div className="sidebar-bottom"><p className="eyebrow">Growvelt Learning</p><p>Learn, teach, and grow from one account.</p><Link href="/teach/apply">Teach on Growvelt</Link></div>
     </aside>
@@ -112,6 +113,6 @@ export function LearningShellNavigation({ children, initialSidebarCollapsed, isI
       </div></header>
       <main id="main-content" className="dashboard-main">{children}</main>
     </div>
-    <nav className="mobile-nav" aria-label="Learning navigation">{mobileNavigation.map((item) => { const active = isActive(item.href); return <Link className={active ? "active" : ""} aria-current={active ? "page" : undefined} href={item.href} key={item.label}><LearningIcon name={item.icon} size={18} /><small>{item.mobileLabel ?? item.label}</small></Link>; })}</nav>
+    <nav className="mobile-nav" aria-label="Learning navigation">{mobileNavigation.map((item) => { const active = !item.external && isActive(item.href); return item.external ? <a href={item.href} target="_blank" rel="noreferrer" key={item.label}><LearningIcon name={item.icon} size={18} /><small>{item.mobileLabel ?? item.label}</small><span className="sr-only"> (opens Growvelt Jobs in a new tab)</span></a> : <Link className={active ? "active" : ""} aria-current={active ? "page" : undefined} href={item.href} key={item.label}><LearningIcon name={item.icon} size={18} /><small>{item.mobileLabel ?? item.label}</small></Link>; })}</nav>
   </div>;
 }

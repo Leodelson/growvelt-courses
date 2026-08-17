@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { CourseStatusBadge } from "@/app/components/instructor/course-status-badge";
+import { InstructorCourseActions } from "@/app/components/instructor/instructor-course-actions";
 import { OperationsSearchControls } from "@/app/components/operations-search-controls";
 import { SearchHighlight } from "@/app/components/search-highlight";
 import { searchOwnInstructorCourses } from "@/app/lib/instructor/courses";
@@ -16,16 +17,17 @@ export default async function DashboardInstructorCoursesPage({
   const result = await searchOwnInstructorCourses(query.query, query.status, query.page);
   const { courses, total, page, pageSize } = result;
   const lastPage = Math.max(1, Math.ceil(total / pageSize));
+  const isArchivedView = query.status === "archived";
 
   return (
     <section className="course-management-page section-shell">
       <header className="course-management-heading">
         <div>
           <p className="eyebrow">Instructor workspace</p>
-          <h1>Your courses</h1>
-          <p>Create structured lessons and quizzes, submit complete drafts for review, and follow each course through its publishing lifecycle.</p>
+          <h1>{isArchivedView ? "Archived courses" : "Your courses"}</h1>
+          <p>{isArchivedView ? "Archived courses are hidden from the catalog. Restore one whenever you are ready to offer it again." : "Create structured lessons and quizzes, submit complete drafts for review, and follow each course through its publishing lifecycle."}</p>
         </div>
-        <Link className="button button-primary" href="/dashboard/instructor/courses/new">Create course</Link>
+        <div className="course-management-actions"><Link className="button button-secondary" href={isArchivedView ? "/dashboard/instructor/courses" : "/dashboard/instructor/courses?status=archived"}>{isArchivedView ? "All courses" : "Archived courses"}</Link><Link className="button button-primary" href="/dashboard/instructor/courses/new">Create course</Link></div>
       </header>
       <OperationsSearchControls basePath="/dashboard/instructor/courses" query={query} fields={[
         { name: "query", label: "Search your courses", placeholder: "Title, topic, category, or level" },
@@ -36,7 +38,7 @@ export default async function DashboardInstructorCoursesPage({
         <section className="instructor-course-list" aria-label="Your courses">
           {courses.map((course) => <article className="instructor-course-row" key={course.course_id}>
             <div><div className="course-row-meta"><CourseStatusBadge status={course.status} /><span><SearchHighlight text={course.category || "Uncategorized"} query={query.query} /></span><span><SearchHighlight text={course.level || "Level not set"} query={query.query} /></span></div><h2><SearchHighlight text={course.title} query={query.query} /></h2><p><SearchHighlight text={course.summary || "No summary added yet."} query={query.query} /></p></div>
-            <div className="course-row-actions"><span>{course.is_free ? "Free" : `${course.price_currency || "NGN"} ${Number(course.price_amount ?? 0).toLocaleString("en-NG")}`}</span><Link className="button button-secondary" href={`/dashboard/instructor/courses/${course.course_id}`}>{course.status === "draft" ? "Edit draft" : "View course"}</Link></div>
+            <div className="course-row-actions"><span>{course.is_free ? "Free" : `${course.price_currency || "NGN"} ${Number(course.price_amount ?? 0).toLocaleString("en-NG")}`}</span><InstructorCourseActions courseId={course.course_id} status={course.status} title={course.title} /></div>
           </article>)}
         </section>
         <nav className="operations-pagination" aria-label="Course results pages">

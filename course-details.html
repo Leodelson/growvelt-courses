@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Preview a Growvelt Learning course with curriculum, instructor, lessons, reviews, and enrollment details.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://www.courses.growvelt.com/course-details.html">
+  <title>Course Details | Growvelt Learning</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="learning-page">
+<nav class="navbar" aria-label="Main navigation">
+  <div class="container nav-container">
+    <div class="nav-logo">
+      <a href="index.html" aria-label="Growvelt Learning home">
+        <img src="images/growvelt-white-text.png" alt="Growvelt Logo" class="logo">
+      </a>
+    </div>
+    <button class="nav-toggle" type="button" onclick="toggleMenu()" aria-label="Open navigation" aria-expanded="false" aria-controls="primary-navigation">
+      <span class="hamburger" aria-hidden="true"></span>
+    </button>
+    <ul class="nav-menu" id="primary-navigation">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="courses.html">Courses</a></li>
+      <li><a href="auth.html">Learning Portal</a></li>
+      <li><a href="learner-dashboard.html">Learner</a></li>
+      <li><a href="instructor-dashboard.html">Instructor</a></li>
+      <li class="nav-careers"><a href="https://growvelt.com" target="_blank" rel="noopener noreferrer" class="careers-link careers-highlight">Careers<span class="careers-sub">Apply for jobs</span></a></li>
+    </ul>
+  </div>
+</nav>
+
+<main>
+  <section class="learning-detail-hero" data-course-detail>
+    <div class="container learning-detail-grid">
+      <div>
+        <span class="eyebrow">Course Preview</span>
+        <h1 data-course-title>Data Analysis Professional Track</h1>
+        <p data-course-summary>Excel, SQL, Power BI, Python foundations, portfolio projects, and practical business reporting skills for learners preparing for real analytics work.</p>
+        <p class="dashboard-status" data-course-detail-status>Showing a sample course preview. Published Supabase course data will load here when available.</p>
+        <div class="learning-meta-row">
+          <span data-course-category><i class="fa-solid fa-layer-group"></i> Data Analytics</span>
+          <span data-course-level><i class="fa-solid fa-signal"></i> Beginner to job-ready</span>
+          <span data-course-price><i class="fa-solid fa-certificate"></i> Certificate</span>
+        </div>
+        <div class="learning-actions">
+          <a class="btn btn-primary" href="registration.html" data-course-enroll>Enroll Now</a>
+          <a class="btn btn-secondary" href="#curriculum">Preview Lessons</a>
+        </div>
+      </div>
+      <aside class="learning-side-panel">
+        <img src="images/Data Analysis.png" alt="Data analysis course preview" data-course-image>
+        <h2>What you will build</h2>
+        <ul>
+          <li>Clean Excel analysis workbook</li>
+          <li>SQL portfolio queries</li>
+          <li>Power BI dashboard</li>
+          <li>Capstone project proof</li>
+        </ul>
+      </aside>
+    </div>
+  </section>
+
+  <section class="learning-section" id="curriculum">
+    <div class="container">
+      <div class="section-heading-row">
+        <div>
+          <span class="eyebrow">Curriculum</span>
+          <h2>Preview the learning path</h2>
+        </div>
+        <a href="auth.html" class="text-link">Create learning account</a>
+      </div>
+      <div class="module-list" data-course-modules>
+        <article>
+          <span>Module 01</span>
+          <h3>Data thinking and spreadsheet foundations</h3>
+          <p>Learn how to structure questions, clean datasets, and use Excel for analysis.</p>
+        </article>
+        <article>
+          <span>Module 02</span>
+          <h3>SQL for analysis</h3>
+          <p>Write queries, filter records, join tables, and produce reusable reports.</p>
+        </article>
+        <article>
+          <span>Module 03</span>
+          <h3>Dashboards and storytelling</h3>
+          <p>Build business dashboards and explain insights with clarity.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="footer">
+  <div class="container footer-container">
+    <p class="left-text">&copy; 2026 Growvelt Technologies Limited (RC - 8738218) | All rights reserved</p>
+    <ul class="center-links" aria-label="Legal links">
+      <li><a href="privacy-policy.html">Privacy</a></li>
+      <li><a href="terms-of-service.html">Terms</a></li>
+    </ul>
+  </div>
+</footer>
+
+<script src="supabase-config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="main.js"></script>
+<script src="learning-platform.js"></script>
+</body>
+</html>

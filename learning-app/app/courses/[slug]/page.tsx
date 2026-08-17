@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import FooterWrapper from "@/app/components/FooterWrapper";
 import { PublicHeader } from "@/app/components/public-header";
+import { CourseVideoCover } from "@/app/components/course-video-cover";
 import { getPublishedLearningCourse } from "@/app/lib/catalog/published-courses";
 import { absoluteLearningUrl, defaultSocialImage } from "@/app/lib/seo";
 
@@ -73,6 +74,10 @@ export default async function PublicCoursePage({ params }: { params: Promise<{ s
           <h1>{course.title}</h1>
           <p className="published-course-summary">{description}</p>
           <div className="published-course-meta"><span>{course.level || "All levels"}</span><span>{pricing}</span><span>{course.instructorName ? `By ${course.instructorName}` : "Growvelt Instructor"}</span></div>
+          <div className="published-course-video-cover">
+            <div className="published-course-video-cover-fallback" aria-hidden="true"><span>Growvelt Learning</span><strong>{course.category || "Practical learning"}</strong></div>
+            <CourseVideoCover courseId={course.id} alt="" loading="eager" />
+          </div>
         </header>
         <div className="published-course-layout">
           <article className="published-course-content">

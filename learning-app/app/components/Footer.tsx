@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Download, Mail } from "lucide-react";
 import { NewsletterForm } from "@/app/components/newsletter-form";
+import { CookieSettingsButton } from "@/app/components/privacy/cookie-settings-button";
 
 const jobsHref = "https://growvelt.com";
 
@@ -94,6 +95,8 @@ export default function Footer() {
           <nav aria-label="Legal links">
             <Link href="/privacy-policy">Privacy policy</Link>
             <Link href="/terms-of-service">Terms of service</Link>
+            <Link href="/cookie-policy">Cookie policy</Link>
+            <CookieSettingsButton />
           </nav>
         </div>
       </div>
