@@ -1570,3 +1570,22 @@ p { color: var(--muted); line-height: 1.65; }
   .profile-identity-skeleton > div:last-child { justify-items: center; }
   .profile-cover-skeleton { min-height: 205px; border-radius: 20px 20px 0 0; }
 }
+
+/* Instructor workspace refinement: stronger hierarchy without touching course lifecycle actions. */
+.dashboard-main > .instructor-analytics-page, .dashboard-main > .course-management-page, .dashboard-main > .course-editor-page, .dashboard-main > .curriculum-page { padding-block: 0 40px !important; }
+.instructor-analytics-page { gap: 20px; }
+.instructor-analytics-hero, .instructor-analytics-courses, .instructor-analytics-empty { border-color: color-mix(in srgb, var(--purple) 16%, var(--line)); }
+.instructor-analytics-summary article { min-height: 166px; transition: transform var(--dur) var(--ease), box-shadow var(--dur) var(--ease); }
+.instructor-analytics-summary article:hover { box-shadow: var(--shadow); transform: translateY(-2px); }
+.instructor-analytics-stat-skeleton { display: grid; align-content: start; gap: 14px; padding: 24px; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); }
+.instructor-analytics-courses-skeleton { display: grid; gap: 14px; }
+.instructor-analytics-courses-skeleton > article { display: grid; gap: 12px; padding: 22px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface-muted); }
+.operations-skeleton-controls { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(180px, .7fr); gap: 12px; margin-bottom: 24px; padding: 14px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); }
+.instructor-course-loading-actions { display: grid; justify-items: end; align-content: center; gap: 12px; }
+.instructor-course-row { transition: border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease), transform var(--dur) var(--ease); }
+.instructor-course-row:hover { border-color: color-mix(in srgb, var(--purple) 32%, var(--line)); box-shadow: var(--shadow); transform: translateY(-2px); }
+
+@media (max-width: 720px) {
+  .operations-skeleton-controls { grid-template-columns: 1fr; }
+  .instructor-course-loading-actions { width: 100%; justify-items: start; }
+}
