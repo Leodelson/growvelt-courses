@@ -1538,3 +1538,35 @@ p { color: var(--muted); line-height: 1.65; }
   .published-course-skeleton, .lesson-player-skeleton { min-height: 0; padding: 22px; }
   .skeleton-course-cover { min-height: 180px; }
 }
+
+/* Personal learner surfaces share the same compact dashboard rhythm. */
+.certificate-list, .profile-page { padding-block: 0 40px !important; }
+.certificate-list-hero { display: grid; gap: 12px; max-width: 780px; margin-bottom: 30px; }
+.certificate-list-hero .skeleton-copy { margin-top: 4px; }
+.dashboard-main > .settings-loading, .dashboard-main > .settings-stack { width: 100%; }
+.dashboard-main > .settings-loading { display: grid; gap: 26px; padding-bottom: 40px; }
+.dashboard-main > .dashboard-intro { margin-bottom: 28px; }
+.settings-stack { gap: 18px; }
+.settings-card { min-height: 132px; padding: clamp(24px, 3vw, 32px); border-radius: 20px; box-shadow: var(--shadow-xs); transition: border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease), transform var(--dur) var(--ease); }
+.settings-card:hover { border-color: color-mix(in srgb, var(--purple) 32%, var(--line)); box-shadow: var(--shadow); transform: translateY(-2px); }
+.settings-card h2 { font-size: clamp(23px, 3vw, 29px); }
+.profile-page { gap: 22px; }
+.profile-cover-skeleton { width: 100%; min-height: clamp(250px, 30vw, 360px); border-radius: 28px 28px 0 0; }
+.profile-identity-skeleton { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 22px; align-items: center; min-height: 180px; padding: 30px; border: 1px solid var(--line); border-radius: 0 0 24px 24px; background: var(--surface); box-shadow: var(--shadow); }
+.profile-identity-skeleton > div:last-child, .profile-setup-skeleton { display: grid; gap: 12px; }
+.profile-avatar-skeleton { width: 94px; height: 94px; border-radius: 50%; }
+.profile-setup-skeleton { min-height: 180px; padding: clamp(24px, 4vw, 34px); border: 1px solid var(--line); border-radius: 20px; background: var(--surface); box-shadow: var(--shadow-xs); }
+.settings-loading-hero { display: grid; gap: 12px; max-width: 780px; }
+.settings-skeleton-card { display: flex; justify-content: space-between; gap: 24px; align-items: center; min-height: 132px; padding: clamp(24px, 3vw, 32px); border: 1px solid var(--line); border-radius: 20px; background: var(--surface); box-shadow: var(--shadow-xs); }
+.settings-skeleton-card > div { display: grid; gap: 12px; }
+
+@media (max-width: 620px) {
+  .certificate-list, .profile-page { padding-block: 0 32px !important; }
+  .settings-card, .settings-skeleton-card { min-height: 0; padding: 22px; }
+  .settings-skeleton-card { align-items: flex-start; flex-direction: column; }
+  .settings-skeleton-card > .skeleton-button { width: 100%; }
+  .profile-identity-skeleton { grid-template-columns: 1fr; justify-items: center; min-height: 0; padding: 64px 22px 24px; border-radius: 0 0 20px 20px; text-align: center; }
+  .profile-avatar-skeleton { margin-top: -70px; }
+  .profile-identity-skeleton > div:last-child { justify-items: center; }
+  .profile-cover-skeleton { min-height: 205px; border-radius: 20px 20px 0 0; }
+}
