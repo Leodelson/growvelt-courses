@@ -1493,6 +1493,8 @@ p { color: var(--muted); line-height: 1.65; }
 /* The dashboard shell already supplies vertical page rhythm; nested learner pages must not add a second hero-sized gap. */
 .dashboard-main > .catalog-page { padding-block: 0 40px; }
 .saved-courses-page { padding-block: 0 40px !important; }
+.dashboard-main > .route-feedback-page { width: 100%; min-height: min(620px, calc(100dvh - 150px)); padding-block: 0 40px !important; }
+.dashboard-main > .route-feedback-page .route-feedback-panel { width: 100%; max-width: none; min-height: clamp(360px, 44vw, 470px); align-content: center; padding: clamp(30px, 5vw, 62px); border-radius: 24px; }
 .public-catalog-controls + section { margin-top: clamp(32px, 4vw, 48px); }
 .skeleton-course-art { width: 100%; min-height: 132px; border-radius: 16px 16px 10px 10px; }
 .catalog-course-skeleton { display: grid; min-height: 360px; overflow: hidden; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); box-shadow: var(--shadow-xs); }
@@ -1506,7 +1508,9 @@ p { color: var(--muted); line-height: 1.65; }
 }
 
 @media (max-width: 620px) {
-  .dashboard-main > .catalog-page, .saved-courses-page { padding-block: 0 32px !important; }
+  .dashboard-main > .catalog-page, .saved-courses-page, .dashboard-main > .route-feedback-page { padding-block: 0 32px !important; }
+  .dashboard-main > .route-feedback-page { min-height: calc(100dvh - 120px); }
+  .dashboard-main > .route-feedback-page .route-feedback-panel { min-height: 0; padding: 28px 22px; border-radius: 20px; }
   .dashboard-catalog-loading .public-catalog-skeleton-controls { grid-template-columns: 1fr; }
   .saved-courses-loading-hero { min-height: 0; }
   .saved-courses-loading-hero > .skeleton-button { width: 100%; }
