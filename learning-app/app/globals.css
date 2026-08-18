@@ -1601,6 +1601,18 @@ p { color: var(--muted); line-height: 1.65; }
 .admin-queue-skeleton-list .admin-application-row { min-height: 172px; }
 .admin-course-filter-skeleton { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 
+/* Public course discovery keeps the same complete loading language as signed-in Learning. */
+.public-catalog-loading .public-catalog-skeleton-controls { grid-template-columns: minmax(0, 1.7fr) repeat(4, minmax(120px, 1fr)); }
+.public-page .published-course-page { padding-block: clamp(48px, 7vw, 82px) !important; }
+.public-page .published-course-hero { max-width: 920px; }
+.public-page .published-course-content { border-color: color-mix(in srgb, var(--purple) 12%, var(--line)); }
+.public-page .published-course-aside { border-color: color-mix(in srgb, var(--purple) 20%, var(--line)); }
+
 @media (max-width: 760px) {
   .admin-course-filter-skeleton { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 620px) {
+  .public-catalog-loading .public-catalog-skeleton-controls { grid-template-columns: 1fr; }
+  .public-page .published-course-page { padding-block: 36px !important; }
 }

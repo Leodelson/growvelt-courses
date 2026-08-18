@@ -49,7 +49,7 @@ export default function AboutPage() {
               <p>We bring learning, career development, intelligent hiring tools, and real job opportunities together in one platform.</p>
             </div>
             <dl>
-              <div><dt>Founded</dt><dd>2025-2026</dd></div>
+              <div><dt>Founded</dt><dd>2024</dd></div>
               <div><dt>Focus</dt><dd>Skills to opportunity</dd></div>
             </dl>
           </aside>

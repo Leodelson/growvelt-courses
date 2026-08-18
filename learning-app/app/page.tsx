@@ -3,6 +3,7 @@ import Link from "next/link";
 import { LearningMark } from "@/app/components/learning-mark";
 import { PublicHeader } from "@/app/components/public-header";
 import FooterWrapper from "@/app/components/FooterWrapper";
+import { ConsentAwareYouTubeEmbed } from "@/app/components/privacy/consent-aware-youtube-embed";
 import { growveltOrganizationJsonLd } from "@/app/lib/seo";
 
 const jobsHref = "https://growvelt.com";
@@ -85,7 +86,7 @@ export default function HomePage() {
       <section className="growvelt-video-section section-shell" aria-labelledby="video-title">
         <div className="video-section-heading"><div><p className="eyebrow">Growvelt video guides</p><h2 id="video-title">See how Growvelt works in practice.</h2></div><p>Short official guides covering Growvelt Careers for employers, the Growvelt app, and how employers hire on Growvelt.</p></div>
         <div className="growvelt-video-grid">
-          {growveltVideos.map((video) => <article key={video.id}><div className="growvelt-video-frame"><iframe src={`https://www.youtube-nocookie.com/embed/${video.id}?rel=0`} title={video.title} loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen /></div><h3>{video.title}</h3><a className="text-link" href={`https://www.youtube.com/watch?v=${video.id}`} target="_blank" rel="noreferrer">Watch on YouTube <span aria-hidden="true">→</span><span className="sr-only"> in a new tab</span></a></article>)}
+          {growveltVideos.map((video) => <article key={video.id}><ConsentAwareYouTubeEmbed className="growvelt-video-frame" videoId={video.id} title={video.title} /><h3>{video.title}</h3><a className="text-link" href={`https://www.youtube.com/watch?v=${video.id}`} target="_blank" rel="noreferrer">Watch on YouTube <span aria-hidden="true">→</span><span className="sr-only"> in a new tab</span></a></article>)}
         </div>
       </section>
 

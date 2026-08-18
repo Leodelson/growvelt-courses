@@ -1,0 +1,6 @@
+import { PublicHeader } from "@/app/components/public-header";
+import { Skeleton } from "@/app/components/ui/skeleton";
+
+export default function PublicCourseLoading() {
+  return <div className="public-page"><PublicHeader /><main><section className="published-course-page section-shell course-detail-loading" aria-busy="true"><span className="sr-only">Loading course…</span><header className="published-course-hero"><Skeleton className="skeleton-link" /><Skeleton className="skeleton-eyebrow" /><Skeleton className="skeleton-title skeleton-title-wide" /><Skeleton className="skeleton-copy" /><Skeleton className="skeleton-copy skeleton-copy-short" /><Skeleton className="skeleton-course-cover" /></header><div className="published-course-layout"><article className="published-course-skeleton"><Skeleton className="skeleton-eyebrow" /><Skeleton className="skeleton-row-title" /><Skeleton className="skeleton-copy" /><Skeleton className="skeleton-copy skeleton-copy-short" /><Skeleton className="skeleton-outline-list" /></article><aside className="published-course-skeleton course-access-skeleton"><Skeleton className="skeleton-status" /><Skeleton className="skeleton-row-title" /><Skeleton className="skeleton-copy" /><Skeleton className="skeleton-button" /></aside></div></section></main></div>;
+}
