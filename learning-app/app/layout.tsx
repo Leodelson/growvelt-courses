@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { LanguageProvider } from "@/app/components/language-provider";
 import { ThemeProvider } from "@/app/components/theme-provider";
 import { CookieConsentProvider } from "@/app/components/privacy/cookie-consent-provider";
 import { defaultSocialImage, growveltLearningUrl } from "@/app/lib/seo";
@@ -63,7 +64,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         />
       </head>
       <body>
-        <ThemeProvider><CookieConsentProvider>{children}</CookieConsentProvider></ThemeProvider>
+        <ThemeProvider><LanguageProvider initialLocale="en"><CookieConsentProvider>{children}</CookieConsentProvider></LanguageProvider></ThemeProvider>
       </body>
     </html>
   );

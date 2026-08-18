@@ -954,6 +954,7 @@ p { color: var(--muted); line-height: 1.65; }
 .dashboard-language-options button.is-selected { background: var(--surface-muted); color: var(--purple); font-weight: 800; }
 .dashboard-language-options button:disabled { color: var(--muted); cursor: not-allowed; opacity: .72; }
 .dashboard-language-options button small { flex: 0 0 auto; font-size: 8px; font-weight: 750; }
+.dashboard-language-options > small { display: block; padding: 10px 12px 12px; border-top: 1px solid var(--line); color: var(--muted); font-size: 10px; line-height: 1.45; }
 .app-header .learning-mark img { width: 92px; max-width: none; height: 34px; object-fit: cover; object-position: 50% 42%; }
 .dashboard-notifications { margin-right: 16px; padding-right: 20px; border-right: 1px solid var(--line); }
 .dashboard-notifications > button, .dashboard-account-trigger, .mobile-dashboard-menu-button { display: flex; align-items: center; justify-content: center; border: 1px solid transparent; background: transparent; color: var(--muted); cursor: pointer; }
@@ -987,6 +988,9 @@ p { color: var(--muted); line-height: 1.65; }
 .mobile-dashboard-language strong { font-size: 11px; text-transform: uppercase; letter-spacing: .07em; }
 .mobile-dashboard-language span { color: var(--ink); font-size: 13px; font-weight: 750; }
 .mobile-dashboard-language small { color: var(--muted); font-size: 10px; line-height: 1.4; }
+.mobile-language-options { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 2px; }
+.mobile-language-options button { min-height: 34px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); font: inherit; font-size: 12px; font-weight: 750; }
+.mobile-language-options button.is-selected { border-color: color-mix(in srgb, var(--purple) 48%, var(--line)); background: color-mix(in srgb, var(--purple) 9%, var(--surface)); color: var(--purple); }
 @media (max-width: 900px) {
   .mobile-dashboard-control { display: inline-flex; align-items: center; order: 2; }
   .dashboard-notifications { display: block; order: 1; margin: 0; padding: 0; border: 0; }
@@ -1574,6 +1578,9 @@ p { color: var(--muted); line-height: 1.65; }
 .settings-card-expanded > div { max-width: 520px; }
 .settings-card-expanded .theme-control { display: grid; grid-template-columns: repeat(3, minmax(105px, 1fr)); width: min(100%, 430px); align-self: center; padding: 6px; border-radius: 14px; }
 .settings-card-expanded .theme-control button { min-height: 46px; font-size: 14px; }
+.language-control { display: block; width: min(100%, 430px); align-self: center; }
+.language-control select { width: 100%; min-height: 58px; padding: 12px 42px 12px 15px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface-muted); color: var(--ink); font: inherit; font-size: 15px; font-weight: 750; }
+.language-control select:focus { outline: 0; border-color: var(--purple); box-shadow: 0 0 0 4px color-mix(in srgb, var(--purple) 16%, transparent); }
 .settings-danger-card { border-color: color-mix(in srgb, #dc2626 32%, var(--line)); background: linear-gradient(135deg, color-mix(in srgb, #dc2626 5%, var(--surface)), var(--surface) 58%); }
 .settings-danger-card:hover { border-color: color-mix(in srgb, #dc2626 55%, var(--line)); }
 .settings-danger-card .eyebrow, .settings-danger-card h2 { color: #dc2626; }
@@ -1625,6 +1632,7 @@ p { color: var(--muted); line-height: 1.65; }
   .settings-feature-card .button { width: 100%; justify-content: center; }
   .settings-card-expanded { gap: 20px; }
   .settings-card-expanded .theme-control { width: 100%; }
+  .language-control { width: 100%; }
   .settings-danger-card .button-danger { width: 100%; justify-content: center; }
   .account-delete-backdrop { align-items: end; padding: 12px; }
   .account-delete-dialog { max-height: calc(100dvh - 24px); padding: 24px 20px; border-radius: 20px; }

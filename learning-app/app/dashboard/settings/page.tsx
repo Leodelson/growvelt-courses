@@ -1,23 +1,28 @@
 import { ThemeControl } from "@/app/components/theme-control";
 import Link from "next/link";
 import { DeleteAccountControl } from "@/app/components/auth/delete-account-control";
+import { LanguageControl } from "@/app/components/language-control";
 import { isLearningAdmin } from "@/app/lib/admin/authorization";
 import { getOwnInstructorApplication } from "@/app/lib/instructor/application";
 import { getOwnLearningProfile } from "@/app/lib/learning-profile";
+import { getRequestLocale } from "@/app/lib/i18n-server";
+import { translate } from "@/app/lib/i18n";
 
 export default async function DashboardSettingsPage() {
-  const [profile, instructorApplication, isAdmin] = await Promise.all([getOwnLearningProfile(), getOwnInstructorApplication(), isLearningAdmin()]);
+  const [profile, instructorApplication, isAdmin, locale] = await Promise.all([getOwnLearningProfile(), getOwnInstructorApplication(), isLearningAdmin(), getRequestLocale()]);
+  const t = (key: Parameters<typeof translate>[1]) => translate(locale, key);
   const instructorStatus = instructorApplication?.approval_status ?? null;
-  const accountRole = isAdmin ? "Learning Administrator" : instructorStatus === "approved" ? "Approved Instructor" : instructorStatus === "pending" ? "Instructor applicant" : "Learner";
-  const roleCopy = isAdmin ? "You can review approved Growvelt Learning operations." : instructorStatus === "approved" ? "You can create and manage courses while continuing to learn." : instructorStatus === "pending" ? "Your Instructor application is under review. You can continue learning while you wait." : "Learn practical skills, track progress, and apply to teach when you are ready.";
+  const accountRole = isAdmin ? t("settings.roleAdmin") : instructorStatus === "approved" ? t("settings.roleInstructor") : instructorStatus === "pending" ? t("settings.roleApplicant") : t("settings.roleLearner");
+  const roleCopy = isAdmin ? t("settings.adminCopy") : instructorStatus === "approved" ? t("settings.instructorCopy") : instructorStatus === "pending" ? t("settings.applicantCopy") : t("settings.learnerCopy");
   return <>
-    <header className="settings-hero"><p className="eyebrow">Preferences and controls</p><h1>Your Learning settings.</h1><p>Manage your profile, access, appearance, and account security from one place.</p><div className="settings-hero-pills"><span>Learning account</span><span>{accountRole}</span><span>Signed in</span></div></header>
+    <header className="settings-hero"><p className="eyebrow">{t("settings.eyebrow")}</p><h1>{t("settings.title")}</h1><p>{t("settings.summary")}</p><div className="settings-hero-pills"><span>{t("settings.account")}</span><span>{accountRole}</span><span>{t("settings.signedIn")}</span></div></header>
     <div className="settings-stack">
-      <div className="settings-summary-grid"><section className="settings-feature-card"><p className="eyebrow">Learning account</p><h2>{profile?.fullName || "Your Growvelt account"}</h2><p>{profile?.email || "Your account is securely connected."}</p><Link className="button button-primary" href="/dashboard/profile">Manage profile</Link></section><section className="settings-feature-card settings-role-card"><p className="eyebrow">Account access</p><h2>{accountRole}</h2><p>{roleCopy}</p>{instructorStatus === "approved" ? <Link className="button button-secondary" href="/dashboard/instructor">Open Instructor workspace</Link> : instructorStatus === "pending" ? <Link className="button button-secondary" href="/teach/application">View application</Link> : <Link className="button button-secondary" href="/teach">Teach on Growvelt</Link>}</section></div>
-      <section className="settings-card settings-card-expanded" aria-labelledby="appearance-title"><div><p className="eyebrow">Appearance</p><h2 id="appearance-title">Choose your preferred view</h2><p>Your theme choice is saved locally on this device.</p></div><ThemeControl /></section>
-      <section className="settings-card" aria-labelledby="profile-title"><div><p className="eyebrow">Profile</p><h2 id="profile-title">How you appear in Learning</h2><p>{profile ? `${profile.fullName} is connected to this account.` : "Your authenticated account is connected."}</p></div><Link className="button button-secondary" href="/dashboard/profile">Edit profile</Link></section>
-      <section className="settings-card" aria-labelledby="security-title"><div><p className="eyebrow">Account security</p><h2 id="security-title">Change your password</h2><p>Use the secure recovery flow to set a new password. Google sign-in accounts can manage their password with Google.</p></div><Link className="button button-secondary" href="/forgot-password">Reset password</Link></section>
-      <section className="settings-card settings-danger-card" aria-labelledby="danger-title"><div><p className="eyebrow">Danger zone</p><h2 id="danger-title">Delete your account</h2><p>Permanently remove your Learning profile and related account data. This action cannot be undone.</p></div><DeleteAccountControl /></section>
+      <div className="settings-summary-grid"><section className="settings-feature-card"><p className="eyebrow">{t("settings.account")}</p><h2>{profile?.fullName || "Growvelt"}</h2><p>{profile?.email || "—"}</p><Link className="button button-primary" href="/dashboard/profile">{t("settings.manageProfile")}</Link></section><section className="settings-feature-card settings-role-card"><p className="eyebrow">{t("settings.access")}</p><h2>{accountRole}</h2><p>{roleCopy}</p>{instructorStatus === "approved" ? <Link className="button button-secondary" href="/dashboard/instructor">{t("settings.openWorkspace")}</Link> : instructorStatus === "pending" ? <Link className="button button-secondary" href="/teach/application">{t("settings.viewApplication")}</Link> : <Link className="button button-secondary" href="/teach">{t("nav.teach")}</Link>}</section></div>
+      <section className="settings-card settings-card-expanded" aria-labelledby="language-title"><div><p className="eyebrow">{t("settings.language")}</p><h2 id="language-title">{t("settings.languageTitle")}</h2><p>{t("settings.languageCopy")}</p></div><LanguageControl /></section>
+      <section className="settings-card settings-card-expanded" aria-labelledby="appearance-title"><div><p className="eyebrow">{t("settings.appearance")}</p><h2 id="appearance-title">{t("settings.appearanceTitle")}</h2><p>{t("settings.appearanceCopy")}</p></div><ThemeControl /></section>
+      <section className="settings-card" aria-labelledby="profile-title"><div><p className="eyebrow">{t("settings.profile")}</p><h2 id="profile-title">{t("settings.profileTitle")}</h2><p>{profile ? `${profile.fullName} is connected to this account.` : "—"}</p></div><Link className="button button-secondary" href="/dashboard/profile">{t("settings.editProfile")}</Link></section>
+      <section className="settings-card" aria-labelledby="security-title"><div><p className="eyebrow">{t("settings.security")}</p><h2 id="security-title">{t("settings.securityTitle")}</h2><p>{t("settings.securityCopy")}</p></div><Link className="button button-secondary" href="/forgot-password">{t("settings.resetPassword")}</Link></section>
+      <section className="settings-card settings-danger-card" aria-labelledby="danger-title"><div><p className="eyebrow">{t("settings.danger")}</p><h2 id="danger-title">{t("settings.deleteTitle")}</h2><p>{t("settings.deleteCopy")}</p></div><DeleteAccountControl /></section>
     </div>
   </>;
 }
