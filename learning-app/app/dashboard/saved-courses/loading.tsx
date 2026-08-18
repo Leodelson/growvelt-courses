@@ -1,0 +1,5 @@
+import { Skeleton } from "@/app/components/ui/skeleton";
+
+export default function SavedCoursesLoading() {
+  return <section className="saved-courses-page section-shell" aria-busy="true"><span className="sr-only">Loading your saved courses…</span><header className="saved-courses-hero saved-courses-loading-hero"><div><Skeleton className="skeleton-eyebrow" /><Skeleton className="skeleton-title skeleton-title-wide" /><Skeleton className="skeleton-copy" /><Skeleton className="skeleton-copy skeleton-copy-short" /></div><Skeleton className="skeleton-button" /></header><div className="course-grid published-course-grid">{Array.from({ length: 3 }, (_, index) => <article className="catalog-course-skeleton" key={index}><Skeleton className="skeleton-course-art" /><div><Skeleton className="skeleton-status" /><Skeleton className="skeleton-row-title" /><Skeleton className="skeleton-copy" /><Skeleton className="skeleton-copy skeleton-copy-short" /><Skeleton className="skeleton-copy" /><Skeleton className="skeleton-button" /></div></article>)}</div></section>;
+}
