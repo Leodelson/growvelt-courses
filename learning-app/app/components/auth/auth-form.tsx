@@ -4,8 +4,10 @@ import Link from "next/link";
 import { FormEvent, useRef, useState } from "react";
 import { ActionButton } from "@/app/components/ui/action-button";
 import { InlineFeedback } from "@/app/components/ui/inline-feedback";
+import { TurnstileWidget } from "@/app/components/auth/turnstile-widget";
 import { LearningIcon } from "@/app/components/learning-icon";
 import { getExplicitSafeNextPath, getSafeNextPath } from "@/app/lib/auth/redirect";
+import { verifyTurnstileToken } from "@/app/lib/auth/turnstile";
 import { createClient } from "@/app/lib/supabase/browser";
 
 type AuthMode = "sign-in" | "sign-up";
@@ -18,6 +20,8 @@ export function AuthForm({ mode, next }: { mode: AuthMode; next?: string | null 
   const [isBusy, setIsBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [turnstileResetKey, setTurnstileResetKey] = useState(0);
   const [intent, setIntent] = useState<OnboardingIntent>("learn");
   const intentRef = useRef<OnboardingIntent>("learn");
   const pendingRef = useRef(false);
@@ -35,13 +39,22 @@ export function AuthForm({ mode, next }: { mode: AuthMode; next?: string | null 
     setIntent(nextIntent);
   }
 
-  async function begin(action: () => Promise<void>) {
+  async function begin(action: () => Promise<void>, turnstileAction: "sign_in" | "sign_up") {
     if (pendingRef.current) return;
     pendingRef.current = true;
     setMessage("");
     setIsBusy(true);
     try {
+      const verification = await verifyTurnstileToken(turnstileToken, turnstileAction);
+      if (!verification.ok) {
+        setMessage(verification.message);
+        setIsBusy(false);
+        pendingRef.current = false;
+        return;
+      }
       await action();
+      setTurnstileToken(null);
+      setTurnstileResetKey((value) => value + 1);
     } catch {
       setMessage("Authentication is not configured on this environment yet. Please try again later.");
       setIsBusy(false);
@@ -86,7 +99,7 @@ export function AuthForm({ mode, next }: { mode: AuthMode; next?: string | null 
         return;
       }
       window.location.assign(safeNext);
-    });
+    }, isSignUp ? "sign_up" : "sign_in");
   }
 
   async function continueWithGoogle() {
@@ -100,7 +113,7 @@ export function AuthForm({ mode, next }: { mode: AuthMode; next?: string | null 
         setIsBusy(false);
         pendingRef.current = false;
       }
-    });
+    }, isSignUp ? "sign_up" : "sign_in");
   }
 
   return <form className="auth-card" onSubmit={submit} noValidate>
@@ -109,7 +122,7 @@ export function AuthForm({ mode, next }: { mode: AuthMode; next?: string | null 
     <div className="auth-card-heading"><p className="eyebrow">{isSignUp ? "Start learning" : "Welcome back"}</p><h1>{isSignUp ? "Build your next proof point." : "Continue your learning."}</h1><p>{isSignUp ? "Create your Growvelt Learning account. Learn new skills or apply to teach on Growvelt." : "Sign in to return to your Growvelt Learning space."}</p></div>
     {isSignUp && <fieldset className="intent-picker"><legend>I want to:</legend><div className="intent-options"><button className={intent === "learn" ? "intent-option intent-learn is-selected" : "intent-option intent-learn"} type="button" onClick={() => selectIntent("learn")} aria-pressed={intent === "learn"} disabled={isBusy}><strong>Learn</strong><span>Build practical skills, complete courses and earn proof of learning.</span></button><button className={intent === "teach" ? "intent-option intent-teach is-selected" : "intent-option intent-teach"} type="button" onClick={() => selectIntent("teach")} aria-pressed={intent === "teach"} disabled={isBusy}><strong>Teach</strong><span>Share your expertise and create courses for Growvelt learners.</span></button></div><small>Teaching access requires a separate Instructor application and Growvelt approval.</small></fieldset>}
     <ActionButton className="google-button" type="button" onClick={continueWithGoogle} isPending={isBusy} pendingLabel="Opening Google…"><GoogleMark /> Continue with Google</ActionButton><div className="auth-divider" aria-hidden="true"><span>or continue with email</span></div>
-    {isSignUp && <label className="field-label">Display name<input name="full_name" type="text" autoComplete="name" required maxLength={160} disabled={isBusy} /></label>}<label className="field-label">Email address<input name="email" type="email" autoComplete="email" required disabled={isBusy} /></label><label className="field-label">Password<span className="password-field"><input name="password" type={showPassword ? "text" : "password"} autoComplete={isSignUp ? "new-password" : "current-password"} required minLength={8} disabled={isBusy} /><button type="button" onClick={() => setShowPassword((value) => !value)} aria-label={showPassword ? "Hide password" : "Show password"} disabled={isBusy}>{showPassword ? "Hide" : "Show"}</button></span></label>{isSignUp && <label className="field-label">Confirm password<input name="password_confirmation" type={showPassword ? "text" : "password"} autoComplete="new-password" required minLength={8} disabled={isBusy} /></label>}
+    {isSignUp && <label className="field-label">Display name<input name="full_name" type="text" autoComplete="name" required maxLength={160} disabled={isBusy} /></label>}<label className="field-label">Email address<input name="email" type="email" autoComplete="email" required disabled={isBusy} /></label><label className="field-label">Password<span className="password-field"><input name="password" type={showPassword ? "text" : "password"} autoComplete={isSignUp ? "new-password" : "current-password"} required minLength={8} disabled={isBusy} /><button type="button" onClick={() => setShowPassword((value) => !value)} aria-label={showPassword ? "Hide password" : "Show password"} disabled={isBusy}>{showPassword ? "Hide" : "Show"}</button></span></label>{isSignUp && <label className="field-label">Confirm password<input name="password_confirmation" type={showPassword ? "text" : "password"} autoComplete="new-password" required minLength={8} disabled={isBusy} /></label>}<TurnstileWidget action={isSignUp ? "sign_up" : "sign_in"} onTokenChange={setTurnstileToken} resetKey={turnstileResetKey} />
     {!isSignUp && <Link className="auth-inline-link" href="/forgot-password">Forgot password?</Link>}{message && <InlineFeedback variant="error">{message}</InlineFeedback>}<ActionButton className="button button-primary auth-submit" type="submit" isPending={isBusy} pendingLabel={isSignUp ? "Creating account…" : "Signing in…"}>{isSignUp ? "Create account" : "Sign in"}</ActionButton>
     {isSignUp ? <p className="auth-legal">By creating an account, you agree to the Growvelt <a href="/terms-of-service">Terms of Service</a> and acknowledge the Growvelt <a href="/privacy-policy">Privacy Policy</a>.</p> : <p className="auth-legal"><a href="/terms-of-service">Terms of Service</a><span aria-hidden="true"> · </span><a href="/privacy-policy">Privacy Policy</a></p>}
   </form>;

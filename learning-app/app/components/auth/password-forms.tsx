@@ -4,11 +4,16 @@ import Link from "next/link";
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { ActionButton } from "@/app/components/ui/action-button";
 import { InlineFeedback } from "@/app/components/ui/inline-feedback";
+import { TurnstileWidget } from "@/app/components/auth/turnstile-widget";
+import { verifyTurnstileToken } from "@/app/lib/auth/turnstile";
 import { createClient } from "@/app/lib/supabase/browser";
 
 export function ForgotPasswordForm() {
   const [isBusy, setIsBusy] = useState(false);
   const [sent, setSent] = useState(false);
+  const [message, setMessage] = useState("");
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [turnstileResetKey, setTurnstileResetKey] = useState(0);
   const pendingRef = useRef(false);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -18,6 +23,14 @@ export function ForgotPasswordForm() {
     setIsBusy(true);
     const email = String(new FormData(event.currentTarget).get("email") ?? "").trim();
 
+    const verification = await verifyTurnstileToken(turnstileToken, "password_recovery");
+    if (!verification.ok) {
+      setMessage(verification.message);
+      setIsBusy(false);
+      pendingRef.current = false;
+      return;
+    }
+
     try {
       const supabase = createClient();
       await supabase.auth.resetPasswordForEmail(email, { redirectTo: new URL("/auth/callback?next=/reset-password", window.location.origin).href });
@@ -25,6 +38,8 @@ export function ForgotPasswordForm() {
       // Keep the outcome neutral to avoid account enumeration.
     }
 
+    setTurnstileToken(null);
+    setTurnstileResetKey((value) => value + 1);
     setSent(true);
     setIsBusy(false);
     pendingRef.current = false;
@@ -32,7 +47,7 @@ export function ForgotPasswordForm() {
 
   return <form className="auth-card" onSubmit={submit}>
     <div className="auth-card-heading"><p className="eyebrow">Account recovery</p><h1>Reset your password.</h1><p>Enter your email and we’ll send recovery instructions if an account can use them.</p></div>
-    {sent ? <InlineFeedback variant="success"><strong>Check your email.</strong><p>If the address can receive a reset, recovery instructions are on their way. Check spam or junk folders too.</p></InlineFeedback> : <><label className="field-label">Email address<input name="email" type="email" autoComplete="email" required disabled={isBusy} /></label><ActionButton className="button button-primary auth-submit" type="submit" isPending={isBusy} pendingLabel="Sending recovery link…">Send recovery instructions</ActionButton></>}
+    {sent ? <InlineFeedback variant="success"><strong>Check your email.</strong><p>If the address can receive a reset, recovery instructions are on their way. Check spam or junk folders too.</p></InlineFeedback> : <><label className="field-label">Email address<input name="email" type="email" autoComplete="email" required disabled={isBusy} /></label><TurnstileWidget action="password_recovery" onTokenChange={setTurnstileToken} resetKey={turnstileResetKey} />{message && <InlineFeedback variant="error">{message}</InlineFeedback>}<ActionButton className="button button-primary auth-submit" type="submit" isPending={isBusy} pendingLabel="Sending recovery link…">Send recovery instructions</ActionButton></>}
     <p className="auth-switch"><Link href="/sign-in">Back to sign in</Link></p>
   </form>;
 }
