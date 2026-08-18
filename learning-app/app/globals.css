@@ -1589,3 +1589,18 @@ p { color: var(--muted); line-height: 1.65; }
   .operations-skeleton-controls { grid-template-columns: 1fr; }
   .instructor-course-loading-actions { width: 100%; justify-items: start; }
 }
+
+/* Admin review surfaces: compact queue rhythm and distinct review cards. */
+.dashboard-main > .admin-page { min-height: 0; padding-block: 0 40px !important; }
+.admin-page-header { margin-top: 0; margin-bottom: 30px; }
+.admin-operations-page .admin-operations-grid { gap: 18px; }
+.admin-operation-card, .admin-empty-state, .admin-application-detail, .admin-review-panel { border-color: color-mix(in srgb, var(--purple) 16%, var(--line)); }
+.admin-application-row { margin-top: 14px; padding: clamp(22px, 3vw, 30px); border: 1px solid var(--line); border-radius: 18px; background: var(--surface); box-shadow: var(--shadow-xs); transition: border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease), transform var(--dur) var(--ease); }
+.admin-application-row:hover { border-color: color-mix(in srgb, var(--purple) 34%, var(--line)); box-shadow: var(--shadow); transform: translateY(-2px); }
+.admin-queue-skeleton-list { gap: 0; border: 0; }
+.admin-queue-skeleton-list .admin-application-row { min-height: 172px; }
+.admin-course-filter-skeleton { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+@media (max-width: 760px) {
+  .admin-course-filter-skeleton { grid-template-columns: 1fr; }
+}
