@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { SignOutButton } from "@/app/components/auth/sign-out-button";
+import { WelcomeEmailTrigger } from "@/app/components/auth/welcome-email-trigger";
 import { LearningIcon } from "@/app/components/learning-icon";
 import { LearningMark } from "@/app/components/learning-mark";
 import { ThemeControl } from "@/app/components/theme-control";
@@ -80,6 +81,7 @@ export function LearningShellNavigation({ children, initialSidebarCollapsed, isI
   const togglePanel = (panel: Exclude<OpenPanel, null>) => setOpenPanel((current) => current === panel ? null : panel);
 
   return <div className={collapsed ? "app-shell is-sidebar-collapsed" : "app-shell"}>
+    <WelcomeEmailTrigger />
     <SkipLink />
     <aside className="learning-sidebar">
       <button className="sidebar-collapse-button" type="button" aria-label={collapsed ? "Expand dashboard navigation" : "Collapse dashboard navigation"} aria-expanded={!collapsed} onClick={() => setCollapsed((current) => { const next = !current; document.cookie = `${sidebarPreferenceKey}=${next}; path=/; max-age=31536000; samesite=lax`; return next; })}><LearningIcon name="collapse" /></button>

@@ -67,7 +67,7 @@ export function AuthForm({ mode, next }: { mode: AuthMode; next?: string | null 
       const supabase = createClient();
       if (isSignUp) {
         const postAuthDestination = getPostAuthDestination();
-        const { error } = await supabase.auth.signUp({ email, password, options: { data: { full_name: fullName }, emailRedirectTo: new URL(`/auth/callback?next=${encodeURIComponent(postAuthDestination)}`, window.location.origin).href } });
+        const { error } = await supabase.auth.signUp({ email, password, options: { data: { full_name: fullName, growvelt_learning_welcome_email_pending: true }, emailRedirectTo: new URL(`/auth/callback?next=${encodeURIComponent(postAuthDestination)}`, window.location.origin).href } });
         if (error) {
           setMessage(friendlyAuthError);
           setIsBusy(false);
