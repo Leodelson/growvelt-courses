@@ -1614,7 +1614,14 @@ p { color: var(--muted); line-height: 1.65; }
 .teach-page > div:first-child > * { margin: 0; }
 .teach-page > div:first-child h1 { max-width: 720px; font-size: clamp(40px, 5.2vw, 68px); }
 .teach-page > div:first-child > .button { justify-self: start; margin-top: 8px; }
+.teach-hero-image { position: relative; min-height: 100%; margin: 0; overflow: hidden; border: 1px solid color-mix(in srgb, var(--purple) 18%, var(--line)); border-radius: 26px; background: var(--surface-muted); box-shadow: var(--shadow); }
+.teach-hero-image::after { position: absolute; inset: 42% 0 0; background: linear-gradient(transparent, rgba(18, 12, 30, .78)); content: ""; pointer-events: none; }
+.teach-hero-image > img { display: block; width: 100%; height: 100%; min-height: 430px; object-fit: cover; object-position: center; }
+.teach-hero-image figcaption { position: absolute; z-index: 1; right: clamp(20px, 3vw, 32px); bottom: clamp(20px, 3vw, 30px); left: clamp(20px, 3vw, 32px); display: grid; gap: 6px; color: #fff; }
+.teach-hero-image span { color: #ffd27a; font-size: 11px; font-weight: 850; letter-spacing: .12em; text-transform: uppercase; }
+.teach-hero-image strong { max-width: 360px; font-size: clamp(21px, 2.6vw, 31px); letter-spacing: -.04em; line-height: 1.1; }
 .teach-journey { padding: clamp(10px, 2vw, 18px) clamp(24px, 4vw, 40px); border: 1px solid var(--line); border-radius: 26px; background: var(--surface); box-shadow: var(--shadow); }
+.teach-page .teach-journey { grid-column: 1 / -1; }
 .teach-journey li { padding-block: clamp(20px, 2.5vw, 29px); }
 .teach-journey p { font-size: 14px; }
 .teach-page .demo-note { grid-column: 1 / -1; margin: 0; padding: 16px 18px; border: 1px solid color-mix(in srgb, var(--purple) 16%, var(--line)); border-radius: 14px; background: var(--surface-muted); color: var(--muted); }
@@ -1633,4 +1640,6 @@ p { color: var(--muted); line-height: 1.65; }
   .teach-page { padding-block: 38px !important; }
   .teach-page > div:first-child, .teach-journey { padding: 22px; border-radius: 20px; }
   .teach-page > div:first-child > .button { width: 100%; }
+  .teach-hero-image { border-radius: 20px; }
+  .teach-hero-image > img { min-height: 300px; }
 }
