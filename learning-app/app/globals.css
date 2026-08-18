@@ -1608,6 +1608,21 @@ p { color: var(--muted); line-height: 1.65; }
 .public-page .published-course-content { border-color: color-mix(in srgb, var(--purple) 12%, var(--line)); }
 .public-page .published-course-aside { border-color: color-mix(in srgb, var(--purple) 20%, var(--line)); }
 
+/* Public Teach and its protected application steps use the same generous, full-width card language as the rest of Learning. */
+.teach-page { align-items: stretch; padding-block: clamp(58px, 9vw, 108px) !important; }
+.teach-page > div:first-child { display: grid; align-content: start; gap: 18px; padding: clamp(26px, 4vw, 44px); border: 1px solid color-mix(in srgb, var(--purple) 18%, var(--line)); border-radius: 26px; background: linear-gradient(135deg, color-mix(in srgb, var(--purple) 10%, var(--surface)), var(--surface)); box-shadow: var(--shadow); }
+.teach-page > div:first-child > * { margin: 0; }
+.teach-page > div:first-child h1 { max-width: 720px; font-size: clamp(40px, 5.2vw, 68px); }
+.teach-page > div:first-child > .button { justify-self: start; margin-top: 8px; }
+.teach-journey { padding: clamp(10px, 2vw, 18px) clamp(24px, 4vw, 40px); border: 1px solid var(--line); border-radius: 26px; background: var(--surface); box-shadow: var(--shadow); }
+.teach-journey li { padding-block: clamp(20px, 2.5vw, 29px); }
+.teach-journey p { font-size: 14px; }
+.teach-page .demo-note { grid-column: 1 / -1; margin: 0; padding: 16px 18px; border: 1px solid color-mix(in srgb, var(--purple) 16%, var(--line)); border-radius: 14px; background: var(--surface-muted); color: var(--muted); }
+.instructor-page { padding-block: clamp(48px, 8vw, 92px) !important; }
+.instructor-page-intro { padding-top: clamp(8px, 2vw, 28px); }
+.application-status { grid-column: 1 / -1; max-width: none; min-height: 250px; align-content: center; border-color: color-mix(in srgb, var(--purple) 18%, var(--line)); background: linear-gradient(135deg, color-mix(in srgb, var(--purple) 8%, var(--surface)), var(--surface)); }
+.application-status > * { max-width: 720px; }
+
 @media (max-width: 760px) {
   .admin-course-filter-skeleton { grid-template-columns: 1fr; }
 }
@@ -1615,4 +1630,7 @@ p { color: var(--muted); line-height: 1.65; }
 @media (max-width: 620px) {
   .public-catalog-loading .public-catalog-skeleton-controls { grid-template-columns: 1fr; }
   .public-page .published-course-page { padding-block: 36px !important; }
+  .teach-page { padding-block: 38px !important; }
+  .teach-page > div:first-child, .teach-journey { padding: 22px; border-radius: 20px; }
+  .teach-page > div:first-child > .button { width: 100%; }
 }
