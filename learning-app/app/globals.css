@@ -1549,25 +1549,89 @@ p { color: var(--muted); line-height: 1.65; }
 .certificate-list-hero { display: grid; gap: 12px; max-width: 780px; margin-bottom: 30px; }
 .certificate-list-hero .skeleton-copy { margin-top: 4px; }
 .dashboard-main > .settings-loading, .dashboard-main > .settings-stack { width: 100%; }
+.dashboard-main:has(.settings-hero) { display: block; }
+.settings-hero { position: relative; display: grid; gap: 14px; overflow: hidden; margin-bottom: 22px; padding: clamp(28px, 4vw, 46px); border: 1px solid color-mix(in srgb, var(--purple) 24%, var(--line)); border-radius: 24px; background: linear-gradient(128deg, color-mix(in srgb, var(--purple) 10%, var(--surface)) 0%, var(--surface) 52%, color-mix(in srgb, var(--orange) 9%, var(--surface)) 100%); box-shadow: var(--shadow-xs); }
+.settings-hero::after { position: absolute; right: clamp(-74px, -4vw, -34px); bottom: clamp(-115px, -8vw, -68px); width: clamp(180px, 24vw, 300px); aspect-ratio: 1; border: clamp(28px, 4vw, 48px) solid color-mix(in srgb, var(--purple) 11%, transparent); border-radius: 50%; content: ""; pointer-events: none; }
+.settings-hero > * { position: relative; z-index: 1; }
+.settings-hero h1 { max-width: 720px; margin: 0; font-size: clamp(38px, 5.2vw, 64px); letter-spacing: -0.065em; line-height: .98; }
+.settings-hero > p:not(.eyebrow) { max-width: 700px; margin: 0; color: var(--muted); font-size: clamp(16px, 1.7vw, 19px); line-height: 1.65; }
+.settings-hero-pills { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+.settings-hero-pills span { padding: 9px 13px; border: 1px solid var(--line); border-radius: 999px; background: color-mix(in srgb, var(--surface) 88%, transparent); color: var(--ink); font-size: 13px; font-weight: 800; }
+.settings-hero-pills span:nth-child(2) { border-color: color-mix(in srgb, var(--purple) 36%, var(--line)); color: var(--purple); }
 .dashboard-main > .settings-loading { display: grid; gap: 26px; padding-bottom: 40px; }
 .dashboard-main > .dashboard-intro { margin-bottom: 28px; }
 .settings-stack { gap: 18px; }
+.settings-summary-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.settings-feature-card { display: flex; min-width: 0; min-height: 250px; flex-direction: column; align-items: flex-start; gap: 12px; padding: clamp(24px, 3vw, 32px); border: 1px solid var(--line); border-radius: 20px; background: var(--surface); box-shadow: var(--shadow-xs); }
+.settings-feature-card h2 { margin: 0; font-size: clamp(25px, 3vw, 34px); letter-spacing: -0.045em; line-height: 1.05; overflow-wrap: anywhere; }
+.settings-feature-card > p:not(.eyebrow) { margin: 0; color: var(--muted); line-height: 1.65; overflow-wrap: anywhere; }
+.settings-feature-card .button { margin-top: auto; }
+.settings-role-card { border-color: color-mix(in srgb, var(--purple) 28%, var(--line)); background: linear-gradient(145deg, color-mix(in srgb, var(--purple) 7%, var(--surface)), var(--surface) 62%); }
 .settings-card { min-height: 132px; padding: clamp(24px, 3vw, 32px); border-radius: 20px; box-shadow: var(--shadow-xs); transition: border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease), transform var(--dur) var(--ease); }
 .settings-card:hover { border-color: color-mix(in srgb, var(--purple) 32%, var(--line)); box-shadow: var(--shadow); transform: translateY(-2px); }
 .settings-card h2 { font-size: clamp(23px, 3vw, 29px); }
+.settings-card-expanded { align-items: stretch; }
+.settings-card-expanded > div { max-width: 520px; }
+.settings-card-expanded .theme-control { display: grid; grid-template-columns: repeat(3, minmax(105px, 1fr)); width: min(100%, 430px); align-self: center; padding: 6px; border-radius: 14px; }
+.settings-card-expanded .theme-control button { min-height: 46px; font-size: 14px; }
+.settings-danger-card { border-color: color-mix(in srgb, #dc2626 32%, var(--line)); background: linear-gradient(135deg, color-mix(in srgb, #dc2626 5%, var(--surface)), var(--surface) 58%); }
+.settings-danger-card:hover { border-color: color-mix(in srgb, #dc2626 55%, var(--line)); }
+.settings-danger-card .eyebrow, .settings-danger-card h2 { color: #dc2626; }
+.settings-danger-card > .button-danger { border-color: #dc2626; background: #dc2626; color: #fff; font-weight: 850; box-shadow: 0 10px 22px color-mix(in srgb, #dc2626 28%, transparent); }
+.settings-danger-card > .button-danger:hover { border-color: #b91c1c; background: #b91c1c; color: #fff; }
+.settings-danger-card > .button-danger:focus-visible, .account-delete-form .button-danger:focus-visible { outline: 3px solid color-mix(in srgb, #dc2626 40%, transparent); outline-offset: 3px; }
+.account-delete-backdrop { position: fixed; z-index: 120; inset: 0; display: grid; place-items: center; padding: max(20px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) max(20px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left)); background: color-mix(in srgb, #0b0718 64%, transparent); }
+.account-delete-dialog { width: min(100%, 640px); max-height: min(860px, calc(100dvh - 40px)); overflow: auto; padding: clamp(24px, 4vw, 36px); border: 1px solid color-mix(in srgb, #dc2626 36%, var(--line)); border-radius: 22px; background: var(--surface); box-shadow: 0 28px 80px rgba(9, 4, 24, .35); }
+.account-delete-dialog > header { display: flex; align-items: start; justify-content: space-between; gap: 18px; margin-bottom: 18px; }
+.account-delete-dialog h2 { margin: 4px 0 0; font-size: clamp(29px, 4vw, 39px); letter-spacing: -0.055em; line-height: 1.03; }
+.account-delete-intro { margin: 10px 0 0; color: var(--muted); line-height: 1.55; }
+.account-delete-close { display: grid; width: 40px; min-width: 40px; height: 40px; place-items: center; border: 1px solid var(--line); border-radius: 50%; background: var(--surface-muted); color: var(--ink); font-size: 28px; line-height: 1; }
+.account-delete-close:hover { border-color: color-mix(in srgb, #dc2626 48%, var(--line)); color: #dc2626; }
+.account-delete-form { display: grid; gap: 18px; }
+.account-delete-form > p { margin: 0; color: var(--muted); line-height: 1.65; }
+.account-delete-form fieldset { display: grid; gap: 12px; margin: 0; padding: 0; border: 0; }
+.account-delete-form legend { padding-inline: 6px; color: var(--ink); font-weight: 800; }
+.account-delete-reason-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.account-delete-reason { display: flex; min-height: 80px; align-items: center; gap: 12px; padding: 16px; border: 1px solid var(--line); border-radius: 15px; color: var(--ink); line-height: 1.42; cursor: pointer; transition: border-color var(--dur) var(--ease), background var(--dur) var(--ease); }
+.account-delete-reason:has(input:checked) { border-color: color-mix(in srgb, #dc2626 54%, var(--line)); background: color-mix(in srgb, #dc2626 6%, var(--surface)); }
+.account-delete-reason input { width: 20px; min-width: 20px; height: 20px; accent-color: #dc2626; }
+.account-delete-form textarea, .account-delete-form .field-label > input { width: 100%; margin-top: 8px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 11px; background: var(--surface-muted); color: var(--ink); font: inherit; }
+.account-delete-form textarea { resize: vertical; }
+.account-delete-form small { color: var(--muted); font-size: 12px; font-weight: 500; }
+.account-delete-form footer { display: flex; justify-content: flex-end; gap: 12px; padding-top: 4px; }
 .profile-page { gap: 22px; }
 .profile-cover-skeleton { width: 100%; min-height: clamp(250px, 30vw, 360px); border-radius: 28px 28px 0 0; }
 .profile-identity-skeleton { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 22px; align-items: center; min-height: 180px; padding: 30px; border: 1px solid var(--line); border-radius: 0 0 24px 24px; background: var(--surface); box-shadow: var(--shadow); }
 .profile-identity-skeleton > div:last-child, .profile-setup-skeleton { display: grid; gap: 12px; }
 .profile-avatar-skeleton { width: 94px; height: 94px; border-radius: 50%; }
 .profile-setup-skeleton { min-height: 180px; padding: clamp(24px, 4vw, 34px); border: 1px solid var(--line); border-radius: 20px; background: var(--surface); box-shadow: var(--shadow-xs); }
-.settings-loading-hero { display: grid; gap: 12px; max-width: 780px; }
+.settings-loading-hero { display: grid; gap: 12px; padding: clamp(28px, 4vw, 46px); border: 1px solid color-mix(in srgb, var(--purple) 24%, var(--line)); border-radius: 24px; background: var(--surface); box-shadow: var(--shadow-xs); }
+.settings-loading-pills { display: flex; gap: 10px; margin-top: 6px; }
+.settings-loading-pills .skeleton { width: 118px; height: 34px; border-radius: 999px; }
 .settings-skeleton-card { display: flex; justify-content: space-between; gap: 24px; align-items: center; min-height: 132px; padding: clamp(24px, 3vw, 32px); border: 1px solid var(--line); border-radius: 20px; background: var(--surface); box-shadow: var(--shadow-xs); }
 .settings-skeleton-card > div { display: grid; gap: 12px; }
+.settings-summary-skeleton { min-height: 250px; align-items: stretch; flex-direction: column; }
+.settings-summary-skeleton > .skeleton-button { margin-top: auto; }
 
 @media (max-width: 620px) {
   .certificate-list, .profile-page { padding-block: 0 32px !important; }
   .settings-card, .settings-skeleton-card { min-height: 0; padding: 22px; }
+  .settings-loading-hero { padding: 28px 22px; border-radius: 20px; }
+  .settings-loading-pills { flex-wrap: wrap; }
+  .settings-hero { margin-bottom: 18px; padding: 28px 22px; border-radius: 20px; }
+  .settings-hero h1 { font-size: clamp(37px, 12vw, 50px); }
+  .settings-summary-grid { grid-template-columns: 1fr; gap: 14px; }
+  .settings-feature-card { min-height: 0; padding: 22px; }
+  .settings-feature-card .button { width: 100%; justify-content: center; }
+  .settings-card-expanded { gap: 20px; }
+  .settings-card-expanded .theme-control { width: 100%; }
+  .settings-danger-card .button-danger { width: 100%; justify-content: center; }
+  .account-delete-backdrop { align-items: end; padding: 12px; }
+  .account-delete-dialog { max-height: calc(100dvh - 24px); padding: 24px 20px; border-radius: 20px; }
+  .account-delete-reason-grid { grid-template-columns: 1fr; }
+  .account-delete-reason { min-height: 64px; }
+  .account-delete-form footer { align-items: stretch; flex-direction: column-reverse; }
+  .account-delete-form footer .button { width: 100%; justify-content: center; }
   .settings-skeleton-card { align-items: flex-start; flex-direction: column; }
   .settings-skeleton-card > .skeleton-button { width: 100%; }
   .profile-identity-skeleton { grid-template-columns: 1fr; justify-items: center; min-height: 0; padding: 64px 22px 24px; border-radius: 0 0 20px 20px; text-align: center; }
