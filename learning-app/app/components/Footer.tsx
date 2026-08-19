@@ -1,27 +1,13 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
 import { Download, Mail } from "lucide-react";
 import { NewsletterForm } from "@/app/components/newsletter-form";
 import { CookieSettingsButton } from "@/app/components/privacy/cookie-settings-button";
+import { useLanguage } from "@/app/components/language-provider";
 
 const jobsHref = "https://growvelt.com";
-
-const learningLinks = [
-  { label: "Explore courses", href: "/learn" },
-  { label: "Growvelt Blog", href: "/blog" },
-  { label: "Frequently asked questions", href: "/frequently-asked-questions" },
-  { label: "Teach on Growvelt", href: "/teach" },
-  { label: "Contact us", href: "/contact" },
-  { label: "Partner with Growvelt", href: "/partner-with-growvelt" },
-  { label: "My Learning", href: "/dashboard/my-learning" },
-  { label: "Certificates", href: "/dashboard/certificates" },
-];
-
-const supportLinks = [
-  { label: "Instagram support", href: "https://instagram.com/growvelt", iconSrc: "/images/instagram-oip.png" },
-  { label: "WhatsApp support", href: "https://wa.me/2349034876746", iconSrc: "/images/whatsapp-r3.png" },
-  { label: "Email support", href: "mailto:support@growvelt.com", Icon: Mail },
-];
 
 function SocialIcon({ name }: { name: "linkedin" | "instagram" | "facebook" | "tiktok" | "whatsapp" }) {
   if (name === "linkedin") return <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M6.5 8.5v9M6.5 5.8v.1M10.5 17.5v-5.2a3.3 3.3 0 0 1 6.5 0v5.2M10.5 12.3v-3.8" /></svg>;
@@ -32,54 +18,61 @@ function SocialIcon({ name }: { name: "linkedin" | "instagram" | "facebook" | "t
 }
 
 export default function Footer() {
+  const { t } = useLanguage();
+  const learningLinks = [
+    { label: t("footer.explore"), href: "/learn" }, { label: t("footer.blog"), href: "/blog" }, { label: t("footer.faq"), href: "/frequently-asked-questions" }, { label: t("public.teach"), href: "/teach" }, { label: t("footer.contact"), href: "/contact" }, { label: t("footer.partner"), href: "/partner-with-growvelt" }, { label: t("footer.myLearning"), href: "/dashboard/my-learning" }, { label: t("footer.certificates"), href: "/dashboard/certificates" },
+  ];
+  const supportLinks = [
+    { label: t("footer.instagramSupport"), href: "https://instagram.com/growvelt", iconSrc: "/images/instagram-oip.png" }, { label: t("footer.whatsappSupport"), href: "https://wa.me/2349034876746", iconSrc: "/images/whatsapp-r3.png" }, { label: t("footer.emailSupport"), href: "mailto:support@growvelt.com", Icon: Mail },
+  ];
   return (
     <footer className="growvelt-footer">
       <div className="growvelt-footer-main">
         <div className="section-shell">
           <div className="growvelt-footer-feature">
             <div>
-              <p className="growvelt-footer-kicker">Growvelt Careers &amp; Learning</p>
-              <h2>A home for jobs, career growth, and learning support.</h2>
-              <p>Growvelt brings practical learning, career development, employers, and opportunities together in one connected ecosystem.</p>
+              <p className="growvelt-footer-kicker">{t("footer.kicker")}</p>
+              <h2>{t("footer.title")}</h2>
+              <p>{t("footer.copy")}</p>
               <div className="growvelt-footer-actions">
-                <Link className="growvelt-footer-button is-light" href="/learn">Explore courses</Link>
-                <a className="growvelt-footer-button is-quiet" href={jobsHref} target="_blank" rel="noreferrer">Apply for jobs<span className="sr-only"> in a new tab</span></a>
+                <Link className="growvelt-footer-button is-light" href="/learn">{t("footer.explore")}</Link>
+                <a className="growvelt-footer-button is-quiet" href={jobsHref} target="_blank" rel="noreferrer">{t("footer.applyJobs")}<span className="sr-only"> in a new tab</span></a>
               </div>
             </div>
             <div className="growvelt-footer-about">
               <div className="growvelt-footer-logo-tile"><Image src="/logo/Growvelt Logo.png" alt="Growvelt" width={400} height={400} priority={false} /></div>
-              <p>Growvelt is a technology ecosystem connecting skills development, career intelligence, and employment; helping emerging-market talent move from learning → career readiness → verified skills → employment.</p>
-              <Link href="/about">Learn more about Growvelt <span aria-hidden="true">→</span></Link>
+              <p>{t("footer.about")}</p>
+              <Link href="/about">{t("footer.learnMore")} <span aria-hidden="true">→</span></Link>
             </div>
           </div>
 
           <div className="growvelt-footer-links">
-            <nav aria-label="Growvelt Learning">
-              <h3>Growvelt Learning</h3>
+            <nav aria-label={t("footer.learning")}>
+              <h3>{t("footer.learning")}</h3>
               {learningLinks.map((link) => <Link key={link.href} href={link.href}>{link.label}</Link>)}
             </nav>
-            <nav aria-label="Growvelt Careers">
-              <h3>Growvelt Careers</h3>
-              <a className="growvelt-career-assistant" href="https://www.growvelt.com/career-assistant" target="_blank" rel="noreferrer">Career Assistant <span aria-hidden="true">→</span></a>
-              <a className="growvelt-footer-install" href={jobsHref} target="_blank" rel="noreferrer"><Download aria-hidden="true" />Get the Growvelt App</a>
-              <p className="growvelt-footer-group-title">For employers</p>
-              <a href={jobsHref} target="_blank" rel="noreferrer">Post a job</a>
-              <a href={jobsHref} target="_blank" rel="noreferrer">Manage jobs</a>
-              <p className="growvelt-footer-group-title">For job seekers</p>
-              <a href={jobsHref} target="_blank" rel="noreferrer">Track applications</a>
-              <a href={jobsHref} target="_blank" rel="noreferrer">Jobs</a>
-              <a href={jobsHref} target="_blank" rel="noreferrer">Upgrade</a>
+            <nav aria-label={t("footer.careers")}>
+              <h3>{t("footer.careers")}</h3>
+              <a className="growvelt-career-assistant" href="https://www.growvelt.com/career-assistant" target="_blank" rel="noreferrer">{t("footer.careerAssistant")} <span aria-hidden="true">→</span></a>
+              <a className="growvelt-footer-install" href={jobsHref} target="_blank" rel="noreferrer"><Download aria-hidden="true" />{t("footer.getApp")}</a>
+              <p className="growvelt-footer-group-title">{t("footer.employers")}</p>
+              <a href={jobsHref} target="_blank" rel="noreferrer">{t("footer.postJob")}</a>
+              <a href={jobsHref} target="_blank" rel="noreferrer">{t("footer.manageJobs")}</a>
+              <p className="growvelt-footer-group-title">{t("footer.jobSeekers")}</p>
+              <a href={jobsHref} target="_blank" rel="noreferrer">{t("footer.trackApplications")}</a>
+              <a href={jobsHref} target="_blank" rel="noreferrer">{t("footer.jobs")}</a>
+              <a href={jobsHref} target="_blank" rel="noreferrer">{t("footer.upgrade")}</a>
             </nav>
-            <nav aria-label="Growvelt support">
-              <h3>Support</h3>
+            <nav aria-label={t("footer.support")}>
+              <h3>{t("footer.support")}</h3>
               {supportLinks.map((link) => <a key={link.href} href={link.href} target={link.href.startsWith("http") ? "_blank" : undefined} rel={link.href.startsWith("http") ? "noreferrer" : undefined}>{link.iconSrc ? <Image className="growvelt-support-image" src={link.iconSrc} alt="" width={24} height={24} /> : <Mail aria-hidden="true" />}{link.label}</a>)}
             </nav>
             <section className="growvelt-footer-newsletter" aria-labelledby="newsletter-title">
-              <h3 id="newsletter-title">Newsletter</h3>
-              <p>Get updates on jobs, courses, and career development directly in your inbox.</p>
+              <h3 id="newsletter-title">{t("footer.newsletter")}</h3>
+              <p>{t("footer.newsletterCopy")}</p>
               <NewsletterForm />
-              <small id="newsletter-note">We only use your email for Growvelt updates.</small>
-              <div className="growvelt-footer-socials" aria-label="Follow Growvelt">
+              <small id="newsletter-note">{t("footer.newsletterNote")}</small>
+              <div className="growvelt-footer-socials" aria-label={t("footer.follow")}>
                 <a href="https://www.linkedin.com/company/growvelt" target="_blank" rel="noreferrer"><SocialIcon name="linkedin" />LinkedIn</a>
                 <a href="https://instagram.com/growvelt" target="_blank" rel="noreferrer"><SocialIcon name="instagram" />Instagram</a>
                 <a href="https://web.facebook.com/growvelttechnologies09" target="_blank" rel="noreferrer"><SocialIcon name="facebook" />Facebook</a>
@@ -91,11 +84,11 @@ export default function Footer() {
       </div>
       <div className="growvelt-footer-legal">
         <div className="section-shell">
-          <p>© {new Date().getFullYear()} Growvelt Technologies Limited (RC - 8738218). All rights reserved.</p>
+          <p>© {new Date().getFullYear()} Growvelt Technologies Limited (RC - 8738218). {t("footer.rights")}</p>
           <nav aria-label="Legal links">
-            <Link href="/privacy-policy">Privacy policy</Link>
-            <Link href="/terms-of-service">Terms of service</Link>
-            <Link href="/cookie-policy">Cookie policy</Link>
+            <Link href="/privacy-policy">{t("footer.privacy")}</Link>
+            <Link href="/terms-of-service">{t("footer.terms")}</Link>
+            <Link href="/cookie-policy">{t("footer.cookies")}</Link>
             <CookieSettingsButton />
           </nav>
         </div>
