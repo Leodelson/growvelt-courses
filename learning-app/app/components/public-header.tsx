@@ -5,6 +5,7 @@ import { useEffect, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { LearningIcon } from "@/app/components/learning-icon";
 import { LearningMark } from "@/app/components/learning-mark";
+import { useLanguage } from "@/app/components/language-provider";
 
 const jobsHref = "https://www.growvelt.com";
 
@@ -17,6 +18,7 @@ function useClientReady() {
 }
 
 export function PublicHeader() {
+  const { t } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const clientReady = useClientReady();
   const closeMenu = () => setIsOpen(false);
@@ -30,19 +32,19 @@ export function PublicHeader() {
   }, []);
 
   const navigation = <>
-    <Link href="/" onClick={closeMenu}>Home</Link>
-    <Link href="/learn" onClick={closeMenu}>Explore Learning</Link>
-    <Link href="/teach" onClick={closeMenu}>Teach on Growvelt</Link>
-    <a href={jobsHref} target="_blank" rel="noreferrer" onClick={closeMenu}>Hire Talent<span className="sr-only"> in a new tab</span></a>
-    <div className="public-careers-menu"><strong>Careers</strong><a href={jobsHref} target="_blank" rel="noreferrer" onClick={closeMenu}>Apply for jobs<span className="sr-only"> in a new tab</span></a></div>
+    <Link href="/" onClick={closeMenu}>{t("public.home")}</Link>
+    <Link href="/learn" onClick={closeMenu}>{t("public.explore")}</Link>
+    <Link href="/teach" onClick={closeMenu}>{t("public.teach")}</Link>
+    <a href={jobsHref} target="_blank" rel="noreferrer" onClick={closeMenu}>{t("public.hire")}<span className="sr-only"> in a new tab</span></a>
+    <div className="public-careers-menu"><strong>{t("public.careers")}</strong><a href={jobsHref} target="_blank" rel="noreferrer" onClick={closeMenu}>{t("public.applyJobs")}<span className="sr-only"> in a new tab</span></a></div>
   </>;
 
   const mobileNavigation = <>
-    <button type="button" className={`mobile-public-nav-backdrop${isOpen ? " is-open" : ""}`} aria-label="Close navigation menu" tabIndex={isOpen ? 0 : -1} onClick={closeMenu} />
+    <button type="button" className={`mobile-public-nav-backdrop${isOpen ? " is-open" : ""}`} aria-label={t("public.closeMenu")} tabIndex={isOpen ? 0 : -1} onClick={closeMenu} />
     <aside id="mobile-public-navigation" className={`mobile-public-nav${isOpen ? " is-open" : ""}`} aria-hidden={!isOpen}>
-      <div className="mobile-public-nav-heading"><LearningMark /><button type="button" aria-label="Close navigation menu" onClick={closeMenu}><LearningIcon name="close" /></button></div>
+      <div className="mobile-public-nav-heading"><LearningMark /><button type="button" aria-label={t("public.closeMenu")} onClick={closeMenu}><LearningIcon name="close" /></button></div>
       <nav aria-label="Mobile primary navigation">{navigation}</nav>
-      <div className="mobile-public-nav-account"><Link className="button button-outline" href="/sign-up" onClick={closeMenu}>Sign Up</Link><Link className="button button-login" href="/sign-up" onClick={closeMenu}>Login <span aria-hidden="true">→</span></Link></div>
+      <div className="mobile-public-nav-account"><Link className="button button-outline" href="/sign-up" onClick={closeMenu}>{t("public.signUp")}</Link><Link className="button button-login" href="/sign-in" onClick={closeMenu}>{t("public.logIn")} <span aria-hidden="true">→</span></Link></div>
     </aside>
   </>;
 
@@ -51,10 +53,10 @@ export function PublicHeader() {
       <div className="section-shell header-inner">
         <LearningMark />
         <nav className="desktop-public-nav" aria-label="Primary navigation">{navigation}</nav>
-        <div className="desktop-auth-actions"><Link className="button button-outline" href="/sign-up">Sign Up</Link><Link className="button button-login" href="/sign-up">Log In <span aria-hidden="true"></span></Link></div>
+        <div className="desktop-auth-actions"><Link className="button button-outline" href="/sign-up">{t("public.signUp")}</Link><Link className="button button-login" href="/sign-in">{t("public.logIn")} <span aria-hidden="true"></span></Link></div>
         <div className="mobile-header-controls">
-          <button type="button" className="mobile-menu-button" aria-label={isOpen ? "Close navigation menu" : "Open navigation menu"} aria-expanded={isOpen} aria-controls="mobile-public-navigation" onClick={() => setIsOpen((open) => !open)}><LearningIcon name={isOpen ? "close" : "menu"} /></button>
-          <button type="button" className="mobile-account-button" aria-label={isOpen ? "Close navigation menu" : "Open navigation menu"} aria-expanded={isOpen} aria-controls="mobile-public-navigation" onClick={() => setIsOpen((open) => !open)}><AccountIcon /></button>
+          <button type="button" className="mobile-menu-button" aria-label={isOpen ? t("public.closeMenu") : t("public.openMenu")} aria-expanded={isOpen} aria-controls="mobile-public-navigation" onClick={() => setIsOpen((open) => !open)}><LearningIcon name={isOpen ? "close" : "menu"} /></button>
+          <button type="button" className="mobile-account-button" aria-label={isOpen ? t("public.closeMenu") : t("public.openMenu")} aria-expanded={isOpen} aria-controls="mobile-public-navigation" onClick={() => setIsOpen((open) => !open)}><AccountIcon /></button>
         </div>
       </div>
     </header>
