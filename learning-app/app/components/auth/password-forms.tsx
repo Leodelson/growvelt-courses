@@ -7,8 +7,10 @@ import { InlineFeedback } from "@/app/components/ui/inline-feedback";
 import { TurnstileWidget } from "@/app/components/auth/turnstile-widget";
 import { verifyTurnstileToken } from "@/app/lib/auth/turnstile";
 import { createClient } from "@/app/lib/supabase/browser";
+import { useLanguage } from "@/app/components/language-provider";
 
 export function ForgotPasswordForm() {
+  const { t } = useLanguage();
   const [isBusy, setIsBusy] = useState(false);
   const [sent, setSent] = useState(false);
   const [message, setMessage] = useState("");
@@ -46,13 +48,14 @@ export function ForgotPasswordForm() {
   }
 
   return <form className="auth-card" onSubmit={submit}>
-    <div className="auth-card-heading"><p className="eyebrow">Account recovery</p><h1>Reset your password.</h1><p>Enter your email and we’ll send recovery instructions if an account can use them.</p></div>
-    {sent ? <InlineFeedback variant="success"><strong>Check your email.</strong><p>If the address can receive a reset, recovery instructions are on their way. Check spam or junk folders too.</p></InlineFeedback> : <><label className="field-label">Email address<input name="email" type="email" autoComplete="email" required disabled={isBusy} /></label><TurnstileWidget action="password_recovery" onTokenChange={setTurnstileToken} resetKey={turnstileResetKey} />{message && <InlineFeedback variant="error">{message}</InlineFeedback>}<ActionButton className="button button-primary auth-submit" type="submit" isPending={isBusy} pendingLabel="Sending recovery link…">Send recovery instructions</ActionButton></>}
-    <p className="auth-switch"><Link href="/sign-in">Back to sign in</Link></p>
+    <div className="auth-card-heading"><p className="eyebrow">{t("auth.recoveryEyebrow")}</p><h1>{t("auth.forgotTitle")}</h1><p>{t("auth.forgotCopy")}</p></div>
+    {sent ? <InlineFeedback variant="success"><strong>Check your email.</strong><p>If the address can receive a reset, recovery instructions are on their way. Check spam or junk folders too.</p></InlineFeedback> : <><label className="field-label">{t("auth.email")}<input name="email" type="email" autoComplete="email" required disabled={isBusy} /></label><TurnstileWidget action="password_recovery" onTokenChange={setTurnstileToken} resetKey={turnstileResetKey} />{message && <InlineFeedback variant="error">{message}</InlineFeedback>}<ActionButton className="button button-primary auth-submit" type="submit" isPending={isBusy} pendingLabel={t("auth.sendingRecovery")}>{t("auth.sendRecovery")}</ActionButton></>}
+    <p className="auth-switch"><Link href="/sign-in">{t("auth.backSignIn")}</Link></p>
   </form>;
 }
 
 export function ResetPasswordForm() {
+  const { t } = useLanguage();
   const [isReady, setIsReady] = useState<boolean | null>(null);
   const [isBusy, setIsBusy] = useState(false);
   const [message, setMessage] = useState("");
@@ -98,10 +101,10 @@ export function ResetPasswordForm() {
   }
 
   return <form className="auth-card" onSubmit={submit}>
-    <div className="auth-card-heading"><p className="eyebrow">Account recovery</p><h1>Choose a new password.</h1><p>Use a strong password you do not reuse elsewhere.</p></div>
+    <div className="auth-card-heading"><p className="eyebrow">{t("auth.recoveryEyebrow")}</p><h1>{t("auth.resetTitle")}</h1><p>{t("auth.resetCopy")}</p></div>
     {isReady === null && <InlineFeedback variant="info">Checking your recovery link…</InlineFeedback>}
     {isReady === false && <InlineFeedback variant="error"><strong>This recovery link is unavailable.</strong><p>It may have expired or already been used.</p><Link className="auth-inline-link" href="/forgot-password">Request another reset</Link></InlineFeedback>}
-    {isReady && <><label className="field-label">New password<input name="password" type="password" autoComplete="new-password" required minLength={8} disabled={isBusy} /></label><label className="field-label">Confirm new password<input name="password_confirmation" type="password" autoComplete="new-password" required minLength={8} disabled={isBusy} /></label>{message && <InlineFeedback variant="error">{message}</InlineFeedback>}<ActionButton className="button button-primary auth-submit" type="submit" isPending={isBusy} pendingLabel="Updating password…">Update password</ActionButton></>}
-    <p className="auth-switch"><Link href="/sign-in">Back to sign in</Link></p>
+    {isReady && <><label className="field-label">{t("auth.newPassword")}<input name="password" type="password" autoComplete="new-password" required minLength={8} disabled={isBusy} /></label><label className="field-label">{t("auth.confirmNewPassword")}<input name="password_confirmation" type="password" autoComplete="new-password" required minLength={8} disabled={isBusy} /></label>{message && <InlineFeedback variant="error">{message}</InlineFeedback>}<ActionButton className="button button-primary auth-submit" type="submit" isPending={isBusy} pendingLabel={t("auth.updatingPassword")}>{t("auth.updatePassword")}</ActionButton></>}
+    <p className="auth-switch"><Link href="/sign-in">{t("auth.backSignIn")}</Link></p>
   </form>;
 }
