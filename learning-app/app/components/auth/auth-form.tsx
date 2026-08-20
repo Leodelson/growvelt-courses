@@ -20,6 +20,7 @@ function GoogleMark() { return <span aria-hidden="true" className="google-glyph"
 export function AuthForm({ mode, next }: { mode: AuthMode; next?: string | null }) {
   const { t } = useLanguage();
   const [isBusy, setIsBusy] = useState(false);
+  const [isGoogleBusy, setIsGoogleBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
@@ -105,17 +106,25 @@ export function AuthForm({ mode, next }: { mode: AuthMode; next?: string | null 
   }
 
   async function continueWithGoogle() {
+    if (pendingRef.current || isGoogleBusy) return;
+    pendingRef.current = true;
+    setMessage("");
+    setIsGoogleBusy(true);
     const postAuthDestination = getPostAuthDestination();
-    await begin(async () => {
+    try {
       const callback = new URL("/auth/callback", window.location.origin);
       callback.searchParams.set("next", postAuthDestination);
       const { error } = await createClient().auth.signInWithOAuth({ provider: "google", options: { redirectTo: callback.href } });
       if (error) {
         setMessage("Google sign-in could not be started. Please try again.");
-        setIsBusy(false);
+        setIsGoogleBusy(false);
         pendingRef.current = false;
       }
-    }, isSignUp ? "sign_up" : "sign_in");
+    } catch {
+      setMessage("Google sign-in could not be started. Please try again.");
+      setIsGoogleBusy(false);
+      pendingRef.current = false;
+    }
   }
 
   return <form className="auth-card" onSubmit={submit} noValidate>
@@ -123,7 +132,7 @@ export function AuthForm({ mode, next }: { mode: AuthMode; next?: string | null 
     <nav className="auth-mode-tabs" aria-label="Account access"><Link className={isSignUp ? "is-active" : ""} aria-current={isSignUp ? "page" : undefined} href={authModeHref("/sign-up")}>{t("auth.createAccount")}</Link><Link className={!isSignUp ? "is-active" : ""} aria-current={!isSignUp ? "page" : undefined} href={authModeHref("/sign-in")}>{t("auth.signIn")}</Link></nav>
     <div className="auth-card-heading"><p className="eyebrow">{isSignUp ? t("auth.startLearning") : t("auth.welcomeBack")}</p><h1>{isSignUp ? t("auth.signUpTitle") : t("auth.signInTitle")}</h1><p>{isSignUp ? t("auth.signUpCopy") : t("auth.signInCopy")}</p></div>
     {isSignUp && <fieldset className="intent-picker"><legend>I want to:</legend><div className="intent-options"><button className={intent === "learn" ? "intent-option intent-learn is-selected" : "intent-option intent-learn"} type="button" onClick={() => selectIntent("learn")} aria-pressed={intent === "learn"} disabled={isBusy}><strong>{t("auth.learn")}</strong><span>{t("auth.learnCopy")}</span></button><button className={intent === "teach" ? "intent-option intent-teach is-selected" : "intent-option intent-teach"} type="button" onClick={() => selectIntent("teach")} aria-pressed={intent === "teach"} disabled={isBusy}><strong>{t("auth.teach")}</strong><span>{t("auth.teachCopy")}</span></button></div><small>{t("auth.teachNote")}</small></fieldset>}
-    <ActionButton className="google-button" type="button" onClick={continueWithGoogle} isPending={isBusy} pendingLabel="Opening Google…"><GoogleMark /> {t("auth.google")}</ActionButton><div className="auth-divider" aria-hidden="true"><span>{t("auth.emailDivider")}</span></div>
+    <ActionButton className="google-button" type="button" onClick={continueWithGoogle} isPending={isGoogleBusy} disabled={isBusy} pendingLabel="Opening Google…"><GoogleMark /> {t("auth.google")}</ActionButton><div className="auth-divider" aria-hidden="true"><span>{t("auth.emailDivider")}</span></div>
     {isSignUp && <label className="field-label">{t("auth.displayName")}<input name="full_name" type="text" autoComplete="name" required maxLength={160} disabled={isBusy} /></label>}<label className="field-label">{t("auth.email")}<input name="email" type="email" autoComplete="email" required disabled={isBusy} /></label><label className="field-label">{t("auth.password")}<span className="password-field"><input name="password" type={showPassword ? "text" : "password"} autoComplete={isSignUp ? "new-password" : "current-password"} required minLength={8} disabled={isBusy} /><button type="button" onClick={() => setShowPassword((value) => !value)} aria-label={showPassword ? "Hide password" : "Show password"} disabled={isBusy}>{showPassword ? "Hide" : "Show"}</button></span></label>{isSignUp && <label className="field-label">{t("auth.confirmPassword")}<input name="password_confirmation" type={showPassword ? "text" : "password"} autoComplete="new-password" required minLength={8} disabled={isBusy} /></label>}<TurnstileWidget action={isSignUp ? "sign_up" : "sign_in"} onTokenChange={setTurnstileToken} resetKey={turnstileResetKey} />
     {!isSignUp && <Link className="auth-inline-link" href="/forgot-password">{t("auth.forgot")}</Link>}{message && <InlineFeedback variant="error">{message}</InlineFeedback>}<ActionButton className="button button-primary auth-submit" type="submit" isPending={isBusy} pendingLabel={isSignUp ? t("auth.createPending") : t("auth.signInPending")}>{isSignUp ? t("auth.create") : t("auth.signIn")}</ActionButton>
     {isSignUp ? <p className="auth-legal">By creating an account, you agree to the Growvelt <a href="/terms-of-service">Terms of Service</a> and acknowledge the Growvelt <a href="/privacy-policy">Privacy Policy</a>.</p> : <p className="auth-legal"><a href="/terms-of-service">Terms of Service</a><span aria-hidden="true"> · </span><a href="/privacy-policy">Privacy Policy</a></p>}

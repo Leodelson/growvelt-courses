@@ -1,17 +1,20 @@
 import Link from "next/link";
+import { getRequestLocale } from "@/app/lib/i18n-server";
 import { listOwnCertificates } from "@/app/lib/learning/certificates";
 import { listOwnLearningEnrollments } from "@/app/lib/learning/enrollments";
 
 export const metadata = { title: "Overview" };
 
-const dateFormatter = new Intl.DateTimeFormat("en-NG", { dateStyle: "medium" });
+const copy = {
+  en: { overview: "Learning overview", title: "Build skills. Track progress. Earn proof.", intro: "Your Growvelt Learning space brings together enrolled courses, completed activities, quiz progress, and issued certificates.", explore: "Explore courses", myLearning: "View My Learning", completed: "Completed", progress: "In progress", ready: "Ready to begin", continueFrom: "Continue where you left off", latest: "Your latest course", practical: "Continue building practical knowledge through structured lessons and assessments.", allLevels: "All levels", instructor: "Growvelt Instructor", by: "By", courseProgress: "course progress", activitiesComplete: "learning activities complete", continue: "Continue learning", start: "Start course", review: "Review course", view: "View course", journey: "Your learning journey starts here", journeyTitle: "Choose a published course and begin building practical skills.", journeyCopy: "You have not enrolled in a course yet. Explore Growvelt Learning and add your first available course to this dashboard.", browse: "Browse published courses", statistics: "Your learning statistics", enrolled: "Enrolled", course: "course", courses: "courses", activities: "Activities completed", issued: "Issued", certificate: "certificate", certificates: "certificates", glance: "Your courses at a glance", allCourses: "View all courses", active: "Active", courseSummary: "A practical Growvelt Learning course.", startLabel: "Start", continueLabel: "Continue", reviewLabel: "Review", viewLabel: "View course", activityCount: "activities", noCourses: "No enrolled courses yet.", firstCourse: "Find your first course", proof: "Verified achievement", proofTitle: "Turn completed learning into trusted proof.", proofCopy: "Complete every required text, video, and quiz activity to unlock the existing secure certificate flow for an eligible course.", latestCertificate: "Latest issued certificate", issuedOn: "Issued", viewCertificate: "View certificate", proofAction: "Your issued certificates will appear here after you complete and claim them.", completedCourses: "View completed courses", openCertificates: "Open certificates" },
+  fr: { overview: "Aperçu de l’apprentissage", title: "Développez vos compétences. Suivez vos progrès. Obtenez des preuves.", intro: "Votre espace Growvelt Learning rassemble vos cours suivis, activités terminées, progrès aux quiz et certificats délivrés.", explore: "Explorer les cours", myLearning: "Voir mon apprentissage", completed: "Terminé", progress: "En cours", ready: "Prêt à commencer", continueFrom: "Reprenez là où vous vous êtes arrêté", latest: "Votre dernier cours", practical: "Continuez à développer des connaissances pratiques grâce à des leçons et évaluations structurées.", allLevels: "Tous niveaux", instructor: "Instructeur Growvelt", by: "Par", courseProgress: "progression du cours", activitiesComplete: "activités d’apprentissage terminées", continue: "Continuer le cours", start: "Commencer le cours", review: "Revoir le cours", view: "Voir le cours", journey: "Votre parcours d’apprentissage commence ici", journeyTitle: "Choisissez un cours publié et commencez à développer des compétences pratiques.", journeyCopy: "Vous ne suivez pas encore de cours. Explorez Growvelt Learning et ajoutez votre premier cours disponible à ce tableau de bord.", browse: "Parcourir les cours publiés", statistics: "Vos statistiques d’apprentissage", enrolled: "Inscrit", course: "cours", courses: "cours", activities: "Activités terminées", issued: "Délivré", certificate: "certificat", certificates: "certificats", glance: "Vos cours en un coup d’œil", allCourses: "Voir tous les cours", active: "Actif", courseSummary: "Un cours pratique Growvelt Learning.", startLabel: "Commencer", continueLabel: "Continuer", reviewLabel: "Revoir", viewLabel: "Voir le cours", activityCount: "activités", noCourses: "Aucun cours suivi pour le moment.", firstCourse: "Trouvez votre premier cours", proof: "Réussite vérifiée", proofTitle: "Transformez votre apprentissage terminé en preuve fiable.", proofCopy: "Terminez chaque activité obligatoire de texte, vidéo et quiz pour débloquer le parcours de certificat sécurisé d’un cours éligible.", latestCertificate: "Dernier certificat délivré", issuedOn: "Délivré le", viewCertificate: "Voir le certificat", proofAction: "Vos certificats délivrés apparaîtront ici après les avoir terminés et réclamés.", completedCourses: "Voir les cours terminés", openCertificates: "Ouvrir les certificats" },
+  es: { overview: "Resumen de aprendizaje", title: "Desarrolla habilidades. Sigue tu progreso. Obtén pruebas.", intro: "Tu espacio de Growvelt Learning reúne los cursos inscritos, actividades completadas, progreso de cuestionarios y certificados emitidos.", explore: "Explorar cursos", myLearning: "Ver mi aprendizaje", completed: "Completado", progress: "En progreso", ready: "Listo para empezar", continueFrom: "Continúa donde lo dejaste", latest: "Tu curso más reciente", practical: "Sigue desarrollando conocimientos prácticos mediante lecciones y evaluaciones estructuradas.", allLevels: "Todos los niveles", instructor: "Instructor de Growvelt", by: "Por", courseProgress: "progreso del curso", activitiesComplete: "actividades de aprendizaje completadas", continue: "Continuar aprendiendo", start: "Comenzar curso", review: "Revisar curso", view: "Ver curso", journey: "Tu aprendizaje comienza aquí", journeyTitle: "Elige un curso publicado y empieza a desarrollar habilidades prácticas.", journeyCopy: "Aún no te has inscrito en un curso. Explora Growvelt Learning y añade tu primer curso disponible a este panel.", browse: "Explorar cursos publicados", statistics: "Tus estadísticas de aprendizaje", enrolled: "Inscrito", course: "curso", courses: "cursos", activities: "Actividades completadas", issued: "Emitido", certificate: "certificado", certificates: "certificados", glance: "Tus cursos de un vistazo", allCourses: "Ver todos los cursos", active: "Activo", courseSummary: "Un curso práctico de Growvelt Learning.", startLabel: "Comenzar", continueLabel: "Continuar", reviewLabel: "Revisar", viewLabel: "Ver curso", activityCount: "actividades", noCourses: "Aún no hay cursos inscritos.", firstCourse: "Encuentra tu primer curso", proof: "Logro verificado", proofTitle: "Convierte el aprendizaje completado en una prueba fiable.", proofCopy: "Completa todas las actividades obligatorias de texto, vídeo y cuestionarios para desbloquear el flujo seguro de certificados de un curso elegible.", latestCertificate: "Último certificado emitido", issuedOn: "Emitido", viewCertificate: "Ver certificado", proofAction: "Tus certificados emitidos aparecerán aquí después de completarlos y solicitarlos.", completedCourses: "Ver cursos completados", openCertificates: "Abrir certificados" },
+} as const;
 
 export default async function DashboardPage() {
-  const [courses, certificates] = await Promise.all([
-    listOwnLearningEnrollments(),
-    listOwnCertificates(),
-  ]);
-
+  const [courses, certificates, locale] = await Promise.all([listOwnLearningEnrollments(), listOwnCertificates(), getRequestLocale()]);
+  const text = copy[locale];
+  const dateFormatter = new Intl.DateTimeFormat(locale === "fr" ? "fr-FR" : locale === "es" ? "es-ES" : "en-NG", { dateStyle: "medium" });
   const resumableCourse = courses.find((course) => course.resumeLessonId !== null);
   const reviewableCourse = courses.find((course) => course.enrollmentStatus === "completed");
   const featuredCourse = resumableCourse ?? reviewableCourse ?? courses[0] ?? null;
@@ -19,110 +22,14 @@ export default async function DashboardPage() {
   const completedCourses = courses.filter((course) => course.enrollmentStatus === "completed").length;
   const completedActivities = courses.reduce((total, course) => total + course.completedLessons, 0);
   const totalActivities = courses.reduce((total, course) => total + course.totalLessons, 0);
-
-  const featuredHref = featuredCourse
-    ? featuredCourse.resumeLessonId
-      ? `/dashboard/my-learning/${encodeURIComponent(featuredCourse.slug)}/lessons/${featuredCourse.resumeLessonId}`
-      : `/dashboard/my-learning/${encodeURIComponent(featuredCourse.slug)}`
-    : "/dashboard/explore";
-  const featuredAction = featuredCourse?.resumeLessonId
-    ? featuredCourse.progressPercent > 0
-      ? "Continue learning"
-      : "Start course"
-    : featuredCourse?.enrollmentStatus === "completed"
-      ? "Review course"
-      : "View course";
+  const featuredHref = featuredCourse ? featuredCourse.resumeLessonId ? `/dashboard/my-learning/${encodeURIComponent(featuredCourse.slug)}/lessons/${featuredCourse.resumeLessonId}` : `/dashboard/my-learning/${encodeURIComponent(featuredCourse.slug)}` : "/dashboard/explore";
+  const featuredAction = featuredCourse?.resumeLessonId ? featuredCourse.progressPercent > 0 ? text.continue : text.start : featuredCourse?.enrollmentStatus === "completed" ? text.review : text.view;
 
   return <section className="learner-overview" aria-labelledby="learner-overview-title">
-    <header className="learner-overview-hero">
-      <div>
-        <p className="eyebrow">Learning overview</p>
-        <h1 id="learner-overview-title">Build skills. Track progress. Earn proof.</h1>
-        <p>Your Growvelt Learning space brings together enrolled courses, completed activities, quiz progress, and issued certificates.</p>
-      </div>
-      <div className="learner-overview-actions">
-        <Link className="button button-primary" href="/dashboard/explore">Explore courses</Link>
-        {courses.length > 0 && <Link className="button button-secondary" href="/dashboard/my-learning">View My Learning</Link>}
-      </div>
-    </header>
-
-    {featuredCourse ? <section className="learner-continue-panel" aria-labelledby="continue-title">
-      <div className="learner-continue-copy">
-        <div className="learner-status-row">
-          <span className={`learner-status-pill${featuredCourse.enrollmentStatus === "completed" ? " is-complete" : ""}`}>
-            {featuredCourse.enrollmentStatus === "completed" ? "Completed" : featuredCourse.progressPercent > 0 ? "In progress" : "Ready to begin"}
-          </span>
-          <span>{featuredCourse.category || "Growvelt Learning"}</span>
-        </div>
-        <p className="eyebrow">{featuredCourse.resumeLessonId ? "Continue where you left off" : "Your latest course"}</p>
-        <h2 id="continue-title">{featuredCourse.title}</h2>
-        <p>{featuredCourse.summary || "Continue building practical knowledge through structured lessons and assessments."}</p>
-        <div className="learner-course-meta">
-          <span>{featuredCourse.level || "All levels"}</span>
-          <span>{featuredCourse.instructorName ? `By ${featuredCourse.instructorName}` : "Growvelt Instructor"}</span>
-        </div>
-      </div>
-      <div className="learner-continue-progress">
-        <strong>{featuredCourse.progressPercent}%</strong>
-        <span>course progress</span>
-        <div className="progress-track" role="progressbar" aria-label={`${featuredCourse.title} progress`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={featuredCourse.progressPercent}>
-          <span style={{ width: `${featuredCourse.progressPercent}%` }} />
-        </div>
-        <small>{featuredCourse.completedLessons} of {featuredCourse.totalLessons} learning activities complete</small>
-        <Link className="button button-primary learner-arrow-action" href={featuredHref}>{featuredAction}<span aria-hidden="true">→</span></Link>
-      </div>
-    </section> : <section className="learner-welcome-panel" aria-labelledby="learning-start-title">
-      <div>
-        <p className="eyebrow">Your learning journey starts here</p>
-        <h2 id="learning-start-title">Choose a published course and begin building practical skills.</h2>
-        <p>You have not enrolled in a course yet. Explore Growvelt Learning and add your first available course to this dashboard.</p>
-      </div>
-      <Link className="button button-primary" href="/dashboard/explore">Browse published courses</Link>
-    </section>}
-
-    <section className="learner-stat-grid" aria-label="Your learning statistics">
-      <article><span className="learner-stat-icon" aria-hidden="true">◫</span><strong>{courses.length}</strong><p>Enrolled {courses.length === 1 ? "course" : "courses"}</p></article>
-      <article><span className="learner-stat-icon" aria-hidden="true">✓</span><strong>{completedCourses}</strong><p>Completed {completedCourses === 1 ? "course" : "courses"}</p></article>
-      <article><span className="learner-stat-icon" aria-hidden="true">↗</span><strong>{completedActivities}<small> / {totalActivities}</small></strong><p>Activities completed</p></article>
-      <article><span className="learner-stat-icon" aria-hidden="true">◇</span><strong>{issuedCertificates.length}</strong><p>Issued {issuedCertificates.length === 1 ? "certificate" : "certificates"}</p></article>
-    </section>
-
-    <section id="my-learning" className="learner-dashboard-section" aria-labelledby="current-learning-title">
-      <div className="learner-section-heading">
-        <div><p className="eyebrow">My Learning</p><h2 id="current-learning-title">Your courses at a glance</h2></div>
-        {courses.length > 0 && <Link className="text-link" href="/dashboard/my-learning">View all courses <span aria-hidden="true">→</span></Link>}
-      </div>
-      {courses.length > 0 ? <div className="learner-course-grid">{courses.slice(0, 4).map((course) => {
-        const courseHref = course.resumeLessonId
-          ? `/dashboard/my-learning/${encodeURIComponent(course.slug)}/lessons/${course.resumeLessonId}`
-          : `/dashboard/my-learning/${encodeURIComponent(course.slug)}`;
-        const action = course.resumeLessonId ? course.progressPercent > 0 ? "Continue" : "Start" : course.enrollmentStatus === "completed" ? "Review" : "View course";
-        return <article className="learner-course-card" key={course.id}>
-          <div className="learner-course-card-top">
-            <span className={`learner-status-pill${course.enrollmentStatus === "completed" ? " is-complete" : ""}`}>{course.enrollmentStatus === "completed" ? "Completed" : "Active"}</span>
-            <span>{course.progressPercent}%</span>
-          </div>
-          <div><p className="eyebrow">{course.category || "Growvelt Learning"}</p><h3>{course.title}</h3><p>{course.summary || "A practical Growvelt Learning course."}</p></div>
-          <div className="learner-card-progress">
-            <div className="progress-track" role="progressbar" aria-label={`${course.title} progress`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={course.progressPercent}><span style={{ width: `${course.progressPercent}%` }} /></div>
-            <small>{course.completedLessons} of {course.totalLessons} activities</small>
-          </div>
-          <Link className="button button-secondary learner-arrow-action" href={courseHref}>{action}<span aria-hidden="true">→</span></Link>
-        </article>;
-      })}</div> : <div className="learner-inline-empty"><p>No enrolled courses yet.</p><Link className="text-link" href="/dashboard/explore">Find your first course <span aria-hidden="true">→</span></Link></div>}
-    </section>
-
-    <section className="learner-dashboard-section learner-proof-panel" aria-labelledby="proof-title">
-      <div>
-        <p className="eyebrow">Verified achievement</p>
-        <h2 id="proof-title">Turn completed learning into trusted proof.</h2>
-        <p>Complete every required text, video, and quiz activity to unlock the existing secure certificate flow for an eligible course.</p>
-      </div>
-      {issuedCertificates[0] ? <article className="learner-latest-certificate">
-        <span className="learner-proof-mark" aria-hidden="true">◇</span>
-        <div><small>Latest issued certificate</small><h3>{issuedCertificates[0].courseTitle}</h3><p>Issued {dateFormatter.format(new Date(issuedCertificates[0].issuedAt))}</p></div>
-        <Link className="button button-secondary" href={`/dashboard/certificates/${encodeURIComponent(issuedCertificates[0].code)}`}>View certificate</Link>
-      </article> : <div className="learner-proof-action"><p>Your issued certificates will appear here after you complete and claim them.</p><Link className="button button-secondary" href={completedCourses > 0 ? "/dashboard/my-learning" : "/dashboard/certificates"}>{completedCourses > 0 ? "View completed courses" : "Open certificates"}</Link></div>}
-    </section>
+    <header className="learner-overview-hero"><div><p className="eyebrow">{text.overview}</p><h1 id="learner-overview-title">{text.title}</h1><p>{text.intro}</p></div><div className="learner-overview-actions"><Link className="button button-primary" href="/dashboard/explore">{text.explore}</Link>{courses.length > 0 && <Link className="button button-secondary" href="/dashboard/my-learning">{text.myLearning}</Link>}</div></header>
+    {featuredCourse ? <section className="learner-continue-panel" aria-labelledby="continue-title"><div className="learner-continue-copy"><div className="learner-status-row"><span className={`learner-status-pill${featuredCourse.enrollmentStatus === "completed" ? " is-complete" : ""}`}>{featuredCourse.enrollmentStatus === "completed" ? text.completed : featuredCourse.progressPercent > 0 ? text.progress : text.ready}</span><span>{featuredCourse.category || "Growvelt Learning"}</span></div><p className="eyebrow">{featuredCourse.resumeLessonId ? text.continueFrom : text.latest}</p><h2 id="continue-title">{featuredCourse.title}</h2><p>{featuredCourse.summary || text.practical}</p><div className="learner-course-meta"><span>{featuredCourse.level || text.allLevels}</span><span>{featuredCourse.instructorName ? `${text.by} ${featuredCourse.instructorName}` : text.instructor}</span></div></div><div className="learner-continue-progress"><strong>{featuredCourse.progressPercent}%</strong><span>{text.courseProgress}</span><div className="progress-track" role="progressbar" aria-label={`${featuredCourse.title} ${text.courseProgress}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={featuredCourse.progressPercent}><span style={{ width: `${featuredCourse.progressPercent}%` }} /></div><small>{featuredCourse.completedLessons} {text.activitiesComplete} {featuredCourse.totalLessons ? `(${featuredCourse.totalLessons})` : ""}</small><Link className="button button-primary learner-arrow-action" href={featuredHref}>{featuredAction}<span aria-hidden="true">→</span></Link></div></section> : <section className="learner-welcome-panel" aria-labelledby="learning-start-title"><div><p className="eyebrow">{text.journey}</p><h2 id="learning-start-title">{text.journeyTitle}</h2><p>{text.journeyCopy}</p></div><Link className="button button-primary" href="/dashboard/explore">{text.browse}</Link></section>}
+    <section className="learner-stat-grid" aria-label={text.statistics}><article><span className="learner-stat-icon" aria-hidden="true">◫</span><strong>{courses.length}</strong><p>{text.enrolled} {courses.length === 1 ? text.course : text.courses}</p></article><article><span className="learner-stat-icon" aria-hidden="true">✓</span><strong>{completedCourses}</strong><p>{text.completed} {completedCourses === 1 ? text.course : text.courses}</p></article><article><span className="learner-stat-icon" aria-hidden="true">↗</span><strong>{completedActivities}<small> / {totalActivities}</small></strong><p>{text.activities}</p></article><article><span className="learner-stat-icon" aria-hidden="true">◇</span><strong>{issuedCertificates.length}</strong><p>{text.issued} {issuedCertificates.length === 1 ? text.certificate : text.certificates}</p></article></section>
+    <section id="my-learning" className="learner-dashboard-section" aria-labelledby="current-learning-title"><div className="learner-section-heading"><div><p className="eyebrow">{text.myLearning}</p><h2 id="current-learning-title">{text.glance}</h2></div>{courses.length > 0 && <Link className="text-link" href="/dashboard/my-learning">{text.allCourses} <span aria-hidden="true">→</span></Link>}</div>{courses.length > 0 ? <div className="learner-course-grid">{courses.slice(0, 4).map((course) => { const courseHref = course.resumeLessonId ? `/dashboard/my-learning/${encodeURIComponent(course.slug)}/lessons/${course.resumeLessonId}` : `/dashboard/my-learning/${encodeURIComponent(course.slug)}`; const action = course.resumeLessonId ? course.progressPercent > 0 ? text.continueLabel : text.startLabel : course.enrollmentStatus === "completed" ? text.reviewLabel : text.viewLabel; return <article className="learner-course-card" key={course.id}><div className="learner-course-card-top"><span className={`learner-status-pill${course.enrollmentStatus === "completed" ? " is-complete" : ""}`}>{course.enrollmentStatus === "completed" ? text.completed : text.active}</span><span>{course.progressPercent}%</span></div><div><p className="eyebrow">{course.category || "Growvelt Learning"}</p><h3>{course.title}</h3><p>{course.summary || text.courseSummary}</p></div><div className="learner-card-progress"><div className="progress-track" role="progressbar" aria-label={`${course.title} ${text.courseProgress}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={course.progressPercent}><span style={{ width: `${course.progressPercent}%` }} /></div><small>{course.completedLessons} / {course.totalLessons} {text.activityCount}</small></div><Link className="button button-secondary learner-arrow-action" href={courseHref}>{action}<span aria-hidden="true">→</span></Link></article>; })}</div> : <div className="learner-inline-empty"><p>{text.noCourses}</p><Link className="text-link" href="/dashboard/explore">{text.firstCourse} <span aria-hidden="true">→</span></Link></div>}</section>
+    <section className="learner-dashboard-section learner-proof-panel" aria-labelledby="proof-title"><div><p className="eyebrow">{text.proof}</p><h2 id="proof-title">{text.proofTitle}</h2><p>{text.proofCopy}</p></div>{issuedCertificates[0] ? <article className="learner-latest-certificate"><span className="learner-proof-mark" aria-hidden="true">◇</span><div><small>{text.latestCertificate}</small><h3>{issuedCertificates[0].courseTitle}</h3><p>{text.issuedOn} {dateFormatter.format(new Date(issuedCertificates[0].issuedAt))}</p></div><Link className="button button-secondary" href={`/dashboard/certificates/${encodeURIComponent(issuedCertificates[0].code)}`}>{text.viewCertificate}</Link></article> : <div className="learner-proof-action"><p>{text.proofAction}</p><Link className="button button-secondary" href={completedCourses > 0 ? "/dashboard/my-learning" : "/dashboard/certificates"}>{completedCourses > 0 ? text.completedCourses : text.openCertificates}</Link></div>}</section>
   </section>;
 }

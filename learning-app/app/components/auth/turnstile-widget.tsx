@@ -43,9 +43,10 @@ export function TurnstileWidget({ action, onTokenChange, resetKey }: TurnstileWi
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<string | null>(null);
   const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+  const isLocalDevelopment = process.env.NODE_ENV !== "production";
 
   useEffect(() => {
-    if (!siteKey || !containerRef.current) return;
+    if (!siteKey || isLocalDevelopment || !containerRef.current) return;
     let cancelled = false;
     onTokenChange(null);
 
@@ -67,8 +68,8 @@ export function TurnstileWidget({ action, onTokenChange, resetKey }: TurnstileWi
       if (widgetIdRef.current && window.turnstile) window.turnstile.remove(widgetIdRef.current);
       widgetIdRef.current = null;
     };
-  }, [action, onTokenChange, resetKey, siteKey]);
+  }, [action, isLocalDevelopment, onTokenChange, resetKey, siteKey]);
 
-  if (!siteKey) return null;
+  if (!siteKey || isLocalDevelopment) return null;
   return <div className="turnstile-field"><span>Security check</span><div className="turnstile-widget" ref={containerRef} /></div>;
 }
