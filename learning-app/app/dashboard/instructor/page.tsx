@@ -47,20 +47,20 @@ export default async function DashboardInstructorPage() {
             <InstructorCourseActions courseId={course.courseId} status={course.status} title={course.title} />
           </div>
           <dl>
-            <div><dt>Enrolled</dt><dd>{course.enrolledLearnerCount}</dd></div>
-            <div><dt>Active</dt><dd>{course.activeLearnerCount}</dd></div>
-            <div><dt>Completed</dt><dd>{course.completedLearnerCount}</dd></div>
-            <div><dt>Completion</dt><dd>{course.completionRate}%</dd></div>
+            <div><dt>{text.enrolled}</dt><dd>{course.enrolledLearnerCount}</dd></div>
+            <div><dt>{text.active}</dt><dd>{course.activeLearnerCount}</dd></div>
+            <div><dt>{text.completed}</dt><dd>{course.completedLearnerCount}</dd></div>
+            <div><dt>{text.completion}</dt><dd>{course.completionRate}%</dd></div>
           </dl>
           <div className="instructor-analytics-progress" aria-label={`${course.completionRate}% course completion`}><span style={{ width: `${course.completionRate}%` }} /></div>
-          {course.quizCount > 0 ? <div className="instructor-quiz-insight"><span>{course.quizCount} {course.quizCount === 1 ? "quiz" : "quizzes"}</span><span>{course.quizAttemptCount} attempts</span><span>{course.quizAttemptPassRate}% attempt pass rate</span><span>{course.averageQuizScore}% average score</span></div> : <p className="instructor-analytics-empty-note">No quiz lessons in this course yet.</p>}
+          {course.quizCount > 0 ? <div className="instructor-quiz-insight"><span>{course.quizCount} {course.quizCount === 1 ? text.quiz : text.quizzes}</span><span>{course.quizAttemptCount} {text.attempt}</span><span>{course.quizAttemptPassRate}% {text.passRate}</span><span>{course.averageQuizScore}% {text.average}</span></div> : <p className="instructor-analytics-empty-note">{text.noQuiz}</p>}
         </article>)}
       </div>
     </section> : <section className="instructor-analytics-empty">
-      <p className="eyebrow">No course analytics yet</p>
-      <h2>Create your first course to begin.</h2>
-      <p>Once a course is published and learners enroll, this workspace will show its enrollment, completion, and quiz engagement metrics.</p>
-      <Link className="button button-primary" href="/dashboard/instructor/courses/new">Create Course</Link>
+      <p className="eyebrow">{text.empty}</p>
+      <h2>{text.emptyTitle}</h2>
+      <p>{text.emptyCopy}</p>
+      <Link className="button button-primary" href="/dashboard/instructor/courses/new">{text.create}</Link>
     </section>}
   </section>;
 }

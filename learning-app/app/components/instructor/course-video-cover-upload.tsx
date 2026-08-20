@@ -4,6 +4,7 @@ import { useRef, useState, type ChangeEvent } from "react";
 import { useRouter } from "next/navigation";
 import { LearningIcon } from "@/app/components/learning-icon";
 import { createClient } from "@/app/lib/supabase/browser";
+import { useLanguage } from "@/app/components/language-provider";
 
 const maximumUploadBytes = 1024 * 1024;
 const maximumSourceBytes = 10 * 1024 * 1024;
@@ -89,10 +90,12 @@ async function prepareCover(file: File) {
 }
 
 export function CourseVideoCoverUpload({ courseId, userId }: { courseId: number; userId: string }) {
+  const { locale } = useLanguage();
+  const text = locale === "fr" ? { uploading: "Téléversement…", optimizing: "Optimisation de l’image…", invalid: "Choisissez une image de couverture valide.", uploadError: "Nous n’avons pas pu téléverser cette couverture. Réessayez.", attachError: "L’image a été téléversée, mais n’a pas pu être associée à ce brouillon.", saved: "Couverture du cours enregistrée.", eyebrow: "Couverture vidéo du cours", title: "Donnez au cours une identité visuelle claire.", copy: "Téléversez une image paysage JPG ou WebP au format 16:9, d’au moins 960 × 540 pixels. Les fichiers jusqu’à 10 Mo sont optimisés automatiquement.", action: "Téléverser la couverture du cours" } : locale === "es" ? { uploading: "Subiendo…", optimizing: "Optimizando imagen…", invalid: "Elige una portada válida.", uploadError: "No pudimos subir esta portada. Inténtalo de nuevo.", attachError: "La imagen se subió, pero no se pudo asociar al borrador.", saved: "Portada del curso guardada.", eyebrow: "Portada de vídeo del curso", title: "Da al curso una identidad visual clara.", copy: "Sube una imagen horizontal JPG o WebP en formato 16:9 y de al menos 960 × 540 píxeles. Los archivos de hasta 10 MB se optimizan automáticamente.", action: "Subir portada del curso" } : { uploading: "Uploading…", optimizing: "Optimising image…", invalid: "Choose a valid course video cover.", uploadError: "We couldn’t upload this course video cover. Please try again.", attachError: "The image uploaded, but could not be attached to this draft. Please try again.", saved: "Course video cover saved.", eyebrow: "Course video cover", title: "Give the course a clear visual identity.", copy: "Upload one landscape JPG or WebP in 16:9 at least 960 × 540 pixels. Files up to 10 MB are automatically optimised before upload.", action: "Upload course video cover" };
   const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
   const [busy, setBusy] = useState(false);
-  const [busyLabel, setBusyLabel] = useState("Uploading…");
+  const [busyLabel, setBusyLabel] = useState(text.uploading);
   const [message, setMessage] = useState("");
 
   async function upload(event: ChangeEvent<HTMLInputElement>) {
@@ -101,7 +104,7 @@ export function CourseVideoCoverUpload({ courseId, userId }: { courseId: number;
     if (!file || busy) return;
 
     setBusy(true);
-    setBusyLabel("Optimising image…");
+    setBusyLabel(text.optimizing);
     setMessage("");
 
     let optimizedCover: File;
@@ -109,11 +112,11 @@ export function CourseVideoCoverUpload({ courseId, userId }: { courseId: number;
       optimizedCover = await prepareCover(file);
     } catch (error) {
       setBusy(false);
-      setMessage(error instanceof Error ? error.message : "Choose a valid course video cover.");
+      setMessage(error instanceof Error ? error.message : text.invalid);
       return;
     }
 
-    setBusyLabel("Uploading…");
+    setBusyLabel(text.uploading);
     const path = `${userId}/${courseId}/course-video-cover`;
     const supabase = createClient();
     const { error: uploadError } = await supabase.storage
@@ -132,8 +135,8 @@ export function CourseVideoCoverUpload({ courseId, userId }: { courseId: number;
         console.error("raw course video cover upload error:", uploadError);
       }
       setBusy(false);
-      setBusyLabel("Uploading…");
-      setMessage("We couldn’t upload this course video cover. Please try again.");
+      setBusyLabel(text.uploading);
+      setMessage(text.uploadError);
       return;
     }
 
@@ -144,23 +147,23 @@ export function CourseVideoCoverUpload({ courseId, userId }: { courseId: number;
 
     if (saveError || !data?.[0]) {
       setBusy(false);
-      setBusyLabel("Uploading…");
-      setMessage("The image uploaded, but could not be attached to this draft. Please try again.");
+      setBusyLabel(text.uploading);
+      setMessage(text.attachError);
       return;
     }
 
     setBusy(false);
-    setBusyLabel("Uploading…");
-    setMessage("Course video cover saved.");
+    setBusyLabel(text.uploading);
+    setMessage(text.saved);
     router.refresh();
   }
 
   return (
     <section className="course-video-cover-upload" aria-labelledby="course-video-cover-heading">
       <div>
-        <p className="eyebrow">Course video cover</p>
-        <h2 id="course-video-cover-heading">Give the course a clear visual identity.</h2>
-        <p>Upload one landscape JPG or WebP for course cards and the course page. Use 16:9 at least 960 × 540 pixels; files up to 10 MB are automatically reduced before upload, with a strict 1 MB final limit.</p>
+        <p className="eyebrow">{text.eyebrow}</p>
+        <h2 id="course-video-cover-heading">{text.title}</h2>
+        <p>{text.copy}</p>
       </div>
       <input
         ref={inputRef}
@@ -172,9 +175,9 @@ export function CourseVideoCoverUpload({ courseId, userId }: { courseId: number;
       />
       <button className="button button-secondary" type="button" onClick={() => inputRef.current?.click()} disabled={busy} aria-busy={busy}>
         {busy ? <span className="profile-upload-spinner" aria-hidden="true" /> : <LearningIcon name="image" size={16} />}
-        {busy ? busyLabel : "Upload course video cover"}
+        {busy ? busyLabel : text.action}
       </button>
-      {message && <p className={message === "Course video cover saved." ? "course-cover-upload-success" : "course-cover-upload-error"} role="status">{message}</p>}
+      {message && <p className={message === text.saved ? "course-cover-upload-success" : "course-cover-upload-error"} role="status">{message}</p>}
     </section>
   );
 }
