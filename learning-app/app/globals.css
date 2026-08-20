@@ -1052,8 +1052,13 @@ p { color: var(--muted); line-height: 1.65; }
 .learning-mark-label { font-size: 11px; }
 .learning-mark.is-compact img { width: 100px; height: 38px; }
 .desktop-auth-actions { display: flex; align-items: center; gap: 14px; }
-.public-language-control { display: inline-flex; align-items: center; gap: 9px; color: var(--purple); }
-.public-language-control select { width: 202px; min-height: 44px; padding: 0 34px 0 15px; border: 1px solid var(--line); border-radius: 999px; background-color: var(--surface); color: var(--ink); font-size: 14px; font-weight: 720; box-shadow: 0 4px 12px color-mix(in srgb, var(--ink) 7%, transparent); }
+.public-language-control { position: relative; display: inline-flex; align-items: center; gap: 9px; color: var(--purple); }
+.public-language-trigger { display: inline-flex; width: 202px; min-height: 44px; align-items: center; justify-content: space-between; gap: 12px; padding: 0 14px 0 15px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--ink); font-size: 14px; font-weight: 720; box-shadow: 0 4px 12px color-mix(in srgb, var(--ink) 7%, transparent); }
+.public-language-trigger svg { flex: 0 0 auto; transition: transform .18s ease; }
+.public-language-trigger[aria-expanded="true"] svg { transform: rotate(180deg); }
+.public-language-options { position: absolute; z-index: 35; top: calc(100% + 8px); right: 0; display: grid; width: 202px; overflow: hidden; padding: 5px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); box-shadow: 0 16px 36px color-mix(in srgb, var(--ink) 18%, transparent); }
+.public-language-options button { min-height: 38px; padding: 0 10px; border: 0; border-radius: 9px; background: transparent; color: var(--ink); text-align: left; font-size: 13px; font-weight: 700; }
+.public-language-options button:hover, .public-language-options button:focus-visible, .public-language-options button.is-selected { background: color-mix(in srgb, var(--purple) 10%, var(--surface)); color: var(--purple); }
 .button-outline { border-color: var(--purple); background: var(--surface); color: var(--purple); }
 .button-login { border-color: #10172a; background: #10172a; color: #fff; box-shadow: 0 8px 18px rgba(16, 23, 42, .18); }
 .button-login:hover { background: #202a40; }
@@ -1090,10 +1095,12 @@ p { color: var(--muted); line-height: 1.65; }
   .mobile-public-nav.is-open { display: grid; align-content: start; gap: 28px; transform: translateX(0); visibility: visible; }
   .mobile-public-nav-heading { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
   .mobile-public-nav-heading button { display: grid; width: 38px; height: 38px; place-items: center; padding: 0; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--ink); }
-  .mobile-public-language { display: grid; gap: 9px; padding: 13px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface-muted); }
-  .mobile-public-language > div { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
-  .mobile-public-language > div svg { color: var(--purple); }
-  .mobile-public-language select { width: 100%; min-height: 40px; padding: 0 34px 0 12px; border: 1px solid var(--line); border-radius: 10px; background-color: var(--surface); color: var(--ink); font-size: 13px; font-weight: 700; }
+  .mobile-public-language { padding: 13px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface-muted); }
+  .public-language-control.is-mobile { display: grid; width: 100%; gap: 9px; }
+  .public-language-label { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+  .public-language-label svg { color: var(--purple); }
+  .public-language-control.is-mobile .public-language-trigger { width: 100%; min-height: 40px; border-radius: 10px; font-size: 13px; box-shadow: none; }
+  .public-language-control.is-mobile .public-language-options { top: calc(100% + 6px); left: 0; width: 100%; }
   .mobile-public-nav nav { display: grid; gap: 3px; }
   .mobile-public-nav nav > a { padding: 14px 7px; border-bottom: 1px solid var(--line); color: var(--ink); font-size: 15px; font-weight: 760; }
   .mobile-public-nav .public-careers-menu { width: max-content; margin-top: 14px; padding: 10px 12px; }
