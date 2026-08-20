@@ -38,7 +38,6 @@ export function HomeHeroCarousel() {
     <div className="growvelt-hero-visual" aria-hidden="true">
       {slides.map((item, index) => <Image className={index === active ? "is-active" : ""} key={item.key} src={item.image} alt="" fill priority={index === 0} sizes="(max-width: 900px) 100vw, 48vw" />)}
       <div className="growvelt-hero-orbit orbit-one" /><div className="growvelt-hero-orbit orbit-two" />
-      <div className="growvelt-hero-status"><span>{String(active + 1).padStart(2, "0")}</span><p>{copy.eyebrow}</p></div>
     </div>
   </section>;
 }
