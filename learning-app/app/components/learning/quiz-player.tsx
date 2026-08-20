@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ActionButton } from "@/app/components/ui/action-button";
 import { InlineFeedback } from "@/app/components/ui/inline-feedback";
+import { useLanguage } from "@/app/components/language-provider";
 import { createClient } from "@/app/lib/supabase/browser";
 
 type QuizAttemptResult = {
@@ -34,6 +35,8 @@ export function QuizPlayer({ quiz, slug, lessonId, nextHref, courseHref }: {
   courseHref: string;
 }) {
   const router = useRouter();
+  const { locale } = useLanguage();
+  const text = locale === "fr" ? { unanswered: "Répondez à toutes les {count} question{plural} restantes avant d’envoyer.", noAccess: "Vous n’avez plus accès à ce quiz. Retournez à votre cours et réessayez.", invalid: "Ce quiz ne peut pas être envoyé dans son état actuel. Actualisez la page et réessayez.", failed: "Nous n’avons pas pu envoyer ce quiz. Réessayez.", passMark: "Note de passage", attempts: "Tentatives", passed: "Réussi", notPassed: "Non réussi", correct: "bonnes réponses", submitting: "Envoi du quiz…", retry: "Réessayer", submit: "Envoyer le quiz", next: "Continuer vers la leçon suivante", completed: "Voir le cours terminé" } : locale === "es" ? { unanswered: "Responde las {count} pregunta{plural} restantes antes de enviar.", noAccess: "Ya no tienes acceso para enviar este cuestionario. Vuelve al curso e inténtalo de nuevo.", invalid: "Este cuestionario no se puede enviar en su estado actual. Actualiza la página e inténtalo de nuevo.", failed: "No pudimos enviar este cuestionario. Inténtalo de nuevo.", passMark: "Puntuación mínima", attempts: "Intentos", passed: "Aprobado", notPassed: "No aprobado", correct: "correctas", submitting: "Enviando cuestionario…", retry: "Intentar de nuevo", submit: "Enviar cuestionario", next: "Continuar a la siguiente lección", completed: "Ver curso completado" } : { unanswered: "Answer all {count} remaining question{plural} before submitting.", noAccess: "You no longer have access to submit this quiz. Return to your course and try again.", invalid: "This quiz cannot be submitted in its current state. Refresh the page and try again.", failed: "We couldn’t submit this quiz. Please try again.", passMark: "Pass mark", attempts: "Attempts", passed: "Passed", notPassed: "Not passed", correct: "correct", submitting: "Submitting quiz…", retry: "Try again", submit: "Submit quiz", next: "Continue to next lesson", completed: "View completed course" };
   const [answers, setAnswers] = useState<Record<number, number>>({});
   const [result, setResult] = useState<QuizAttemptResult | null>(quiz.quiz.latestAttempt
     ? {
@@ -52,7 +55,7 @@ export function QuizPlayer({ quiz, slug, lessonId, nextHref, courseHref }: {
   async function submit() {
     if (pending) return;
     if (unanswered) {
-      setError(`Answer all ${unanswered} remaining question${unanswered === 1 ? "" : "s"} before submitting.`);
+      setError(text.unanswered.replace("{count}", String(unanswered)).replace("{plural}", unanswered === 1 ? "" : "s"));
       return;
     }
 
@@ -75,10 +78,10 @@ export function QuizPlayer({ quiz, slug, lessonId, nextHref, courseHref }: {
         );
       }
       setError(rpcError?.code === "42501"
-        ? "You no longer have access to submit this quiz. Return to your course and try again."
+        ? text.noAccess
         : rpcError?.code === "22023"
-          ? "This quiz cannot be submitted in its current state. Refresh the page and try again."
-          : "We couldn’t submit this quiz. Please try again.");
+          ? text.invalid
+          : text.failed);
       return;
     }
 
@@ -97,11 +100,11 @@ export function QuizPlayer({ quiz, slug, lessonId, nextHref, courseHref }: {
     <section className="quiz-player" aria-labelledby="quiz-title">
       <h2 id="quiz-title">{quiz.lesson.title}</h2>
       {quiz.quiz.instructions && <p className="quiz-instructions">{quiz.quiz.instructions}</p>}
-      <p className="quiz-threshold">Pass mark: <strong>{quiz.quiz.passingPercentage}%</strong> · Attempts: {quiz.quiz.attemptCount}</p>
-      {result && <div className={`quiz-result${result.passed ? " is-passed" : " is-failed"}`} role="status"><strong>{result.passed ? "Passed" : "Not passed"}</strong><span>{result.scorePercentage}% · {result.correctAnswerCount} of {result.totalQuestionCount} correct</span></div>}
+      <p className="quiz-threshold">{text.passMark}: <strong>{quiz.quiz.passingPercentage}%</strong> · {text.attempts}: {quiz.quiz.attemptCount}</p>
+      {result && <div className={`quiz-result${result.passed ? " is-passed" : " is-failed"}`} role="status"><strong>{result.passed ? text.passed : text.notPassed}</strong><span>{result.scorePercentage}% · {result.correctAnswerCount} / {result.totalQuestionCount} {text.correct}</span></div>}
       <ol className="quiz-questions">{quiz.quiz.questions.map((question, index) => <li key={question.id}><fieldset disabled={pending || Boolean(result?.passed)}><legend>{index + 1}. {question.text}</legend>{question.options.map((option) => <label key={option.id} className={`quiz-option${answers[question.id] === option.id ? " is-selected" : ""}`}><input type="radio" name={`question-${question.id}`} checked={answers[question.id] === option.id} onChange={() => setAnswers((current) => ({ ...current, [question.id]: option.id }))} />{option.text}</label>)}</fieldset></li>)}</ol>
       {error && <InlineFeedback variant="error">{error}</InlineFeedback>}
-      <div className="quiz-actions">{!result?.passed && <ActionButton className="button button-primary" type="button" isPending={pending} pendingLabel="Submitting quiz…" onClick={submit}>{result ? "Try again" : "Submit quiz"}</ActionButton>}{result?.passed && <a className="button button-primary" href={nextHref ?? courseHref}>{nextHref ? "Continue to next lesson" : "View completed course"}</a>}</div>
+      <div className="quiz-actions">{!result?.passed && <ActionButton className="button button-primary" type="button" isPending={pending} pendingLabel={text.submitting} onClick={submit}>{result ? text.retry : text.submit}</ActionButton>}{result?.passed && <a className="button button-primary" href={nextHref ?? courseHref}>{nextHref ? text.next : text.completed}</a>}</div>
     </section>
   );
 }

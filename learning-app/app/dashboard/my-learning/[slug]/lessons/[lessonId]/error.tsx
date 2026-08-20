@@ -1,3 +1,4 @@
 "use client";
 import { RouteError } from "@/app/components/ui/route-error";
-export default function LessonError({ reset }: { reset: () => void }) { return <RouteError title="Unable to load this lesson" description="Try again, or return to your enrolled course." reset={reset} recoveryHref="/dashboard/my-learning" recoveryLabel="My Learning" />; }
+import { useLanguage } from "@/app/components/language-provider";
+export default function LessonError({ reset }: { reset: () => void }) { const { locale } = useLanguage(); const text = locale === "fr" ? { title: "Impossible de charger cette leçon", copy: "Réessayez ou retournez à votre cours suivi.", action: "Mon apprentissage" } : locale === "es" ? { title: "No se pudo cargar esta lección", copy: "Inténtalo de nuevo o vuelve a tu curso inscrito.", action: "Mi aprendizaje" } : { title: "Unable to load this lesson", copy: "Try again, or return to your enrolled course.", action: "My Learning" }; return <RouteError title={text.title} description={text.copy} reset={reset} recoveryHref="/dashboard/my-learning" recoveryLabel={text.action} />; }
