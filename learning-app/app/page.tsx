@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { LearningMark } from "@/app/components/learning-mark";
+import { HomeHeroCarousel } from "@/app/components/home-hero-carousel";
 import { PublicHeader } from "@/app/components/public-header";
 import FooterWrapper from "@/app/components/FooterWrapper";
 import { growveltOrganizationJsonLd } from "@/app/lib/seo";
@@ -39,26 +40,7 @@ export default function HomePage() {
   return <div className="public-page">
     <PublicHeader />
     <main>
-      <section className="hero section-shell" aria-labelledby="hero-title">
-        <div className="hero-copy">
-          <p className="eyebrow">Growvelt Learning</p>
-          <h1 id="hero-title">{t("home.hero")}</h1>
-          <p className="hero-lede">{t("home.heroCopy")}</p>
-          <div className="hero-actions">
-            <Link className="button button-primary" href="/learn">{t("public.explore")}</Link>
-            <a className="button button-secondary" href="#how-it-works">{t("home.how")}</a>
-          </div>
-        </div>
-        <div className="learning-map" aria-label="Growvelt Learning journey">
-          <p className="map-label">{t("home.journey")}</p>
-          <ol>
-            <li><span>01</span><strong>{t("home.discover")}</strong><small>{t("home.discoverCopy")}</small></li>
-            <li><span>02</span><strong>{t("home.learnStep")}</strong><small>{t("home.learnStepCopy")}</small></li>
-            <li><span>03</span><strong>{t("home.complete")}</strong><small>{t("home.completeCopy")}</small></li>
-            <li><span>04</span><strong>{t("home.prove")}</strong><small>{t("home.proveCopy")}</small></li>
-          </ol>
-        </div>
-      </section>
+      <HomeHeroCarousel />
 
       <section id="how-it-works" className="proof-band section-shell" aria-labelledby="how-title">
         <div><p className="eyebrow">{t("home.howEyebrow")}</p><h2 id="how-title">{t("home.howTitle")}</h2></div>

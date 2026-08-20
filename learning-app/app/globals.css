@@ -132,6 +132,18 @@ h3 { margin-bottom: 10px; font-size: 20px; }
 p { color: var(--muted); line-height: 1.65; }
 .hero-lede { max-width: 590px; font-size: 18px; }
 .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px; }
+.growvelt-hero { position: relative; display: grid; min-height: clamp(360px, 31vw, 450px); align-items: stretch; overflow: hidden; margin: 0; background: var(--surface-muted); }
+.growvelt-hero-copy { position: relative; z-index: 5; display: grid; align-content: center; justify-items: start; width: min(100%, 710px); padding: clamp(32px, 5vw, 62px) max(24px, calc((100vw - 1180px) / 2)); animation: growvelt-hero-copy-in .75s cubic-bezier(.22, 1, .36, 1) both; }
+.growvelt-hero-copy h1 { max-width: 640px; margin-bottom: 16px; color: var(--ink); font-size: clamp(40px, 4.8vw, 66px); }.growvelt-hero-copy .eyebrow { color: var(--purple); }.growvelt-hero-copy .hero-lede { color: var(--muted); }
+.growvelt-hero-copy .button { margin-top: 10px; }
+.growvelt-hero-pagination { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 42px; }
+.growvelt-hero-pagination button { display: inline-flex; align-items: center; gap: 7px; padding: 8px 10px; border: 1px solid transparent; border-radius: 999px; background: transparent; color: var(--muted); font-size: 11px; font-weight: 800; text-transform: capitalize; }
+.growvelt-hero-pagination button[aria-selected="true"] { border-color: color-mix(in srgb, var(--purple) 35%, var(--line)); background: color-mix(in srgb, var(--surface) 88%, transparent); color: var(--purple); }.growvelt-hero-pagination span { font-size: 10px; }
+.growvelt-hero-visual { position: absolute; inset: 0; min-height: 0; overflow: hidden; isolation: isolate; background: var(--surface-muted); }.growvelt-hero-visual > img { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; object-fit: cover; opacity: 0; transform: scale(1.035); transition: opacity 2.2s cubic-bezier(.4, 0, .2, 1), transform 8.8s cubic-bezier(.22, 1, .36, 1); }.growvelt-hero-visual > img.is-active { opacity: 1; transform: scale(1); }
+.growvelt-hero-visual::after { position: absolute; inset: 0; z-index: 2; background: linear-gradient(90deg, color-mix(in srgb, var(--surface) 98%, transparent) 0%, color-mix(in srgb, var(--surface) 92%, transparent) 38%, color-mix(in srgb, var(--surface) 12%, transparent) 73%), linear-gradient(0deg, color-mix(in srgb, var(--ink) 16%, transparent), transparent 50%); content: ""; }.growvelt-hero-orbit { position: absolute; z-index: 3; border: 1px solid rgba(255,255,255,.54); border-radius: 50%; pointer-events: none; }.orbit-one { top: 10%; right: -15%; width: 330px; height: 330px; }.orbit-two { bottom: -18%; left: 8%; width: 220px; height: 220px; }
+.growvelt-hero-status { position: absolute; z-index: 4; right: 26px; bottom: 26px; display: grid; gap: 5px; min-width: 126px; padding: 15px; border: 1px solid rgba(255,255,255,.46); border-radius: 16px; background: rgba(20, 11, 42, .58); color: #fff; backdrop-filter: blur(12px); }.growvelt-hero-status span { color: #ffc667; font-size: 11px; font-weight: 850; letter-spacing: .12em; }.growvelt-hero-status p { margin: 0; color: #fff; font-size: 13px; font-weight: 800; }
+@keyframes growvelt-hero-copy-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@media (max-width: 620px) { .growvelt-hero { min-height: 410px; }.growvelt-hero-copy { align-content: end; padding: 28px 24px; }.growvelt-hero-copy h1 { font-size: clamp(36px, 10vw, 48px); }.growvelt-hero-pagination { margin-top: 24px; }.growvelt-hero-status { right: 16px; bottom: auto; top: 16px; }.orbit-one { width: 210px; height: 210px; }.orbit-two { width: 150px; height: 150px; }.growvelt-hero-visual::after { background: linear-gradient(0deg, color-mix(in srgb, var(--surface) 97%, transparent) 0%, color-mix(in srgb, var(--surface) 68%, transparent) 55%, color-mix(in srgb, var(--surface) 8%, transparent) 100%); } }
 .learning-map { padding: clamp(25px, 4vw, 44px); border: 1px solid var(--line); border-radius: 24px; background: var(--surface); box-shadow: var(--shadow); }
 .map-label { margin-bottom: 25px; color: var(--muted); font-size: 13px; }
 .learning-map ol { display: grid; gap: 17px; margin: 0; padding: 0; list-style: none; }
@@ -1126,9 +1138,9 @@ p { color: var(--muted); line-height: 1.65; }
 /* Phase 2D-B follow-up: clearer brand hierarchy, shared mobile navigation, and the Growvelt footer. */
 .learning-mark { align-items: center; gap: 0; line-height: 1; }
 .learning-mark-label { display: none; }
-.public-careers-menu { color: #fff; }
+.public-careers-menu { background: #3d0a70; color: #fff; }
 .public-careers-menu strong { color: #fff; }
-.public-careers-menu a, .public-header .public-careers-menu a { color: #fff; font-weight: 800; text-decoration: underline; text-decoration-color: rgba(255, 210, 122, .92); text-underline-offset: 3px; }
+.public-careers-menu a, .public-header .public-careers-menu a { color: #fff !important; font-weight: 800; text-decoration: underline; text-decoration-color: #ffd27a; text-underline-offset: 3px; text-shadow: 0 1px 1px rgba(0,0,0,.32); }
 .public-header .public-careers-menu a:hover, .public-header .public-careers-menu a:focus-visible { color: #ffd27a; }
 .button-login { display: inline-flex; align-items: center; gap: 9px; border-color: rgba(255,255,255,.3); background: #080d1b; color: #fff; box-shadow: 0 8px 18px rgba(8, 13, 27, .28); }
 .button-login:hover { background: #202a40; color: #fff; }
