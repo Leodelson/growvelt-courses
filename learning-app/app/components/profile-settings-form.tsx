@@ -4,6 +4,7 @@ import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/app/lib/supabase/browser";
 import { InlineFeedback } from "@/app/components/ui/inline-feedback";
+import { useLanguage } from "@/app/components/language-provider";
 
 export function ProfileSettingsForm({
   userId,
@@ -14,6 +15,7 @@ export function ProfileSettingsForm({
   email: string;
   fullName: string;
 }) {
+  const { t } = useLanguage();
   const router = useRouter();
   const [editing, setEditing] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -24,7 +26,7 @@ export function ProfileSettingsForm({
     if (busy) return;
     const nextName = String(new FormData(event.currentTarget).get("full_name") ?? "").trim();
     if (!nextName) {
-      setErrorMessage("Enter the name you want shown in Growvelt Learning.");
+      setErrorMessage(t("profile.nameHint"));
       return;
     }
 
@@ -36,7 +38,7 @@ export function ProfileSettingsForm({
       .eq("id", userId);
 
     if (error) {
-      setErrorMessage("We couldn’t save your profile. Please try again.");
+      setErrorMessage(t("profile.saveFailed"));
       setBusy(false);
       return;
     }
@@ -51,7 +53,7 @@ export function ProfileSettingsForm({
       <>
         <h2 id="profile-name">{fullName}</h2>
         <button className="button button-secondary profile-edit-link" type="button" onClick={() => setEditing(true)}>
-          Edit profile
+          {t("profile.edit")}
         </button>
       </>
     );
@@ -59,13 +61,13 @@ export function ProfileSettingsForm({
 
   return (
     <form className="profile-inline-editor" onSubmit={save}>
-      <label htmlFor="profile-display-name">Display name</label>
+      <label htmlFor="profile-display-name">{t("profile.displayName")}</label>
       <input id="profile-display-name" name="full_name" defaultValue={fullName} maxLength={160} autoFocus disabled={busy} />
       <small>{email}</small>
       {errorMessage && <InlineFeedback variant="error">{errorMessage}</InlineFeedback>}
       <div>
-        <button className="button button-secondary" type="button" onClick={() => { setEditing(false); setErrorMessage(""); }} disabled={busy}>Cancel</button>
-        <button className="button button-primary" type="submit" disabled={busy}>{busy ? "Saving…" : "Save name"}</button>
+        <button className="button button-secondary" type="button" onClick={() => { setEditing(false); setErrorMessage(""); }} disabled={busy}>{t("profile.cancel")}</button>
+        <button className="button button-primary" type="submit" disabled={busy}>{busy ? t("profile.saving") : t("profile.saveName")}</button>
       </div>
     </form>
   );

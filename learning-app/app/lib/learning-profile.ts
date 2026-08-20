@@ -9,6 +9,11 @@ export type OwnLearningProfile = {
   coverUrl: string | null;
   coverStoragePath: string | null;
   accountType: string;
+  linkedinUrl: string | null;
+  websiteUrl: string | null;
+  instagramUrl: string | null;
+  facebookUrl: string | null;
+  xUrl: string | null;
 };
 
 export async function getOwnLearningProfile(): Promise<OwnLearningProfile | null> {
@@ -45,5 +50,10 @@ export async function getOwnLearningProfile(): Promise<OwnLearningProfile | null
     coverUrl: coverMedia.data?.signedUrl || null,
     coverStoragePath,
     accountType: data?.account_type || "learner",
+    linkedinUrl: data?.linkedin_url?.trim() || null,
+    websiteUrl: data?.website_url?.trim() || null,
+    instagramUrl: data?.instagram_url?.trim() || null,
+    facebookUrl: data?.facebook_url?.trim() || null,
+    xUrl: data?.x_url?.trim() || null,
   };
 }

@@ -15,7 +15,7 @@ import { SkipLink } from "@/app/components/ui/skip-link";
 const navigation = [
   { href: "/dashboard", labelKey: "nav.home" as const, icon: "home" as const },
   { href: "/dashboard/my-learning", labelKey: "nav.learning" as const, icon: "learning" as const },
-  { href: "/dashboard/explore", labelKey: "nav.explore" as const, mobileLabelKey: "nav.explore" as const, icon: "explore" as const },
+  { href: "/dashboard/explore", labelKey: "nav.explore" as const, mobileLabelKey: "nav.exploreMobile" as const, icon: "explore" as const },
   { href: "https://www.growvelt.com", labelKey: "nav.jobs" as const, icon: "jobs" as const, external: true },
   { href: "/dashboard/saved-courses", labelKey: "nav.saved" as const, icon: "heart" as const },
   { href: "/dashboard/certificates", labelKey: "nav.certificates" as const, icon: "certificate" as const },

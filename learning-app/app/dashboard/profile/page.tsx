@@ -1,31 +1,36 @@
 import { redirect } from "next/navigation";
 import { ProfileSettingsForm } from "@/app/components/profile-settings-form";
 import { ProfileMediaUploadButton } from "@/app/components/profile-media-upload-button";
+import { ProfileSocialLinksForm } from "@/app/components/profile-social-links-form";
 import { isLearningAdmin } from "@/app/lib/admin/authorization";
 import { isApprovedInstructor } from "@/app/lib/instructor/authorization";
 import { getOwnLearningProfile } from "@/app/lib/learning-profile";
+import { getRequestLocale } from "@/app/lib/i18n-server";
+import { translate } from "@/app/lib/i18n";
 
 export const metadata = { title: "Your profile" };
 
 export default async function DashboardProfilePage() {
-  const [profile, isInstructor, isAdmin] = await Promise.all([
+  const [profile, isInstructor, isAdmin, locale] = await Promise.all([
     getOwnLearningProfile(),
     isApprovedInstructor(),
     isLearningAdmin(),
+    getRequestLocale(),
   ]);
 
   if (!profile) redirect("/sign-in");
+  const t = (key: Parameters<typeof translate>[1]) => translate(locale, key);
 
   const initial = profile.fullName.charAt(0).toUpperCase() || "G";
   const role = isAdmin
-    ? "Growvelt Learning Admin"
+    ? t("profile.admin")
     : isInstructor
-      ? "Approved Instructor"
-      : "Learner";
+      ? t("profile.instructor")
+      : t("profile.learner");
   const setupSteps = [
-    { label: "Display name", complete: profile.fullName !== "Growvelt learner" },
-    { label: "Verified email", complete: true },
-    { label: "Profile image", complete: Boolean(profile.avatarUrl) },
+    { label: t("profile.displayName"), complete: profile.fullName !== "Growvelt learner" },
+    { label: t("profile.verifiedEmail"), complete: true },
+    { label: t("profile.image"), complete: Boolean(profile.avatarUrl) },
   ];
   const completedSteps = setupSteps.filter((step) => step.complete).length;
   const setupPercent = Math.round((completedSteps / setupSteps.length) * 100);
@@ -64,7 +69,7 @@ export default async function DashboardProfilePage() {
           />
         </div>
         <div className="profile-identity-copy">
-          <p className="eyebrow">Growvelt Learning member</p>
+          <p className="eyebrow">{t("profile.member")}</p>
           <ProfileSettingsForm
             userId={profile.id}
             email={profile.email}
@@ -73,7 +78,7 @@ export default async function DashboardProfilePage() {
           <p className="profile-role">{role}</p>
           <div className="profile-identity-meta">
             <span>{profile.email}</span>
-            <span>Private account</span>
+            <span>{t("profile.private")}</span>
           </div>
         </div>
       </section>
@@ -81,15 +86,15 @@ export default async function DashboardProfilePage() {
       <section className="profile-setup-card" aria-labelledby="profile-setup-title">
         <div className="profile-setup-heading">
           <div>
-            <p className="eyebrow">Profile set-up</p>
-            <h2 id="profile-setup-title">Keep your account ready for Learning</h2>
+            <p className="eyebrow">{t("profile.setup")}</p>
+            <h2 id="profile-setup-title">{t("profile.setupTitle")}</h2>
           </div>
           <strong>{setupPercent}%</strong>
         </div>
         <div
           className="profile-setup-progress"
           role="progressbar"
-          aria-label="Profile set-up"
+          aria-label={t("profile.setupProgress")}
           aria-valuemin={0}
           aria-valuemax={100}
           aria-valuenow={setupPercent}
@@ -107,22 +112,18 @@ export default async function DashboardProfilePage() {
 
       <section className="profile-details-grid" aria-label="Learning profile details">
         <article>
-          <p className="eyebrow">Learning identity</p>
-          <h2>Recognisable and personal</h2>
-          <p>
-            Your display name is used in your signed-in Learning experience and
-            on certificates issued to you.
-          </p>
+          <p className="eyebrow">{t("profile.identity")}</p>
+          <h2>{t("profile.identityTitle")}</h2>
+          <p>{t("profile.identityCopy")}</p>
         </article>
         <article>
-          <p className="eyebrow">Account privacy</p>
-          <h2>Built for your account only</h2>
-          <p>
-            Your email remains private. It is not shown on public certificate
-            verification pages or course pages.
-          </p>
+          <p className="eyebrow">{t("profile.privacy")}</p>
+          <h2>{t("profile.privacyTitle")}</h2>
+          <p>{t("profile.privacyCopy")}</p>
         </article>
       </section>
+
+      <ProfileSocialLinksForm userId={profile.id} links={{ linkedinUrl: profile.linkedinUrl, websiteUrl: profile.websiteUrl, instagramUrl: profile.instagramUrl, facebookUrl: profile.facebookUrl, xUrl: profile.xUrl }} />
 
     </section>
   );
