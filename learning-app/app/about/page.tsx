@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
-import Image from "next/image";
-import Link from "next/link";
 import FooterWrapper from "@/app/components/FooterWrapper";
-import { LearningMark } from "@/app/components/learning-mark";
 import { PublicHeader } from "@/app/components/public-header";
+import { AboutPageContent } from "@/app/components/about-page-content";
 
 export const metadata: Metadata = {
   title: "About Growvelt",
@@ -12,7 +10,7 @@ export const metadata: Metadata = {
   openGraph: { url: "/about", title: "About Growvelt | Practical learning and opportunity" },
 };
 
-const offerings = [
+/* const offerings = [
   "Real-world projects and mentorship",
   "Career consultation and job support",
   "Supportive, beginner-friendly teaching",
@@ -25,13 +23,13 @@ const team = [
   { name: "Ndu Queeneth Ezinne", role: "Head of Admin & Support Team", image: "/images/about/ndu-queeneth.jpg", skills: "Office management · Coordination · Reporting", imagePosition: "50% 42%" },
   { name: "Joy Ezedo", role: "Data Analytics Instructor & Support Team", image: "/images/about/joy-ezedo.jpg", skills: "Data Analysis · Excel · SQL · Power BI", imagePosition: "50% 35%" },
   { name: "Godswill Ukoha", role: "Graphics Design Instructor", image: "/images/about/godswill-ukoha.jpg", skills: "Adobe Photoshop · Illustrator · Brand Design", imagePosition: "50% 36%" },
-];
+]; */
 
 export default function AboutPage() {
   return (
     <div className="public-page about-page">
       <PublicHeader />
-      <main>
+      {/* <main>
         <section className="about-hero section-shell" aria-labelledby="about-title">
           <div>
             <p className="eyebrow">About Growvelt</p>
@@ -90,7 +88,8 @@ export default function AboutPage() {
         </section>
 
         <section className="about-final section-shell" aria-labelledby="about-cta-title"><p className="eyebrow">Build what comes next</p><h2 id="about-cta-title">Learn practical skills. Apply them with confidence.</h2><Link href="/learn" className="button button-primary">Explore Growvelt Learning</Link></section>
-      </main>
+      </main> */}
+      <AboutPageContent />
       <FooterWrapper />
     </div>
   );
