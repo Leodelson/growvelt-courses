@@ -41,8 +41,8 @@ function PublicLanguageControl({ mobile = false }: { mobile?: boolean }) {
   }, []);
 
   return <div className={`public-language-control${mobile ? " is-mobile" : ""}`} ref={controlRef}>
-    {mobile ? <div className="public-language-label"><Globe aria-hidden="true" size={16} /><span>{t("language.label")}</span></div> : <Globe aria-hidden="true" size={19} />}
-    <button type="button" className="public-language-trigger" aria-expanded={open} aria-haspopup="listbox" aria-label={t("language.label")} onClick={() => setOpen((current) => !current)}>{selected.label}<ChevronDown aria-hidden="true" size={17} /></button>
+    {mobile ? <div className="public-language-label"><Globe aria-hidden="true" size={16} /><span>{t("language.label")}</span></div> : null}
+    <button type="button" className="public-language-trigger" aria-expanded={open} aria-haspopup="listbox" aria-label={t("language.label")} onClick={() => setOpen((current) => !current)}>{mobile ? null : <Globe aria-hidden="true" size={18} />}<span>{selected.label}</span><ChevronDown aria-hidden="true" size={17} /></button>
     {open ? <div className="public-language-options" role="listbox" aria-label={t("language.label")}>{languageOptions.map((option) => <button className={locale === option.code ? "is-selected" : ""} type="button" role="option" aria-selected={locale === option.code} onClick={() => { setLocale(option.code); setOpen(false); }} key={option.code}>{option.label}</button>)}</div> : null}
   </div>;
 }

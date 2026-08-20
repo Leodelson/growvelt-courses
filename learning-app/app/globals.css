@@ -1052,8 +1052,10 @@ p { color: var(--muted); line-height: 1.65; }
 .learning-mark-label { font-size: 11px; }
 .learning-mark.is-compact img { width: 100px; height: 38px; }
 .desktop-auth-actions { display: flex; align-items: center; gap: 14px; }
-.public-language-control { position: relative; display: inline-flex; align-items: center; gap: 9px; color: var(--purple); }
-.public-language-trigger { display: inline-flex; width: 202px; min-height: 44px; align-items: center; justify-content: space-between; gap: 12px; padding: 0 14px 0 15px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--ink); font-size: 14px; font-weight: 720; box-shadow: 0 4px 12px color-mix(in srgb, var(--ink) 7%, transparent); }
+.public-language-control { position: relative; display: inline-flex; color: var(--purple); }
+.public-language-trigger { display: inline-flex; width: 202px; min-height: 44px; align-items: center; gap: 10px; padding: 0 14px 0 15px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--ink); font-size: 14px; font-weight: 720; box-shadow: 0 4px 12px color-mix(in srgb, var(--ink) 7%, transparent); }
+.public-language-trigger > span { min-width: 0; flex: 1; text-align: left; }
+.public-language-trigger > svg:first-child { color: var(--purple); }
 .public-language-trigger svg { flex: 0 0 auto; transition: transform .18s ease; }
 .public-language-trigger[aria-expanded="true"] svg { transform: rotate(180deg); }
 .public-language-options { position: absolute; z-index: 35; top: calc(100% + 8px); right: 0; display: grid; width: 202px; overflow: hidden; padding: 5px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); box-shadow: 0 16px 36px color-mix(in srgb, var(--ink) 18%, transparent); }
