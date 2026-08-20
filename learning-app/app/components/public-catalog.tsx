@@ -7,6 +7,7 @@ import { PublishedCourseCard } from "@/app/components/published-course-card";
 import { createClient } from "@/app/lib/supabase/browser";
 import type { PublicCatalogResult, PublishedCourse } from "@/app/lib/catalog/published-courses";
 import { PublicCatalogQuery, publicCatalogHref } from "@/app/lib/catalog/public-catalog-query";
+import { useLanguage } from "@/app/components/language-provider";
 
 const categories = ["Business", "Business Intelligence", "Creative Skills", "Cybersecurity", "Data Analytics", "Data Science", "Digital Marketing", "Digital Skills", "Productivity", "Programming", "Web Development"];
 const levels = ["Beginner", "Intermediate", "Beginner to intermediate", "Beginner to job-ready"];
@@ -30,6 +31,7 @@ function toCourse(row: PublicCatalogCourseRow): PublishedCourse {
 }
 
 export function PublicCatalog({ catalog, query, authenticated, savedCourseIds = [], basePath = "/learn", dashboard = false }: { catalog: PublicCatalogResult; query: PublicCatalogQuery; authenticated: boolean; savedCourseIds?: number[]; basePath?: string; dashboard?: boolean }) {
+  const { t } = useLanguage();
   const router = useRouter();
   const sentinelRef = useRef<HTMLDivElement>(null);
   const [typedQuery, setTypedQuery] = useState(query.query);
@@ -81,21 +83,21 @@ export function PublicCatalog({ catalog, query, authenticated, savedCourseIds = 
   const hasActiveFilters = Boolean(query.query || query.category || query.level || query.access !== "all");
 
   return <section className="catalog-page section-shell">
-    <header className={dashboard ? "catalog-hero dashboard-catalog-hero" : "catalog-hero"}><p className="eyebrow">Explore Growvelt Learning</p><h1>Find a practical course to begin.</h1><p>{dashboard ? "Search the live published catalog, compare practical courses, and add available free learning directly to your account." : "Browse live published courses from Growvelt Instructors. Free courses can be enrolled in after you sign in; paid-course checkout is not available yet."}</p></header>
+    <header className={dashboard ? "catalog-hero dashboard-catalog-hero" : "catalog-hero"}><p className="eyebrow">{t("catalog.eyebrow")}</p><h1>{t("catalog.title")}</h1><p>{dashboard ? t("catalog.dashboardCopy") : t("catalog.publicCopy")}</p></header>
 
-    <div className="public-catalog-controls" aria-label="Course catalog filters">
-      <label className="public-catalog-search">Search courses<input name="q" type="search" value={typedQuery} placeholder="Search title, topic, or category" maxLength={120} onChange={(event) => setTypedQuery(event.target.value)} /></label>
-      <label>Category<select value={query.category} onChange={(event) => updateQuery({ category: event.target.value })}><option value="">All categories</option>{categories.map((category) => <option value={category} key={category}>{category}</option>)}</select></label>
-      <label>Level<select value={query.level} onChange={(event) => updateQuery({ level: event.target.value })}><option value="">All levels</option>{levels.map((level) => <option value={level} key={level}>{level}</option>)}</select></label>
-      <label>Access<select value={query.access} onChange={(event) => updateQuery({ access: event.target.value as PublicCatalogQuery["access"] })}><option value="all">All access</option><option value="free">Free</option><option value="paid">Paid</option></select></label>
-      <label>Sort<select value={query.sort} onChange={(event) => updateQuery({ sort: event.target.value as PublicCatalogQuery["sort"] })}><option value="newest">Newest</option><option value="title_asc">Title: A-Z</option><option value="title_desc">Title: Z-A</option></select></label>
-      <div className="public-catalog-actions"><Link className="button button-secondary" href={basePath}>Reset</Link></div>
+    <div className="public-catalog-controls" aria-label={t("catalog.filters")}>
+      <label className="public-catalog-search">{t("catalog.search")}<input name="q" type="search" value={typedQuery} placeholder={t("catalog.searchPlaceholder")} maxLength={120} onChange={(event) => setTypedQuery(event.target.value)} /></label>
+      <label>{t("catalog.category")}<select value={query.category} onChange={(event) => updateQuery({ category: event.target.value })}><option value="">{t("catalog.allCategories")}</option>{categories.map((category) => <option value={category} key={category}>{category}</option>)}</select></label>
+      <label>{t("catalog.level")}<select value={query.level} onChange={(event) => updateQuery({ level: event.target.value })}><option value="">{t("catalog.allLevels")}</option>{levels.map((level) => <option value={level} key={level}>{level}</option>)}</select></label>
+      <label>{t("catalog.access")}<select value={query.access} onChange={(event) => updateQuery({ access: event.target.value as PublicCatalogQuery["access"] })}><option value="all">{t("catalog.allAccess")}</option><option value="free">{t("catalog.free")}</option><option value="paid">{t("catalog.paid")}</option></select></label>
+      <label>{t("catalog.sort")}<select value={query.sort} onChange={(event) => updateQuery({ sort: event.target.value as PublicCatalogQuery["sort"] })}><option value="newest">{t("catalog.newest")}</option><option value="title_asc">{t("catalog.titleAsc")}</option><option value="title_desc">{t("catalog.titleDesc")}</option></select></label>
+      <div className="public-catalog-actions"><Link className="button button-secondary" href={basePath}>{t("catalog.reset")}</Link></div>
     </div>
 
-    {catalog.total === 0 ? <section className="course-empty-state catalog-empty-state"><p className="eyebrow">No matching courses</p><h2>{hasActiveFilters ? "Try a different search or filter." : "Published courses will appear here as they become available."}</h2><p>{hasActiveFilters ? "Clear one or more filters to see the current published catalog." : "Growvelt is preparing practical learning experiences for this catalog."}</p>{hasActiveFilters ? <Link className="button button-secondary" href={basePath}>Clear filters</Link> : null}</section> : <section aria-labelledby="public-catalog-title">
-      <div className="section-heading"><div><p className="eyebrow">Published courses</p><h2 id="public-catalog-title">{catalog.total} {catalog.total === 1 ? "course" : "courses"} available</h2></div><p className="live-catalog-chip"><span aria-hidden="true" />Live catalog</p></div>
+    {catalog.total === 0 ? <section className="course-empty-state catalog-empty-state"><p className="eyebrow">{t("catalog.noMatches")}</p><h2>{hasActiveFilters ? t("catalog.tryDifferent") : t("catalog.noCourses")}</h2><p>{hasActiveFilters ? t("catalog.clearFiltersCopy") : t("catalog.emptyCopy")}</p>{hasActiveFilters ? <Link className="button button-secondary" href={basePath}>{t("catalog.clearFilters")}</Link> : null}</section> : <section aria-labelledby="public-catalog-title">
+      <div className="section-heading"><div><p className="eyebrow">{t("catalog.published")}</p><h2 id="public-catalog-title">{catalog.total} {catalog.total === 1 ? t("catalog.course") : t("catalog.courses")} {t("catalog.available")}</h2></div><p className="live-catalog-chip"><span aria-hidden="true" />{t("catalog.live")}</p></div>
       <div className="course-grid published-course-grid public-published-course-grid">{courses.map((course, index) => <PublishedCourseCard course={course} highlightQuery={query.query} href={courseHref(course.slug)} index={index} key={course.id} authenticated={authenticated} isSaved={savedCourseIds.includes(course.id)} />)}</div>
-      <div className="public-catalog-load-more" ref={sentinelRef} aria-live="polite">{isLoadingMore ? <p><span className="catalog-loader" aria-hidden="true" />Loading more courses</p> : null}{loadMoreError ? <button className="button button-secondary" type="button" onClick={() => void loadMore()}>Try loading more</button> : null}{!hasMore && !isLoadingMore && !loadMoreError ? <p className="results-end-marker">End of course catalog</p> : null}</div>
+      <div className="public-catalog-load-more" ref={sentinelRef} aria-live="polite">{isLoadingMore ? <p><span className="catalog-loader" aria-hidden="true" />{t("catalog.loadingMore")}</p> : null}{loadMoreError ? <button className="button button-secondary" type="button" onClick={() => void loadMore()}>{t("catalog.tryLoading")}</button> : null}{!hasMore && !isLoadingMore && !loadMoreError ? <p className="results-end-marker">{t("catalog.end")}</p> : null}</div>
     </section>}
   </section>;
 }

@@ -4,15 +4,17 @@ import Link from "next/link";
 import { Heart } from "lucide-react";
 import { useState } from "react";
 import { createClient } from "@/app/lib/supabase/browser";
+import { useLanguage } from "@/app/components/language-provider";
 
 export function SaveCourseButton({ courseId, isSaved, authenticated, signInHref = "/sign-up", onSavedChange }: { courseId: number; isSaved: boolean; authenticated: boolean; signInHref?: string; onSavedChange?: (isSaved: boolean) => void }) {
+  const { t } = useLanguage();
   const [saved, setSaved] = useState(isSaved);
   const [pending, setPending] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-  const label = saved ? "Remove from saved courses" : "Save course";
+  const label = saved ? t("catalog.removeSaved") : t("catalog.save");
 
   if (!authenticated) {
-    return <Link className="save-course-button" href={signInHref} aria-label="Sign in to save this course" title="Sign in to save this course"><Heart size={19} strokeWidth={2} /></Link>;
+    return <Link className="save-course-button" href={signInHref} aria-label={t("catalog.signInToSave")} title={t("catalog.signInToSave")}><Heart size={19} strokeWidth={2} /></Link>;
   }
 
   async function toggleSave() {
@@ -25,7 +27,7 @@ export function SaveCourseButton({ courseId, isSaved, authenticated, signInHref 
       setSaved(next.is_saved);
       onSavedChange?.(next.is_saved);
     }
-    else setErrorMessage("Could not update saved courses. Please try again.");
+    else setErrorMessage(t("catalog.saveFailed"));
     setPending(false);
   }
 
