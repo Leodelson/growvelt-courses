@@ -19,9 +19,15 @@ export function OperationsSearchControls({ basePath, query, fields }: { basePath
   const { locale } = useLanguage();
   const text = locale === "fr" ? { search: "Rechercher", reset: "Réinitialiser" } : locale === "es" ? { search: "Buscar", reset: "Restablecer" } : { search: "Search", reset: "Reset" };
   const initialValues = useMemo(() => ({ query: query.query, status: query.status, category: query.category, level: query.level }), [query.category, query.level, query.query, query.status]);
-  const [values, setValues] = useState(initialValues);
-
-  useEffect(() => setValues(initialValues), [initialValues]);
+  const initialKey = `${initialValues.query}\u0000${initialValues.status}\u0000${initialValues.category}\u0000${initialValues.level}`;
+  const [draft, setDraft] = useState({ key: initialKey, values: initialValues });
+  const values = draft.key === initialKey ? draft.values : initialValues;
+  const setValues = useCallback((update: typeof values | ((current: typeof values) => typeof values)) => {
+    setDraft((current) => {
+      const currentValues = current.key === initialKey ? current.values : initialValues;
+      return { key: initialKey, values: typeof update === "function" ? update(currentValues) : update };
+    });
+  }, [initialKey, initialValues]);
 
   const commit = useCallback((nextValues: typeof values) => {
     router.replace(operationsHref(basePath, { ...query, ...nextValues, page: 1 }), { scroll: false });

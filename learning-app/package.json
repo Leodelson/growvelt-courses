@@ -10,7 +10,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prepare:security:local": "node scripts/prepare-phase0c-local.mjs",
+    "test:security:local": "node scripts/run-phase0c-local-security-tests.mjs",
+    "test:security:staging": "node scripts/run-phase0c-security-tests.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.8.0",

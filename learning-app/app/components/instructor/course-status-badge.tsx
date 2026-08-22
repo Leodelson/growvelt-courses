@@ -1,3 +1,5 @@
+"use client";
+
 import type { CourseStatus } from "@/app/lib/instructor/course-options";
 import { useLanguage } from "@/app/components/language-provider";
 

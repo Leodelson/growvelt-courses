@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useMemo, useState, useSyncExternalStore, type ReactNode } from "react";
 import { COOKIE_CONSENT_MAX_AGE, COOKIE_CONSENT_NAME, type CookieConsent, readCookieConsent, serializeCookieConsent } from "@/app/lib/cookie-consent";
 import { CookieConsentBanner } from "@/app/components/privacy/cookie-consent-banner";
 import { CookiePreferencesDialog } from "@/app/components/privacy/cookie-preferences-dialog";
@@ -13,20 +13,16 @@ function cookieValue(name: string) {
 }
 
 export function CookieConsentProvider({ children }: { children: ReactNode }) {
-  const [consent, setConsent] = useState<CookieConsent | null>(null);
-  const [ready, setReady] = useState(false);
+  const ready = useSyncExternalStore(() => () => undefined, () => true, () => false);
+  const [savedConsent, setSavedConsent] = useState<CookieConsent | null | undefined>(undefined);
+  const consent = savedConsent === undefined && ready ? readCookieConsent(cookieValue(COOKIE_CONSENT_NAME)) : savedConsent ?? null;
   const [settingsOpen, setSettingsOpen] = useState(false);
-
-  useEffect(() => {
-    setConsent(readCookieConsent(cookieValue(COOKIE_CONSENT_NAME)));
-    setReady(true);
-  }, []);
 
   const save = useCallback((choices: Pick<CookieConsent, "analytics" | "advertising">) => {
     const next = serializeCookieConsent(choices);
     const secure = window.location.protocol === "https:" ? "; Secure" : "";
     document.cookie = `${COOKIE_CONSENT_NAME}=${encodeURIComponent(JSON.stringify(next))}; Path=/; Max-Age=${COOKIE_CONSENT_MAX_AGE}; SameSite=Lax${secure}`;
-    setConsent(next);
+    setSavedConsent(next);
     setSettingsOpen(false);
   }, []);
 

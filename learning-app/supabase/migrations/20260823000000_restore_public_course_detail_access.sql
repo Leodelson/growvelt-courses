@@ -1,3 +1,7 @@
+-- Restore intended signed-out access to published course details.
+-- The function exposes only published courses and masks non-preview lesson content.
+-- This migration changes no application data.
+
 create or replace function public.get_published_learning_course_by_slug (
   p_slug text
 )
@@ -76,6 +80,6 @@ begin
 end;
 $function$;
 
-grant execute on function "public"."get_published_learning_course_by_slug"(text) to "anon", "authenticated", "postgres", "service_role";
-
-revoke all on function "public"."get_published_learning_course_by_slug"(text) from public;
+revoke all on function public.get_published_learning_course_by_slug(text) from public;
+grant execute on function public.get_published_learning_course_by_slug(text)
+  to anon, authenticated, postgres, service_role;
