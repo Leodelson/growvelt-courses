@@ -46,8 +46,8 @@ begin
     and relation.relkind in ('r', 'p')
     and relation.relrowsecurity;
 
-  if rls_table_count <> 26 then
-    raise exception 'Phase 0D: expected 26 RLS-enabled public tables including audit and deletion-request tables, found %', rls_table_count;
+  if rls_table_count <> 33 then
+    raise exception 'Phase 0E: expected 33 RLS-enabled public tables including financial-foundation tables, found %', rls_table_count;
   end if;
 
   if has_table_privilege('anon', 'public.course_contacts', 'UPDATE,DELETE,TRUNCATE') then

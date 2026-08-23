@@ -36,9 +36,6 @@ create policy "Admins can read course registrations" on "public"."course_registr
   to "authenticated"
   using (public.is_growvelt_learning_admin());
 
-create policy "Allow public course registrations" on "public"."course_registrations"
-  for insert
-  to "anon"
-  with check (true);
+revoke all on table "public"."course_registrations" from "anon", "authenticated";
 
-grant delete, insert, maintain, references, select, trigger, truncate, update on table "public"."course_registrations" to "anon", "authenticated", "postgres", "service_role";
+grant delete, insert, select, update on table "public"."course_registrations" to "postgres", "service_role";

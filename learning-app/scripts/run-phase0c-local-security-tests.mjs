@@ -65,6 +65,7 @@ const tests = [
   "supabase/tests/phase0b_catalog_assertions.sql",
   "supabase/tests/phase0c_multi_user_authorization.sql",
   "supabase/tests/phase0d_account_deletion_retention.sql",
+  "supabase/tests/phase0e_financial_foundation.sql",
 ];
 
 for (const relativePath of tests) {

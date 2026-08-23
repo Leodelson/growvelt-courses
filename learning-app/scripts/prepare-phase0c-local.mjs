@@ -153,4 +153,11 @@ await copyFile(
   path.join(repositoryRoot, "supabase", "migrations", "20260823000000_restore_public_course_detail_access.sql"),
   path.join(migrationDirectory, "99999999999998_restore_public_course_detail_access.sql"),
 );
+await writeFile(
+  path.join(migrationDirectory, "99999999999999_reconcile_phase0e_legacy_privileges.sql"),
+  `-- Local-only reconciliation: Phase 0B intentionally preserved this legacy intake, while Phase 0E isolates it.\n` +
+    `drop policy if exists "Allow public course registrations" on public.course_registrations;\n` +
+    `revoke all on table public.course_registrations from anon, authenticated;\n`,
+  "utf8",
+);
 console.log(`Prepared isolated Phase 0C project at ${localRoot}`);
