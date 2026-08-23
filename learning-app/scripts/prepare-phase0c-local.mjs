@@ -136,22 +136,21 @@ if (columnPrivilegeStatements.length === 0) {
   throw new Error("No captured column-level privileges were found for local reconciliation.");
 }
 await writeFile(
-  path.join(migrationDirectory, "99999999999996_restore_baseline_column_privileges.sql"),
+  path.join(migrationDirectory, "99999999999995_restore_baseline_column_privileges.sql"),
   `-- Local-only reconciliation for pg-delta's documented column-grant limitation.\n${columnPrivilegeStatements.join("\n\n")}\n`,
   "utf8",
 );
 
 await copyFile(
   path.join(repositoryRoot, "supabase", "migrations", "20260821000000_harden_client_privileges.sql"),
-  path.join(migrationDirectory, "99999999999997_harden_client_privileges.sql"),
+  path.join(migrationDirectory, "99999999999996_harden_client_privileges.sql"),
 );
 await copyFile(
   path.join(repositoryRoot, "supabase", "migrations", "20260822000000_add_learning_audit_events.sql"),
-  path.join(migrationDirectory, "99999999999998_add_learning_audit_events.sql"),
+  path.join(migrationDirectory, "99999999999997_add_learning_audit_events.sql"),
 );
 await copyFile(
   path.join(repositoryRoot, "supabase", "migrations", "20260823000000_restore_public_course_detail_access.sql"),
-  path.join(migrationDirectory, "99999999999999_restore_public_course_detail_access.sql"),
+  path.join(migrationDirectory, "99999999999998_restore_public_course_detail_access.sql"),
 );
-
 console.log(`Prepared isolated Phase 0C project at ${localRoot}`);

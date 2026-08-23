@@ -39,6 +39,10 @@ create policy "Profiles are updated by owner" on "public"."profiles"
   using ((auth.uid() = id))
   with check ((auth.uid() = id));
 
+create trigger apply_learning_account_deletion_retention
+  before delete on public.profiles
+  for each row execute function public.apply_learning_account_deletion_retention();
+
 grant delete, insert, maintain, references, select, trigger, truncate, update on table "public"."profiles" to "postgres", "service_role";
 
 comment on column "public"."profiles"."facebook_url" is 'Optional public Facebook profile URL selected by the account owner.';

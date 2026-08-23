@@ -17,6 +17,10 @@ alter table "public"."enrollments"
 
 create unique index enrollments_id_learner_course_id_key on public.enrollments using btree (id, learner_id, course_id);
 
+create trigger delete_learning_quiz_attempts_with_enrollment
+  before delete on public.enrollments
+  for each row execute function public.delete_learning_quiz_attempts_with_enrollment();
+
 create policy "Learners can read own enrollments" on "public"."enrollments"
   for select
   to "authenticated"
