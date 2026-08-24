@@ -30,6 +30,7 @@ alter table "public"."learning_orders" enable row level security;
 create index learning_orders_learner_created_idx on public.learning_orders using btree (learner_id, created_at desc, id desc);
 create index learning_orders_course_created_idx on public.learning_orders using btree (course_id, created_at desc, id desc);
 create index learning_orders_status_created_idx on public.learning_orders using btree (status, created_at desc, id desc);
+create unique index learning_orders_one_active_purchase_key on public.learning_orders (learner_id, course_id) where learner_id is not null and course_id is not null and status in ('created','payment_pending','paid','partially_refunded');
 create trigger protect_learning_order_financial_snapshot before update on public.learning_orders for each row execute function public.protect_learning_order_financial_snapshot();
 create trigger prevent_learning_order_delete before delete on public.learning_orders for each row execute function public.prevent_learning_financial_record_delete();
 create trigger audit_learning_order_insert after insert on public.learning_orders for each row execute function public.capture_learning_financial_audit_event('order.created', 'learning_order');

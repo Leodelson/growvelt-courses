@@ -28,6 +28,7 @@ export default async function PublishedCourseDetailPage({ params }: { params: Pr
   const [enrollment, savedCourseIds] = await Promise.all([getEnrollmentState(course.id), getOwnSavedLearningCourseIds()]);
   const pricing = course.isFree ? "Free" : `${course.priceCurrency || "NGN"} ${Number(course.priceAmount ?? 0).toLocaleString("en-NG")}`;
   const activityCount = course.modules.reduce((total, module) => total + module.lessons.filter((lesson) => lesson.type !== "project").length, 0);
+  const paidCheckoutEnabled = process.env.PAYSTACK_MODE === "test" && process.env.PAYMENTS_CHECKOUT_ENABLED === "true";
 
   return <section className="published-course-page section-shell">
     <header className="published-course-hero">
@@ -55,9 +56,9 @@ export default async function PublishedCourseDetailPage({ params }: { params: Pr
       <aside className="published-course-aside">
         <div className="published-course-save"><SaveCourseButton courseId={course.id} authenticated isSaved={savedCourseIds.includes(course.id)} /><span>Save course</span></div>
         <p className="eyebrow">Course access</p>
-        <h2>{enrollment.isEnrolled ? "You’re enrolled" : course.isFree ? "Start learning for free" : "Paid access is coming later"}</h2>
-        <p>{enrollment.isEnrolled ? "Open My Learning to continue lessons, complete quizzes, and follow your saved course progress." : course.isFree ? "Enroll to access the lesson player, complete text and video lessons, take quizzes, and track your progress." : "Growvelt has not enabled paid enrollment or checkout yet."}</p>
-        <EnrollmentButton courseId={course.id} slug={course.slug} isFree={course.isFree} isEnrolled={enrollment.isEnrolled} />
+        <h2>{enrollment.isEnrolled ? "You’re enrolled" : course.isFree ? "Start learning for free" : paidCheckoutEnabled ? "Purchase this course securely" : "Paid access is coming later"}</h2>
+        <p>{enrollment.isEnrolled ? "Open My Learning to continue lessons, complete quizzes, and follow your saved course progress." : course.isFree ? "Enroll to access the lesson player, complete text and video lessons, take quizzes, and track your progress." : paidCheckoutEnabled ? "Complete a Paystack test-mode checkout. Access is granted only after Growvelt verifies the payment event." : "Growvelt has not enabled paid enrollment or checkout yet."}</p>
+        <EnrollmentButton courseId={course.id} slug={course.slug} isFree={course.isFree} isEnrolled={enrollment.isEnrolled} paidCheckoutEnabled={paidCheckoutEnabled} />
         <Link className="text-link" href="/dashboard/explore">Browse more courses</Link>
       </aside>
     </div>

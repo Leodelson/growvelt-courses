@@ -17,6 +17,7 @@ create table "public"."learning_ledger_transactions" (
 );
 alter table "public"."learning_ledger_transactions" enable row level security;
 create index learning_ledger_transactions_order_idx on public.learning_ledger_transactions using btree (order_id, occurred_at, id);
+create unique index learning_ledger_one_capture_per_order_key on public.learning_ledger_transactions (order_id) where transaction_type = 'payment_capture';
 create trigger prevent_learning_ledger_transaction_update_delete before update or delete on public.learning_ledger_transactions for each row execute function public.prevent_learning_ledger_mutation();
 create constraint trigger assert_learning_ledger_transaction_balanced after insert on public.learning_ledger_transactions deferrable initially deferred for each row execute function public.assert_learning_ledger_transaction_balanced();
 grant delete, insert, select, update on table "public"."learning_ledger_transactions" to "postgres", "service_role";

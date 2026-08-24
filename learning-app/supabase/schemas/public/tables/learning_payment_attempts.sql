@@ -4,6 +4,7 @@ create table "public"."learning_payment_attempts" (
   "idempotency_key" uuid not null default gen_random_uuid(),
   "provider" text not null,
   "provider_reference" text,
+  "provider_transaction_id" text,
   "amount_minor" bigint not null,
   "currency" text not null,
   "status" text not null default 'initialized'::text,
@@ -26,6 +27,7 @@ create table "public"."learning_payment_attempts" (
 alter table "public"."learning_payment_attempts" enable row level security;
 create index learning_payment_attempts_order_idx on public.learning_payment_attempts using btree (order_id, initialized_at desc, id desc);
 create index learning_payment_attempts_status_idx on public.learning_payment_attempts using btree (status, initialized_at desc, id desc);
+create unique index learning_payment_attempts_provider_transaction_key on public.learning_payment_attempts (provider, provider_transaction_id) where provider_transaction_id is not null;
 create trigger validate_learning_payment_attempt before insert or update of order_id, amount_minor, currency on public.learning_payment_attempts for each row execute function public.validate_learning_payment_attempt();
 create trigger prevent_learning_payment_attempt_delete before delete on public.learning_payment_attempts for each row execute function public.prevent_learning_financial_record_delete();
 grant delete, insert, select, update on table "public"."learning_payment_attempts" to "postgres", "service_role";
