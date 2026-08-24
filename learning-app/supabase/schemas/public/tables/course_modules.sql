@@ -20,7 +20,8 @@ create policy "Published course modules are public" on "public"."course_modules"
   to "anon", "authenticated"
   using ((exists ( select 1
    from public.learning_courses
-  where ((learning_courses.id = course_modules.course_id) AND (learning_courses.status = 'published'::text)))));
+  where ((learning_courses.id = course_modules.course_id) AND (learning_courses.status = 'published'::text)
+    and not public.is_paystack_test_fixture_course(learning_courses.id)))));
 
 grant delete, insert, maintain, references, select, trigger, truncate, update on table "public"."course_modules" to "postgres", "service_role";
 

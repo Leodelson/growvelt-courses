@@ -14,8 +14,14 @@ export async function POST(request: Request) {
   if (!user?.id || !user.email) return NextResponse.json({ code: "not_signed_in", message: "Sign in before purchasing this course." }, { status: 401 });
   const body = await request.json().catch(() => null) as { courseId?: unknown } | null;
   if (!Number.isSafeInteger(body?.courseId) || Number(body?.courseId) <= 0) return NextResponse.json({ code: "invalid_course", message: "Choose a valid course." }, { status: 400 });
+  const courseId = Number(body?.courseId);
+  const { data: eligibilityData, error: eligibilityError } = await supabase.rpc("get_own_paystack_test_fixture_eligibility", { p_course_id: courseId });
+  const eligible = (eligibilityData as { eligible?: unknown }[] | null)?.[0]?.eligible === true;
+  if (eligibilityError || !eligible) {
+    return NextResponse.json({ code: "fixture_not_eligible", message: "This controlled test checkout is not available for this account." }, { status: 403 });
+  }
   const admin = createAdminClient();
-  const { data, error } = await admin.rpc("initialize_paystack_test_learning_order", { p_learner_id: user.id, p_course_id: Number(body?.courseId) });
+  const { data, error } = await admin.rpc("initialize_paystack_test_learning_order", { p_learner_id: user.id, p_course_id: courseId });
   const order = (data as OrderRow[] | null)?.[0];
   if (error || !order) {
     const duplicate = error?.code === "23505";

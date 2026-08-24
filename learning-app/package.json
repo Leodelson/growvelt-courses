@@ -15,7 +15,9 @@
     "test:security:local": "node scripts/run-phase0c-local-security-tests.mjs",
     "test:security:staging": "node scripts/run-phase0c-security-tests.mjs",
     "test:payments:unit": "node --experimental-strip-types scripts/test-phase1a-paystack.mjs",
-    "test:payments:migration:local": "node scripts/test-phase1a-migration-local.mjs"
+    "test:payments:migration:local": "node scripts/test-phase1a-migration-local.mjs",
+    "test:payments:fixture:local": "node scripts/test-phase1a-fixture-local.mjs",
+    "fixture:payments:test": "node scripts/manage-phase1a-test-fixture.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.8.0",

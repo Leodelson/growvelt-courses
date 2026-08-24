@@ -10,12 +10,14 @@ insert into auth.users (
 ) values
   ('10000000-0000-4000-a000-000000000001', 'authenticated', 'authenticated', 'buyer-a@phase1a.invalid', '', now(), '{"provider":"email","providers":["email"]}', '{"full_name":"Phase 1A Buyer A"}', now(), now(), false, false),
   ('10000000-0000-4000-a000-000000000002', 'authenticated', 'authenticated', 'buyer-b@phase1a.invalid', '', now(), '{"provider":"email","providers":["email"]}', '{"full_name":"Phase 1A Buyer B"}', now(), now(), false, false),
-  ('10000000-0000-4000-a000-000000000003', 'authenticated', 'authenticated', 'teacher@phase1a.invalid', '', now(), '{"provider":"email","providers":["email"]}', '{"full_name":"Phase 1A Instructor"}', now(), now(), false, false);
+  ('10000000-0000-4000-a000-000000000003', 'authenticated', 'authenticated', 'teacher@phase1a.invalid', '', now(), '{"provider":"email","providers":["email"]}', '{"full_name":"Phase 1A Instructor"}', now(), now(), false, false),
+  ('10000000-0000-4000-a000-000000000004', 'authenticated', 'authenticated', 'admin@phase1a.invalid', '', now(), '{"provider":"email","providers":["email"]}', '{"full_name":"Phase 1A Admin"}', now(), now(), false, false);
 
 insert into public.instructor_profiles (user_id, headline, bio, approval_status, reviewed_at)
 values ('10000000-0000-4000-a000-000000000003', 'Instructor', 'Phase 1A fixture', 'approved', now());
 insert into public.account_capabilities (user_id, capability, status)
-values ('10000000-0000-4000-a000-000000000003', 'instructor', 'active');
+values ('10000000-0000-4000-a000-000000000003', 'instructor', 'active'),
+       ('10000000-0000-4000-a000-000000000004', 'admin', 'active');
 
 insert into public.learning_courses (
   instructor_id, title, slug, summary, description, level, category,
@@ -26,6 +28,8 @@ insert into public.learning_courses (
   'Beginner', 'Business', false, 2500, 'NGN', false, 'published'
 );
 select set_config('phase1a.course', (select id::text from public.learning_courses where slug='phase1a-paid-course'), true);
+insert into public.learning_paystack_test_fixtures(course_id,tester_id,expires_at,activated_by)
+values(current_setting('phase1a.course')::bigint,'10000000-0000-4000-a000-000000000001',now()+interval '1 hour','10000000-0000-4000-a000-000000000004');
 
 create temporary table phase1a_order_a as
 select * from public.initialize_paystack_test_learning_order(
@@ -94,9 +98,15 @@ begin
 end
 $idempotency$;
 
+update public.learning_paystack_test_fixtures set status='closed',closed_at=now(),closed_by='10000000-0000-4000-a000-000000000004',close_reason='Switch local mismatch fixture' where status='active';
+insert into public.learning_courses(instructor_id,title,slug,summary,description,level,category,is_free,price_amount,price_currency,is_limited_time_free,status)
+values('10000000-0000-4000-a000-000000000003','Phase 1A Paid Course B','phase1a-paid-course-b','Second test checkout fixture','A second local-only paid-course fixture.','Beginner','Business',false,2500,'NGN',false,'published');
+select set_config('phase1a.course_b',(select id::text from public.learning_courses where slug='phase1a-paid-course-b'),true);
+insert into public.learning_paystack_test_fixtures(course_id,tester_id,expires_at,activated_by)
+values(current_setting('phase1a.course_b')::bigint,'10000000-0000-4000-a000-000000000002',now()+interval '1 hour','10000000-0000-4000-a000-000000000004');
 create temporary table phase1a_order_b as
 select * from public.initialize_paystack_test_learning_order(
-  '10000000-0000-4000-a000-000000000002', current_setting('phase1a.course')::bigint
+  '10000000-0000-4000-a000-000000000002', current_setting('phase1a.course_b')::bigint
 );
 select set_config('phase1a.reference_b', (select order_reference from phase1a_order_b), true);
 create temporary table phase1a_mismatch as
@@ -108,8 +118,8 @@ select * from public.finalize_paystack_test_charge(
 do $mismatch$
 begin
   if (select outcome from phase1a_mismatch) <> 'amount_mismatch' then raise exception 'Amount mismatch was not rejected'; end if;
-  if exists (select 1 from public.enrollments where learner_id='10000000-0000-4000-a000-000000000002' and course_id=current_setting('phase1a.course')::bigint) then raise exception 'Mismatch granted enrollment'; end if;
-  if exists (select 1 from public.learning_course_entitlements where learner_id='10000000-0000-4000-a000-000000000002' and course_id=current_setting('phase1a.course')::bigint) then raise exception 'Mismatch granted entitlement'; end if;
+  if exists (select 1 from public.enrollments where learner_id='10000000-0000-4000-a000-000000000002' and course_id=current_setting('phase1a.course_b')::bigint) then raise exception 'Mismatch granted enrollment'; end if;
+  if exists (select 1 from public.learning_course_entitlements where learner_id='10000000-0000-4000-a000-000000000002' and course_id=current_setting('phase1a.course_b')::bigint) then raise exception 'Mismatch granted entitlement'; end if;
 end
 $mismatch$;
 

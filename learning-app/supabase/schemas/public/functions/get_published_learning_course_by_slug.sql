@@ -72,6 +72,16 @@ begin
   left join public.lessons as lesson_row on lesson_row.course_id = course_row.id and lesson_row.module_id = module_row.id
   where course_row.slug = normalized_slug
     and course_row.status = 'published'
+    and (
+      not exists (select 1 from public.learning_paystack_test_fixtures fixture where fixture.course_id = course_row.id)
+      or exists (
+        select 1 from public.learning_paystack_test_fixtures fixture
+        where fixture.course_id = course_row.id
+          and fixture.status = 'active'
+          and fixture.expires_at > now()
+          and fixture.tester_id = auth.uid()
+      )
+    )
   order by module_row.position nulls last, module_row.id, lesson_row.position nulls last, lesson_row.id;
 end;
 $function$;

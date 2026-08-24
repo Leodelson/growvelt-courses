@@ -6,6 +6,7 @@ import { CourseVideoCover } from "@/app/components/course-video-cover";
 import { getPublishedLearningCourse } from "@/app/lib/catalog/published-courses";
 import { getEnrollmentState } from "@/app/lib/learning/enrollments";
 import { getOwnSavedLearningCourseIds } from "@/app/lib/learning/saved-courses";
+import { getOwnPaystackTestFixtureEligibility } from "@/app/lib/payments/test-fixture";
 
 export const metadata = { title: "Course" };
 
@@ -25,10 +26,16 @@ export default async function PublishedCourseDetailPage({ params }: { params: Pr
   if (!slug || slug.length > 220) notFound();
   const course = await getPublishedLearningCourse(slug);
   if (!course) notFound();
-  const [enrollment, savedCourseIds] = await Promise.all([getEnrollmentState(course.id), getOwnSavedLearningCourseIds()]);
+  const [enrollment, savedCourseIds, fixtureEligibility] = await Promise.all([
+    getEnrollmentState(course.id),
+    getOwnSavedLearningCourseIds(),
+    course.isFree ? Promise.resolve({ eligible: false }) : getOwnPaystackTestFixtureEligibility(course.id),
+  ]);
   const pricing = course.isFree ? "Free" : `${course.priceCurrency || "NGN"} ${Number(course.priceAmount ?? 0).toLocaleString("en-NG")}`;
   const activityCount = course.modules.reduce((total, module) => total + module.lessons.filter((lesson) => lesson.type !== "project").length, 0);
-  const paidCheckoutEnabled = process.env.PAYSTACK_MODE === "test" && process.env.PAYMENTS_CHECKOUT_ENABLED === "true";
+  const paidCheckoutEnabled = process.env.PAYSTACK_MODE === "test"
+    && process.env.PAYMENTS_CHECKOUT_ENABLED === "true"
+    && fixtureEligibility.eligible;
 
   return <section className="published-course-page section-shell">
     <header className="published-course-hero">

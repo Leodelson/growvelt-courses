@@ -43,6 +43,9 @@ begin
   from public.learning_courses as course_row
   left join public.profiles as profile_row on profile_row.id = course_row.instructor_id
   where course_row.status = 'published'
+    and not exists (
+      select 1 from public.learning_paystack_test_fixtures fixture where fixture.course_id = course_row.id
+    )
   order by course_row.published_at desc nulls last, course_row.id desc
   limit p_limit offset p_offset;
 end;

@@ -46,7 +46,7 @@ create trigger learning_courses_quiz_readiness_before_submit
 create policy "Published courses are public" on "public"."learning_courses"
   for select
   to "anon", "authenticated"
-  using ((status = 'published'::text));
+  using ((status = 'published'::text) and not public.is_paystack_test_fixture_course(learning_courses.id));
 
 grant delete, insert, maintain, references, select, trigger, truncate, update on table "public"."learning_courses" to "postgres", "service_role";
 

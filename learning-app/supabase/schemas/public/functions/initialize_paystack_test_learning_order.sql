@@ -4,6 +4,13 @@ language plpgsql security definer set search_path to '' as $function$
 declare course_row record; order_key bigint; order_ref text; attempt_key bigint; amount_key bigint;
 begin
   if p_learner_id is null or p_course_id is null then raise exception 'Learner and course are required' using errcode='22023'; end if;
+  if not exists (
+    select 1 from public.learning_paystack_test_fixtures fixture
+    where fixture.course_id = p_course_id
+      and fixture.tester_id = p_learner_id
+      and fixture.status = 'active'
+      and fixture.expires_at > now()
+  ) then raise exception 'Learner is not eligible for this controlled test checkout' using errcode='42501'; end if;
   perform pg_advisory_xact_lock(hashtextextended(p_learner_id::text||':'||p_course_id::text,0));
   if not exists(select 1 from public.profiles where id=p_learner_id) then raise exception 'Learner profile was not found' using errcode='P0002'; end if;
   select c.id,c.instructor_id,c.title,c.price_amount,c.price_currency,c.is_free,c.is_limited_time_free,c.status,p.full_name instructor_name into course_row

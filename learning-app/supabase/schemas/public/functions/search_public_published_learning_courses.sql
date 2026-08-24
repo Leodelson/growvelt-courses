@@ -65,6 +65,9 @@ begin
   from public.learning_courses as course_row
   left join public.profiles as profile_row on profile_row.id = course_row.instructor_id
   where course_row.status = 'published'
+    and not exists (
+      select 1 from public.learning_paystack_test_fixtures fixture where fixture.course_id = course_row.id
+    )
     and (normalized_query is null or position(normalized_query in lower(concat_ws(' ', course_row.title, course_row.summary, course_row.category, course_row.level))) > 0)
     and (normalized_category is null or lower(course_row.category) = normalized_category)
     and (normalized_level is null or lower(course_row.level) = normalized_level)
