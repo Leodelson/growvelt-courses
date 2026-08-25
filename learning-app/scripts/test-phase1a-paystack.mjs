@@ -9,6 +9,7 @@ const {
   parsePaystackTestChargeSuccess,
   verifyPaystackSignature,
 } = await import("../app/lib/payments/paystack-core.ts");
+const { resolvePaystackCallbackReference } = await import("../app/lib/payments/paystack-callback.ts");
 
 const reference = `GL-${"A".repeat(32)}`;
 const event = {
@@ -41,4 +42,12 @@ assert.equal(parsePaystackTestChargeSuccess({ ...event, data: { ...event.data, c
 assert.equal(parsePaystackTestChargeSuccess({ ...event, data: { ...event.data, status: "failed" } }), null);
 assert.equal(parsePaystackTestChargeSuccess({ ...event, data: { ...event.data, reference: "client-reference" } }), null);
 
-console.log("PASS Phase 1A Paystack signature, event parsing, and trusted-URL tests");
+assert.equal(resolvePaystackCallbackReference({ reference }), reference);
+assert.equal(resolvePaystackCallbackReference({ reference: [reference, reference] }), reference);
+assert.equal(resolvePaystackCallbackReference({ trxref: reference }), reference);
+assert.equal(resolvePaystackCallbackReference({ reference: [reference, reference], trxref: reference }), reference);
+assert.equal(resolvePaystackCallbackReference({ reference, trxref: `GL-${"B".repeat(32)}` }), null);
+assert.equal(resolvePaystackCallbackReference({ reference: "invalid-reference" }), null);
+assert.equal(resolvePaystackCallbackReference({}), null);
+
+console.log("PASS Phase 1A Paystack signature, event parsing, callback normalization, and trusted-URL tests");
