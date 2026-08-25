@@ -6,6 +6,7 @@ create table "public"."learning_paystack_test_fixtures" (
   "expires_at" timestamptz not null,
   "activated_at" timestamptz not null default now(),
   "activated_by" uuid not null,
+  "previous_fixture_id" bigint,
   "closed_at" timestamptz,
   "closed_by" uuid,
   "close_reason" text,
@@ -13,6 +14,8 @@ create table "public"."learning_paystack_test_fixtures" (
   constraint "learning_paystack_test_fixtures_course_id_fkey" foreign key (course_id) references public.learning_courses(id) on delete restrict,
   constraint "learning_paystack_test_fixtures_tester_id_fkey" foreign key (tester_id) references public.profiles(id) on delete restrict,
   constraint "learning_paystack_test_fixtures_activated_by_fkey" foreign key (activated_by) references public.profiles(id) on delete restrict,
+  constraint "learning_paystack_test_fixtures_previous_fixture_id_fkey" foreign key (previous_fixture_id) references public.learning_paystack_test_fixtures(id) on delete restrict,
+  constraint "learning_paystack_test_fixtures_previous_fixture_not_self_check" check (previous_fixture_id is null or previous_fixture_id <> id),
   constraint "learning_paystack_test_fixtures_closed_by_fkey" foreign key (closed_by) references public.profiles(id) on delete restrict,
   constraint "learning_paystack_test_fixtures_status_check" check (status in ('active','closed')),
   constraint "learning_paystack_test_fixtures_expiry_check" check (expires_at > activated_at),
@@ -24,7 +27,9 @@ create table "public"."learning_paystack_test_fixtures" (
 
 alter table "public"."learning_paystack_test_fixtures" enable row level security;
 create unique index learning_paystack_test_fixtures_one_active_key on public.learning_paystack_test_fixtures(status) where status='active';
-create unique index learning_paystack_test_fixtures_course_key on public.learning_paystack_test_fixtures(course_id);
+create index learning_paystack_test_fixtures_course_history_idx on public.learning_paystack_test_fixtures(course_id,activated_at desc,id desc);
+create unique index learning_paystack_test_fixtures_one_successor_key on public.learning_paystack_test_fixtures(previous_fixture_id) where previous_fixture_id is not null;
 create index learning_paystack_test_fixtures_tester_idx on public.learning_paystack_test_fixtures(tester_id,expires_at desc);
+create trigger protect_paystack_test_fixture_history before insert or update on public.learning_paystack_test_fixtures for each row execute function public.protect_paystack_test_fixture_history();
 grant select,insert,update on table public.learning_paystack_test_fixtures to postgres,service_role;
 grant usage,select on sequence public.learning_paystack_test_fixtures_id_seq to postgres,service_role;

@@ -1,8 +1,13 @@
 import { createClient } from "@supabase/supabase-js";
 
 const action = process.argv[2];
-const expectedConfirmation = action === "activate" ? "ACTIVATE_PHASE1A_TEST_FIXTURE" : "CLOSE_PHASE1A_TEST_FIXTURE";
-if (!['activate','close'].includes(action)) throw new Error("Use: node scripts/manage-phase1a-test-fixture.mjs activate|close");
+const confirmations = {
+  activate: "ACTIVATE_PHASE1A_TEST_FIXTURE",
+  renew: "RENEW_PHASE1A_TEST_FIXTURE",
+  close: "CLOSE_PHASE1A_TEST_FIXTURE",
+};
+const expectedConfirmation = confirmations[action];
+if (!expectedConfirmation) throw new Error("Use: node scripts/manage-phase1a-test-fixture.mjs activate|renew|close");
 if (process.env.PHASE1A_FIXTURE_CONFIRMATION !== expectedConfirmation) throw new Error(`Set PHASE1A_FIXTURE_CONFIRMATION=${expectedConfirmation} to continue.`);
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -29,6 +34,16 @@ if (action === "activate") {
     p_expires_at: expiresAt,
     p_declaration_version: "2026-08-v1",
     p_rights_basis: process.env.PHASE1A_FIXTURE_RIGHTS_BASIS ?? "original",
+  });
+} else if (action === "renew") {
+  const previousFixtureId = Number(process.env.PHASE1A_FIXTURE_PREVIOUS_ID);
+  const operatorId = process.env.PHASE1A_FIXTURE_OPERATOR_ID;
+  const expiresAt = process.env.PHASE1A_FIXTURE_EXPIRES_AT;
+  if (!Number.isSafeInteger(previousFixtureId) || !operatorId || !expiresAt) throw new Error("Previous fixture, operator, and expiry inputs are required.");
+  result = await supabase.rpc("renew_paystack_test_fixture", {
+    p_previous_fixture_id: previousFixtureId,
+    p_operator_id: operatorId,
+    p_expires_at: expiresAt,
   });
 } else {
   const fixtureId = Number(process.env.PHASE1A_FIXTURE_ID);

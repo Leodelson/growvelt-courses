@@ -17,6 +17,7 @@
     "test:payments:unit": "node --experimental-strip-types scripts/test-phase1a-paystack.mjs",
     "test:payments:migration:local": "node scripts/test-phase1a-migration-local.mjs",
     "test:payments:fixture:local": "node scripts/test-phase1a-fixture-local.mjs",
+    "test:payments:fixture-renewal:local": "node scripts/test-phase1a-fixture-renewal-local.mjs",
     "fixture:payments:test": "node scripts/manage-phase1a-test-fixture.mjs"
   },
   "dependencies": {

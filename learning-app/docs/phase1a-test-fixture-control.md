@@ -14,6 +14,8 @@ This control permits one temporary Paystack test-mode course to be exercised by 
 - During the active window, only the designated authenticated learner can resolve the course-detail RPC.
 - Checkout UI and API initialization both check the authenticated learner's fixture eligibility. The order RPC independently enforces it again.
 - Activation and closure append explicit `learning_audit_events`. Closure archives the course but preserves financial history and any resulting entitlement/enrollment.
+- Each renewed testing window is a new immutable fixture row linked to its immediate predecessor; the original activation and expiry timestamps are never rewritten.
+- Renewal inherits the same course and tester, records expiry/renewal/activation audit events, and is rejected after any order, attempt, provider event, ledger record, entitlement, or enrollment exists for that pair.
 
 ## Operator workflow
 
@@ -25,5 +27,19 @@ This control permits one temporary Paystack test-mode course to be exercised by 
 6. Run the controlled end-to-end test only after checkout is separately enabled.
 7. Close the fixture immediately afterward with the same script's `close` action.
 8. Reconcile orders, attempts, provider events, ledger entries, entitlements, enrollments, and audit events before deleting the disposable auth account.
+
+## Renewing an unused expired window
+
+Renewal is available only when the previous window is expired or properly closed and the learner/course pair has no financial or access history. The guarded function automatically records an expired-but-stored-active predecessor as closed, preserves its timestamps, and creates a linked successor for the same course and learner. It does not accept replacement course or learner identifiers.
+
+Use `scripts/manage-phase1a-test-fixture.mjs renew` with:
+
+- `PHASE1A_FIXTURE_CONFIRMATION=RENEW_PHASE1A_TEST_FIXTURE`
+- `PHASE1A_FIXTURE_PREVIOUS_ID`
+- `PHASE1A_FIXTURE_OPERATOR_ID`
+- `PHASE1A_FIXTURE_EXPIRES_AT` between 15 minutes and 24 hours ahead
+- the existing guarded target and server-only Supabase environment variables
+
+Only one successor may reference a historical fixture, and the global one-active-fixture index remains in force. After any successful or attempted financial flow creates history, close the fixture instead of renewing it.
 
 The script never embeds or prints credentials. It refuses a remote target other than the Growvelt Learning project and requires an exact confirmation phrase.
