@@ -11,6 +11,7 @@ export default async function DashboardAdminPage() {
     <div className="admin-operations-grid">
       <section className="admin-operation-card"><span className="admin-operation-number">01</span><div><p className="eyebrow">{text.instructors}</p><h2>{text.instructorTitle}</h2><p>{text.instructorCopy}</p></div><Link className="button button-primary" href="/dashboard/admin/instructors">{text.openInstructors} <span aria-hidden="true">→</span></Link></section>
       <section className="admin-operation-card"><span className="admin-operation-number">02</span><div><p className="eyebrow">{text.courses}</p><h2>{text.courseTitle}</h2><p>{text.courseCopy}</p></div><Link className="button button-secondary" href="/dashboard/admin/courses">{text.openCourses} <span aria-hidden="true">→</span></Link></section>
+      <section className="admin-operation-card"><span className="admin-operation-number">03</span><div><p className="eyebrow">Payment operations</p><h2>Inspect payment integrity.</h2><p>Review test-mode orders, provider events, reconciliation findings, and guarded recovery actions.</p></div><Link className="button button-secondary" href="/dashboard/admin/payments">Open payment operations <span aria-hidden="true">→</span></Link></section>
     </div>
   </section>;
 }

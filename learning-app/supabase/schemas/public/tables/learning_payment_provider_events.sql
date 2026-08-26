@@ -12,6 +12,11 @@ create table "public"."learning_payment_provider_events" (
   "received_at" timestamptz not null default now(),
   "processed_at" timestamptz,
   "processing_error" text,
+  "processing_attempts" integer not null default 0,
+  "last_attempted_at" timestamptz,
+  "next_retry_at" timestamptz,
+  "verification_source" text not null default 'webhook'::text,
+  "recovery_status" text not null default 'none'::text,
   constraint "learning_payment_provider_events_pkey" primary key (id),
   constraint "learning_payment_provider_events_provider_event_key" unique (provider, provider_event_id),
   constraint "learning_payment_provider_events_order_id_fkey" foreign key (order_id) references public.learning_orders(id) on delete restrict,
@@ -23,10 +28,14 @@ create table "public"."learning_payment_provider_events" (
   constraint "learning_payment_provider_events_status_check" check (processing_status = any (array['received'::text, 'processed'::text, 'ignored'::text, 'failed'::text])),
   constraint "learning_payment_provider_events_error_length_check" check (processing_error is null or char_length(processing_error) <= 2000),
   constraint "learning_payment_provider_events_processing_check" check ((processing_status = 'received'::text and processed_at is null) or (processing_status <> 'received'::text and processed_at is not null))
+  ,constraint "learning_payment_provider_events_attempts_check" check (processing_attempts >= 0)
+  ,constraint "learning_payment_provider_events_recovery_status_check" check (recovery_status = any (array['none'::text,'retryable'::text,'manual_review'::text,'resolved'::text]))
+  ,constraint "learning_payment_provider_events_verification_source_check" check (verification_source = any (array['webhook'::text,'provider_api'::text]))
 );
 alter table "public"."learning_payment_provider_events" enable row level security;
 create index learning_payment_provider_events_status_idx on public.learning_payment_provider_events using btree (processing_status, received_at, id);
 create index learning_payment_provider_events_order_idx on public.learning_payment_provider_events using btree (order_id, received_at desc, id desc);
+create index learning_payment_provider_events_recovery_idx on public.learning_payment_provider_events using btree (recovery_status, next_retry_at, received_at, id) where processing_status in ('received','failed');
 create trigger prevent_learning_provider_event_delete before delete on public.learning_payment_provider_events for each row execute function public.prevent_learning_financial_record_delete();
 create trigger validate_learning_provider_event_links before insert or update of order_id, payment_attempt_id on public.learning_payment_provider_events for each row execute function public.validate_learning_provider_event_links();
 grant delete, insert, select, update on table "public"."learning_payment_provider_events" to "postgres", "service_role";

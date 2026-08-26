@@ -34,3 +34,28 @@ export async function initializePaystackTestTransaction(input: { email: string; 
   if (!response.ok || result?.status !== true || !isTrustedPaystackAuthorizationUrl(authorizationUrl) || result.data?.reference !== input.reference) throw new Error(typeof result?.message === "string" ? result.message : "Paystack initialization failed.");
   return { authorizationUrl };
 }
+
+export type VerifiedPaystackTestTransaction = {
+  reference: string;
+  transactionId: string;
+  amountMinor: number;
+  currency: "NGN";
+  domain: "test";
+  status: string;
+  paidAt: string | null;
+};
+
+export async function verifyPaystackTestTransaction(reference: string): Promise<VerifiedPaystackTestTransaction> {
+  if (!/^GL-[A-F0-9]{32}$/.test(reference)) throw new Error("Invalid Growvelt payment reference.");
+  const { secretKey } = getPaystackTestConfig(false);
+  const response = await fetch(`https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`, {
+    headers: { Authorization: `Bearer ${secretKey}` }, cache: "no-store", signal: AbortSignal.timeout(15000),
+  });
+  const result = await response.json().catch(() => null) as { status?: unknown; message?: unknown; data?: Record<string, unknown> } | null;
+  const data = result?.data;
+  const transactionId = typeof data?.id === "number" && Number.isSafeInteger(data.id) ? String(data.id) : typeof data?.id === "string" && /^\d+$/.test(data.id) ? data.id : "";
+  if (!response.ok || result?.status !== true || !data || data.reference !== reference || !transactionId || !Number.isSafeInteger(data.amount) || data.currency !== "NGN" || data.domain !== "test" || typeof data.status !== "string") {
+    throw new Error(typeof result?.message === "string" ? result.message : "Paystack verification failed.");
+  }
+  return { reference, transactionId, amountMinor: Number(data.amount), currency: "NGN", domain: "test", status: data.status, paidAt: typeof data.paid_at === "string" ? data.paid_at : null };
+}

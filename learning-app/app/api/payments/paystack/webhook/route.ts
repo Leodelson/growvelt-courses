@@ -15,12 +15,20 @@ export async function POST(request: Request) {
   }
   const parsed = parsePaystackTestChargeSuccess(payload);
   if (!parsed) return new NextResponse(null, { status: 204 });
-  const { data, error } = await createAdminClient().rpc("finalize_paystack_test_charge", {
+  const admin = createAdminClient();
+  const { data: received, error: receiveError } = await admin.rpc("receive_paystack_test_charge_event", {
     p_provider_event_id: parsed.eventId, p_payload_digest: digestPaystackPayload(rawBody), p_reference: parsed.reference,
     p_provider_transaction_id: parsed.transactionId, p_amount_minor: parsed.amountMinor, p_currency: parsed.currency, p_domain: parsed.domain, p_payload: parsed.payload,
   });
-  if (error) { console.error("Growvelt Learning Paystack webhook finalization failed.", { reference: parsed.reference, message: error.message }); return NextResponse.json({ code: "processing_failed" }, { status: 500 }); }
+  if (receiveError) { console.error("payment.webhook_receive_failed", { provider: "paystack", reference: parsed.reference, code: receiveError.code }); return NextResponse.json({ code: "receipt_failed" }, { status: 500 }); }
+  const receipt = (received as Array<{ outcome?: string; event_id?: number }> | null)?.[0];
+  if (!receipt?.event_id || receipt.outcome === "duplicate_payload_mismatch") {
+    console.error("payment.webhook_receipt_conflict", { provider: "paystack", reference: parsed.reference, outcome: receipt?.outcome ?? "missing_receipt" });
+    return NextResponse.json({ code: "receipt_conflict" }, { status: 409 });
+  }
+  const { data, error } = await admin.rpc("process_paystack_test_charge_event", { p_event_id: receipt.event_id });
+  if (error) { console.error("payment.webhook_processing_deferred", { provider: "paystack", reference: parsed.reference, eventId: receipt.event_id, code: error.code }); return NextResponse.json({ received: true, processing: "deferred" }); }
   const outcome = (data as Array<{ outcome?: string }> | null)?.[0]?.outcome;
-  if (outcome && !["paid_and_enrolled","already_processed","already_paid"].includes(outcome)) console.error("Growvelt Learning Paystack webhook requires reconciliation.", { reference: parsed.reference, outcome });
+  if (outcome && !["paid_and_enrolled","already_processed","already_paid"].includes(outcome)) console.error("payment.webhook_manual_review", { provider: "paystack", reference: parsed.reference, eventId: receipt.event_id, outcome });
   return NextResponse.json({ received: true });
 }
