@@ -1,29 +1,30 @@
-import { NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { getSafeNextPath } from "@/app/lib/auth/redirect";
-import { createClient } from "@/app/lib/supabase/server";
+import { createAuthCallbackClient, preventAuthRedirectCaching } from "@/app/lib/supabase/auth-callback";
+import { logSupabaseError } from "@/app/lib/supabase/logging";
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get("code");
   const next = getSafeNextPath(requestUrl.searchParams.get("next"));
 
   if (!code) {
-    return NextResponse.redirect(new URL("/auth/error", requestUrl.origin));
+    return preventAuthRedirectCaching(NextResponse.redirect(new URL("/auth/error", requestUrl.origin)));
   }
 
+  const response = preventAuthRedirectCaching(NextResponse.redirect(new URL(next, requestUrl.origin)));
   try {
-    const supabase = await createClient();
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    const supabase = createAuthCallbackClient(request, response);
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
-    if (error) {
-      console.error("Growvelt auth callback code exchange failed.", { message: error.message, status: error.status, code: error.code });
-      return NextResponse.redirect(new URL("/auth/error", requestUrl.origin));
+    if (error || !data.session) {
+      logSupabaseError("auth.oauth_code_exchange_failed", error);
+      return preventAuthRedirectCaching(NextResponse.redirect(new URL("/auth/error", requestUrl.origin)));
     }
-
   } catch (error) {
-    console.error("Growvelt auth callback failed unexpectedly.", error);
-    return NextResponse.redirect(new URL("/auth/error", requestUrl.origin));
+    logSupabaseError("auth.oauth_callback_failed", error);
+    return preventAuthRedirectCaching(NextResponse.redirect(new URL("/auth/error", requestUrl.origin)));
   }
 
-  return NextResponse.redirect(new URL(next, requestUrl.origin));
+  return response;
 }
