@@ -21,35 +21,13 @@ create or replace function public.list_published_learning_courses (
   set search_path to ''
   AS $function$
 begin
-  if auth.uid() is null then
-    raise exception 'Authentication required' using errcode = '42501';
-  end if;
-  if p_limit not between 1 and 36 or p_offset < 0 then
-    raise exception 'Invalid published-course pagination' using errcode = '22023';
-  end if;
-
-  return query
-  select course_row.id,
-         course_row.slug,
-         course_row.title,
-         course_row.summary,
-         course_row.category,
-         course_row.level,
-         course_row.is_free,
-         course_row.price_amount,
-         course_row.price_currency,
-         profile_row.full_name,
-         course_row.published_at
-  from public.learning_courses as course_row
-  left join public.profiles as profile_row on profile_row.id = course_row.instructor_id
-  where course_row.status = 'published'
-    and not exists (
-      select 1 from public.learning_paystack_test_fixtures fixture where fixture.course_id = course_row.id
-    )
-  order by course_row.published_at desc nulls last, course_row.id desc
-  limit p_limit offset p_offset;
-end;
-$function$;
+  if auth.uid() is null then raise exception 'Authentication required' using errcode='42501'; end if;
+  if p_limit not between 1 and 36 or p_offset<0 then raise exception 'Invalid published-course pagination' using errcode='22023'; end if;
+  return query select c.id,c.slug,c.title,c.summary,c.category,c.level,c.is_free,c.price_amount,c.price_currency,p.full_name,c.published_at
+  from public.learning_courses c left join public.profiles p on p.id=c.instructor_id
+  where c.status='published' and not exists(select 1 from public.learning_paystack_test_fixtures f where f.course_id=c.id)
+  order by c.published_at desc nulls last,c.id desc limit p_limit offset p_offset;
+end;$function$;
 
 grant execute on function "public"."list_published_learning_courses"(integer, integer) to "authenticated", "postgres", "service_role";
 

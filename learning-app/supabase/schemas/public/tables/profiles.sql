@@ -23,6 +23,11 @@ create table "public"."profiles" (
 alter table "public"."profiles"
   enable row level security;
 
+create trigger apply_learning_account_deletion_retention
+  before delete on public.profiles
+  for each row
+  execute function public.apply_learning_account_deletion_retention();
+
 create policy "Profiles are created by owner" on "public"."profiles"
   for insert
   to "authenticated"
@@ -39,9 +44,33 @@ create policy "Profiles are updated by owner" on "public"."profiles"
   using ((auth.uid() = id))
   with check ((auth.uid() = id));
 
-create trigger apply_learning_account_deletion_retention
-  before delete on public.profiles
-  for each row execute function public.apply_learning_account_deletion_retention();
+grant select on table "public"."profiles" to "anon";
+
+grant update ("avatar_storage_path") on table "public"."profiles" to "authenticated";
+
+grant insert ("avatar_url"), update ("avatar_url") on table "public"."profiles" to "authenticated";
+
+grant update ("cover_storage_path") on table "public"."profiles" to "authenticated";
+
+grant insert ("email") on table "public"."profiles" to "authenticated";
+
+grant update ("facebook_url") on table "public"."profiles" to "authenticated";
+
+grant insert ("full_name"), update ("full_name") on table "public"."profiles" to "authenticated";
+
+grant insert ("id") on table "public"."profiles" to "authenticated";
+
+grant update ("instagram_url") on table "public"."profiles" to "authenticated";
+
+grant update ("linkedin_url") on table "public"."profiles" to "authenticated";
+
+grant insert ("onboarding_status"), update ("onboarding_status") on table "public"."profiles" to "authenticated";
+
+grant update ("website_url") on table "public"."profiles" to "authenticated";
+
+grant update ("x_url") on table "public"."profiles" to "authenticated";
+
+grant select on table "public"."profiles" to "authenticated";
 
 grant delete, insert, maintain, references, select, trigger, truncate, update on table "public"."profiles" to "postgres", "service_role";
 
@@ -54,59 +83,3 @@ comment on column "public"."profiles"."linkedin_url" is 'Optional public LinkedI
 comment on column "public"."profiles"."website_url" is 'Optional public professional website or portfolio URL selected by the account owner.';
 
 comment on column "public"."profiles"."x_url" is 'Optional public X or Twitter profile URL selected by the account owner.';
-
-revoke all on table "public"."profiles" from "anon";
-
-grant maintain, references, select, trigger on table "public"."profiles" to "anon";
-
-revoke all ("avatar_storage_path") on table "public"."profiles" from "authenticated";
-
-grant update ("avatar_storage_path") on table "public"."profiles" to "authenticated";
-
-revoke all ("avatar_url") on table "public"."profiles" from "authenticated";
-
-grant insert ("avatar_url"), update ("avatar_url") on table "public"."profiles" to "authenticated";
-
-revoke all ("cover_storage_path") on table "public"."profiles" from "authenticated";
-
-grant update ("cover_storage_path") on table "public"."profiles" to "authenticated";
-
-revoke all ("email") on table "public"."profiles" from "authenticated";
-
-grant insert ("email") on table "public"."profiles" to "authenticated";
-
-revoke all ("facebook_url") on table "public"."profiles" from "authenticated";
-
-grant update ("facebook_url") on table "public"."profiles" to "authenticated";
-
-revoke all ("full_name") on table "public"."profiles" from "authenticated";
-
-grant insert ("full_name"), update ("full_name") on table "public"."profiles" to "authenticated";
-
-revoke all ("id") on table "public"."profiles" from "authenticated";
-
-grant insert ("id") on table "public"."profiles" to "authenticated";
-
-revoke all ("instagram_url") on table "public"."profiles" from "authenticated";
-
-grant update ("instagram_url") on table "public"."profiles" to "authenticated";
-
-revoke all ("linkedin_url") on table "public"."profiles" from "authenticated";
-
-grant update ("linkedin_url") on table "public"."profiles" to "authenticated";
-
-revoke all ("onboarding_status") on table "public"."profiles" from "authenticated";
-
-grant insert ("onboarding_status"), update ("onboarding_status") on table "public"."profiles" to "authenticated";
-
-revoke all ("website_url") on table "public"."profiles" from "authenticated";
-
-grant update ("website_url") on table "public"."profiles" to "authenticated";
-
-revoke all ("x_url") on table "public"."profiles" from "authenticated";
-
-grant update ("x_url") on table "public"."profiles" to "authenticated";
-
-revoke all on table "public"."profiles" from "authenticated";
-
-grant maintain, references, select, trigger on table "public"."profiles" to "authenticated";

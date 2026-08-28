@@ -34,6 +34,12 @@ create table "public"."instructor_profiles" (
 alter table "public"."instructor_profiles"
   enable row level security;
 
+create trigger audit_instructor_application_decision
+  after update of approval_status on public.instructor_profiles
+  for each row
+  when ((old.approval_status IS DISTINCT FROM new.approval_status))
+  execute function public.capture_learning_security_audit_event('instructor_application.status_changed', 'instructor_application');
+
 create policy "Admins can read instructor applications" on "public"."instructor_profiles"
   for select
   to "authenticated"
@@ -67,72 +73,34 @@ create policy "Instructor profiles are updated by owner while pending" on "publi
     NOT NULL) AND ((char_length(btrim(bio)) >= 2) AND (char_length(btrim(bio)) <= 2000)) AND (motivation IS
     NOT NULL) AND ((char_length(btrim(motivation)) >= 2) AND (char_length(btrim(motivation)) <= 1500))));
 
-grant delete, insert, maintain, references, select, trigger, truncate, update on table "public"."instructor_profiles" to "postgres", "service_role";
-
-revoke all on table "public"."instructor_profiles" from "anon";
-
-grant maintain, references, trigger on table "public"."instructor_profiles" to "anon";
-
-revoke all ("approval_status") on table "public"."instructor_profiles" from "authenticated";
-
 grant select ("approval_status") on table "public"."instructor_profiles" to "authenticated";
-
-revoke all ("bio") on table "public"."instructor_profiles" from "authenticated";
 
 grant insert ("bio"), select ("bio"), update ("bio") on table "public"."instructor_profiles" to "authenticated";
 
-revoke all ("country") on table "public"."instructor_profiles" from "authenticated";
-
 grant insert ("country"), select ("country"), update ("country") on table "public"."instructor_profiles" to "authenticated";
-
-revoke all ("created_at") on table "public"."instructor_profiles" from "authenticated";
 
 grant select ("created_at") on table "public"."instructor_profiles" to "authenticated";
 
-revoke all ("expertise") on table "public"."instructor_profiles" from "authenticated";
-
 grant insert ("expertise"), select ("expertise"), update ("expertise") on table "public"."instructor_profiles" to "authenticated";
-
-revoke all ("headline") on table "public"."instructor_profiles" from "authenticated";
 
 grant insert ("headline"), select ("headline"), update ("headline") on table "public"."instructor_profiles" to "authenticated";
 
-revoke all ("id") on table "public"."instructor_profiles" from "authenticated";
-
 grant select ("id") on table "public"."instructor_profiles" to "authenticated";
-
-revoke all ("motivation") on table "public"."instructor_profiles" from "authenticated";
 
 grant insert ("motivation"), select ("motivation"), update ("motivation") on table "public"."instructor_profiles" to "authenticated";
 
-revoke all ("phone") on table "public"."instructor_profiles" from "authenticated";
-
 grant insert ("phone"), select ("phone"), update ("phone") on table "public"."instructor_profiles" to "authenticated";
-
-revoke all ("portfolio_url") on table "public"."instructor_profiles" from "authenticated";
 
 grant insert ("portfolio_url"), select ("portfolio_url"), update ("portfolio_url") on table "public"."instructor_profiles" to "authenticated";
 
-revoke all ("reviewed_at") on table "public"."instructor_profiles" from "authenticated";
-
 grant select ("reviewed_at") on table "public"."instructor_profiles" to "authenticated";
-
-revoke all ("teaching_experience") on table "public"."instructor_profiles" from "authenticated";
 
 grant insert ("teaching_experience"), select ("teaching_experience"), update ("teaching_experience") on table "public"."instructor_profiles" to "authenticated";
 
-revoke all ("updated_at") on table "public"."instructor_profiles" from "authenticated";
-
 grant select ("updated_at") on table "public"."instructor_profiles" to "authenticated";
-
-revoke all ("user_id") on table "public"."instructor_profiles" from "authenticated";
 
 grant insert ("user_id"), select ("user_id") on table "public"."instructor_profiles" to "authenticated";
 
-revoke all ("years_experience") on table "public"."instructor_profiles" from "authenticated";
-
 grant insert ("years_experience"), select ("years_experience"), update ("years_experience") on table "public"."instructor_profiles" to "authenticated";
 
-revoke all on table "public"."instructor_profiles" from "authenticated";
-
-grant maintain, references, trigger on table "public"."instructor_profiles" to "authenticated";
+grant delete, insert, maintain, references, select, trigger, truncate, update on table "public"."instructor_profiles" to "postgres", "service_role";

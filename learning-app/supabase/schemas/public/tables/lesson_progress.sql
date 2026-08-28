@@ -21,12 +21,6 @@ create policy "Learners can read own lesson progress" on "public"."lesson_progre
    from public.enrollments enrollment_row
   where ((enrollment_row.id = lesson_progress.enrollment_id) AND (enrollment_row.learner_id = auth.uid())))));
 
+grant select on table "public"."lesson_progress" to "anon", "authenticated";
+
 grant delete, insert, maintain, references, select, trigger, truncate, update on table "public"."lesson_progress" to "postgres", "service_role";
-
-revoke all on table "public"."lesson_progress" from "anon";
-
-grant maintain, references, select, trigger on table "public"."lesson_progress" to "anon";
-
-revoke all on table "public"."lesson_progress" from "authenticated";
-
-grant maintain, references, select, trigger on table "public"."lesson_progress" to "authenticated";

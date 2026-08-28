@@ -1,5 +1,9 @@
 create or replace function public.validate_learning_provider_event_links()
-returns trigger language plpgsql security definer set search_path to '' as $function$
+  returns trigger
+  language plpgsql
+  security definer
+  set search_path to ''
+  AS $function$
 begin
   if new.order_id is not null and new.payment_attempt_id is not null and not exists (
     select 1 from public.learning_payment_attempts where id=new.payment_attempt_id and order_id=new.order_id
@@ -13,5 +17,7 @@ begin
   return new;
 end;
 $function$;
-revoke all on function public.validate_learning_provider_event_links() from public,anon,authenticated;
-grant execute on function public.validate_learning_provider_event_links() to postgres,service_role;
+
+grant execute on function "public"."validate_learning_provider_event_links"() to "postgres", "service_role";
+
+revoke all on function "public"."validate_learning_provider_event_links"() from public;

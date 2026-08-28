@@ -5,6 +5,7 @@ export {
   digestPaystackPayload,
   isTrustedPaystackAuthorizationUrl,
   parsePaystackTestChargeSuccess,
+  parsePaystackTestDisputeEvent,
   parsePaystackTestRefundEvent,
   verifyPaystackSignature,
 } from "@/app/lib/payments/paystack-core";
@@ -112,4 +113,21 @@ export async function verifyPaystackTestRefund(input: { refundId: string; transa
   const result = await response.json().catch(() => null) as { status?: unknown; message?: unknown; data?: Record<string, unknown> } | null;
   if (!response.ok || result?.status !== true || !result.data) throw new Error(typeof result?.message === "string" ? result.message : "Paystack refund verification failed.");
   return parsePaystackRefund(result.data, { transactionReference: input.transactionReference, transactionId: input.transactionId });
+}
+
+export type PaystackTestDispute = { id: string; transactionReference: string; amountMinor: number; currency: "NGN"; domain: "test"; status: string; resolution: string | null; category: string | null; reason: string | null; deadline: string | null; payload: Record<string, unknown> };
+
+export async function verifyPaystackTestDispute(input: { disputeId: string; transactionReference: string }): Promise<PaystackTestDispute> {
+  if (!/^\d+$/.test(input.disputeId) || !/^GL-[A-F0-9]{32}$/.test(input.transactionReference)) throw new Error("Invalid dispute reference.");
+  const { secretKey } = getPaystackTestConfig(false);
+  const response = await fetch(`https://api.paystack.co/dispute/${encodeURIComponent(input.disputeId)}`, { headers: { Authorization: `Bearer ${secretKey}` }, cache: "no-store", signal: AbortSignal.timeout(15000) });
+  const result = await response.json().catch(() => null) as { status?: unknown; message?: unknown; data?: Record<string, unknown> } | null;
+  const data = result?.data; const transaction = data?.transaction && typeof data.transaction === "object" ? data.transaction as Record<string, unknown> : {};
+  const id = typeof data?.id === "number" && Number.isSafeInteger(data.id) ? String(data.id) : typeof data?.id === "string" && /^\d+$/.test(data.id) ? data.id : "";
+  const reference = typeof data?.transaction_reference === "string" ? data.transaction_reference : typeof transaction.reference === "string" ? transaction.reference : "";
+  const amountValue = data?.refund_amount ?? data?.amount ?? transaction.amount; const amount = typeof amountValue === "string" && /^\d+$/.test(amountValue) ? Number(amountValue) : amountValue;
+  const currency = data?.currency ?? transaction.currency; const domain = data?.domain ?? transaction.domain;
+  if (!response.ok || result?.status !== true || !data || id !== input.disputeId || reference !== input.transactionReference || !Number.isSafeInteger(amount) || Number(amount)<=0 || currency!=="NGN" || domain!=="test" || typeof data.status!=="string") throw new Error(typeof result?.message === "string" ? result.message : "Paystack dispute verification failed.");
+  const deadlineValue=data.due_at??data.dueAt??data.deadline; const deadline=typeof deadlineValue==="string"&&!Number.isNaN(Date.parse(deadlineValue))?new Date(deadlineValue).toISOString():null;
+  return { id,transactionReference:reference,amountMinor:Number(amount),currency:"NGN",domain:"test",status:data.status,resolution:typeof data.resolution==="string"?data.resolution:null,category:typeof data.category==="string"?data.category:null,reason:typeof data.reason==="string"?data.reason:typeof data.note==="string"?data.note:null,deadline,payload:data };
 }

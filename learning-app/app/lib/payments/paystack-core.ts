@@ -43,6 +43,60 @@ export type PaystackRefundEvent = {
   payload: Record<string, unknown>;
 };
 
+export type PaystackDisputeEvent = {
+  eventId: string;
+  eventType: "charge.dispute.create" | "charge.dispute.remind" | "charge.dispute.resolve";
+  transactionReference: string;
+  disputeId: string;
+  status: string;
+  resolution: string | null;
+  amountMinor: number;
+  currency: "NGN";
+  domain: "test";
+  category: string | null;
+  reason: string | null;
+  deadline: string | null;
+  payload: Record<string, unknown>;
+};
+
+export function parsePaystackTestDisputeEvent(value: unknown): PaystackDisputeEvent | null {
+  if (!value || typeof value !== "object") return null;
+  const event = value as { event?: unknown; data?: unknown };
+  const allowed = new Set(["charge.dispute.create", "charge.dispute.remind", "charge.dispute.resolve"]);
+  if (typeof event.event !== "string" || !allowed.has(event.event) || !event.data || typeof event.data !== "object") return null;
+  const data = event.data as Record<string, unknown>;
+  const transaction = data.transaction && typeof data.transaction === "object" ? data.transaction as Record<string, unknown> : {};
+  const disputeId = typeof data.id === "number" && Number.isSafeInteger(data.id) ? String(data.id) : typeof data.id === "string" && /^\d+$/.test(data.id) ? data.id : "";
+  const transactionReference = typeof data.transaction_reference === "string" ? data.transaction_reference
+    : typeof data.merchant_transaction_reference === "string" ? data.merchant_transaction_reference
+      : typeof transaction.reference === "string" ? transaction.reference : "";
+  const amountValue = data.refund_amount ?? data.amount ?? transaction.amount;
+  const amount = typeof amountValue === "string" && /^\d+$/.test(amountValue) ? Number(amountValue) : amountValue;
+  const currency = data.currency ?? transaction.currency;
+  const domain = data.domain ?? transaction.domain;
+  const status = typeof data.status === "string" ? data.status : "";
+  const resolution = typeof data.resolution === "string" && data.resolution ? data.resolution : null;
+  const deadlineValue = data.due_at ?? data.dueAt ?? data.deadline;
+  const deadline = typeof deadlineValue === "string" && !Number.isNaN(Date.parse(deadlineValue)) ? new Date(deadlineValue).toISOString() : null;
+  if (!disputeId || !/^GL-[A-F0-9]{32}$/.test(transactionReference) || !Number.isSafeInteger(amount) || Number(amount) <= 0 || currency !== "NGN" || domain !== "test" || !status) return null;
+  const occurrence = data.updated_at ?? data.updatedAt ?? data.resolved_at ?? data.due_at ?? `${status}:${resolution ?? "none"}`;
+  return {
+    eventId: `${event.event}:${disputeId}:${String(occurrence)}`,
+    eventType: event.event as PaystackDisputeEvent["eventType"],
+    transactionReference,
+    disputeId,
+    status,
+    resolution,
+    amountMinor: Number(amount),
+    currency: "NGN",
+    domain: "test",
+    category: typeof data.category === "string" ? data.category : null,
+    reason: typeof data.reason === "string" ? data.reason : typeof data.note === "string" ? data.note : null,
+    deadline,
+    payload: { dispute_id: disputeId, transaction_reference: transactionReference, amount: Number(amount), currency: "NGN", domain: "test", status, resolution, category: data.category ?? null, reason: data.reason ?? data.note ?? null, due_at: deadline },
+  };
+}
+
 export function parsePaystackTestRefundEvent(value: unknown): PaystackRefundEvent | null {
   if (!value || typeof value !== "object") return null;
   const event = value as { event?: unknown; data?: unknown };

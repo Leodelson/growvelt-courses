@@ -20,4 +20,6 @@ create policy "Enrolled learners can read lesson resources" on "public"."lesson_
      JOIN public.enrollments on ((enrollments.course_id = lessons.course_id)))
   where ((lessons.id = lesson_resources.lesson_id) AND (enrollments.learner_id = auth.uid()) AND (enrollments.status = ANY (ARRAY['active'::text, 'completed'::text]))))));
 
-grant delete, insert, maintain, references, select, trigger, truncate, update on table "public"."lesson_resources" to "anon", "authenticated", "postgres", "service_role";
+grant select on table "public"."lesson_resources" to "anon", "authenticated";
+
+grant delete, insert, maintain, references, select, trigger, truncate, update on table "public"."lesson_resources" to "postgres", "service_role";

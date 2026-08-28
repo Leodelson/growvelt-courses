@@ -18,4 +18,6 @@ create policy "Allow public partner requests" on "public"."partner_requests"
   to "anon"
   with check (true);
 
-grant delete, insert, maintain, references, select, trigger, truncate, update on table "public"."partner_requests" to "anon", "authenticated", "postgres", "service_role";
+grant insert on table "public"."partner_requests" to "anon", "authenticated";
+
+grant delete, insert, maintain, references, select, trigger, truncate, update on table "public"."partner_requests" to "postgres", "service_role";

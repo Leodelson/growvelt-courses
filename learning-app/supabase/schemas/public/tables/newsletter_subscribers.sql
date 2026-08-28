@@ -15,4 +15,6 @@ create policy "Allow public newsletter subscriptions" on "public"."newsletter_su
   to "anon"
   with check (true);
 
-grant delete, insert, maintain, references, select, trigger, truncate, update on table "public"."newsletter_subscribers" to "anon", "authenticated", "postgres", "service_role";
+grant insert on table "public"."newsletter_subscribers" to "anon", "authenticated";
+
+grant delete, insert, maintain, references, select, trigger, truncate, update on table "public"."newsletter_subscribers" to "postgres", "service_role";

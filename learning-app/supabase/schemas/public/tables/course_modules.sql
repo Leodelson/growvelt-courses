@@ -19,16 +19,9 @@ create policy "Published course modules are public" on "public"."course_modules"
   for select
   to "anon", "authenticated"
   using ((exists ( select 1
-   from public.learning_courses
-  where ((learning_courses.id = course_modules.course_id) AND (learning_courses.status = 'published'::text)
-    and not public.is_paystack_test_fixture_course(learning_courses.id)))));
+   from public.learning_courses course
+  where ((course.id = course_modules.course_id) AND (course.status = 'published'::text) AND (not public.is_paystack_test_fixture_course(course.id))))));
+
+grant select on table "public"."course_modules" to "anon", "authenticated";
 
 grant delete, insert, maintain, references, select, trigger, truncate, update on table "public"."course_modules" to "postgres", "service_role";
-
-revoke all on table "public"."course_modules" from "anon";
-
-grant maintain, references, select, trigger, truncate on table "public"."course_modules" to "anon";
-
-revoke all on table "public"."course_modules" from "authenticated";
-
-grant maintain, references, select, trigger, truncate on table "public"."course_modules" to "authenticated";

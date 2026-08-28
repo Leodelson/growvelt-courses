@@ -28,4 +28,6 @@ BEGIN
 END;
 $function$;
 
-grant execute on function "public"."rls_auto_enable"() to public, "anon", "authenticated", "postgres", "service_role";
+grant execute on function "public"."rls_auto_enable"() to "postgres", "service_role";
+
+revoke all on function "public"."rls_auto_enable"() from public;

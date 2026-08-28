@@ -22,4 +22,9 @@ create table "public"."account_capabilities" (
 alter table "public"."account_capabilities"
   enable row level security;
 
+create trigger audit_learning_capability_change
+  after insert or update of status on public.account_capabilities
+  for each row
+  execute function public.capture_learning_security_audit_event('capability.changed', 'account_capability');
+
 grant delete, insert, maintain, references, select, trigger, truncate, update on table "public"."account_capabilities" to "postgres", "service_role";

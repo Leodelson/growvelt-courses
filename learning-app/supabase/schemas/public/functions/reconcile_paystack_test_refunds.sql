@@ -1,5 +1,14 @@
 create or replace function public.reconcile_paystack_test_refunds()
-returns table(issue_type text,order_reference text,detail text) language sql stable security definer set search_path to '' as $function$
+  returns table (
+    issue_type      text,
+    order_reference text,
+    detail          text
+  )
+  language sql
+  stable
+  security definer
+  set search_path to ''
+  AS $function$
  select 'processed_refund_without_ledger',o.order_reference,'Processed refund case has no reversal ledger' from public.learning_payment_cases c join public.learning_orders o on o.id=c.order_id where c.case_type='refund' and c.status='processed' and not exists(select 1 from public.learning_ledger_transactions t where t.payment_case_id=c.id and t.transaction_type='refund')
  union all select 'refund_ledger_without_processed_case',o.order_reference,'Refund ledger is not backed by a processed case' from public.learning_ledger_transactions t join public.learning_orders o on o.id=t.order_id left join public.learning_payment_cases c on c.id=t.payment_case_id where t.transaction_type='refund' and (c.id is null or c.status<>'processed')
  union all select 'refund_amount_mismatch',o.order_reference,'Processed refund amount differs from authoritative gross' from public.learning_payment_cases c join public.learning_orders o on o.id=c.order_id where c.case_type='refund' and c.status='processed' and (c.amount_minor<>o.gross_amount_minor or c.currency<>o.currency)
@@ -13,5 +22,7 @@ returns table(issue_type text,order_reference text,detail text) language sql sta
  union all select 'stale_refund_case',o.order_reference,'Refund case requires verification or operator attention' from public.learning_payment_cases c join public.learning_orders o on o.id=c.order_id where c.case_type='refund' and ((c.status in('pending','processing') and c.updated_at<now()-interval '2 hours') or (c.status='needs_attention' and c.updated_at<now()-interval '15 minutes'))
  union all select 'refund_provider_event_unresolved',o.order_reference,'Refund provider event is failed or stale' from public.learning_payment_provider_events e join public.learning_orders o on o.id=e.order_id where e.event_type like 'refund.%' and (e.processing_status='failed' or (e.processing_status='received' and e.received_at<now()-interval '5 minutes'));
 $function$;
-revoke all on function public.reconcile_paystack_test_refunds() from public, anon, authenticated;
-grant execute on function public.reconcile_paystack_test_refunds() to postgres, service_role;
+
+grant execute on function "public"."reconcile_paystack_test_refunds"() to "postgres", "service_role";
+
+revoke all on function "public"."reconcile_paystack_test_refunds"() from public;

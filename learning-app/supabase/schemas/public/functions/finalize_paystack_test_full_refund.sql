@@ -1,5 +1,18 @@
-create or replace function public.finalize_paystack_test_full_refund(p_case_id bigint,p_provider_event_id bigint,p_provenance text,p_operator_id uuid default null)
-returns table(outcome text,order_id bigint,ledger_transaction_id bigint) language plpgsql security definer set search_path to '' as $function$
+create or replace function public.finalize_paystack_test_full_refund (
+  p_case_id           bigint,
+  p_provider_event_id bigint,
+  p_provenance        text,
+  p_operator_id       uuid   default null::uuid
+)
+  returns table (
+    outcome               text,
+    order_id              bigint,
+    ledger_transaction_id bigint
+  )
+  language plpgsql
+  security definer
+  set search_path to ''
+  AS $function$
 declare case_row record; entitlement_row record; ledger_key bigint;
 begin
  perform pg_advisory_xact_lock(hashtextextended('refund-case:'||p_case_id::text,0));
@@ -27,5 +40,7 @@ begin
  values(p_operator_id,case when p_operator_id is null then 'payment_system' else 'admin_operator' end,'refund.processed','payment_case',p_case_id::text,jsonb_build_object('order_id',case_row.order_id,'ledger_transaction_id',ledger_key,'amount_minor',case_row.amount_minor));
  return query select 'refunded',case_row.order_id,ledger_key;
 end;$function$;
-revoke all on function public.finalize_paystack_test_full_refund(bigint,bigint,text,uuid) from public, anon, authenticated;
-grant execute on function public.finalize_paystack_test_full_refund(bigint,bigint,text,uuid) to postgres, service_role;
+
+grant execute on function "public"."finalize_paystack_test_full_refund"(bigint, bigint, text, uuid) to "postgres", "service_role";
+
+revoke all on function "public"."finalize_paystack_test_full_refund"(bigint, bigint, text, uuid) from public;

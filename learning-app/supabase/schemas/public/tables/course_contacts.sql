@@ -18,4 +18,6 @@ create policy "Allow public course contact submissions" on "public"."course_cont
   to "anon"
   with check (true);
 
-grant delete, insert, maintain, references, select, trigger, truncate, update on table "public"."course_contacts" to "anon", "authenticated", "postgres", "service_role";
+grant insert on table "public"."course_contacts" to "anon", "authenticated";
+
+grant delete, insert, maintain, references, select, trigger, truncate, update on table "public"."course_contacts" to "postgres", "service_role";

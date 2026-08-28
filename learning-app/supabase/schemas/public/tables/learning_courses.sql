@@ -38,6 +38,12 @@ alter table "public"."learning_courses"
 
 create index learning_courses_instructor_updated_at_idx on public.learning_courses using btree (instructor_id, updated_at desc);
 
+create trigger audit_learning_course_status
+  after update of status on public.learning_courses
+  for each row
+  when ((old.status IS DISTINCT FROM new.status))
+  execute function public.capture_learning_security_audit_event('course.status_changed', 'learning_course');
+
 create trigger learning_courses_quiz_readiness_before_submit
   before update of status on public.learning_courses
   for each row
@@ -46,166 +52,82 @@ create trigger learning_courses_quiz_readiness_before_submit
 create policy "Published courses are public" on "public"."learning_courses"
   for select
   to "anon", "authenticated"
-  using ((status = 'published'::text) and not public.is_paystack_test_fixture_course(learning_courses.id));
-
-grant delete, insert, maintain, references, select, trigger, truncate, update on table "public"."learning_courses" to "postgres", "service_role";
-
-revoke all ("category") on table "public"."learning_courses" from "anon";
+  using (((status = 'published'::text) AND (not public.is_paystack_test_fixture_course(id))));
 
 grant select ("category") on table "public"."learning_courses" to "anon";
 
-revoke all ("created_at") on table "public"."learning_courses" from "anon";
-
 grant select ("created_at") on table "public"."learning_courses" to "anon";
-
-revoke all ("description") on table "public"."learning_courses" from "anon";
 
 grant select ("description") on table "public"."learning_courses" to "anon";
 
-revoke all ("id") on table "public"."learning_courses" from "anon";
-
 grant select ("id") on table "public"."learning_courses" to "anon";
-
-revoke all ("instructor_id") on table "public"."learning_courses" from "anon";
 
 grant select ("instructor_id") on table "public"."learning_courses" to "anon";
 
-revoke all ("is_free") on table "public"."learning_courses" from "anon";
-
 grant select ("is_free") on table "public"."learning_courses" to "anon";
-
-revoke all ("is_limited_time_free") on table "public"."learning_courses" from "anon";
 
 grant select ("is_limited_time_free") on table "public"."learning_courses" to "anon";
 
-revoke all ("level") on table "public"."learning_courses" from "anon";
-
 grant select ("level") on table "public"."learning_courses" to "anon";
-
-revoke all ("price_amount") on table "public"."learning_courses" from "anon";
 
 grant select ("price_amount") on table "public"."learning_courses" to "anon";
 
-revoke all ("price_currency") on table "public"."learning_courses" from "anon";
-
 grant select ("price_currency") on table "public"."learning_courses" to "anon";
-
-revoke all ("published_at") on table "public"."learning_courses" from "anon";
 
 grant select ("published_at") on table "public"."learning_courses" to "anon";
 
-revoke all ("reviewed_at") on table "public"."learning_courses" from "anon";
-
 grant select ("reviewed_at") on table "public"."learning_courses" to "anon";
-
-revoke all ("slug") on table "public"."learning_courses" from "anon";
 
 grant select ("slug") on table "public"."learning_courses" to "anon";
 
-revoke all ("status") on table "public"."learning_courses" from "anon";
-
 grant select ("status") on table "public"."learning_courses" to "anon";
-
-revoke all ("submitted_at") on table "public"."learning_courses" from "anon";
 
 grant select ("submitted_at") on table "public"."learning_courses" to "anon";
 
-revoke all ("summary") on table "public"."learning_courses" from "anon";
-
 grant select ("summary") on table "public"."learning_courses" to "anon";
-
-revoke all ("thumbnail_url") on table "public"."learning_courses" from "anon";
 
 grant select ("thumbnail_url") on table "public"."learning_courses" to "anon";
 
-revoke all ("title") on table "public"."learning_courses" from "anon";
-
 grant select ("title") on table "public"."learning_courses" to "anon";
-
-revoke all ("updated_at") on table "public"."learning_courses" from "anon";
 
 grant select ("updated_at") on table "public"."learning_courses" to "anon";
 
-revoke all on table "public"."learning_courses" from "anon";
-
-grant maintain, references, trigger, truncate on table "public"."learning_courses" to "anon";
-
-revoke all ("category") on table "public"."learning_courses" from "authenticated";
-
 grant select ("category") on table "public"."learning_courses" to "authenticated";
-
-revoke all ("created_at") on table "public"."learning_courses" from "authenticated";
 
 grant select ("created_at") on table "public"."learning_courses" to "authenticated";
 
-revoke all ("description") on table "public"."learning_courses" from "authenticated";
-
 grant select ("description") on table "public"."learning_courses" to "authenticated";
-
-revoke all ("id") on table "public"."learning_courses" from "authenticated";
 
 grant select ("id") on table "public"."learning_courses" to "authenticated";
 
-revoke all ("instructor_id") on table "public"."learning_courses" from "authenticated";
-
 grant select ("instructor_id") on table "public"."learning_courses" to "authenticated";
-
-revoke all ("is_free") on table "public"."learning_courses" from "authenticated";
 
 grant select ("is_free") on table "public"."learning_courses" to "authenticated";
 
-revoke all ("is_limited_time_free") on table "public"."learning_courses" from "authenticated";
-
 grant select ("is_limited_time_free") on table "public"."learning_courses" to "authenticated";
-
-revoke all ("level") on table "public"."learning_courses" from "authenticated";
 
 grant select ("level") on table "public"."learning_courses" to "authenticated";
 
-revoke all ("price_amount") on table "public"."learning_courses" from "authenticated";
-
 grant select ("price_amount") on table "public"."learning_courses" to "authenticated";
-
-revoke all ("price_currency") on table "public"."learning_courses" from "authenticated";
 
 grant select ("price_currency") on table "public"."learning_courses" to "authenticated";
 
-revoke all ("published_at") on table "public"."learning_courses" from "authenticated";
-
 grant select ("published_at") on table "public"."learning_courses" to "authenticated";
-
-revoke all ("reviewed_at") on table "public"."learning_courses" from "authenticated";
 
 grant select ("reviewed_at") on table "public"."learning_courses" to "authenticated";
 
-revoke all ("slug") on table "public"."learning_courses" from "authenticated";
-
 grant select ("slug") on table "public"."learning_courses" to "authenticated";
-
-revoke all ("status") on table "public"."learning_courses" from "authenticated";
 
 grant select ("status") on table "public"."learning_courses" to "authenticated";
 
-revoke all ("submitted_at") on table "public"."learning_courses" from "authenticated";
-
 grant select ("submitted_at") on table "public"."learning_courses" to "authenticated";
-
-revoke all ("summary") on table "public"."learning_courses" from "authenticated";
 
 grant select ("summary") on table "public"."learning_courses" to "authenticated";
 
-revoke all ("thumbnail_url") on table "public"."learning_courses" from "authenticated";
-
 grant select ("thumbnail_url") on table "public"."learning_courses" to "authenticated";
-
-revoke all ("title") on table "public"."learning_courses" from "authenticated";
 
 grant select ("title") on table "public"."learning_courses" to "authenticated";
 
-revoke all ("updated_at") on table "public"."learning_courses" from "authenticated";
-
 grant select ("updated_at") on table "public"."learning_courses" to "authenticated";
 
-revoke all on table "public"."learning_courses" from "authenticated";
-
-grant maintain, references, trigger, truncate on table "public"."learning_courses" to "authenticated";
+grant delete, insert, maintain, references, select, trigger, truncate, update on table "public"."learning_courses" to "postgres", "service_role";

@@ -1,5 +1,15 @@
-create or replace function public.process_paystack_test_refund_event(p_event_id bigint)
-returns table(outcome text,order_id bigint,ledger_transaction_id bigint) language plpgsql security definer set search_path to '' as $function$
+create or replace function public.process_paystack_test_refund_event (
+  p_event_id bigint
+)
+  returns table (
+    outcome               text,
+    order_id              bigint,
+    ledger_transaction_id bigint
+  )
+  language plpgsql
+  security definer
+  set search_path to ''
+  AS $function$
 declare event_row record; case_row record; normalized text; result_row record; result_outcome text; result_order_id bigint; result_ledger_id bigint;
 begin
  select * into event_row from public.learning_payment_provider_events where id=p_event_id and provider='paystack' for update;
@@ -24,5 +34,7 @@ begin
  update public.learning_payment_provider_events set processing_status='processed',processed_at=now(),processing_error=null,recovery_status='resolved' where id=p_event_id;
  return query select result_outcome,result_order_id,result_ledger_id;
 end;$function$;
-revoke all on function public.process_paystack_test_refund_event(bigint) from public, anon, authenticated;
-grant execute on function public.process_paystack_test_refund_event(bigint) to postgres, service_role;
+
+grant execute on function "public"."process_paystack_test_refund_event"(bigint) to "postgres", "service_role";
+
+revoke all on function "public"."process_paystack_test_refund_event"(bigint) from public;

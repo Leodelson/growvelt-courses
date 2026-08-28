@@ -46,16 +46,9 @@ create policy "Published course preview lessons are public" on "public"."lessons
   for select
   to "anon", "authenticated"
   using (((is_preview = true) AND (exists ( select 1
-   from public.learning_courses
-  where ((learning_courses.id = lessons.course_id) AND (learning_courses.status = 'published'::text)
-    and not public.is_paystack_test_fixture_course(learning_courses.id))))));
+   from public.learning_courses course
+  where ((course.id = lessons.course_id) AND (course.status = 'published'::text) AND (not public.is_paystack_test_fixture_course(course.id)))))));
+
+grant select on table "public"."lessons" to "anon", "authenticated";
 
 grant delete, insert, maintain, references, select, trigger, truncate, update on table "public"."lessons" to "postgres", "service_role";
-
-revoke all on table "public"."lessons" from "anon";
-
-grant maintain, references, select, trigger, truncate on table "public"."lessons" to "anon";
-
-revoke all on table "public"."lessons" from "authenticated";
-
-grant maintain, references, select, trigger, truncate on table "public"."lessons" to "authenticated";

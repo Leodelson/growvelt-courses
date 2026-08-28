@@ -33,58 +33,19 @@ create or replace function public.get_published_learning_course_by_slug (
   security definer
   set search_path to ''
   AS $function$
-declare
-  normalized_slug text := lower(btrim(p_slug));
+declare normalized_slug text:=lower(btrim(p_slug));
 begin
-  if normalized_slug is null or normalized_slug = '' or char_length(normalized_slug) > 220 then
-    raise exception 'Invalid published course reference' using errcode = '22023';
-  end if;
-
-  return query
-  select course_row.id,
-         course_row.slug,
-         course_row.title,
-         course_row.summary,
-         course_row.description,
-         course_row.category,
-         course_row.level,
-         course_row.is_free,
-         course_row.price_amount,
-         course_row.price_currency,
-         profile_row.full_name,
-         course_row.published_at,
-         module_row.id,
-         module_row.title,
-         module_row.position,
-         lesson_row.id,
-         lesson_row.title,
-         lesson_row.lesson_type,
-         lesson_row.is_preview,
-         case when lesson_row.is_preview then lesson_row.content else null::text end,
-         case when lesson_row.is_preview then lesson_row.video_provider else null::text end,
-         case when lesson_row.is_preview then lesson_row.video_reference else null::text end,
-         case when lesson_row.is_preview then lesson_row.video_visibility else null::text end,
-         case when lesson_row.is_preview then lesson_row.duration_seconds else null::integer end,
-         lesson_row.position
-  from public.learning_courses as course_row
-  left join public.profiles as profile_row on profile_row.id = course_row.instructor_id
-  left join public.course_modules as module_row on module_row.course_id = course_row.id
-  left join public.lessons as lesson_row on lesson_row.course_id = course_row.id and lesson_row.module_id = module_row.id
-  where course_row.slug = normalized_slug
-    and course_row.status = 'published'
-    and (
-      not exists (select 1 from public.learning_paystack_test_fixtures fixture where fixture.course_id = course_row.id)
-      or exists (
-        select 1 from public.learning_paystack_test_fixtures fixture
-        where fixture.course_id = course_row.id
-          and fixture.status = 'active'
-          and fixture.expires_at > now()
-          and fixture.tester_id = auth.uid()
-      )
-    )
-  order by module_row.position nulls last, module_row.id, lesson_row.position nulls last, lesson_row.id;
-end;
-$function$;
+  if normalized_slug is null or normalized_slug='' or char_length(normalized_slug)>220 then raise exception 'Invalid published course reference' using errcode='22023'; end if;
+  return query select c.id,c.slug,c.title,c.summary,c.description,c.category,c.level,c.is_free,c.price_amount,c.price_currency,p.full_name,c.published_at,
+    m.id,m.title,m.position,l.id,l.title,l.lesson_type,l.is_preview,case when l.is_preview then l.content end,case when l.is_preview then l.video_provider end,
+    case when l.is_preview then l.video_reference end,case when l.is_preview then l.video_visibility end,case when l.is_preview then l.duration_seconds end,l.position
+  from public.learning_courses c left join public.profiles p on p.id=c.instructor_id left join public.course_modules m on m.course_id=c.id
+  left join public.lessons l on l.course_id=c.id and l.module_id=m.id
+  where c.slug=normalized_slug and c.status='published' and (
+    not exists(select 1 from public.learning_paystack_test_fixtures f where f.course_id=c.id)
+    or exists(select 1 from public.learning_paystack_test_fixtures f where f.course_id=c.id and f.status='active' and f.expires_at>now() and f.tester_id=auth.uid()))
+  order by m.position nulls last,m.id,l.position nulls last,l.id;
+end;$function$;
 
 grant execute on function "public"."get_published_learning_course_by_slug"(text) to "anon", "authenticated", "postgres", "service_role";
 

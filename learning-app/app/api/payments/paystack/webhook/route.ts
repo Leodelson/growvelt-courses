@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/app/lib/supabase/admin";
-import { digestPaystackPayload, getPaystackTestConfig, parsePaystackTestChargeSuccess, parsePaystackTestRefundEvent, verifyPaystackSignature } from "@/app/lib/payments/paystack";
+import { digestPaystackPayload, getPaystackTestConfig, parsePaystackTestChargeSuccess, parsePaystackTestDisputeEvent, parsePaystackTestRefundEvent, verifyPaystackSignature } from "@/app/lib/payments/paystack";
 
 export async function POST(request: Request) {
   let config; try { config = getPaystackTestConfig(false); } catch { return NextResponse.json({ code: "not_configured" }, { status: 503 }); }
@@ -12,6 +12,24 @@ export async function POST(request: Request) {
     payload = JSON.parse(rawBody) as unknown;
   } catch {
     return NextResponse.json({ code: "invalid_payload" }, { status: 400 });
+  }
+  const dispute = parsePaystackTestDisputeEvent(payload);
+  if (dispute) {
+    const admin = createAdminClient();
+    const { data: received, error: receiveError } = await admin.rpc("receive_paystack_test_dispute_event", {
+      p_provider_event_id: dispute.eventId, p_payload_digest: digestPaystackPayload(rawBody), p_event_type: dispute.eventType,
+      p_transaction_reference: dispute.transactionReference, p_provider_case_id: dispute.disputeId, p_provider_status: dispute.status,
+      p_resolution: dispute.resolution, p_amount_minor: dispute.amountMinor, p_currency: dispute.currency, p_domain: dispute.domain,
+      p_category: dispute.category, p_reason: dispute.reason, p_deadline: dispute.deadline, p_payload: dispute.payload,
+    });
+    if (receiveError) { console.error("dispute.webhook_receive_failed", { provider: "paystack", transactionReference: dispute.transactionReference, code: receiveError.code }); return NextResponse.json({ code: "receipt_failed" }, { status: 500 }); }
+    const receipt = (received as Array<{ outcome?: string; event_id?: number }> | null)?.[0];
+    if (!receipt?.event_id || receipt.outcome === "duplicate_payload_mismatch") return NextResponse.json({ code: "receipt_conflict" }, { status: 409 });
+    const { data, error } = await admin.rpc("process_paystack_test_dispute_event", { p_event_id: receipt.event_id });
+    if (error) { console.error("dispute.webhook_processing_deferred", { provider: "paystack", transactionReference: dispute.transactionReference, eventId: receipt.event_id, code: error.code }); return NextResponse.json({ received: true, processing: "deferred" }); }
+    const outcome = (data as Array<{ outcome?: string }> | null)?.[0]?.outcome;
+    if (outcome && !["action_required", "under_review", "won", "lost", "already_processed"].includes(outcome)) console.error("dispute.webhook_manual_review", { provider: "paystack", transactionReference: dispute.transactionReference, eventId: receipt.event_id, outcome });
+    return NextResponse.json({ received: true });
   }
   const refund = parsePaystackTestRefundEvent(payload);
   if (refund) {

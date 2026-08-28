@@ -1,6 +1,19 @@
-create or replace function public.receive_paystack_test_verified_refund(
- p_case_id bigint,p_provider_case_id text,p_provider_status text,p_provider_reference text,p_amount_minor bigint,p_currency text,p_domain text,p_payload jsonb,p_operator_id uuid
-) returns bigint language plpgsql security definer set search_path to '' as $function$
+create or replace function public.receive_paystack_test_verified_refund (
+  p_case_id            bigint,
+  p_provider_case_id   text,
+  p_provider_status    text,
+  p_provider_reference text,
+  p_amount_minor       bigint,
+  p_currency           text,
+  p_domain             text,
+  p_payload            jsonb,
+  p_operator_id        uuid
+)
+  returns bigint
+  language plpgsql
+  security definer
+  set search_path to ''
+  AS $function$
 declare case_row record; event_key bigint; digest text; normalized text;
 begin
  if not exists(select 1 from public.account_capabilities ac where ac.user_id=p_operator_id and ac.capability='admin' and ac.status='active') then raise exception 'Active administrator required' using errcode='42501'; end if;
@@ -16,5 +29,7 @@ begin
  insert into public.learning_audit_events(actor_user_id,actor_role,action,entity_type,entity_id,metadata) values(p_operator_id,'admin_operator','refund.verified_via_api','payment_case',p_case_id::text,jsonb_build_object('provider_status',normalized,'event_id',event_key));
  return event_key;
 end;$function$;
-revoke all on function public.receive_paystack_test_verified_refund(bigint,text,text,text,bigint,text,text,jsonb,uuid) from public, anon, authenticated;
-grant execute on function public.receive_paystack_test_verified_refund(bigint,text,text,text,bigint,text,text,jsonb,uuid) to postgres, service_role;
+
+grant execute on function "public"."receive_paystack_test_verified_refund"(bigint, text, text, text, bigint, text, text, jsonb, uuid) to "postgres", "service_role";
+
+revoke all on function "public"."receive_paystack_test_verified_refund"(bigint, text, text, text, bigint, text, text, jsonb, uuid) from public;

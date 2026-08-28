@@ -26,61 +26,18 @@ create or replace function public.search_public_published_learning_courses (
   security definer
   set search_path to ''
   AS $function$
-declare
-  normalized_query text := nullif(lower(btrim(p_query)), '');
-  normalized_category text := nullif(lower(btrim(p_category)), '');
-  normalized_level text := nullif(lower(btrim(p_level)), '');
-  normalized_sort text := lower(btrim(coalesce(p_sort, 'newest')));
+declare q text:=nullif(lower(btrim(p_query)),''); cat text:=nullif(lower(btrim(p_category)),''); lvl text:=nullif(lower(btrim(p_level)),''); sort_key text:=lower(btrim(coalesce(p_sort,'newest')));
 begin
-  if normalized_query is not null and char_length(normalized_query) > 120 then
-    raise exception 'Invalid catalog search query' using errcode = '22023';
-  end if;
-  if normalized_category is not null and char_length(normalized_category) > 100 then
-    raise exception 'Invalid catalog category filter' using errcode = '22023';
-  end if;
-  if normalized_level is not null and char_length(normalized_level) > 100 then
-    raise exception 'Invalid catalog level filter' using errcode = '22023';
-  end if;
-  if normalized_sort not in ('newest', 'title_asc', 'title_desc') then
-    raise exception 'Invalid catalog sort' using errcode = '22023';
-  end if;
-  if p_limit not between 1 and 24 or p_offset < 0 then
-    raise exception 'Invalid catalog pagination' using errcode = '22023';
-  end if;
-
-  return query
-  select
-    course_row.id,
-    course_row.slug,
-    course_row.title,
-    course_row.summary,
-    course_row.category,
-    course_row.level,
-    course_row.is_free,
-    course_row.price_amount,
-    course_row.price_currency,
-    profile_row.full_name,
-    course_row.published_at,
-    count(*) over ()::integer
-  from public.learning_courses as course_row
-  left join public.profiles as profile_row on profile_row.id = course_row.instructor_id
-  where course_row.status = 'published'
-    and not exists (
-      select 1 from public.learning_paystack_test_fixtures fixture where fixture.course_id = course_row.id
-    )
-    and (normalized_query is null or position(normalized_query in lower(concat_ws(' ', course_row.title, course_row.summary, course_row.category, course_row.level))) > 0)
-    and (normalized_category is null or lower(course_row.category) = normalized_category)
-    and (normalized_level is null or lower(course_row.level) = normalized_level)
-    and (p_is_free is null or course_row.is_free = p_is_free)
-  order by
-    case when normalized_sort = 'title_asc' then lower(course_row.title) end asc nulls last,
-    case when normalized_sort = 'title_desc' then lower(course_row.title) end desc nulls last,
-    case when normalized_sort = 'newest' then course_row.published_at end desc nulls last,
-    course_row.id desc
-  limit p_limit
-  offset p_offset;
-end;
-$function$;
+  if q is not null and char_length(q)>120 or cat is not null and char_length(cat)>100 or lvl is not null and char_length(lvl)>100 then raise exception 'Invalid catalog filter' using errcode='22023'; end if;
+  if sort_key not in ('newest','title_asc','title_desc') or p_limit not between 1 and 24 or p_offset<0 then raise exception 'Invalid catalog pagination or sort' using errcode='22023'; end if;
+  return query select c.id,c.slug,c.title,c.summary,c.category,c.level,c.is_free,c.price_amount,c.price_currency,p.full_name,c.published_at,count(*) over()::integer
+  from public.learning_courses c left join public.profiles p on p.id=c.instructor_id
+  where c.status='published' and not exists(select 1 from public.learning_paystack_test_fixtures f where f.course_id=c.id)
+    and (q is null or position(q in lower(concat_ws(' ',c.title,c.summary,c.category,c.level)))>0)
+    and (cat is null or lower(c.category)=cat) and (lvl is null or lower(c.level)=lvl) and (p_is_free is null or c.is_free=p_is_free)
+  order by case when sort_key='title_asc' then lower(c.title) end asc nulls last,case when sort_key='title_desc' then lower(c.title) end desc nulls last,
+    case when sort_key='newest' then c.published_at end desc nulls last,c.id desc limit p_limit offset p_offset;
+end;$function$;
 
 grant execute
   on function "public"."search_public_published_learning_courses"(text, text, text, boolean, text, integer, integer)

@@ -19,19 +19,14 @@ create unique index enrollments_id_learner_course_id_key on public.enrollments u
 
 create trigger delete_learning_quiz_attempts_with_enrollment
   before delete on public.enrollments
-  for each row execute function public.delete_learning_quiz_attempts_with_enrollment();
+  for each row
+  execute function public.delete_learning_quiz_attempts_with_enrollment();
 
 create policy "Learners can read own enrollments" on "public"."enrollments"
   for select
   to "authenticated"
   using ((auth.uid() = learner_id));
 
+grant select on table "public"."enrollments" to "anon", "authenticated";
+
 grant delete, insert, maintain, references, select, trigger, truncate, update on table "public"."enrollments" to "postgres", "service_role";
-
-revoke all on table "public"."enrollments" from "anon";
-
-grant maintain, references, select, trigger on table "public"."enrollments" to "anon";
-
-revoke all on table "public"."enrollments" from "authenticated";
-
-grant maintain, references, select, trigger on table "public"."enrollments" to "authenticated";

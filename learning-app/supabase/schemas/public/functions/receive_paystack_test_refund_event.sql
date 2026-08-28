@@ -1,8 +1,22 @@
-create or replace function public.receive_paystack_test_refund_event(
- p_provider_event_id text,p_payload_digest text,p_transaction_reference text,p_provider_case_id text,
- p_provider_status text,p_amount_minor bigint,p_currency text,p_domain text,p_payload jsonb
-) returns table(outcome text,event_id bigint)
-language plpgsql security definer set search_path to '' as $function$
+create or replace function public.receive_paystack_test_refund_event (
+  p_provider_event_id     text,
+  p_payload_digest        text,
+  p_transaction_reference text,
+  p_provider_case_id      text,
+  p_provider_status       text,
+  p_amount_minor          bigint,
+  p_currency              text,
+  p_domain                text,
+  p_payload               jsonb
+)
+  returns table (
+    outcome  text,
+    event_id bigint
+  )
+  language plpgsql
+  security definer
+  set search_path to ''
+  AS $function$
 declare case_row record; existing record; event_key bigint; normalized text;
 begin
  normalized:=replace(lower(trim(p_provider_status)),'_','-');
@@ -26,5 +40,7 @@ begin
  values('paystack',p_provider_event_id,'refund.'||normalized,p_payload_digest,p_payload,true,'received',case_row.order_id,case_row.payment_attempt_id,case_row.id,'none') returning id into event_key;
  return query select 'received',event_key;
 end;$function$;
-revoke all on function public.receive_paystack_test_refund_event(text,text,text,text,text,bigint,text,text,jsonb) from public, anon, authenticated;
-grant execute on function public.receive_paystack_test_refund_event(text,text,text,text,text,bigint,text,text,jsonb) to postgres, service_role;
+
+grant execute on function "public"."receive_paystack_test_refund_event"(text, text, text, text, text, bigint, text, text, jsonb) to "postgres", "service_role";
+
+revoke all on function "public"."receive_paystack_test_refund_event"(text, text, text, text, text, bigint, text, text, jsonb) from public;

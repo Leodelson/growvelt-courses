@@ -1,7 +1,23 @@
-create or replace function public.request_paystack_test_full_refund(
-  p_order_reference text,p_operator_id uuid,p_idempotency_key uuid,p_confirmation text,p_reason_code text,p_operator_note text
-) returns table(case_id bigint,case_reference uuid,amount_minor bigint,currency text,status text,provider_transaction_id text)
-language plpgsql security definer set search_path to '' as $function$
+create or replace function public.request_paystack_test_full_refund (
+  p_order_reference text,
+  p_operator_id     uuid,
+  p_idempotency_key uuid,
+  p_confirmation    text,
+  p_reason_code     text,
+  p_operator_note   text
+)
+  returns table (
+    case_id                 bigint,
+    case_reference          uuid,
+    amount_minor            bigint,
+    currency                text,
+    status                  text,
+    provider_transaction_id text
+  )
+  language plpgsql
+  security definer
+  set search_path to ''
+  AS $function$
 declare order_row record; case_row public.learning_payment_cases%rowtype; normalized_note text; normalized_reason text;
 begin
   if not exists(select 1 from public.account_capabilities ac where ac.user_id=p_operator_id and ac.capability='admin' and ac.status='active')
@@ -34,5 +50,7 @@ begin
   values(p_operator_id,'admin_operator','refund.requested','payment_case',case_row.id::text,jsonb_build_object('order_id',order_row.id,'amount_minor',order_row.gross_amount_minor,'currency',order_row.currency,'reason_code',normalized_reason));
   return query select case_row.id,case_row.case_reference,case_row.amount_minor,case_row.currency,case_row.status,case_row.provider_transaction_id;
 end;$function$;
-revoke all on function public.request_paystack_test_full_refund(text,uuid,uuid,text,text,text) from public, anon, authenticated;
-grant execute on function public.request_paystack_test_full_refund(text,uuid,uuid,text,text,text) to postgres, service_role;
+
+grant execute on function "public"."request_paystack_test_full_refund"(text, uuid, uuid, text, text, text) to "postgres", "service_role";
+
+revoke all on function "public"."request_paystack_test_full_refund"(text, uuid, uuid, text, text, text) from public;

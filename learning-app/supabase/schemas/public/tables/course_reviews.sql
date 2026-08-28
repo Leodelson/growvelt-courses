@@ -21,12 +21,6 @@ create policy "Published reviews are public" on "public"."course_reviews"
   to "anon", "authenticated"
   using ((status = 'published'::text));
 
+grant select on table "public"."course_reviews" to "anon", "authenticated";
+
 grant delete, insert, maintain, references, select, trigger, truncate, update on table "public"."course_reviews" to "postgres", "service_role";
-
-revoke all on table "public"."course_reviews" from "anon";
-
-grant maintain, references, select, trigger, update on table "public"."course_reviews" to "anon";
-
-revoke all on table "public"."course_reviews" from "authenticated";
-
-grant maintain, references, select, trigger, update on table "public"."course_reviews" to "authenticated";
