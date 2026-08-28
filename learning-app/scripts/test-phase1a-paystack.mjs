@@ -7,6 +7,7 @@ const {
   digestPaystackPayload,
   isTrustedPaystackAuthorizationUrl,
   parsePaystackTestChargeSuccess,
+  parsePaystackTestRefundEvent,
   verifyPaystackSignature,
 } = await import("../app/lib/payments/paystack-core.ts");
 const { resolvePaystackCallbackReference } = await import("../app/lib/payments/paystack-callback.ts");
@@ -41,6 +42,19 @@ assert.equal(parsePaystackTestChargeSuccess({ ...event, data: { ...event.data, d
 assert.equal(parsePaystackTestChargeSuccess({ ...event, data: { ...event.data, currency: "USD" } }), null);
 assert.equal(parsePaystackTestChargeSuccess({ ...event, data: { ...event.data, status: "failed" } }), null);
 assert.equal(parsePaystackTestChargeSuccess({ ...event, data: { ...event.data, reference: "client-reference" } }), null);
+
+const refundEvent = { event: "refund.processed", data: { id: 740001, transaction_reference: reference, refund_reference: "refund-740001", amount: "250000", currency: "NGN", domain: "test", status: "processed" } };
+const parsedRefund = parsePaystackTestRefundEvent(refundEvent);
+assert.equal(parsedRefund?.transactionReference, reference);
+assert.equal(parsedRefund?.refundId, "740001");
+assert.equal(parsedRefund?.amountMinor, 250000);
+assert.equal(parsedRefund?.status, "processed");
+const documentedPendingRefund = parsePaystackTestRefundEvent({ event: "refund.pending", data: { transaction_reference: reference, refund_reference: null, amount: "250000", currency: "NGN", domain: "test", status: "pending" } });
+assert.equal(documentedPendingRefund?.refundId, null);
+assert.equal(documentedPendingRefund?.eventId, `refund.pending:${reference}:250000`);
+assert.equal(parsePaystackTestRefundEvent({ ...refundEvent, data: { ...refundEvent.data, domain: "live" } }), null);
+assert.equal(parsePaystackTestRefundEvent({ ...refundEvent, data: { ...refundEvent.data, amount: "0" } }), null);
+assert.equal(parsePaystackTestRefundEvent({ ...refundEvent, event: "refund.unknown" }), null);
 
 assert.equal(resolvePaystackCallbackReference({ reference }), reference);
 assert.equal(resolvePaystackCallbackReference({ reference: [reference, reference] }), reference);

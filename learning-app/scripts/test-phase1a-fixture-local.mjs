@@ -11,8 +11,11 @@ function run(args,input=""){return new Promise((resolve,reject)=>{const child=sp
 const target=await run(["inspect","--format","{{.Name}}|{{.State.Status}}|{{(index (index .NetworkSettings.Ports \"5432/tcp\") 0).HostPort}}",container]);
 if(target!==`/${container}|running|55432`) throw new Error(`Refusing unexpected database target: ${target}`);
 const migration=await readFile(path.join(root,"supabase","migrations","20260826000000_add_paystack_test_fixture_control.sql"),"utf8");
-const tests=await readFile(path.join(root,"supabase","tests","phase1a_paystack_test_fixture.sql"),"utf8");
-const checkoutTests=await readFile(path.join(root,"supabase","tests","phase1a_paystack_test_checkout.sql"),"utf8");
+let tests=await readFile(path.join(root,"supabase","tests","phase1a_paystack_test_fixture.sql"),"utf8");
+let checkoutTests=await readFile(path.join(root,"supabase","tests","phase1a_paystack_test_checkout.sql"),"utf8");
+const authColumns=await run(["exec","-i",container,"psql","-X","-A","-t","-v","ON_ERROR_STOP=1","-U","postgres","-d","postgres"],"select string_agg(column_name,',') from information_schema.columns where table_schema='auth' and table_name='users' and column_name in('email_confirmed_at','confirmed_at','is_sso_user','is_anonymous');");
+function adaptAuthFixture(value){if(!authColumns.includes("email_confirmed_at")) value=value.replaceAll("email_confirmed_at","confirmed_at");const boundary=value.indexOf("insert into public.instructor_profiles");let prefix=boundary<0?value:value.slice(0,boundary);const suffix=boundary<0?"":value.slice(boundary);if(!authColumns.includes("is_sso_user")&&!authColumns.includes("is_anonymous")){prefix=prefix.replace(/,\s*is_sso_user\s*,\s*is_anonymous/g,"").replace(/,\s*false\s*,\s*false\)/g,")");}else if(!authColumns.includes("is_sso_user")){prefix=prefix.replace(/,\s*is_sso_user/g,"").replace(/,\s*false\s*,\s*(false\))/g,", $1");}else if(!authColumns.includes("is_anonymous")){prefix=prefix.replace(/,\s*is_anonymous/g,"").replace(/,\s*false\)/g,")");}return prefix+suffix;}
+tests=adaptAuthFixture(tests); checkoutTests=adaptAuthFixture(checkoutTests);
 const activation=await readFile(path.join(root,"supabase","schemas","public","functions","activate_paystack_test_fixture.sql"),"utf8");
 const closure=await readFile(path.join(root,"supabase","schemas","public","functions","close_paystack_test_fixture.sql"),"utf8");
 const detail=await readFile(path.join(root,"supabase","schemas","public","functions","get_published_learning_course_by_slug.sql"),"utf8");

@@ -9,6 +9,7 @@ create table "public"."learning_payment_provider_events" (
   "processing_status" text not null default 'received'::text,
   "order_id" bigint,
   "payment_attempt_id" bigint,
+  "payment_case_id" bigint,
   "received_at" timestamptz not null default now(),
   "processed_at" timestamptz,
   "processing_error" text,
@@ -21,6 +22,7 @@ create table "public"."learning_payment_provider_events" (
   constraint "learning_payment_provider_events_provider_event_key" unique (provider, provider_event_id),
   constraint "learning_payment_provider_events_order_id_fkey" foreign key (order_id) references public.learning_orders(id) on delete restrict,
   constraint "learning_payment_provider_events_payment_attempt_id_fkey" foreign key (payment_attempt_id) references public.learning_payment_attempts(id) on delete restrict,
+  constraint "learning_payment_provider_events_payment_case_id_fkey" foreign key (payment_case_id) references public.learning_payment_cases(id) on delete restrict,
   constraint "learning_payment_provider_events_provider_check" check (provider ~ '^[a-z][a-z0-9_]{1,30}$'::text),
   constraint "learning_payment_provider_events_event_type_check" check (event_type ~ '^[a-zA-Z0-9_.:-]{2,100}$'::text),
   constraint "learning_payment_provider_events_payload_digest_check" check (payload_digest ~ '^[a-f0-9]{64}$'::text),
@@ -36,6 +38,7 @@ alter table "public"."learning_payment_provider_events" enable row level securit
 create index learning_payment_provider_events_status_idx on public.learning_payment_provider_events using btree (processing_status, received_at, id);
 create index learning_payment_provider_events_order_idx on public.learning_payment_provider_events using btree (order_id, received_at desc, id desc);
 create index learning_payment_provider_events_recovery_idx on public.learning_payment_provider_events using btree (recovery_status, next_retry_at, received_at, id) where processing_status in ('received','failed');
+create index learning_payment_provider_events_case_idx on public.learning_payment_provider_events (payment_case_id, received_at, id) where payment_case_id is not null;
 create trigger prevent_learning_provider_event_delete before delete on public.learning_payment_provider_events for each row execute function public.prevent_learning_financial_record_delete();
-create trigger validate_learning_provider_event_links before insert or update of order_id, payment_attempt_id on public.learning_payment_provider_events for each row execute function public.validate_learning_provider_event_links();
+create trigger validate_learning_provider_event_links before insert or update of order_id, payment_attempt_id, payment_case_id on public.learning_payment_provider_events for each row execute function public.validate_learning_provider_event_links();
 grant delete, insert, select, update on table "public"."learning_payment_provider_events" to "postgres", "service_role";

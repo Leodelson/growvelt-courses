@@ -19,6 +19,8 @@
     "test:payments:fixture:local": "node scripts/test-phase1a-fixture-local.mjs",
     "test:payments:fixture-renewal:local": "node scripts/test-phase1a-fixture-renewal-local.mjs",
     "test:payments:operations:local": "node scripts/test-phase1b1-payment-operations-local.mjs",
+    "test:payments:refunds:local": "node scripts/test-phase1b2a-full-refund-local.mjs",
+    "test:payments:refunds:app": "node scripts/test-phase1b2a-refund-app.mjs",
     "test:auth:session": "node --experimental-strip-types scripts/test-auth-session-propagation.mjs",
     "fixture:payments:test": "node scripts/manage-phase1a-test-fixture.mjs"
   },

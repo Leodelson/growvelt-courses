@@ -39,10 +39,23 @@ const target = await run(["inspect", "--format", "{{.Name}}|{{.State.Status}}|{{
 if (target.out !== `/${container}|running|55432`) throw new Error(`Refusing unexpected database target: ${target.out}`);
 
 const migration = await readFile(path.join(root, "supabase", "migrations", "20260827000000_add_paystack_test_fixture_renewal.sql"), "utf8");
-const tests = await readFile(path.join(root, "supabase", "tests", "phase1a_paystack_test_fixture_renewal.sql"), "utf8");
+let tests = await readFile(path.join(root, "supabase", "tests", "phase1a_paystack_test_fixture_renewal.sql"), "utf8");
 const historyProtection = await readFile(path.join(root, "supabase", "schemas", "public", "functions", "protect_paystack_test_fixture_history.sql"), "utf8");
 const renewalFunction = await readFile(path.join(root, "supabase", "schemas", "public", "functions", "renew_paystack_test_fixture.sql"), "utf8");
 const psql = ["exec", "-i", container, "psql", "-X", "-v", "ON_ERROR_STOP=1", "-U", "postgres", "-d", "postgres"];
+
+const authColumns = (await run([...psql, "-Atc", "select string_agg(column_name,',') from information_schema.columns where table_schema='auth' and table_name='users' and column_name in('email_confirmed_at','confirmed_at','is_sso_user','is_anonymous');"])).out;
+function adaptAuthFixture(value) {
+  if (!authColumns.includes("email_confirmed_at")) value = value.replaceAll("email_confirmed_at", "confirmed_at");
+  const boundary = value.indexOf("insert into public.instructor_profiles");
+  let prefix = boundary < 0 ? value : value.slice(0, boundary);
+  const suffix = boundary < 0 ? "" : value.slice(boundary);
+  if (!authColumns.includes("is_sso_user") && !authColumns.includes("is_anonymous")) {
+    prefix = prefix.replace(/,\s*is_sso_user\s*,\s*is_anonymous/g, "").replace(/,\s*false\s*,\s*false\)/g, ")");
+  }
+  return prefix + suffix;
+}
+tests = adaptAuthFixture(tests);
 
 const present = await run([...psql, "-Atc", "select exists(select 1 from information_schema.columns where table_schema='public' and table_name='learning_paystack_test_fixtures' and column_name='previous_fixture_id');"]);
 if (present.out !== "t") await run(psql, migration);
@@ -50,7 +63,7 @@ if (present.out !== "t") await run(psql, migration);
 await run(psql, `${historyProtection}\n${renewalFunction}`);
 await run(psql, tests);
 
-const setup = `
+let setup = `
 insert into auth.users(id,aud,role,email,encrypted_password,email_confirmed_at,raw_app_meta_data,raw_user_meta_data,created_at,updated_at,is_sso_user,is_anonymous) values
 ('13000000-0000-4000-a000-000000000001','authenticated','authenticated','concurrent-tester@fixture.invalid','',now(),'{}','{"full_name":"Concurrent Tester"}',now(),now(),false,false),
 ('13000000-0000-4000-a000-000000000003','authenticated','authenticated','concurrent-teacher@fixture.invalid','',now(),'{}','{"full_name":"Concurrent Instructor"}',now(),now(),false,false),
@@ -68,6 +81,7 @@ select id,'13000000-0000-4000-a000-000000000003','2026-08-v1','original',now()-i
 insert into public.learning_paystack_test_fixtures(course_id,tester_id,status,activated_at,expires_at,activated_by)
 select id,'13000000-0000-4000-a000-000000000001','active',now()-interval '2 hours',now()-interval '1 hour','13000000-0000-4000-a000-000000000004' from public.learning_courses where slug='phase1a-paystack-test-concurrent';
 `;
+setup = adaptAuthFixture(setup);
 const cleanup = `
 begin;
 delete from public.learning_paystack_test_fixtures where previous_fixture_id is not null and course_id=(select id from public.learning_courses where slug='phase1a-paystack-test-concurrent');

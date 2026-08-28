@@ -5,21 +5,29 @@ export {
   digestPaystackPayload,
   isTrustedPaystackAuthorizationUrl,
   parsePaystackTestChargeSuccess,
+  parsePaystackTestRefundEvent,
   verifyPaystackSignature,
 } from "@/app/lib/payments/paystack-core";
 
-export type PaystackTestConfig = { secretKey: string; callbackUrl: string; checkoutEnabled: boolean };
+export type PaystackTestConfig = { secretKey: string; callbackUrl: string; checkoutEnabled: boolean; refundsEnabled: boolean };
 
 export function getPaystackTestConfig(requireCheckout = false): PaystackTestConfig {
   const secretKey = process.env.PAYSTACK_SECRET_KEY?.trim();
   const mode = process.env.PAYSTACK_MODE?.trim();
   const callbackUrl = process.env.PAYSTACK_CALLBACK_URL?.trim();
   const checkoutEnabled = process.env.PAYMENTS_CHECKOUT_ENABLED === "true";
+  const refundsEnabled = process.env.PAYMENTS_REFUNDS_ENABLED === "true";
   if (mode !== "test" || !secretKey?.startsWith("sk_test_") || !callbackUrl) throw new Error("Paystack test mode is not configured.");
   const parsedCallback = new URL(callbackUrl);
   if (!(["http:", "https:"].includes(parsedCallback.protocol))) throw new Error("Paystack callback URL is invalid.");
   if (requireCheckout && !checkoutEnabled) throw new Error("Paystack test checkout is disabled.");
-  return { secretKey, callbackUrl: parsedCallback.href, checkoutEnabled };
+  return { secretKey, callbackUrl: parsedCallback.href, checkoutEnabled, refundsEnabled };
+}
+
+export function requirePaystackTestRefundsEnabled() {
+  const config = getPaystackTestConfig(false);
+  if (!config.refundsEnabled) throw new Error("Paystack test refunds are disabled.");
+  return config;
 }
 
 export async function initializePaystackTestTransaction(input: { email: string; amountMinor: number; reference: string; callbackUrl: string }) {
@@ -58,4 +66,50 @@ export async function verifyPaystackTestTransaction(reference: string): Promise<
     throw new Error(typeof result?.message === "string" ? result.message : "Paystack verification failed.");
   }
   return { reference, transactionId, amountMinor: Number(data.amount), currency: "NGN", domain: "test", status: data.status, paidAt: typeof data.paid_at === "string" ? data.paid_at : null };
+}
+
+export type PaystackTestRefund = {
+  id: string;
+  reference: string | null;
+  transactionReference: string;
+  amountMinor: number;
+  currency: "NGN";
+  domain: "test";
+  status: "pending" | "processing" | "needs-attention" | "failed" | "processed";
+  payload: Record<string, unknown>;
+};
+
+function parsePaystackRefund(data: Record<string, unknown>, expected?: { transactionReference: string; transactionId: string }): PaystackTestRefund {
+  const id = typeof data.id === "number" && Number.isSafeInteger(data.id) ? String(data.id) : typeof data.id === "string" && /^\d+$/.test(data.id) ? data.id : "";
+  const transaction = data.transaction;
+  const transactionReference = typeof data.transaction_reference === "string" ? data.transaction_reference
+    : transaction && typeof transaction === "object" && typeof (transaction as Record<string, unknown>).reference === "string" ? String((transaction as Record<string, unknown>).reference)
+    : expected?.transactionReference ?? "";
+  const transactionId = typeof transaction === "number" && Number.isSafeInteger(transaction) ? String(transaction)
+    : typeof transaction === "string" && /^\d+$/.test(transaction) ? transaction
+    : transaction && typeof transaction === "object" && (typeof (transaction as Record<string, unknown>).id === "number" || typeof (transaction as Record<string, unknown>).id === "string") ? String((transaction as Record<string, unknown>).id) : "";
+  const status = typeof data.status === "string" ? data.status : "";
+  const amount = typeof data.amount === "string" && /^\d+$/.test(data.amount) ? Number(data.amount) : data.amount;
+  if (!id || !/^GL-[A-F0-9]{32}$/.test(transactionReference) || (expected && (transactionReference !== expected.transactionReference || transactionId !== expected.transactionId))
+    || !Number.isSafeInteger(amount) || Number(amount) <= 0 || data.currency !== "NGN" || data.domain !== "test"
+    || !["pending", "processing", "needs-attention", "failed", "processed"].includes(status)) throw new Error("Paystack refund response was invalid.");
+  return { id, reference: typeof data.refund_reference === "string" ? data.refund_reference : null, transactionReference, amountMinor: Number(amount), currency: "NGN", domain: "test", status: status as PaystackTestRefund["status"], payload: data };
+}
+
+export async function createPaystackTestFullRefund(input: { transactionId: string; transactionReference: string; note: string }) {
+  if (!/^\d+$/.test(input.transactionId) || !/^GL-[A-F0-9]{32}$/.test(input.transactionReference)) throw new Error("Invalid refund target.");
+  const { secretKey } = requirePaystackTestRefundsEnabled();
+  const response = await fetch("https://api.paystack.co/refund", { method: "POST", headers: { Authorization: `Bearer ${secretKey}`, "Content-Type": "application/json" }, cache: "no-store", body: JSON.stringify({ transaction: input.transactionId, merchant_note: input.note, customer_note: "Growvelt Learning course refund" }), signal: AbortSignal.timeout(15000) });
+  const result = await response.json().catch(() => null) as { status?: unknown; message?: unknown; data?: Record<string, unknown> } | null;
+  if (!response.ok || result?.status !== true || !result.data) throw new Error(typeof result?.message === "string" ? result.message : "Paystack refund initiation failed.");
+  return parsePaystackRefund(result.data, { transactionReference: input.transactionReference, transactionId: input.transactionId });
+}
+
+export async function verifyPaystackTestRefund(input: { refundId: string; transactionReference: string; transactionId: string }) {
+  if (!/^\d+$/.test(input.refundId) || !/^GL-[A-F0-9]{32}$/.test(input.transactionReference) || !/^\d+$/.test(input.transactionId)) throw new Error("Invalid refund reference.");
+  const { secretKey } = requirePaystackTestRefundsEnabled();
+  const response = await fetch(`https://api.paystack.co/refund/${encodeURIComponent(input.refundId)}`, { headers: { Authorization: `Bearer ${secretKey}` }, cache: "no-store", signal: AbortSignal.timeout(15000) });
+  const result = await response.json().catch(() => null) as { status?: unknown; message?: unknown; data?: Record<string, unknown> } | null;
+  if (!response.ok || result?.status !== true || !result.data) throw new Error(typeof result?.message === "string" ? result.message : "Paystack refund verification failed.");
+  return parsePaystackRefund(result.data, { transactionReference: input.transactionReference, transactionId: input.transactionId });
 }

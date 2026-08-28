@@ -12,6 +12,24 @@ create table "public"."learning_payment_cases" (
   "initiated_by" uuid,
   "opened_at" timestamptz not null default now(),
   "resolved_at" timestamptz,
+  "provider" text not null default 'paystack'::text,
+  "idempotency_key" uuid,
+  "provider_status" text,
+  "provider_case_id" text,
+  "provider_transaction_id" text,
+  "requested_amount_minor" bigint,
+  "processed_amount_minor" bigint,
+  "reason_code" text,
+  "operator_note" text,
+  "requested_at" timestamptz,
+  "provider_submitted_at" timestamptz,
+  "last_verified_at" timestamptz,
+  "action_required_at" timestamptz,
+  "processed_at" timestamptz,
+  "failed_at" timestamptz,
+  "failure_code" text,
+  "failure_message" text,
+  "updated_at" timestamptz not null default now(),
   constraint "learning_payment_cases_pkey" primary key (id),
   constraint "learning_payment_cases_case_reference_key" unique (case_reference),
   constraint "learning_payment_cases_provider_reference_key" unique (case_type, provider_case_reference),
@@ -19,17 +37,26 @@ create table "public"."learning_payment_cases" (
   constraint "learning_payment_cases_payment_attempt_id_fkey" foreign key (payment_attempt_id) references public.learning_payment_attempts(id) on delete restrict,
   constraint "learning_payment_cases_initiated_by_fkey" foreign key (initiated_by) references public.profiles(id) on delete set null,
   constraint "learning_payment_cases_type_check" check (case_type = any (array['refund'::text, 'chargeback'::text])),
-  constraint "learning_payment_cases_status_check" check (status = any (array['opened'::text, 'pending'::text, 'succeeded'::text, 'failed'::text, 'cancelled'::text, 'won'::text, 'lost'::text])),
+  constraint "learning_payment_cases_status_check" check (status = any (array['opened'::text, 'requested'::text, 'submitting'::text, 'pending'::text, 'processing'::text, 'needs_attention'::text, 'processed'::text, 'succeeded'::text, 'failed'::text, 'cancelled'::text, 'won'::text, 'lost'::text])),
   constraint "learning_payment_cases_amount_check" check (amount_minor > 0),
   constraint "learning_payment_cases_currency_check" check (currency = 'NGN'::text),
   constraint "learning_payment_cases_reason_length_check" check (reason is null or char_length(reason) <= 2000),
-  constraint "learning_payment_cases_resolution_check" check (((status = any (array['opened'::text, 'pending'::text])) and resolved_at is null) or ((status = any (array['succeeded'::text, 'failed'::text, 'cancelled'::text, 'won'::text, 'lost'::text])) and resolved_at is not null))
+  constraint "learning_payment_cases_provider_check" check (provider = 'paystack'::text),
+  constraint "learning_payment_cases_refund_amount_check" check (case_type <> 'refund'::text or (requested_amount_minor = amount_minor and (processed_amount_minor is null or processed_amount_minor = amount_minor))),
+  constraint "learning_payment_cases_reason_code_check" check (reason_code is null or reason_code ~ '^[a-z][a-z0-9_]{1,60}$'::text),
+  constraint "learning_payment_cases_operator_note_check" check (operator_note is null or char_length(operator_note) between 3 and 2000),
+  constraint "learning_payment_cases_failure_check" check (failure_message is null or char_length(failure_message) <= 2000),
+  constraint "learning_payment_cases_provider_status_check" check (provider_status is null or provider_status = any (array['requested'::text,'pending'::text,'processing'::text,'needs-attention'::text,'failed'::text,'processed'::text,'cancelled'::text]))
 );
 alter table "public"."learning_payment_cases" enable row level security;
 create index learning_payment_cases_order_idx on public.learning_payment_cases using btree (order_id, opened_at desc, id desc);
 create index learning_payment_cases_status_idx on public.learning_payment_cases using btree (status, opened_at, id);
+create unique index learning_payment_cases_idempotency_key on public.learning_payment_cases (idempotency_key) where idempotency_key is not null;
+create unique index learning_payment_cases_provider_case_id_key on public.learning_payment_cases (provider, provider_case_id) where provider_case_id is not null;
+create unique index learning_payment_cases_one_open_full_refund on public.learning_payment_cases (order_id) where case_type='refund' and status in ('requested','submitting','pending','processing','needs_attention');
 create trigger prevent_learning_payment_case_delete before delete on public.learning_payment_cases for each row execute function public.prevent_learning_financial_record_delete();
 create trigger validate_learning_payment_case before insert or update of order_id, payment_attempt_id, amount_minor, currency on public.learning_payment_cases for each row execute function public.validate_learning_payment_case();
 create trigger audit_learning_payment_case_insert after insert on public.learning_payment_cases for each row execute function public.capture_learning_financial_audit_event('payment_case.created', 'payment_case');
 create trigger audit_learning_payment_case_status after update of status on public.learning_payment_cases for each row when (old.status is distinct from new.status) execute function public.capture_learning_financial_audit_event('payment_case.status_changed', 'payment_case');
+create trigger protect_learning_payment_case_identity before update on public.learning_payment_cases for each row execute function public.prevent_learning_payment_case_identity_change();
 grant delete, insert, select, update on table "public"."learning_payment_cases" to "postgres", "service_role";
