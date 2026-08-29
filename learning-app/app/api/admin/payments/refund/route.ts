@@ -4,6 +4,7 @@ import { isSameOriginRequest } from "@/app/lib/security/request-origin";
 import { createClient } from "@/app/lib/supabase/server";
 import { createAdminClient } from "@/app/lib/supabase/admin";
 import { createPaystackTestFullRefund, requirePaystackTestRefundsEnabled } from "@/app/lib/payments/paystack";
+import { getOrderNotificationContext, sendPaymentNotification } from "@/app/lib/email/payment-notifications";
 
 export async function POST(request: Request) {
   if (!isSameOriginRequest(request)) return NextResponse.json({ code: "invalid_origin" }, { status: 403 });
@@ -40,5 +41,7 @@ export async function POST(request: Request) {
     console.error("refund.local_submission_record_failed", { provider: "paystack", reference, caseId: refundCase.case_id, operatorId: user.id });
     return NextResponse.json({ code: "refund_status_uncertain", message: "Paystack accepted the request, but Growvelt must reconcile its status." }, { status: 202 });
   }
+  const context = await getOrderNotificationContext(reference);
+  if (context) await sendPaymentNotification({ key: `refund-requested:${refundCase.case_id}`, type: "refund_requested", recipient: context.email, subject: "Growvelt Learning received your refund request", heading: "Your refund request was received", message: `Growvelt submitted the full-refund request for ${context.courseTitle}. A pending or processing status is not completion; we will notify you after authoritative Paystack confirmation.`, orderId: context.orderId, caseId: refundCase.case_id });
   return NextResponse.json({ outcome: providerRefund.status, caseId: refundCase.case_id });
 }

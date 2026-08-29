@@ -9,8 +9,6 @@ create table "public"."learning_course_entitlements" (
   "revoked_at"        timestamp with time zone,
   "revocation_reason" text,
   constraint "learning_course_entitlements_enrollment_id_fkey" foreign key (enrollment_id) references public.enrollments(id) on delete set null,
-  constraint "learning_course_entitlements_enrollment_id_key" unique (enrollment_id),
-  constraint "learning_course_entitlements_learner_course_key" unique (learner_id, course_id),
   constraint "learning_course_entitlements_order_id_key" unique (order_id),
   constraint "learning_course_entitlements_pkey" primary key (id),
   constraint "learning_course_entitlements_revocation_reason_length_check" check (((revocation_reason IS NULL) OR (char_length(revocation_reason) <= 1000))),
@@ -26,6 +24,9 @@ alter table "public"."learning_course_entitlements"
   enable row level security;
 
 create index learning_course_entitlements_course_idx on public.learning_course_entitlements using btree (course_id, status, granted_at desc);
+
+create unique index learning_course_entitlements_one_active_learner_course_key on public.learning_course_entitlements using btree (learner_id, course_id)
+  where (status = 'active'::text);
 
 create trigger audit_learning_entitlement_insert
   after insert on public.learning_course_entitlements

@@ -28,7 +28,7 @@ select set_config('phase1b2a.enrollment_id',:refund_enrollment_enrollment_id::te
 select set_config('phase1b2a.lesson_id',:refund_lesson_id::text,true);
 
 create temporary table refund_failed as select * from public.request_paystack_test_full_refund(
-  :'refund_order_order_reference','14000000-0000-4000-a000-000000000003','14000000-0000-4000-a000-000000000097',:'refund_order_order_reference','customer_request','Deterministic local provider failure test'
+  :'refund_order_order_reference','14000000-0000-4000-a000-000000000003','14000000-0000-4000-a000-000000000097',:'refund_order_order_reference','exceptional_admin_refund','Deterministic local provider failure test'
 );
 select public.mark_paystack_test_refund_submitting((select case_id from refund_failed),'14000000-0000-4000-a000-000000000003');
 select public.record_paystack_test_refund_submission((select case_id from refund_failed),null,'failed',null,'14000000-0000-4000-a000-000000000003');
@@ -40,13 +40,13 @@ begin
 end;$failed$;
 
 create temporary table refund_requested as select * from public.request_paystack_test_full_refund(
-  :'refund_order_order_reference','14000000-0000-4000-a000-000000000003','14000000-0000-4000-a000-000000000099',:'refund_order_order_reference','customer_request','Approved local full-refund test'
+  :'refund_order_order_reference','14000000-0000-4000-a000-000000000003','14000000-0000-4000-a000-000000000099',:'refund_order_order_reference','exceptional_admin_refund','Approved local full-refund test'
 );
 do $request_idempotency$
 declare repeated_id bigint;
 begin
  select case_id into repeated_id from public.request_paystack_test_full_refund(
-   current_setting('phase1b2a.order_reference'),'14000000-0000-4000-a000-000000000003','14000000-0000-4000-a000-000000000099',current_setting('phase1b2a.order_reference'),'customer_request','Approved local full-refund test'
+   current_setting('phase1b2a.order_reference'),'14000000-0000-4000-a000-000000000003','14000000-0000-4000-a000-000000000099',current_setting('phase1b2a.order_reference'),'exceptional_admin_refund','Approved local full-refund test'
  );
  if repeated_id<>(select case_id from refund_requested) then raise exception 'Refund request idempotency failed'; end if;
 end;$request_idempotency$;
@@ -98,7 +98,7 @@ begin
  if (select count(*) from public.learning_course_entitlements where order_id=current_setting('phase1b2a.order_id')::bigint)<>1 then raise exception 'Delayed webhook duplicated entitlement'; end if;
  if (select count(*) from public.enrollments where id=current_setting('phase1b2a.enrollment_id')::bigint)<>1 then raise exception 'Delayed webhook duplicated enrollment'; end if;
  begin
-   perform public.request_paystack_test_full_refund(current_setting('phase1b2a.order_reference'),'14000000-0000-4000-a000-000000000003','14000000-0000-4000-a000-000000000098',current_setting('phase1b2a.order_reference'),'customer_request','Second refund must fail');
+   perform public.request_paystack_test_full_refund(current_setting('phase1b2a.order_reference'),'14000000-0000-4000-a000-000000000003','14000000-0000-4000-a000-000000000098',current_setting('phase1b2a.order_reference'),'exceptional_admin_refund','Second refund must fail');
  exception when others then blocked:=true;
  end;
  if not blocked then raise exception 'Second full refund was accepted'; end if;

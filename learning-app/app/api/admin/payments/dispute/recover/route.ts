@@ -3,6 +3,7 @@ import { isSameOriginRequest } from "@/app/lib/security/request-origin";
 import { createClient } from "@/app/lib/supabase/server";
 import { createAdminClient } from "@/app/lib/supabase/admin";
 import { verifyPaystackTestDispute } from "@/app/lib/payments/paystack";
+import { getOrderNotificationContext, sendPaymentNotification } from "@/app/lib/email/payment-notifications";
 
 export async function POST(request: Request) {
   if (!isSameOriginRequest(request)) return NextResponse.json({ code: "invalid_origin" }, { status: 403 });
@@ -19,7 +20,9 @@ export async function POST(request: Request) {
     const {data:eventId,error:receiveError}=await admin.rpc("receive_paystack_test_verified_dispute",{p_case_id:caseId,p_provider_status:verified.status,p_resolution:verified.resolution,p_amount_minor:verified.amountMinor,p_currency:verified.currency,p_domain:verified.domain,p_category:verified.category,p_reason:verified.reason,p_deadline:verified.deadline,p_payload:verified.payload,p_operator_id:user.id});
     if(receiveError) throw receiveError;
     const {data,error}=await admin.rpc("process_paystack_test_dispute_event",{p_event_id:Number(eventId)}); if(error) throw error;
-    return NextResponse.json({outcome:(data as Array<{outcome?:string}>|null)?.[0]?.outcome??verified.status});
+    const outcome=(data as Array<{outcome?:string}>|null)?.[0]?.outcome??verified.status;
+    if(outcome==="lost"){const context=await getOrderNotificationContext(target.order_reference);if(context)await sendPaymentNotification({key:`access-revoked:chargeback:provider-api:${eventId}`,type:"access_revoked",recipient:context.email,subject:"Growvelt Learning course access updated",heading:"Course access has ended",message:`Paystack confirmed a financial reversal for ${context.courseTitle}. Future access has ended while historical learning activity remains retained.`,orderId:context.orderId,caseId});}
+    return NextResponse.json({outcome});
   } catch(error) {
     console.error("dispute.operator_recovery_failed",{provider:"paystack",caseId,operatorId:user.id,message:error instanceof Error?error.message:"Unknown error"});
     return NextResponse.json({code:"recovery_failed",message:"The dispute could not be verified safely."},{status:502});

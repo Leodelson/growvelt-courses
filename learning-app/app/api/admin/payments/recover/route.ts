@@ -3,6 +3,7 @@ import { isSameOriginRequest } from "@/app/lib/security/request-origin";
 import { createClient } from "@/app/lib/supabase/server";
 import { createAdminClient } from "@/app/lib/supabase/admin";
 import { verifyPaystackTestTransaction } from "@/app/lib/payments/paystack";
+import { getOrderNotificationContext, sendPaymentNotification } from "@/app/lib/email/payment-notifications";
 
 export async function POST(request: Request) {
   if (!isSameOriginRequest(request)) return NextResponse.json({ code: "invalid_origin" }, { status: 403 });
@@ -24,7 +25,10 @@ export async function POST(request: Request) {
       const eventId = Number(receivedId);
       const { data, error } = await admin.rpc("recover_paystack_test_charge_event", { p_event_id: eventId, p_operator_id: user.id });
       if (error) throw error;
-      return NextResponse.json({ outcome: (data as Array<{ outcome?: string }> | null)?.[0]?.outcome ?? "unknown" });
+      const outcome=(data as Array<{ outcome?: string }> | null)?.[0]?.outcome??"unknown";
+      const context=await getOrderNotificationContext(reference);
+      if(context&&["paid_and_enrolled","already_paid"].includes(outcome)) await sendPaymentNotification({key:`payment-ready:provider-api:${eventId}`,type:"payment_access_ready",recipient:context.email,subject:"Your Growvelt Learning course is ready",heading:"Payment confirmed — access is ready",message:`Growvelt confirmed your payment for ${context.courseTitle}. The course is now available in My Learning.`,orderId:context.orderId});
+      return NextResponse.json({ outcome });
     }
     if (["abandoned", "failed"].includes(verified.status)) {
       const { data, error } = await admin.rpc("abandon_verified_paystack_test_attempt", { p_order_reference: reference, p_operator_id: user.id, p_provider_status: verified.status, p_reason: "Paystack verification confirmed a stale non-success checkout" });

@@ -88,6 +88,7 @@ export default function Footer() {
           <nav aria-label="Legal links">
             <Link href="/privacy-policy">{t("footer.privacy")}</Link>
             <Link href="/terms-of-service">{t("footer.terms")}</Link>
+            <Link href="/refund-policy">Refund policy</Link>
             <Link href="/cookie-policy">{t("footer.cookies")}</Link>
             <CookieSettingsButton />
           </nav>

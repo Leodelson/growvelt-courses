@@ -13,6 +13,7 @@ create table "public"."certificates" (
   "revoked_at"         timestamp with time zone,
   "retention_state"    text                     not null default 'account_active'::text,
   "account_deleted_at" timestamp with time zone,
+  "revocation_reason"  text,
   constraint "certificates_certificate_code_key" unique (certificate_code),
   constraint "certificates_learner_id_course_id_key" unique (learner_id, course_id),
   constraint "certificates_pkey" primary key (id),
@@ -24,6 +25,7 @@ create table "public"."certificates" (
   constraint "certificates_retention_state_check"
     check ((retention_state = ANY (ARRAY['account_active'::text, 'preserved_after_account_deletion'::text, 'anonymized_after_account_deletion'::text]))),
   constraint "certificates_revocation_check" check ((((status = 'issued'::text) AND (revoked_at IS NULL)) OR ((status = 'revoked'::text) AND (revoked_at IS NOT NULL)))),
+  constraint "certificates_revocation_reason_check" check (((revocation_reason IS NULL) OR (char_length(revocation_reason) <= 1000))),
   constraint "certificates_status_check" check ((status = ANY (ARRAY['issued'::text, 'revoked'::text]))),
   constraint "certificates_course_id_fkey" foreign key (course_id) references public.learning_courses(id) on delete cascade,
   constraint "certificates_learner_id_fkey" foreign key (learner_id) references public.profiles(id) on delete set null

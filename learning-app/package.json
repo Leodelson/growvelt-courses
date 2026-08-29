@@ -23,6 +23,8 @@
     "test:payments:refunds:app": "node scripts/test-phase1b2a-refund-app.mjs",
     "test:payments:disputes:local": "node scripts/test-phase1b2b-disputes-local.mjs",
     "test:payments:disputes:app": "node scripts/test-phase1b2b-dispute-app.mjs",
+    "test:payments:policy:app": "node scripts/test-phase1b2c-policy-app.mjs",
+    "test:payments:policy:local": "node scripts/test-phase1b2c-policy-local.mjs",
     "test:auth:session": "node --experimental-strip-types scripts/test-auth-session-propagation.mjs",
     "fixture:payments:test": "node scripts/manage-phase1a-test-fixture.mjs"
   },
