@@ -1,5 +1,6 @@
 import "server-only";
 import { isTrustedPaystackAuthorizationUrl } from "@/app/lib/payments/paystack-core";
+import { resolvePaystackConfiguration } from "@/app/lib/payments/paystack-config";
 
 export {
   digestPaystackPayload,
@@ -13,16 +14,13 @@ export {
 export type PaystackTestConfig = { secretKey: string; callbackUrl: string; checkoutEnabled: boolean; refundsEnabled: boolean };
 
 export function getPaystackTestConfig(requireCheckout = false): PaystackTestConfig {
-  const secretKey = process.env.PAYSTACK_SECRET_KEY?.trim();
-  const mode = process.env.PAYSTACK_MODE?.trim();
-  const callbackUrl = process.env.PAYSTACK_CALLBACK_URL?.trim();
-  const checkoutEnabled = process.env.PAYMENTS_CHECKOUT_ENABLED === "true";
-  const refundsEnabled = process.env.PAYMENTS_REFUNDS_ENABLED === "true";
-  if (mode !== "test" || !secretKey?.startsWith("sk_test_") || !callbackUrl) throw new Error("Paystack test mode is not configured.");
-  const parsedCallback = new URL(callbackUrl);
-  if (!(["http:", "https:"].includes(parsedCallback.protocol))) throw new Error("Paystack callback URL is invalid.");
-  if (requireCheckout && !checkoutEnabled) throw new Error("Paystack test checkout is disabled.");
-  return { secretKey, callbackUrl: parsedCallback.href, checkoutEnabled, refundsEnabled };
+  const config = resolvePaystackConfiguration(process.env);
+  // The database currently accepts only verified `domain = test` financial
+  // events. A later, separately approved live-domain migration is required
+  // before provider operations may run in live mode.
+  if (config.mode !== "test") throw new Error("Live Paystack provider operations are not activated.");
+  if (requireCheckout && !config.checkoutEnabled) throw new Error("Paystack test checkout is disabled.");
+  return config;
 }
 
 export function requirePaystackTestRefundsEnabled() {

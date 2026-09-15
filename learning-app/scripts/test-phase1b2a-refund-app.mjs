@@ -8,6 +8,7 @@ async function source(path) {
 const initiate = await source("app/api/admin/payments/refund/route.ts");
 const recover = await source("app/api/admin/payments/refund/recover/route.ts");
 const provider = await source("app/lib/payments/paystack.ts");
+const configuration = await source("app/lib/payments/paystack-config.ts");
 const webhook = await source("app/api/payments/paystack/webhook/route.ts");
 
 for (const route of [initiate, recover]) {
@@ -25,7 +26,8 @@ assert.doesNotMatch(initiate, /p_provider_status: "failed"/);
 assert.match(recover, /get_learning_refund_case_for_recovery/);
 assert.doesNotMatch(recover, /body\?\.providerCaseId/);
 assert.doesNotMatch(recover, /body\?\.reference/);
-assert.match(provider, /PAYMENTS_REFUNDS_ENABLED === "true"/);
+assert.match(provider, /resolvePaystackConfiguration/);
+assert.match(configuration, /PAYMENTS_REFUNDS_ENABLED === "true"/);
 const refundInitiation = provider.slice(provider.indexOf("export async function createPaystackTestFullRefund"), provider.indexOf("export async function verifyPaystackTestRefund"));
 assert.match(refundInitiation, /body: JSON\.stringify\(\{ transaction: input\.transactionId, merchant_note:/);
 assert.doesNotMatch(refundInitiation, /amount:/);
