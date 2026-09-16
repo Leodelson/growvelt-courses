@@ -46,7 +46,7 @@ begin
     where id=(select order_id from phase1a_order_a)
       and learner_id='10000000-0000-4000-a000-000000000001'
       and course_title_snapshot='Phase 1A Paid Course'
-      and gross_amount_minor=250000 and commercial_terms_version='phase1a-test-v1'
+      and gross_amount_minor=250000 and commercial_terms_version='growvelt-commercial-v1'
   ) then raise exception 'Order snapshots were not captured'; end if;
   if not exists (
     select 1 from public.learning_payment_attempts
@@ -75,6 +75,13 @@ begin
   if not exists (select 1 from public.learning_course_entitlements where order_id=(select order_id from phase1a_order_a) and status='active') then raise exception 'Entitlement was not created'; end if;
   select id into ledger_id from public.learning_ledger_transactions where order_id=(select order_id from phase1a_order_a) and transaction_type='payment_capture';
   if ledger_id is null or (select count(*) from public.learning_ledger_entries where transaction_id=ledger_id)<>2 or (select sum(amount_minor) from public.learning_ledger_entries where transaction_id=ledger_id)<>0 then raise exception 'Capture ledger is not exactly balanced'; end if;
+  if not exists (
+    select 1 from public.learning_commercial_allocations
+    where order_id=(select order_id from phase1a_order_a)
+      and commercial_terms_version='growvelt-commercial-v1'
+      and gross_amount_minor=250000 and platform_commission_minor=62500
+      and instructor_gross_minor=187500 and status='allocated'
+  ) then raise exception 'Phase 1C1 commercial allocation was not created'; end if;
 end
 $finalization$;
 
