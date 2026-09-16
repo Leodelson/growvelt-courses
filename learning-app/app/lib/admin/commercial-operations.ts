@@ -1,0 +1,33 @@
+import "server-only";
+import { createAdminClient } from "@/app/lib/supabase/admin";
+
+export type CommercialOperation = {
+  earning_id: number;
+  instructor_id: string;
+  instructor_name: string | null;
+  instructor_email: string | null;
+  order_id: number;
+  order_reference: string;
+  course_id: number | null;
+  course_title: string;
+  gross_amount_minor: number;
+  platform_commission_minor: number;
+  instructor_gross_minor: number;
+  currency: "NGN";
+  earning_status: "held" | "available" | "reserved" | "paid" | "reversed" | "recoverable";
+  available_at: string;
+  released_at: string | null;
+  reversed_at: string | null;
+  recoverable_amount_minor: number;
+  commercial_terms_version: string;
+  allocation_status: "allocated" | "reversed";
+  reversal_case_id: number | null;
+  reconciliation_issue_count: number;
+  reconciliation_details: string[];
+};
+
+export async function listCommercialOperations(operatorId: string) {
+  const { data, error } = await createAdminClient().rpc("list_learning_commercial_operations", { p_operator_id: operatorId, p_limit: 100 });
+  if (error) throw new Error("Unable to load commercial operations.");
+  return (data ?? []) as CommercialOperation[];
+}

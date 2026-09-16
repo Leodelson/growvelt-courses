@@ -29,6 +29,8 @@
     "test:payments:live-domain:local": "node scripts/test-phase1b3b-live-domain-local.mjs",
     "test:payments:live-domain:app": "node --experimental-strip-types scripts/test-phase1b3b-live-domain-app.mjs",
     "test:payments:commercial-allocation:local": "node scripts/test-phase1c1-commercial-allocation-local.mjs",
+    "test:payments:instructor-earnings:local": "node scripts/test-phase1c2a-instructor-earnings-local.mjs",
+    "test:payments:instructor-earnings:app": "node scripts/test-phase1c2a-instructor-earnings-app.mjs",
     "test:auth:session": "node --experimental-strip-types scripts/test-auth-session-propagation.mjs",
     "fixture:payments:test": "node scripts/manage-phase1a-test-fixture.mjs"
   },
