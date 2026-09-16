@@ -20,13 +20,15 @@ export function digestPaystackPayload(rawBody: string) {
   return createHash("sha256").update(rawBody).digest("hex");
 }
 
+export type PaystackDomain = "test" | "live";
+
 type ChargeSuccess = {
   eventId: string;
   reference: string;
   transactionId: string;
   amountMinor: number;
   currency: "NGN";
-  domain: "test";
+  domain: PaystackDomain;
   payload: Record<string, unknown>;
 };
 
@@ -39,7 +41,7 @@ export type PaystackRefundEvent = {
   status: "pending" | "processing" | "needs-attention" | "failed" | "processed";
   amountMinor: number;
   currency: "NGN";
-  domain: "test";
+  domain: PaystackDomain;
   payload: Record<string, unknown>;
 };
 
@@ -52,14 +54,14 @@ export type PaystackDisputeEvent = {
   resolution: string | null;
   amountMinor: number;
   currency: "NGN";
-  domain: "test";
+  domain: PaystackDomain;
   category: string | null;
   reason: string | null;
   deadline: string | null;
   payload: Record<string, unknown>;
 };
 
-export function parsePaystackTestDisputeEvent(value: unknown): PaystackDisputeEvent | null {
+export function parsePaystackDisputeEvent(value: unknown, expectedDomain: PaystackDomain): PaystackDisputeEvent | null {
   if (!value || typeof value !== "object") return null;
   const event = value as { event?: unknown; data?: unknown };
   const allowed = new Set(["charge.dispute.create", "charge.dispute.remind", "charge.dispute.resolve"]);
@@ -78,7 +80,7 @@ export function parsePaystackTestDisputeEvent(value: unknown): PaystackDisputeEv
   const resolution = typeof data.resolution === "string" && data.resolution ? data.resolution : null;
   const deadlineValue = data.due_at ?? data.dueAt ?? data.deadline;
   const deadline = typeof deadlineValue === "string" && !Number.isNaN(Date.parse(deadlineValue)) ? new Date(deadlineValue).toISOString() : null;
-  if (!disputeId || !/^GL-[A-F0-9]{32}$/.test(transactionReference) || !Number.isSafeInteger(amount) || Number(amount) <= 0 || currency !== "NGN" || domain !== "test" || !status) return null;
+  if (!disputeId || !/^GL-[A-F0-9]{32}$/.test(transactionReference) || !Number.isSafeInteger(amount) || Number(amount) <= 0 || currency !== "NGN" || domain !== expectedDomain || !status) return null;
   const occurrence = data.updated_at ?? data.updatedAt ?? data.resolved_at ?? data.due_at ?? `${status}:${resolution ?? "none"}`;
   return {
     eventId: `${event.event}:${disputeId}:${String(occurrence)}`,
@@ -89,15 +91,15 @@ export function parsePaystackTestDisputeEvent(value: unknown): PaystackDisputeEv
     resolution,
     amountMinor: Number(amount),
     currency: "NGN",
-    domain: "test",
+    domain: expectedDomain,
     category: typeof data.category === "string" ? data.category : null,
     reason: typeof data.reason === "string" ? data.reason : typeof data.note === "string" ? data.note : null,
     deadline,
-    payload: { dispute_id: disputeId, transaction_reference: transactionReference, amount: Number(amount), currency: "NGN", domain: "test", status, resolution, category: data.category ?? null, reason: data.reason ?? data.note ?? null, due_at: deadline },
+    payload: { dispute_id: disputeId, transaction_reference: transactionReference, amount: Number(amount), currency: "NGN", domain: expectedDomain, status, resolution, category: data.category ?? null, reason: data.reason ?? data.note ?? null, due_at: deadline },
   };
 }
 
-export function parsePaystackTestRefundEvent(value: unknown): PaystackRefundEvent | null {
+export function parsePaystackRefundEvent(value: unknown, expectedDomain: PaystackDomain): PaystackRefundEvent | null {
   if (!value || typeof value !== "object") return null;
   const event = value as { event?: unknown; data?: unknown };
   const allowed = new Set(["refund.pending", "refund.processing", "refund.needs-attention", "refund.failed", "refund.processed"]);
@@ -109,7 +111,7 @@ export function parsePaystackTestRefundEvent(value: unknown): PaystackRefundEven
     : typeof data.id === "string" && /^\d+$/.test(data.id) ? data.id : null;
   const refundReference = typeof data.refund_reference === "string" && data.refund_reference.trim() ? data.refund_reference : null;
   const amount = typeof data.amount === "string" && /^\d+$/.test(data.amount) ? Number(data.amount) : data.amount;
-  if (!/^GL-[A-F0-9]{32}$/.test(transactionReference) || !Number.isSafeInteger(amount) || Number(amount) <= 0 || data.currency !== "NGN" || data.domain !== "test" || (typeof data.status === "string" && data.status !== status)) return null;
+  if (!/^GL-[A-F0-9]{32}$/.test(transactionReference) || !Number.isSafeInteger(amount) || Number(amount) <= 0 || data.currency !== "NGN" || data.domain !== expectedDomain || (typeof data.status === "string" && data.status !== status)) return null;
   return {
     eventId: `${event.event}:${refundId ?? refundReference ?? `${transactionReference}:${Number(amount)}`}`,
     eventType: event.event as PaystackRefundEvent["eventType"],
@@ -119,7 +121,7 @@ export function parsePaystackTestRefundEvent(value: unknown): PaystackRefundEven
     status,
     amountMinor: Number(amount),
     currency: "NGN",
-    domain: "test",
+    domain: expectedDomain,
     payload: {
       refund_id: refundId,
       refund_reference: refundReference,
@@ -135,7 +137,7 @@ export function parsePaystackTestRefundEvent(value: unknown): PaystackRefundEven
   };
 }
 
-export function parsePaystackTestChargeSuccess(value: unknown): ChargeSuccess | null {
+export function parsePaystackChargeSuccess(value: unknown, expectedDomain: PaystackDomain): ChargeSuccess | null {
   if (!value || typeof value !== "object") return null;
   const event = value as { event?: unknown; data?: unknown };
   if (event.event !== "charge.success" || !event.data || typeof event.data !== "object") return null;
@@ -150,16 +152,16 @@ export function parsePaystackTestChargeSuccess(value: unknown): ChargeSuccess | 
     || !Number.isSafeInteger(data.amount)
     || Number(data.amount) <= 0
     || data.currency !== "NGN"
-    || data.domain !== "test"
+    || data.domain !== expectedDomain
     || data.status !== "success"
   ) return null;
   return {
-    eventId: `charge.success:${transactionId}`,
+    eventId: expectedDomain === "test" ? `charge.success:${transactionId}` : `charge.success:${expectedDomain}:${transactionId}`,
     reference,
     transactionId,
     amountMinor: Number(data.amount),
     currency: "NGN",
-    domain: "test",
+    domain: expectedDomain,
     payload: {
       transaction_id: transactionId,
       reference,
@@ -171,4 +173,16 @@ export function parsePaystackTestChargeSuccess(value: unknown): ChargeSuccess | 
       paid_at: data.paid_at ?? null,
     },
   };
+}
+
+export function parsePaystackTestDisputeEvent(value: unknown) {
+  return parsePaystackDisputeEvent(value, "test");
+}
+
+export function parsePaystackTestRefundEvent(value: unknown) {
+  return parsePaystackRefundEvent(value, "test");
+}
+
+export function parsePaystackTestChargeSuccess(value: unknown) {
+  return parsePaystackChargeSuccess(value, "test");
 }

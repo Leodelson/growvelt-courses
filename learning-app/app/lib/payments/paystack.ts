@@ -1,6 +1,7 @@
 import "server-only";
 import { isTrustedPaystackAuthorizationUrl } from "@/app/lib/payments/paystack-core";
 import { resolvePaystackConfiguration } from "@/app/lib/payments/paystack-config";
+import type { PaystackDomain } from "@/app/lib/payments/paystack-core";
 
 export {
   digestPaystackPayload,
@@ -8,18 +9,32 @@ export {
   parsePaystackTestChargeSuccess,
   parsePaystackTestDisputeEvent,
   parsePaystackTestRefundEvent,
+  parsePaystackChargeSuccess,
+  parsePaystackDisputeEvent,
+  parsePaystackRefundEvent,
   verifyPaystackSignature,
 } from "@/app/lib/payments/paystack-core";
 
 export type PaystackTestConfig = { secretKey: string; callbackUrl: string; checkoutEnabled: boolean; refundsEnabled: boolean };
 
-export function getPaystackTestConfig(requireCheckout = false): PaystackTestConfig {
+export function getPaystackConfig(requireCheckout = false) {
   const config = resolvePaystackConfiguration(process.env);
+  if (requireCheckout && !config.checkoutEnabled) throw new Error("Paystack checkout is disabled.");
+  return config;
+}
+
+export function getPaystackTestConfig(requireCheckout = false): PaystackTestConfig {
+  const config = getPaystackConfig(requireCheckout);
   // The database currently accepts only verified `domain = test` financial
   // events. A later, separately approved live-domain migration is required
   // before provider operations may run in live mode.
   if (config.mode !== "test") throw new Error("Live Paystack provider operations are not activated.");
-  if (requireCheckout && !config.checkoutEnabled) throw new Error("Paystack test checkout is disabled.");
+  return config;
+}
+
+export function getPaystackLiveConfig(requireCheckout = false) {
+  const config = getPaystackConfig(requireCheckout);
+  if (config.mode !== "live") throw new Error("Paystack live mode is not configured.");
   return config;
 }
 
@@ -34,6 +49,19 @@ export async function initializePaystackTestTransaction(input: { email: string; 
   const response = await fetch("https://api.paystack.co/transaction/initialize", {
     method: "POST", headers: { Authorization: `Bearer ${secretKey}`, "Content-Type": "application/json" }, cache: "no-store",
     body: JSON.stringify({ email: input.email, amount: String(input.amountMinor), currency: "NGN", reference: input.reference, callback_url: input.callbackUrl, metadata: { product: "growvelt_learning", order_reference: input.reference, environment: "test" } }),
+    signal: AbortSignal.timeout(15000),
+  });
+  const result = await response.json().catch(() => null) as { status?: unknown; message?: unknown; data?: { authorization_url?: unknown; reference?: unknown } } | null;
+  const authorizationUrl = typeof result?.data?.authorization_url === "string" ? result.data.authorization_url : "";
+  if (!response.ok || result?.status !== true || !isTrustedPaystackAuthorizationUrl(authorizationUrl) || result.data?.reference !== input.reference) throw new Error(typeof result?.message === "string" ? result.message : "Paystack initialization failed.");
+  return { authorizationUrl };
+}
+
+export async function initializePaystackLiveTransaction(input: { email: string; amountMinor: number; reference: string; callbackUrl: string }) {
+  const { secretKey } = getPaystackLiveConfig(true);
+  const response = await fetch("https://api.paystack.co/transaction/initialize", {
+    method: "POST", headers: { Authorization: `Bearer ${secretKey}`, "Content-Type": "application/json" }, cache: "no-store",
+    body: JSON.stringify({ email: input.email, amount: String(input.amountMinor), currency: "NGN", reference: input.reference, callback_url: input.callbackUrl, metadata: { product: "growvelt_learning", order_reference: input.reference, environment: "live" } }),
     signal: AbortSignal.timeout(15000),
   });
   const result = await response.json().catch(() => null) as { status?: unknown; message?: unknown; data?: { authorization_url?: unknown; reference?: unknown } } | null;
@@ -65,6 +93,20 @@ export async function verifyPaystackTestTransaction(reference: string): Promise<
     throw new Error(typeof result?.message === "string" ? result.message : "Paystack verification failed.");
   }
   return { reference, transactionId, amountMinor: Number(data.amount), currency: "NGN", domain: "test", status: data.status, paidAt: typeof data.paid_at === "string" ? data.paid_at : null };
+}
+
+export async function verifyPaystackTransaction(reference: string, expectedDomain: PaystackDomain) {
+  if (!/^GL-[A-F0-9]{32}$/.test(reference)) throw new Error("Invalid Growvelt payment reference.");
+  const config = getPaystackConfig(false);
+  if (config.mode !== expectedDomain) throw new Error("Paystack environment does not match this payment.");
+  const response = await fetch(`https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`, {
+    headers: { Authorization: `Bearer ${config.secretKey}` }, cache: "no-store", signal: AbortSignal.timeout(15000),
+  });
+  const result = await response.json().catch(() => null) as { status?: unknown; message?: unknown; data?: Record<string, unknown> } | null;
+  const data = result?.data;
+  const transactionId = typeof data?.id === "number" && Number.isSafeInteger(data.id) ? String(data.id) : typeof data?.id === "string" && /^\d+$/.test(data.id) ? data.id : "";
+  if (!response.ok || result?.status !== true || !data || data.reference !== reference || !transactionId || !Number.isSafeInteger(data.amount) || data.currency !== "NGN" || data.domain !== expectedDomain || typeof data.status !== "string") throw new Error(typeof result?.message === "string" ? result.message : "Paystack verification failed.");
+  return { reference, transactionId, amountMinor: Number(data.amount), currency: "NGN" as const, domain: expectedDomain, status: data.status, paidAt: typeof data.paid_at === "string" ? data.paid_at : null };
 }
 
 export type PaystackTestRefund = {

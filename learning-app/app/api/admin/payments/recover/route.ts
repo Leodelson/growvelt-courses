@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { isSameOriginRequest } from "@/app/lib/security/request-origin";
 import { createClient } from "@/app/lib/supabase/server";
 import { createAdminClient } from "@/app/lib/supabase/admin";
-import { verifyPaystackTestTransaction } from "@/app/lib/payments/paystack";
+import { getPaystackConfig, verifyPaystackTestTransaction, verifyPaystackTransaction } from "@/app/lib/payments/paystack";
 import { getOrderNotificationContext, sendPaymentNotification } from "@/app/lib/email/payment-notifications";
 
 export async function POST(request: Request) {
@@ -17,13 +17,18 @@ export async function POST(request: Request) {
   if (!/^GL-[A-F0-9]{32}$/.test(reference)) return NextResponse.json({ code: "invalid_reference" }, { status: 400 });
   const admin = createAdminClient();
   try {
-    const verified = await verifyPaystackTestTransaction(reference);
+    const configuration = getPaystackConfig(false);
+    const verified = configuration.mode === "live"
+      ? await verifyPaystackTransaction(reference, "live")
+      : await verifyPaystackTestTransaction(reference);
     if (verified.status === "success") {
       const payload = { transaction_id: verified.transactionId, reference: verified.reference, amount: verified.amountMinor, currency: verified.currency, domain: verified.domain, status: verified.status, channel: null, paid_at: verified.paidAt };
-      const { data: receivedId, error: receiveError } = await admin.rpc("receive_paystack_test_verified_transaction", { p_reference: reference, p_provider_transaction_id: verified.transactionId, p_amount_minor: verified.amountMinor, p_currency: verified.currency, p_domain: verified.domain, p_payload: payload, p_operator_id: user.id });
+      const receiveFunction = configuration.mode === "live" ? "receive_paystack_live_verified_transaction" : "receive_paystack_test_verified_transaction";
+      const recoverFunction = configuration.mode === "live" ? "recover_paystack_live_charge_event" : "recover_paystack_test_charge_event";
+      const { data: receivedId, error: receiveError } = await admin.rpc(receiveFunction, { p_reference: reference, p_provider_transaction_id: verified.transactionId, p_amount_minor: verified.amountMinor, p_currency: verified.currency, p_domain: verified.domain, p_payload: payload, p_operator_id: user.id });
       if (receiveError) throw receiveError;
       const eventId = Number(receivedId);
-      const { data, error } = await admin.rpc("recover_paystack_test_charge_event", { p_event_id: eventId, p_operator_id: user.id });
+      const { data, error } = await admin.rpc(recoverFunction, { p_event_id: eventId, p_operator_id: user.id });
       if (error) throw error;
       const outcome=(data as Array<{ outcome?: string }> | null)?.[0]?.outcome??"unknown";
       const context=await getOrderNotificationContext(reference);
@@ -31,6 +36,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ outcome });
     }
     if (["abandoned", "failed"].includes(verified.status)) {
+      // Stale-checkout abandonment is still a test-mode operational control.
+      // Do not route a live result through its test-only mutation function.
+      if (configuration.mode === "live") return NextResponse.json({ code: "pending", message: "The live payment did not return success. No local state was changed." }, { status: 409 });
       const { data, error } = await admin.rpc("abandon_verified_paystack_test_attempt", { p_order_reference: reference, p_operator_id: user.id, p_provider_status: verified.status, p_reason: "Paystack verification confirmed a stale non-success checkout" });
       if (error) throw error;
       return NextResponse.json({ outcome: data });

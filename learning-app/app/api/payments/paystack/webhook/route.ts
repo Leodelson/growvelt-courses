@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/app/lib/supabase/admin";
-import { digestPaystackPayload, getPaystackTestConfig, parsePaystackTestChargeSuccess, parsePaystackTestDisputeEvent, parsePaystackTestRefundEvent, verifyPaystackSignature } from "@/app/lib/payments/paystack";
+import { digestPaystackPayload, getPaystackConfig, parsePaystackChargeSuccess, parsePaystackTestDisputeEvent, parsePaystackTestRefundEvent, verifyPaystackSignature } from "@/app/lib/payments/paystack";
 import { getOrderNotificationContext, paymentOperationsRecipient, sendPaymentNotification } from "@/app/lib/email/payment-notifications";
 
 export async function POST(request: Request) {
-  let config; try { config = getPaystackTestConfig(false); } catch { return NextResponse.json({ code: "not_configured" }, { status: 503 }); }
+  let config; try { config = getPaystackConfig(false); } catch { return NextResponse.json({ code: "not_configured" }, { status: 503 }); }
   const rawBody = await request.text();
   if (!rawBody || rawBody.length > 262144) return NextResponse.json({ code: "invalid_payload" }, { status: 400 });
   if (!verifyPaystackSignature(rawBody, request.headers.get("x-paystack-signature"), config.secretKey)) return NextResponse.json({ code: "invalid_signature" }, { status: 401 });
@@ -14,7 +14,9 @@ export async function POST(request: Request) {
   } catch {
     return NextResponse.json({ code: "invalid_payload" }, { status: 400 });
   }
-  const dispute = parsePaystackTestDisputeEvent(payload);
+  // Refund and dispute operations remain test-only until a separately approved
+  // live-domain foundation exists. Live charge events continue below.
+  const dispute = config.mode === "test" ? parsePaystackTestDisputeEvent(payload) : null;
   if (dispute) {
     const admin = createAdminClient();
     const { data: received, error: receiveError } = await admin.rpc("receive_paystack_test_dispute_event", {
@@ -35,7 +37,7 @@ export async function POST(request: Request) {
     if (outcome && !["action_required", "under_review", "won", "lost", "already_processed"].includes(outcome)) await sendPaymentNotification({ key: `reconciliation:dispute:${receipt.event_id}`, type: "operator_reconciliation", recipient: paymentOperationsRecipient(), subject: "Growvelt Learning dispute reconciliation attention", heading: "A dispute event needs attention", message: `Review order ${dispute.transactionReference} in Payment Operations. Outcome: ${outcome}.` });
     return NextResponse.json({ received: true });
   }
-  const refund = parsePaystackTestRefundEvent(payload);
+  const refund = config.mode === "test" ? parsePaystackTestRefundEvent(payload) : null;
   if (refund) {
     const admin = createAdminClient();
     const { data: received, error: receiveError } = await admin.rpc("receive_paystack_test_refund_event", {
@@ -57,10 +59,12 @@ export async function POST(request: Request) {
     } else if (refundContext && ["failed", "needs_attention"].includes(outcome ?? refund.status)) await sendPaymentNotification({ key: `refund-attention:${receipt.event_id}`, type: "refund_attention", recipient: refundContext.email, subject: "Your Growvelt Learning refund needs attention", heading: "Your refund needs attention", message: `The refund for ${refundContext.courseTitle} is not complete. Growvelt will review it; a pending or attention state is not a completed refund.`, orderId: refundContext.orderId });
     return NextResponse.json({ received: true });
   }
-  const parsed = parsePaystackTestChargeSuccess(payload);
+  const parsed = parsePaystackChargeSuccess(payload, config.mode);
   if (!parsed) return new NextResponse(null, { status: 204 });
   const admin = createAdminClient();
-  const { data: received, error: receiveError } = await admin.rpc("receive_paystack_test_charge_event", {
+  const receiveFunction = config.mode === "live" ? "receive_paystack_live_charge_event" : "receive_paystack_test_charge_event";
+  const processFunction = config.mode === "live" ? "process_paystack_live_charge_event" : "process_paystack_test_charge_event";
+  const { data: received, error: receiveError } = await admin.rpc(receiveFunction, {
     p_provider_event_id: parsed.eventId, p_payload_digest: digestPaystackPayload(rawBody), p_reference: parsed.reference,
     p_provider_transaction_id: parsed.transactionId, p_amount_minor: parsed.amountMinor, p_currency: parsed.currency, p_domain: parsed.domain, p_payload: parsed.payload,
   });
@@ -70,7 +74,7 @@ export async function POST(request: Request) {
     console.error("payment.webhook_receipt_conflict", { provider: "paystack", reference: parsed.reference, outcome: receipt?.outcome ?? "missing_receipt" });
     return NextResponse.json({ code: "receipt_conflict" }, { status: 409 });
   }
-  const { data, error } = await admin.rpc("process_paystack_test_charge_event", { p_event_id: receipt.event_id });
+  const { data, error } = await admin.rpc(processFunction, { p_event_id: receipt.event_id });
   if (error) { console.error("payment.webhook_processing_deferred", { provider: "paystack", reference: parsed.reference, eventId: receipt.event_id, code: error.code }); const context=await getOrderNotificationContext(parsed.reference); if(context) await sendPaymentNotification({key:`payment-attention:deferred:${receipt.event_id}`,type:"payment_attention",recipient:context.email,subject:"Your Growvelt Learning payment needs attention",heading:"Your payment is being reviewed",message:`Growvelt confirmed payment information for ${context.courseTitle}, but access finalization needs attention. Please do not pay again.`,orderId:context.orderId}); return NextResponse.json({ received: true, processing: "deferred" }); }
   const outcome = (data as Array<{ outcome?: string }> | null)?.[0]?.outcome;
   if (outcome && !["paid_and_enrolled","already_processed","already_paid"].includes(outcome)) console.error("payment.webhook_manual_review", { provider: "paystack", reference: parsed.reference, eventId: receipt.event_id, outcome });
