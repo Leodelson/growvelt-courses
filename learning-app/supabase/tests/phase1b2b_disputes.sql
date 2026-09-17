@@ -20,6 +20,15 @@ select set_config('phase1b2b.won_order_id',:won_order_id::text,true);
 
 select * from public.receive_paystack_test_dispute_event('charge.dispute.create:9001',repeat('b',64),'charge.dispute.create',:'won_order_order_reference','9001','awaiting-merchant-feedback',null,10000,'NGN','test','general','Customer claim',now()+interval '2 days',jsonb_build_object('dispute_id','9001','transaction_reference',:'won_order_order_reference','amount',10000,'currency','NGN','domain','test','status','awaiting-merchant-feedback','resolution',null,'due_at',now()+interval '2 days')) \gset won_create_
 select * from public.process_paystack_test_dispute_event(:won_create_event_id);
+do $dispute_operator_reads$
+declare case_key bigint; blocked boolean:=false;
+begin
+  select id into case_key from public.learning_payment_cases where provider_case_id='9001';
+  if (select count(*) from public.list_learning_dispute_cases('15000000-0000-4000-a000-000000000003',null))<>1 then raise exception 'Active admin could not read dispute operations'; end if;
+  if not exists(select 1 from public.get_learning_dispute_case_for_recovery('15000000-0000-4000-a000-000000000003',case_key)) then raise exception 'Active admin could not read an eligible dispute recovery case'; end if;
+  begin perform public.list_learning_dispute_cases('15000000-0000-4000-a000-000000000001',null); exception when insufficient_privilege then blocked:=true; end;
+  if not blocked then raise exception 'Non-admin could read dispute operations'; end if;
+end;$dispute_operator_reads$;
 select * from public.receive_paystack_test_dispute_event('charge.dispute.create:9001',repeat('b',64),'charge.dispute.create',:'won_order_order_reference','9001','awaiting-merchant-feedback',null,10000,'NGN','test','general','Customer claim',now()+interval '2 days',jsonb_build_object('dispute_id','9001','transaction_reference',:'won_order_order_reference','amount',10000,'currency','NGN','domain','test','status','awaiting-merchant-feedback','resolution',null,'due_at',now()+interval '2 days'));
 select * from public.receive_paystack_test_dispute_event('charge.dispute.remind:9001',repeat('c',64),'charge.dispute.remind',:'won_order_order_reference','9001','awaiting-merchant-feedback',null,10000,'NGN','test','general','Reminder',now()+interval '12 hours',jsonb_build_object('dispute_id','9001','transaction_reference',:'won_order_order_reference','amount',10000,'currency','NGN','domain','test','status','awaiting-merchant-feedback','resolution',null,'due_at',now()+interval '12 hours')) \gset won_remind_
 select * from public.process_paystack_test_dispute_event(:won_remind_event_id);
