@@ -37,6 +37,24 @@ export type CommercialEarningsReleaseRun = {
   completed_at: string | null;
 };
 
+export type InstructorPayoutProfile = {
+  payout_profile_id: number;
+  instructor_id: string;
+  instructor_name: string | null;
+  instructor_email: string | null;
+  status: "active" | "disabled";
+  provider: "paystack";
+  provider_domain: "test" | "live";
+  recipient_code: string;
+  currency: "NGN";
+  bank_code: string;
+  bank_name: string;
+  account_name: string;
+  account_last4: string;
+  created_at: string;
+  disabled_at: string | null;
+};
+
 export async function listCommercialOperations(operatorId: string) {
   const { data, error } = await createAdminClient().rpc("list_learning_commercial_operations", { p_operator_id: operatorId, p_limit: 100 });
   if (error) throw new Error("Unable to load commercial operations.");
@@ -47,4 +65,10 @@ export async function listCommercialEarningsReleaseRuns(operatorId: string) {
   const { data, error } = await createAdminClient().rpc("list_learning_instructor_earnings_release_runs", { p_operator_id: operatorId, p_limit: 20 });
   if (error) throw new Error("Unable to load earnings release audit runs.");
   return (data ?? []) as CommercialEarningsReleaseRun[];
+}
+
+export async function listInstructorPayoutProfiles(operatorId: string) {
+  const { data, error } = await createAdminClient().rpc("list_learning_instructor_payout_profiles", { p_operator_id: operatorId, p_limit: 100 });
+  if (error) throw new Error("Unable to load payout profiles.");
+  return (data ?? []) as InstructorPayoutProfile[];
 }

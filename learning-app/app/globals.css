@@ -1736,6 +1736,18 @@ p { color: var(--muted); line-height: 1.65; }
 /* Admin review surfaces: compact queue rhythm and distinct review cards. */
 .dashboard-main > .admin-page { min-height: 0; padding-block: 0 40px !important; }
 .admin-page-header { margin-top: 0; margin-bottom: 30px; }
+
+.payout-profile-panel, .payout-profile-summary, .payout-profile-history, .commercial-payout-profiles { display: grid; gap: 18px; padding: clamp(24px, 4vw, 40px); border: 1px solid var(--line); border-radius: 22px; background: var(--surface); box-shadow: var(--shadow); }
+.payout-profile-panel header p:last-child, .commercial-payout-profiles header p:last-child { max-width: 720px; margin: 0; color: var(--muted); }
+.payout-profile-panel h2, .payout-profile-summary h2, .payout-profile-history h2, .commercial-payout-profiles h2 { margin: 0; }
+.payout-profile-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: end; }
+.payout-profile-form .button { min-height: 48px; }
+.payout-profile-summary { background: linear-gradient(125deg, color-mix(in srgb, var(--purple) 10%, var(--surface)), var(--surface)); }
+.payout-profile-summary p, .payout-profile-summary span, .payout-profile-history p { margin: 0; color: var(--muted); }
+.payout-profile-summary code { width: fit-content; }
+.payout-profile-feedback { margin: 0; color: #278756; font-weight: 700; }.payout-profile-feedback.is-error { color: #a23d3d; }
+.commercial-payout-profile-list { display: grid; gap: 12px; }.commercial-payout-profile-list article { display: grid; grid-template-columns: 1.1fr 1fr auto; gap: 18px; align-items: center; padding: 17px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface-muted); }.commercial-payout-profile-list article div { display: grid; gap: 4px; }.commercial-payout-profile-list article span { color: var(--muted); font-size: 13px; }.commercial-payout-profile-list article code { overflow-wrap: anywhere; }
+@media (max-width: 760px) { .payout-profile-form { grid-template-columns: 1fr; }.commercial-payout-profile-list article { grid-template-columns: 1fr; } }
 .admin-operations-page .admin-operations-grid { gap: 18px; }
 .admin-operation-card, .admin-empty-state, .admin-application-detail, .admin-review-panel { border-color: color-mix(in srgb, var(--purple) 16%, var(--line)); }
 .admin-application-row { margin-top: 14px; padding: clamp(22px, 3vw, 30px); border: 1px solid var(--line); border-radius: 18px; background: var(--surface); box-shadow: var(--shadow-xs); transition: border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease), transform var(--dur) var(--ease); }

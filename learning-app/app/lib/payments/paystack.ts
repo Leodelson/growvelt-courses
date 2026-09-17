@@ -171,3 +171,79 @@ export async function verifyPaystackTestDispute(input: { disputeId: string; tran
   const deadlineValue=data.due_at??data.dueAt??data.deadline; const deadline=typeof deadlineValue==="string"&&!Number.isNaN(Date.parse(deadlineValue))?new Date(deadlineValue).toISOString():null;
   return { id,transactionReference:reference,amountMinor:Number(amount),currency:"NGN",domain:"test",status:data.status,resolution:typeof data.resolution==="string"?data.resolution:null,category:typeof data.category==="string"?data.category:null,reason:typeof data.reason==="string"?data.reason:typeof data.note==="string"?data.note:null,deadline,payload:data };
 }
+
+export type PaystackTestResolvedAccount = {
+  accountName: string;
+  accountNumber: string;
+  bankCode: string;
+};
+
+export type PaystackTestTransferRecipient = {
+  recipientCode: string;
+  providerRecipientId: string;
+  bankCode: string;
+  bankName: string;
+  accountName: string;
+  accountLast4: string;
+  currency: "NGN";
+  domain: "test";
+};
+
+function requirePaystackNubanInput(input: { accountNumber: string; bankCode: string }) {
+  if (!/^\d{10}$/.test(input.accountNumber) || !/^[A-Za-z0-9_-]{2,32}$/.test(input.bankCode)) {
+    throw new Error("Invalid Nigerian bank account details.");
+  }
+}
+
+export async function resolvePaystackTestAccount(input: { accountNumber: string; bankCode: string }): Promise<PaystackTestResolvedAccount> {
+  requirePaystackNubanInput(input);
+  const { secretKey } = getPaystackTestConfig(false);
+  const query = new URLSearchParams({ account_number: input.accountNumber, bank_code: input.bankCode });
+  const response = await fetch(`https://api.paystack.co/bank/resolve?${query.toString()}`, {
+    headers: { Authorization: `Bearer ${secretKey}` }, cache: "no-store", signal: AbortSignal.timeout(15000),
+  });
+  const result = await response.json().catch(() => null) as { status?: unknown; message?: unknown; data?: Record<string, unknown> } | null;
+  const data = result?.data;
+  const accountName = typeof data?.account_name === "string" ? data.account_name.trim() : "";
+  const returnedAccountNumber = typeof data?.account_number === "string" ? data.account_number.trim() : input.accountNumber;
+  if (!response.ok || result?.status !== true || !accountName || returnedAccountNumber !== input.accountNumber) {
+    throw new Error(typeof result?.message === "string" ? result.message : "Paystack account validation failed.");
+  }
+  return { accountName, accountNumber: input.accountNumber, bankCode: input.bankCode };
+}
+
+export async function createPaystackTestTransferRecipient(input: { accountNumber: string; bankCode: string; accountName: string }): Promise<PaystackTestTransferRecipient> {
+  requirePaystackNubanInput(input);
+  if (!input.accountName.trim() || input.accountName.length > 200) throw new Error("Invalid resolved account name.");
+  const { secretKey } = getPaystackTestConfig(false);
+  const response = await fetch("https://api.paystack.co/transferrecipient", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${secretKey}`, "Content-Type": "application/json" },
+    cache: "no-store",
+    body: JSON.stringify({
+      type: "nuban",
+      name: input.accountName.trim(),
+      account_number: input.accountNumber,
+      bank_code: input.bankCode,
+      currency: "NGN",
+      metadata: { product: "growvelt_learning", environment: "test" },
+    }),
+    signal: AbortSignal.timeout(15000),
+  });
+  const result = await response.json().catch(() => null) as { status?: unknown; message?: unknown; data?: Record<string, unknown> } | null;
+  const data = result?.data;
+  const recipientCode = typeof data?.recipient_code === "string" ? data.recipient_code : "";
+  const recipientId = typeof data?.id === "number" && Number.isSafeInteger(data.id) ? String(data.id)
+    : typeof data?.id === "string" && /^\d+$/.test(data.id) ? data.id : "";
+  const details = data?.details && typeof data.details === "object" ? data.details as Record<string, unknown> : {};
+  const returnedAccountNumber = typeof details.account_number === "string" ? details.account_number : "";
+  const bankCode = typeof details.bank_code === "string" ? details.bank_code : "";
+  const bankName = typeof details.bank_name === "string" ? details.bank_name.trim() : "";
+  const accountName = typeof details.account_name === "string" ? details.account_name.trim() : input.accountName.trim();
+  if (!response.ok || result?.status !== true || !/^RCP_[A-Za-z0-9]+$/.test(recipientCode) || !recipientId
+    || data?.domain !== "test" || data?.currency !== "NGN" || returnedAccountNumber !== input.accountNumber
+    || bankCode !== input.bankCode || !bankName || !accountName) {
+    throw new Error(typeof result?.message === "string" ? result.message : "Paystack transfer recipient creation failed.");
+  }
+  return { recipientCode, providerRecipientId: recipientId, bankCode, bankName, accountName, accountLast4: input.accountNumber.slice(-4), currency: "NGN", domain: "test" };
+}
