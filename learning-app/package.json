@@ -31,6 +31,8 @@
     "test:payments:commercial-allocation:local": "node scripts/test-phase1c1-commercial-allocation-local.mjs",
     "test:payments:instructor-earnings:local": "node scripts/test-phase1c2a-instructor-earnings-local.mjs",
     "test:payments:instructor-earnings:app": "node scripts/test-phase1c2a-instructor-earnings-app.mjs",
+    "test:payments:instructor-earnings-release:local": "node scripts/test-phase1c2b-release-operations-local.mjs",
+    "test:payments:instructor-earnings-release:app": "node scripts/test-phase1c2b-release-operations-app.mjs",
     "test:auth:session": "node --experimental-strip-types scripts/test-auth-session-propagation.mjs",
     "fixture:payments:test": "node scripts/manage-phase1a-test-fixture.mjs"
   },

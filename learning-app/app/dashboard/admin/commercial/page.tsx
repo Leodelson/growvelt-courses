@@ -1,4 +1,5 @@
-import { listCommercialOperations } from "@/app/lib/admin/commercial-operations";
+import { CommercialReleaseControl } from "@/app/components/admin/commercial-release-control";
+import { listCommercialEarningsReleaseRuns, listCommercialOperations } from "@/app/lib/admin/commercial-operations";
 import { createClient } from "@/app/lib/supabase/server";
 
 export const metadata = { title: "Commercial earnings review" };
@@ -9,11 +10,13 @@ export default async function AdminCommercialPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
-  const operations = await listCommercialOperations(user.id);
+  const [operations, releaseRuns] = await Promise.all([listCommercialOperations(user.id), listCommercialEarningsReleaseRuns(user.id)]);
   const issues = operations.reduce((total, item) => total + item.reconciliation_issue_count, 0);
   return <section className="admin-page commercial-operations-page section-shell">
     <header className="admin-page-header admin-review-hero"><p className="eyebrow">Commercial operations</p><h1>Instructor earnings review</h1><p>Read-only visibility into authoritative commercial allocations and earnings. Payouts, transfers, and withholding deductions are not enabled.</p></header>
     <section className="commercial-operations-summary"><article><span>Commercial earnings</span><strong>{operations.length}</strong><small>Verified allocation records</small></article><article><span>Reconciliation findings</span><strong>{issues}</strong><small>From the authoritative commercial reconciliation</small></article></section>
+    <CommercialReleaseControl />
+    <section className="commercial-release-runs"><header><p className="eyebrow">Operational audit</p><h2>Recent matured-earnings release runs</h2></header>{releaseRuns.length ? <ul>{releaseRuns.map((run) => <li key={run.run_id}><span className={`admin-status is-${run.status}`}>{run.status}</span><span>{run.invocation_source === "scheduler" ? "Daily scheduler" : "Administrator recovery"}</span><span>{run.released_count} released</span><time dateTime={run.started_at}>{date(run.completed_at ?? run.started_at)}</time></li>)}</ul> : <p>No release operation has run yet.</p>}</section>
     {operations.length ? <div className="commercial-operations-list">{operations.map((item) => <article key={item.earning_id}>
       <div className="commercial-operation-heading"><div><p className={`admin-status is-${item.earning_status}`}>{item.earning_status} · {item.allocation_status}</p><h2>{item.course_title}</h2><p>{item.instructor_name ?? "Instructor"} · {item.instructor_email ?? "Email unavailable"}</p><code>{item.order_reference}</code></div><strong>{money(item.instructor_gross_minor, item.currency)}</strong></div>
       <dl><div><dt>Gross sale</dt><dd>{money(item.gross_amount_minor, item.currency)}</dd></div><div><dt>Growvelt share</dt><dd>{money(item.platform_commission_minor, item.currency)}</dd></div><div><dt>Instructor share</dt><dd>{money(item.instructor_gross_minor, item.currency)}</dd></div><div><dt>Available from</dt><dd>{date(item.available_at)}</dd></div><div><dt>Released</dt><dd>{date(item.released_at)}</dd></div><div><dt>Terms</dt><dd>{item.commercial_terms_version}</dd></div></dl>

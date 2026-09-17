@@ -26,8 +26,25 @@ export type CommercialOperation = {
   reconciliation_details: string[];
 };
 
+export type CommercialEarningsReleaseRun = {
+  run_id: number;
+  invocation_source: "scheduler" | "admin_recovery";
+  actor_user_id: string | null;
+  status: "started" | "succeeded" | "failed";
+  released_count: number;
+  failure_code: string | null;
+  started_at: string;
+  completed_at: string | null;
+};
+
 export async function listCommercialOperations(operatorId: string) {
   const { data, error } = await createAdminClient().rpc("list_learning_commercial_operations", { p_operator_id: operatorId, p_limit: 100 });
   if (error) throw new Error("Unable to load commercial operations.");
   return (data ?? []) as CommercialOperation[];
+}
+
+export async function listCommercialEarningsReleaseRuns(operatorId: string) {
+  const { data, error } = await createAdminClient().rpc("list_learning_instructor_earnings_release_runs", { p_operator_id: operatorId, p_limit: 20 });
+  if (error) throw new Error("Unable to load earnings release audit runs.");
+  return (data ?? []) as CommercialEarningsReleaseRun[];
 }

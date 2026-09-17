@@ -1,0 +1,5 @@
+{
+  "crons": [
+    { "path": "/api/internal/commercial/release-matured", "schedule": "0 4 * * *" }
+  ]
+}
