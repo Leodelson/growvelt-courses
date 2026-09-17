@@ -35,6 +35,8 @@
     "test:payments:instructor-earnings-release:app": "node scripts/test-phase1c2b-release-operations-app.mjs",
     "test:payments:payout-profile:app": "node scripts/test-phase1e1-payout-profile-app.mjs",
     "test:payments:payout-profile:local": "node scripts/test-phase1e1-payout-profile-local.mjs",
+    "test:payments:earnings-reservation:app": "node scripts/test-phase1e2-earnings-reservation-app.mjs",
+    "test:payments:earnings-reservation:local": "node scripts/test-phase1e2-earnings-reservation-local.mjs",
     "test:auth:session": "node --experimental-strip-types scripts/test-auth-session-propagation.mjs",
     "fixture:payments:test": "node scripts/manage-phase1a-test-fixture.mjs"
   },
