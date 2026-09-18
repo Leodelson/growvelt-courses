@@ -37,6 +37,8 @@
     "test:payments:payout-profile:local": "node scripts/test-phase1e1-payout-profile-local.mjs",
     "test:payments:earnings-reservation:app": "node scripts/test-phase1e2-earnings-reservation-app.mjs",
     "test:payments:earnings-reservation:local": "node scripts/test-phase1e2-earnings-reservation-local.mjs",
+    "test:payments:payout-test-transfer:app": "node scripts/test-phase1e3-payout-test-transfer-app.mjs",
+    "test:payments:payout-test-transfer:local": "node scripts/test-phase1e3-payout-test-transfer-local.mjs",
     "test:auth:session": "node --experimental-strip-types scripts/test-auth-session-propagation.mjs",
     "fixture:payments:test": "node scripts/manage-phase1a-test-fixture.mjs"
   },

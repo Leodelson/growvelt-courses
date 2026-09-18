@@ -55,6 +55,9 @@ export type InstructorPayoutProfile = {
   disabled_at: string | null;
 };
 
+export type InstructorPayoutCandidate = { reservation_id: number; reservation_reference: string; instructor_name: string | null; instructor_email: string | null; amount_minor: number; currency: "NGN"; eligible: boolean };
+export type InstructorPayoutItem = { payout_item_id: number; reservation_id: number; reservation_reference: string; payout_item_reference: string; instructor_name: string | null; instructor_email: string | null; amount_minor: number; currency: "NGN"; status: string; provider_status: string | null; provider_transfer_code: string | null; provider_domain: "test"; approved_at: string; initiated_at: string | null };
+
 export async function listCommercialOperations(operatorId: string) {
   const { data, error } = await createAdminClient().rpc("list_learning_commercial_operations", { p_operator_id: operatorId, p_limit: 100 });
   if (error) throw new Error("Unable to load commercial operations.");
@@ -71,4 +74,16 @@ export async function listInstructorPayoutProfiles(operatorId: string) {
   const { data, error } = await createAdminClient().rpc("list_learning_instructor_payout_profiles", { p_operator_id: operatorId, p_limit: 100 });
   if (error) throw new Error("Unable to load payout profiles.");
   return (data ?? []) as InstructorPayoutProfile[];
+}
+
+export async function listInstructorPayoutCandidates(operatorId: string) {
+  const { data, error } = await createAdminClient().rpc("list_learning_instructor_payout_candidates", { p_operator_id: operatorId, p_limit: 100 });
+  if (error) throw new Error("Unable to load payout candidates.");
+  return (data ?? []) as InstructorPayoutCandidate[];
+}
+
+export async function listInstructorPayoutItems(operatorId: string) {
+  const { data, error } = await createAdminClient().rpc("list_learning_instructor_payout_items", { p_operator_id: operatorId, p_limit: 100 });
+  if (error) throw new Error("Unable to load payout items.");
+  return (data ?? []) as InstructorPayoutItem[];
 }

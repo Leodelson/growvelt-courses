@@ -9,9 +9,11 @@ export {
   parsePaystackTestChargeSuccess,
   parsePaystackTestDisputeEvent,
   parsePaystackTestRefundEvent,
+  parsePaystackTestTransferEvent,
   parsePaystackChargeSuccess,
   parsePaystackDisputeEvent,
   parsePaystackRefundEvent,
+  parsePaystackTransferEvent,
   verifyPaystackSignature,
 } from "@/app/lib/payments/paystack-core";
 
@@ -246,4 +248,39 @@ export async function createPaystackTestTransferRecipient(input: { accountNumber
     throw new Error(typeof result?.message === "string" ? result.message : "Paystack transfer recipient creation failed.");
   }
   return { recipientCode, providerRecipientId: recipientId, bankCode, bankName, accountName, accountLast4: input.accountNumber.slice(-4), currency: "NGN", domain: "test" };
+}
+
+export type PaystackTestTransfer = { transferId: string; transferCode: string | null; reference: string; status: string; amountMinor: number; currency: "NGN"; domain: "test" };
+
+/** Server-only: the caller supplies only values loaded from the authoritative payout item. */
+export async function initiatePaystackTestTransfer(input: { recipientCode: string; amountMinor: number; reference: string }): Promise<PaystackTestTransfer> {
+  if (!/^RCP_[A-Za-z0-9]+$/.test(input.recipientCode) || !Number.isSafeInteger(input.amountMinor) || input.amountMinor <= 0 || !/^lpi-[a-z0-9_-]{12,50}$/.test(input.reference)) throw new Error("Invalid Test transfer identity.");
+  const { secretKey } = getPaystackTestConfig(false);
+  const response = await fetch("https://api.paystack.co/transfer", {
+    method: "POST", headers: { Authorization: `Bearer ${secretKey}`, "Content-Type": "application/json" }, cache: "no-store",
+    body: JSON.stringify({ source: "balance", amount: input.amountMinor, recipient: input.recipientCode, reference: input.reference, currency: "NGN", reason: "Growvelt Learning instructor earnings" }), signal: AbortSignal.timeout(15000),
+  });
+  const result = await response.json().catch(() => null) as { status?: unknown; message?: unknown; data?: Record<string, unknown> } | null;
+  const data = result?.data;
+  const transferId = typeof data?.id === "number" && Number.isSafeInteger(data.id) ? String(data.id) : typeof data?.id === "string" && /^\d+$/.test(data.id) ? data.id : "";
+  const transferCode = typeof data?.transfer_code === "string" && /^TRF_[A-Za-z0-9]+$/.test(data.transfer_code) ? data.transfer_code : null;
+  const amount = typeof data?.amount === "number" ? data.amount : typeof data?.amount === "string" && /^\d+$/.test(data.amount) ? Number(data.amount) : NaN;
+  const status = typeof data?.status === "string" ? data.status : "";
+  if (!response.ok || result?.status !== true || !transferId || data?.reference !== input.reference || amount !== input.amountMinor || data?.currency !== "NGN" || data?.domain !== "test" || !status) throw new Error(typeof result?.message === "string" ? result.message : "Paystack Test transfer initiation failed.");
+  return { transferId, transferCode, reference: input.reference, status, amountMinor: amount, currency: "NGN", domain: "test" };
+}
+
+export async function verifyPaystackTestTransfer(reference: string): Promise<PaystackTestTransfer> {
+  if (!/^lpi-[a-z0-9_-]{12,50}$/.test(reference)) throw new Error("Invalid Test transfer reference.");
+  const { secretKey } = getPaystackTestConfig(false);
+  const response = await fetch(`https://api.paystack.co/transfer/verify/${encodeURIComponent(reference)}`, { headers: { Authorization: `Bearer ${secretKey}` }, cache: "no-store", signal: AbortSignal.timeout(15000) });
+  const result = await response.json().catch(() => null) as { status?: unknown; message?: unknown; data?: Record<string, unknown> } | null;
+  const data = result?.data;
+  const transferId = typeof data?.id === "number" && Number.isSafeInteger(data.id) ? String(data.id) : typeof data?.id === "string" && /^\d+$/.test(data.id) ? data.id : "";
+  const transferCode = typeof data?.transfer_code === "string" && /^TRF_[A-Za-z0-9]+$/.test(data.transfer_code) ? data.transfer_code : null;
+  const amount = typeof data?.amount === "number" ? data.amount : typeof data?.amount === "string" && /^\d+$/.test(data.amount) ? Number(data.amount) : NaN;
+  const rawStatus = typeof data?.status === "string" ? data.status : "";
+  const status = rawStatus === "success" ? "succeeded" : rawStatus === "failed" ? "failed" : rawStatus === "reversed" ? "reversed" : rawStatus === "pending" || rawStatus === "otp" ? "pending" : "";
+  if (!response.ok || result?.status !== true || !transferId || data?.reference !== reference || !status || !Number.isSafeInteger(amount) || amount <= 0 || data?.currency !== "NGN" || data?.domain !== "test") throw new Error(typeof result?.message === "string" ? result.message : "Paystack Test transfer verification is inconclusive.");
+  return { transferId, transferCode, reference, status, amountMinor: amount, currency: "NGN", domain: "test" };
 }

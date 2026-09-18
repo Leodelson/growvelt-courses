@@ -61,6 +61,33 @@ export type PaystackDisputeEvent = {
   payload: Record<string, unknown>;
 };
 
+export type PaystackTransferEvent = {
+  eventId: string;
+  eventType: "transfer.success" | "transfer.failed" | "transfer.reversed";
+  reference: string;
+  transferId: string;
+  transferCode: string | null;
+  status: "succeeded" | "failed" | "reversed";
+  amountMinor: number;
+  currency: "NGN";
+  domain: PaystackDomain;
+  payload: Record<string, unknown>;
+};
+
+export function parsePaystackTransferEvent(value: unknown, expectedDomain: PaystackDomain): PaystackTransferEvent | null {
+  if (!value || typeof value !== "object") return null;
+  const event = value as { event?: unknown; data?: unknown };
+  if (!(["transfer.success", "transfer.failed", "transfer.reversed"] as const).includes(event.event as never) || !event.data || typeof event.data !== "object") return null;
+  const data = event.data as Record<string, unknown>;
+  const reference = typeof data.reference === "string" ? data.reference : "";
+  const transferId = typeof data.id === "number" && Number.isSafeInteger(data.id) ? String(data.id) : typeof data.id === "string" && /^\d+$/.test(data.id) ? data.id : "";
+  const transferCode = typeof data.transfer_code === "string" && /^TRF_[A-Za-z0-9]+$/.test(data.transfer_code) ? data.transfer_code : null;
+  const amount = typeof data.amount === "number" ? data.amount : typeof data.amount === "string" && /^\d+$/.test(data.amount) ? Number(data.amount) : NaN;
+  const status = event.event === "transfer.success" ? "succeeded" : event.event === "transfer.failed" ? "failed" : "reversed";
+  if (!/^lpi-[a-z0-9_-]{12,50}$/.test(reference) || !transferId || !Number.isSafeInteger(amount) || amount <= 0 || data.currency !== "NGN" || data.domain !== expectedDomain) return null;
+  return { eventId: `${event.event}:${transferId}`, eventType: event.event as PaystackTransferEvent["eventType"], reference, transferId, transferCode, status, amountMinor: amount, currency: "NGN", domain: expectedDomain, payload: { transfer_id: transferId, transfer_code: transferCode, reference, amount, currency: "NGN", domain: expectedDomain, status } };
+}
+
 export function parsePaystackDisputeEvent(value: unknown, expectedDomain: PaystackDomain): PaystackDisputeEvent | null {
   if (!value || typeof value !== "object") return null;
   const event = value as { event?: unknown; data?: unknown };
@@ -185,4 +212,8 @@ export function parsePaystackTestRefundEvent(value: unknown) {
 
 export function parsePaystackTestChargeSuccess(value: unknown) {
   return parsePaystackChargeSuccess(value, "test");
+}
+
+export function parsePaystackTestTransferEvent(value: unknown) {
+  return parsePaystackTransferEvent(value, "test");
 }

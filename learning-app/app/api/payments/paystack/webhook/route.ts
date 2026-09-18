@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/app/lib/supabase/admin";
-import { digestPaystackPayload, getPaystackConfig, parsePaystackChargeSuccess, parsePaystackTestDisputeEvent, parsePaystackTestRefundEvent, verifyPaystackSignature } from "@/app/lib/payments/paystack";
+import { digestPaystackPayload, getPaystackConfig, parsePaystackChargeSuccess, parsePaystackTestDisputeEvent, parsePaystackTestRefundEvent, parsePaystackTestTransferEvent, verifyPaystackSignature } from "@/app/lib/payments/paystack";
 import { getOrderNotificationContext, paymentOperationsRecipient, sendPaymentNotification } from "@/app/lib/email/payment-notifications";
 
 export async function POST(request: Request) {
@@ -13,6 +13,19 @@ export async function POST(request: Request) {
     payload = JSON.parse(rawBody) as unknown;
   } catch {
     return NextResponse.json({ code: "invalid_payload" }, { status: 400 });
+  }
+  const transfer = config.mode === "test" ? parsePaystackTestTransferEvent(payload) : null;
+  if (transfer) {
+    const admin = createAdminClient();
+    const { data, error } = await admin.rpc("receive_paystack_test_transfer_event", {
+      p_provider_event_id: transfer.eventId, p_payload_digest: digestPaystackPayload(rawBody), p_reference: transfer.reference,
+      p_transfer_id: transfer.transferId, p_transfer_code: transfer.transferCode, p_status: transfer.status,
+      p_amount_minor: transfer.amountMinor, p_currency: transfer.currency, p_payload: transfer.payload,
+    });
+    if (error) { console.error("payout.transfer_webhook_receive_failed", { provider: "paystack", reference: transfer.reference, code: error.code }); return NextResponse.json({ code: "receipt_failed" }, { status: 500 }); }
+    const outcome = (data as Array<{ outcome?: string }> | null)?.[0]?.outcome;
+    if (!outcome) return NextResponse.json({ code: "receipt_conflict" }, { status: 409 });
+    return NextResponse.json({ received: true });
   }
   // Refund and dispute operations remain test-only until a separately approved
   // live-domain foundation exists. Live charge events continue below.
