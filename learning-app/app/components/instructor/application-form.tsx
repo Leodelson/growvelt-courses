@@ -4,7 +4,6 @@ import { FormEvent, useRef, useState } from "react";
 import { ActionButton } from "@/app/components/ui/action-button";
 import { InlineFeedback } from "@/app/components/ui/inline-feedback";
 import type { InstructorApplicationIdentity } from "@/app/lib/instructor/application";
-import { createClient } from "@/app/lib/supabase/browser";
 import { useLanguage } from "@/app/components/language-provider";
 
 export function InstructorApplicationForm({ identity }: { identity: InstructorApplicationIdentity }) {
@@ -42,22 +41,8 @@ export function InstructorApplicationForm({ identity }: { identity: InstructorAp
     setBusy(true);
     setMessage("");
     try {
-      const supabase = createClient();
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user.id) throw new Error("Authentication required");
-      const { error } = await supabase.from("instructor_profiles").insert({
-        user_id: session.user.id,
-        country,
-        phone: String(values.get("phone") ?? "").trim() || null,
-        headline: String(values.get("headline") ?? "").trim(),
-        expertise,
-        years_experience: yearsExperience,
-        teaching_experience: String(values.get("teaching_experience") ?? "").trim(),
-        bio: String(values.get("bio") ?? "").trim(),
-        motivation: String(values.get("motivation") ?? "").trim(),
-        portfolio_url: portfolioUrl || null,
-      });
-      if (error) throw error;
+      const response = await fetch("/api/instructor/application", { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ country, phone: String(values.get("phone") ?? "").trim(), headline: String(values.get("headline") ?? "").trim(), expertise, yearsExperience, teachingExperience: String(values.get("teaching_experience") ?? "").trim(), bio: String(values.get("bio") ?? "").trim(), motivation: String(values.get("motivation") ?? "").trim(), portfolioUrl }) });
+      if (!response.ok) throw new Error("application_unavailable");
       window.location.assign("/teach/application");
     } catch {
       setMessage(t("teach.submitFailed"));
