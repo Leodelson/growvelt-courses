@@ -1,9 +1,26 @@
 import { NextResponse } from "next/server";
 import { isSameOriginRequest } from "@/app/lib/security/request-origin";
+import { createAdminClient } from "@/app/lib/supabase/admin";
 import { createClient } from "@/app/lib/supabase/server";
 
 type ApplicationBody = { country?: unknown; phone?: unknown; headline?: unknown; expertise?: unknown; yearsExperience?: unknown; teachingExperience?: unknown; bio?: unknown; motivation?: unknown; portfolioUrl?: unknown };
 const asText = (value: unknown) => typeof value === "string" ? value.trim() : "";
+
+export async function GET() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ code: "unauthorized" }, { status: 401 });
+  const { data, error } = await createAdminClient()
+    .from("instructor_profiles")
+    .select("headline,bio,expertise,country,phone,years_experience,teaching_experience,motivation,portfolio_url,approval_status,created_at,reviewed_at")
+    .eq("user_id", user.id)
+    .maybeSingle();
+  if (error) {
+    console.error("instructor.application_status_api_failed", { userId: user.id, code: error.code });
+    return NextResponse.json({ code: "application_status_unavailable" }, { status: 503 });
+  }
+  return NextResponse.json({ application: data ?? null }, { headers: { "Cache-Control": "no-store" } });
+}
 
 export async function POST(request: Request) {
   if (!isSameOriginRequest(request)) return NextResponse.json({ code: "invalid_origin" }, { status: 403 });
