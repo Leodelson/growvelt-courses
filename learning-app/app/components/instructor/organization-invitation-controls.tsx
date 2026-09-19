@@ -15,8 +15,10 @@ export function OrganizationInvitationForm({ organizationId }: { organizationId:
   const failureMessage = (code?: string) => code === "invitee_not_found" ? "That email does not belong to a Growvelt Learning account yet." : code === "invitee_not_approved" ? "That account has not been approved as a Growvelt instructor yet." : code === "already_member" ? "That instructor is already an active member of this organization." : code === "organization_access_denied" ? "Your active Owner access could not be verified. Refresh and try again." : "We could not confirm that invitation. Please refresh once before trying again.";
   function showSavedInvitation(text: string) {
     setFeedback({ kind: "success", text });
-    window.sessionStorage.setItem(successStorageKey, text);
-    router.refresh();
+    window.setTimeout(() => {
+      window.sessionStorage.setItem(successStorageKey, text);
+      router.refresh();
+    }, 4500);
   }
   async function confirmSavedInvitation(email: string) {
     const response = await fetch(`/api/instructor/organizations/${organizationId}/invitations?email=${encodeURIComponent(email)}`, { credentials: "same-origin", cache: "no-store" });
@@ -52,6 +54,6 @@ export function OrganizationInvitationForm({ organizationId }: { organizationId:
 
 export function OrganizationInvitationAcceptance({ invitationId }: { invitationId: number }) {
   const router = useRouter(); const [pending, setPending] = useState(false); const [message, setMessage] = useState<string | null>(null);
-  async function accept() { if (pending) return; setPending(true); setMessage(null); try { const response = await fetch(`/api/instructor/organization-invitations/${invitationId}/accept`, { method: "POST", credentials: "same-origin" }); if (!response.ok) throw new Error("unavailable"); setMessage("Organization invitation accepted."); router.refresh(); } catch { setMessage("We could not accept this invitation safely. Refresh and try again."); } finally { setPending(false); } }
+  async function accept() { if (pending) return; setPending(true); setMessage(null); try { const response = await fetch(`/api/instructor/organization-invitations/${invitationId}/accept`, { method: "POST", credentials: "same-origin" }); const result = await response.json().catch(() => null) as { notification?: "sent" | "not_configured" | "failed" } | null; if (!response.ok) throw new Error("unavailable"); setMessage(result?.notification === "sent" ? "Organization invitation accepted. The organization owner has been notified by email." : "Organization invitation accepted."); router.refresh(); } catch { setMessage("We could not accept this invitation safely. Refresh and try again."); } finally { setPending(false); } }
   return <div className="organization-invitation-acceptance"><button className="button button-primary" type="button" onClick={accept} disabled={pending}>{pending ? "Accepting…" : "Accept invitation"}</button>{message && <p className="payout-profile-feedback" role="status">{message}</p>}</div>;
 }
