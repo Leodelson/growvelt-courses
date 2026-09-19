@@ -45,6 +45,7 @@
     "test:organizations:foundation:local": "node scripts/test-phase2a1-organization-foundation-local.mjs",
     "test:organizations:invitations:local": "node scripts/test-phase2a2-organization-invitations-local.mjs",
     "test:organizations:course-attribution:local": "node scripts/test-phase2a3-organization-course-attribution-local.mjs",
+    "test:instructor-application:self-read:local": "node scripts/test-instructor-application-self-read-local.mjs",
     "test:auth:session": "node --experimental-strip-types scripts/test-auth-session-propagation.mjs",
     "fixture:payments:test": "node scripts/manage-phase1a-test-fixture.mjs"
   },

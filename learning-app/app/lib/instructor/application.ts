@@ -1,5 +1,4 @@
 import { createClient } from "@/app/lib/supabase/server";
-import type { SupabaseClient } from "@supabase/supabase-js";
 
 export type InstructorApplication = {
   headline: string | null;
@@ -21,18 +20,15 @@ export type InstructorApplicationIdentity = {
   email: string | null;
 };
 
-async function readOwnInstructorApplication(supabase: SupabaseClient) {
-  const { data, error } = await supabase
-    .from("instructor_profiles")
-    .select("headline,bio,expertise,country,phone,years_experience,teaching_experience,motivation,portfolio_url,approval_status,created_at,reviewed_at")
-    .maybeSingle();
+async function readOwnInstructorApplication() {
+  const { data, error } = await (await createClient()).rpc("get_own_instructor_application").maybeSingle();
 
   if (error) throw new Error("Unable to load Instructor application status.");
   return data as InstructorApplication | null;
 }
 
 export async function getOwnInstructorApplication() {
-  return readOwnInstructorApplication(await createClient());
+  return readOwnInstructorApplication();
 }
 
 export async function getOwnInstructorApplicationContext() {
@@ -41,7 +37,7 @@ export async function getOwnInstructorApplicationContext() {
   if (userError || !user) throw new Error("Unable to verify your Growvelt Learning account.");
 
   const [applicationResult, profileResult] = await Promise.all([
-    readOwnInstructorApplication(supabase),
+    readOwnInstructorApplication(),
     supabase
       .from("profiles")
       .select("full_name,email")
