@@ -7,12 +7,13 @@ const recovery = await readFile("app/lib/admin/instructor-payout-transfer.ts", "
 const operations = await readFile("app/lib/admin/commercial-operations.ts", "utf8");
 const reprocessRoute = await readFile("app/api/admin/commercial/payout-items/reprocess-event/route.ts", "utf8");
 
-assert.match(migration, /create table public\.learning_instructor_payout_provider_events/);
+assert.match(migration, /create table if not exists public\.learning_instructor_payout_provider_events/);
+assert.match(migration, /drop index if exists public\.learning_instructor_payout_reconciliation_findings_open_idx[\s\S]*alter table public\.learning_instructor_payout_reconciliation_findings drop column status, drop column resolved_at/);
 assert.match(migration, /provider_event_id text not null unique/);
 assert.match(migration, /provenance text not null check \(provenance in \('provider_webhook','provider_api'\)\)/);
-assert.match(migration, /create table public\.learning_instructor_payout_settlements/);
+assert.match(migration, /create table if not exists public\.learning_instructor_payout_settlements/);
 assert.match(migration, /payout_item_id bigint not null unique/);
-assert.match(migration, /create table public\.learning_instructor_payout_reconciliation_findings/);
+assert.match(migration, /create table if not exists public\.learning_instructor_payout_reconciliation_findings/);
 assert.match(migration, /create table public\.learning_instructor_payout_reconciliation_finding_events/);
 assert.match(migration, /Payout reconciliation findings are immutable/);
 assert.match(migration, /reprocess_learning_instructor_payout_provider_event/);
