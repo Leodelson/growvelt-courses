@@ -24,8 +24,8 @@ export function OrganizationCreateForm() {
     } finally { setPending(false); }
   }
   return <form className="organization-create-form" onSubmit={submit}>
-    <label className="course-field">Organization name<input name="name" maxLength={160} minLength={2} required /></label>
-    <label className="course-field">Organization URL slug<input name="slug" pattern="[a-z0-9]+(?:-[a-z0-9]+)*" maxLength={100} minLength={3} required /><span>Lowercase letters, numbers, and hyphens only. It becomes part of your organization’s future Learning URL.</span></label>
+    <label className="course-field">Organization name<input name="name" placeholder="e.g. Growvelt Data Academy" maxLength={160} minLength={2} required /></label>
+    <label className="course-field">Organization URL slug<input name="slug" placeholder="e.g. growvelt-data-academy" pattern="[a-z0-9]+(?:-[a-z0-9]+)*" maxLength={100} minLength={3} required /><span>This is your organization’s permanent short identifier. Use lowercase letters, numbers, and hyphens only. A public organization profile URL is not published in this phase.</span></label>
     <button className="button button-primary" type="submit" disabled={pending}>{pending ? "Creating…" : "Create organization"}</button>
     {message && <p className={isError ? "payout-profile-feedback is-error" : "payout-profile-feedback"} role="status">{message}</p>}
   </form>;

@@ -33,6 +33,12 @@ begin
   if not exists(select 1 from public.learning_audit_events where entity_type='learning_course' and entity_id=course_key::text and action='provider_organization.course_draft_created') then
     raise exception 'Organization course attribution was not audited';
   end if;
+  if not exists(select 1 from public.list_own_learning_provider_organization_members(organization_key) member where member.member_id='33333333-3333-4333-8333-333333333351'::uuid and member.role='owner' and member.status='active') then
+    raise exception 'Organization owner could not view their membership roster';
+  end if;
+  if not exists(select 1 from public.list_own_learning_provider_organization_courses(organization_key) course where course.course_id=course_key) then
+    raise exception 'Organization member could not view attributed course';
+  end if;
 
   perform set_config('request.jwt.claim.sub',outsider_id::text,true);
   begin
