@@ -14,6 +14,11 @@ export async function POST(request: Request) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ code: "unauthorized" }, { status: 401 });
   const { data, error } = await supabase.rpc("create_own_learning_provider_organization", { p_name: name, p_slug: slug });
-  if (error) return NextResponse.json({ code: "organization_unavailable" }, { status: 409 });
+  if (error) {
+    console.error("Organization creation failed", { code: error.code, message: error.message });
+    if (error.code === "23505") return NextResponse.json({ code: "organization_slug_taken" }, { status: 409 });
+    if (error.code === "42501") return NextResponse.json({ code: "approved_instructor_required" }, { status: 403 });
+    return NextResponse.json({ code: "organization_unavailable" }, { status: 500 });
+  }
   return NextResponse.json({ organization: (data as unknown[] | null)?.[0] }, { status: 201 });
 }
