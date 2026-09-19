@@ -1,11 +1,23 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 
 export function OrganizationInvitationForm({ organizationId }: { organizationId: number }) {
   const router = useRouter(); const [pending, setPending] = useState(false); const [feedback, setFeedback] = useState<{ kind: "success" | "error"; text: string } | null>(null);
+  const successStorageKey = `growvelt-organization-invitation-success-${organizationId}`;
+  useEffect(() => {
+    const saved = window.sessionStorage.getItem(successStorageKey);
+    if (!saved) return;
+    window.sessionStorage.removeItem(successStorageKey);
+    setFeedback({ kind: "success", text: saved });
+  }, [successStorageKey]);
   const failureMessage = (code?: string) => code === "invitee_not_found" ? "That email does not belong to a Growvelt Learning account yet." : code === "invitee_not_approved" ? "That account has not been approved as a Growvelt instructor yet." : code === "already_member" ? "That instructor is already an active member of this organization." : code === "organization_access_denied" ? "Your active Owner access could not be verified. Refresh and try again." : "We could not confirm that invitation. Please refresh once before trying again.";
+  function showSavedInvitation(text: string) {
+    setFeedback({ kind: "success", text });
+    window.sessionStorage.setItem(successStorageKey, text);
+    router.refresh();
+  }
   async function confirmSavedInvitation(email: string) {
     const response = await fetch(`/api/instructor/organizations/${organizationId}/invitations?email=${encodeURIComponent(email)}`, { credentials: "same-origin", cache: "no-store" });
     if (!response.ok) return false;
@@ -21,17 +33,16 @@ export function OrganizationInvitationForm({ organizationId }: { organizationId:
       const result = await response.json().catch(() => null) as { code?: string; notification?: "sent" | "not_configured" | "failed" } | null;
       if (!response.ok) {
         if (await confirmSavedInvitation(email)) {
-          event.currentTarget.reset(); setFeedback({ kind: "success", text: "Invitation is already saved and pending acceptance. We will not create a duplicate." }); window.setTimeout(() => router.refresh(), 1400); return;
+          event.currentTarget.reset(); showSavedInvitation("Invitation is already saved and pending acceptance. We will not create a duplicate."); return;
         }
         setFeedback({ kind: "error", text: failureMessage(result?.code) }); return;
       }
       event.currentTarget.reset();
-      setFeedback({ kind: "success", text: result?.notification === "sent" ? "Invitation sent. The instructor has been emailed and can accept it from their Organizations page." : result?.notification === "not_configured" ? "Invitation sent and is pending acceptance. Email delivery is not configured yet, so let the instructor know to sign in and open Organizations." : "Invitation sent and is pending acceptance. We could not send the email notice, so let the instructor know to sign in and open Organizations." });
-      window.setTimeout(() => router.refresh(), 1400);
+      showSavedInvitation(result?.notification === "sent" ? "Invitation sent. The instructor has been emailed and can accept it from their Organizations page." : result?.notification === "not_configured" ? "Invitation sent and is pending acceptance. Email delivery is not configured yet, so let the instructor know to sign in and open Organizations." : "Invitation sent and is pending acceptance. We could not send the email notice, so let the instructor know to sign in and open Organizations.");
     }
     catch {
       if (await confirmSavedInvitation(email).catch(() => false)) {
-        event.currentTarget.reset(); setFeedback({ kind: "success", text: "Invitation is already saved and pending acceptance. We will not create a duplicate." }); window.setTimeout(() => router.refresh(), 1400);
+        event.currentTarget.reset(); showSavedInvitation("Invitation is already saved and pending acceptance. We will not create a duplicate.");
       } else setFeedback({ kind: "error", text: "We could not confirm that invitation. Please refresh once before trying again." });
     }
     finally { setPending(false); }
