@@ -17,15 +17,18 @@ export async function POST(request: Request) {
   const transfer = config.mode === "test" ? parsePaystackTestTransferEvent(payload) : null;
   if (transfer) {
     const admin = createAdminClient();
-    const { data, error } = await admin.rpc("receive_paystack_test_transfer_event", {
-      p_provider_event_id: transfer.eventId, p_payload_digest: digestPaystackPayload(rawBody), p_reference: transfer.reference,
+    const { data, error } = await admin.rpc("receive_paystack_test_transfer_provider_event", {
+      p_provenance: "provider_webhook", p_provider_event_id: transfer.eventId, p_payload_digest: digestPaystackPayload(rawBody), p_reference: transfer.reference,
       p_transfer_id: transfer.transferId, p_transfer_code: transfer.transferCode, p_status: transfer.status,
-      p_amount_minor: transfer.amountMinor, p_currency: transfer.currency, p_payload: transfer.payload,
+      p_amount_minor: transfer.amountMinor, p_currency: transfer.currency, p_actor_user_id: null,
     });
     if (error) { console.error("payout.transfer_webhook_receive_failed", { provider: "paystack", reference: transfer.reference, code: error.code }); return NextResponse.json({ code: "receipt_failed" }, { status: 500 }); }
-    const outcome = (data as Array<{ outcome?: string }> | null)?.[0]?.outcome;
-    if (!outcome) return NextResponse.json({ code: "receipt_conflict" }, { status: 409 });
-    return NextResponse.json({ received: true });
+    const receipt = (data as Array<{ provider_event_id?: number; outcome?: string }> | null)?.[0];
+    if (!receipt?.provider_event_id) return NextResponse.json({ code: "receipt_conflict" }, { status: 409 });
+    if (receipt.outcome === "duplicate_conflict") return NextResponse.json({ received: true, processing: "conflict" });
+    const { error: processError } = await admin.rpc("process_learning_instructor_payout_provider_event", { p_provider_event_id: receipt.provider_event_id });
+    if (processError) console.error("payout.transfer_webhook_processing_deferred", { provider: "paystack", reference: transfer.reference, code: processError.code });
+    return NextResponse.json({ received: true, processing: processError ? "deferred" : "processed" });
   }
   // Refund and dispute operations remain test-only until a separately approved
   // live-domain foundation exists. Live charge events continue below.

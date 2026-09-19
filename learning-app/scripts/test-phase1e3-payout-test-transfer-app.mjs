@@ -33,7 +33,8 @@ assert.match(paystack, /getPaystackTestConfig\(false\)/);
 assert.match(paystack, /data\?\.domain !== "test"/);
 assert.doesNotMatch(paystack, /initiatePaystackLiveTransfer/);
 assert.match(webhook, /parsePaystackTestTransferEvent/);
-assert.match(webhook, /receive_paystack_test_transfer_event/);
+assert.match(webhook, /receive_paystack_test_transfer_provider_event/);
+assert.match(webhook, /process_learning_instructor_payout_provider_event/);
 for (const route of [approvalRoute, submissionRoute, recoveryRoute]) {
   assert.match(route, /isSameOriginRequest/);
   assert.match(route, /is_growvelt_learning_admin/);

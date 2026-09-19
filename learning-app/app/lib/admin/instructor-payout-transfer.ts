@@ -1,6 +1,7 @@
 import "server-only";
 import { createAdminClient } from "@/app/lib/supabase/admin";
 import { initiatePaystackTestTransfer, verifyPaystackTestTransfer } from "@/app/lib/payments/paystack";
+import { digestPaystackPayload } from "@/app/lib/payments/paystack-core";
 
 function idempotencyKey(reservationId: number) {
   return `payout-approval:${reservationId}`;
@@ -41,7 +42,16 @@ export async function recoverInstructorTestPayout(payoutItemId: number, actorUse
   if (!item?.payout_item_id || !item.payout_item_reference || typeof item.amount_minor !== "number" || item.currency !== "NGN") throw new Error("Payout transfer recovery is not available.");
   const transfer = await verifyPaystackTestTransfer(item.payout_item_reference);
   if (transfer.amountMinor !== item.amount_minor || transfer.currency !== item.currency || transfer.reference !== item.payout_item_reference || transfer.domain !== "test") throw new Error("Verified transfer does not match the payout item.");
-  const { error: recordError } = await admin.rpc("record_learning_instructor_test_transfer_verification", { p_payout_item_id: item.payout_item_id, p_transfer_id: transfer.transferId, p_transfer_code: transfer.transferCode, p_provider_status: transfer.status, p_actor_user_id: actorUserId });
-  if (recordError) throw new Error("Verified transfer could not be recorded safely.");
+  const verificationIdentity = `provider-api:${transfer.reference}:${transfer.status}:${transfer.transferId}`;
+  const { data: received, error: receiptError } = await admin.rpc("receive_paystack_test_transfer_provider_event", {
+    p_provenance: "provider_api", p_provider_event_id: verificationIdentity,
+    p_payload_digest: digestPaystackPayload(JSON.stringify({ reference: transfer.reference, transferId: transfer.transferId, transferCode: transfer.transferCode, status: transfer.status, amountMinor: transfer.amountMinor, currency: transfer.currency, domain: transfer.domain })),
+    p_reference: transfer.reference, p_transfer_id: transfer.transferId, p_transfer_code: transfer.transferCode,
+    p_status: transfer.status, p_amount_minor: transfer.amountMinor, p_currency: transfer.currency, p_actor_user_id: actorUserId,
+  });
+  const receipt = (received as Array<{ provider_event_id?: number }> | null)?.[0];
+  if (receiptError || !receipt?.provider_event_id) throw new Error("Verified transfer could not be received safely.");
+  const { error: processError } = await admin.rpc("process_learning_instructor_payout_provider_event", { p_provider_event_id: receipt.provider_event_id });
+  if (processError) throw new Error("Verified transfer is retained and requires reconciliation.");
   return { status: transfer.status };
 }
