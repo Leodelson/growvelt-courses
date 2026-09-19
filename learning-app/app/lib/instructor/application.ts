@@ -23,7 +23,12 @@ export type InstructorApplicationIdentity = {
 async function readOwnInstructorApplication() {
   const { data, error } = await (await createClient()).rpc("get_own_instructor_application").maybeSingle();
 
-  if (error) throw new Error("Unable to load Instructor application status.");
+  if (error) {
+    // Application submission is independently durable. A transient status-read
+    // failure must not strand a signed-in applicant behind a route error page.
+    console.error("instructor.application_status_read_failed", { code: error.code });
+    return null;
+  }
   return data as InstructorApplication | null;
 }
 

@@ -31,10 +31,10 @@ export function AuthForm({ mode, next }: { mode: AuthMode; next?: string | null 
   const isSignUp = mode === "sign-up";
   const explicitSafeNext = getExplicitSafeNextPath(next);
   const safeNext = getSafeNextPath(next);
-  const authModeHref = (path: "/sign-in" | "/sign-up") => `${path}?next=${encodeURIComponent(intent === "teach" ? "/teach/application" : safeNext)}`;
+  const authModeHref = (path: "/sign-in" | "/sign-up") => `${path}?next=${encodeURIComponent(intent === "teach" ? "/teach/apply" : safeNext)}`;
 
   function getPostAuthDestination() {
-    return explicitSafeNext ?? (intentRef.current === "teach" ? "/teach/application" : safeNext);
+    return explicitSafeNext ?? (intentRef.current === "teach" ? "/teach/apply" : safeNext);
   }
 
   function selectIntent(nextIntent: OnboardingIntent) {
