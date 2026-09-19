@@ -44,8 +44,8 @@ begin
   allocation_key:=public.allocate_learning_order_commercial_terms(order_key,null);
   perform public.release_matured_learning_instructor_earnings(100,null);
   select id into earning_key from public.learning_instructor_earnings where allocation_id=allocation_key and status='available';
-  select reservation_id into reservation_key from public.reserve_learning_instructor_earning(earning_key,p_instructor,'phase1e4:reserve:'||p_suffix,p_admin);
-  select payout_item_id,payout_item_reference into item_key,reference_key from public.approve_learning_instructor_payout_item(reservation_key,'phase1e4:approve:'||p_suffix,p_admin);
+  select reserved.reservation_id into reservation_key from public.reserve_learning_instructor_earning(earning_key,p_instructor,'phase1e4:reserve:'||p_suffix,p_admin) reserved;
+  select item.payout_item_id,item.payout_item_reference into item_key,reference_key from public.approve_learning_instructor_payout_item(reservation_key,'phase1e4:approve:'||p_suffix,p_admin) item;
   perform public.begin_learning_instructor_test_transfer(item_key,p_admin);
   return query select item_key,reference_key,earning_key,reservation_key,order_key,7500::bigint;
 end;$function$;
@@ -54,7 +54,7 @@ do $lifecycle$
 declare
   admin_id uuid:='88888888-8888-4888-8888-888888888881';
   instructor_id uuid:='88888888-8888-4888-8888-888888888882';
-  course_id bigint; fixture record; event_id bigint; settlement_count bigint; ledger_count bigint; finding_count bigint;
+  course_id bigint; fixture record; event_id bigint; settlement_count bigint; ledger_count bigint; finding_count bigint; duplicate_outcome text; duplicate_findings bigint;
 begin
   insert into auth.users(id,aud,role,email,created_at,updated_at) values
     (admin_id,'authenticated','authenticated','phase1e4-admin@example.test',now(),now()),
@@ -87,8 +87,9 @@ begin
   select provider_event_id into event_id from public.receive_paystack_test_transfer_provider_event('provider_api','provider-api:'||fixture.payout_item_reference||':succeeded:900001',repeat('b',64),fixture.payout_item_reference,'900001','TRF_phase1e4success','succeeded',fixture.amount_minor,'NGN',admin_id);
   perform public.process_learning_instructor_payout_provider_event(event_id);
   if (select count(*) from public.learning_instructor_payout_settlements where payout_item_id=fixture.payout_item_id)<>1 then raise exception 'Webhook/API convergence duplicated settlement'; end if;
-  if (select outcome from public.receive_paystack_test_transfer_provider_event('provider_webhook','phase1e4-success-event',repeat('2',64),fixture.payout_item_reference,'900001','TRF_phase1e4success','succeeded',fixture.amount_minor+1,'NGN',null) limit 1)<>'duplicate_conflict'
-    or not exists(select 1 from public.learning_instructor_payout_reconciliation_findings where payout_item_id=fixture.payout_item_id and finding_type='provider_outcome_conflict') then raise exception 'Conflicting duplicate receipt was not retained without changing settlement'; end if;
+  select outcome into duplicate_outcome from public.receive_paystack_test_transfer_provider_event('provider_webhook','phase1e4-success-event',repeat('2',64),fixture.payout_item_reference,'900001','TRF_phase1e4success','succeeded',fixture.amount_minor+1,'NGN',null) limit 1;
+  select count(*) into duplicate_findings from public.learning_instructor_payout_reconciliation_findings where payout_item_id=fixture.payout_item_id and finding_type='provider_outcome_conflict';
+  if duplicate_outcome<>'duplicate_conflict' or duplicate_findings<>1 then raise exception 'Conflicting duplicate receipt was not retained without changing settlement (outcome %, findings %)',duplicate_outcome,duplicate_findings; end if;
 
   -- A normal failed transfer releases only an unprotected reservation and
   -- never creates a settlement.
