@@ -3,7 +3,6 @@
 import { KeyboardEvent, useEffect, useRef, useState } from "react";
 import { ActionButton } from "@/app/components/ui/action-button";
 import { InlineFeedback } from "@/app/components/ui/inline-feedback";
-import { createClient } from "@/app/lib/supabase/browser";
 import { useLanguage } from "@/app/components/language-provider";
 
 type Decision = "approved" | "rejected";
@@ -16,14 +15,17 @@ type ReviewRpcError = {
 };
 
 function isReviewRpcError(error: unknown): error is ReviewRpcError {
-  return typeof error === "object" && error !== null && "message" in error;
+  return typeof error === "object" && error !== null && ("message" in error || "code" in error);
 }
 
 function reviewFailureMessage(error: unknown) {
   if (!isReviewRpcError(error)) return "The application could not be reviewed. Refresh the page and try again.";
   if (error.code === "42501") return "Your Admin access could not be verified. Refresh the page and try again.";
+  if (error.code === "admin_access_denied") return "Your Admin access could not be verified. Refresh the page and try again.";
   if (error.code === "P0001") return "This application has already been finalized. Refresh the page to confirm its current status.";
+  if (error.code === "application_already_reviewed") return "This application has already been finalized. Refresh the page to confirm its current status.";
   if (error.code === "P0002") return "This application is no longer available. Return to the application queue and refresh it.";
+  if (error.code === "application_not_found") return "This application is no longer available. Return to the application queue and refresh it.";
   if (error.code === "23503" || error.code === "23514") return "The review could not be recorded because required Learning account data is incomplete. Contact a Learning administrator.";
   return "The application could not be reviewed. Refresh the page and try again.";
 }
@@ -86,20 +88,14 @@ export function InstructorReviewForm({ userId }: { userId: string }) {
     setMessage("");
     setDecision(nextDecision);
     try {
-      const { error } = await createClient().rpc("review_instructor_application", {
-        p_application_user_id: userId,
-        p_decision: nextDecision,
-        p_review_note: note.trim() || null,
+      const response = await fetch(`/api/admin/instructor-applications/${userId}/review`, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ decision: nextDecision, reviewNote: note.trim() || null }),
       });
-      if (error) {
-        console.error("Instructor application review RPC failed", {
-          code: error.code,
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-        });
-        throw error;
-      }
+      const result = await response.json().catch(() => null) as ReviewRpcError | null;
+      if (!response.ok) throw result ?? new Error("review_unavailable");
       window.location.reload();
     } catch (error) {
       setMessage(locale === "en" ? reviewFailureMessage(error) : text.error);

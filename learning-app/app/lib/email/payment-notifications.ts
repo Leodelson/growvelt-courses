@@ -1,10 +1,9 @@
 import "server-only";
 import { createAdminClient } from "@/app/lib/supabase/admin";
+import { renderGrowveltEmail } from "@/app/lib/email/growvelt-email-template";
 
 type NoticeType = "payment_access_ready" | "payment_attention" | "refund_requested" | "refund_processed" | "refund_attention" | "access_revoked" | "operator_dispute" | "operator_reconciliation";
 type NoticeInput = { key: string; type: NoticeType; recipient: string; subject: string; heading: string; message: string; orderId?: number; caseId?: number };
-
-const escapeHtml = (value: string) => value.replace(/[&<>'"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[character] ?? character);
 
 export async function sendPaymentNotification(input: NoticeInput) {
  try {
@@ -25,7 +24,7 @@ export async function sendPaymentNotification(input: NoticeInput) {
     const response = await fetch("https://api.resend.com/emails", {
       method: "POST", headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json", "Idempotency-Key": input.key },
       body: JSON.stringify({ from: "Growvelt Learning <no-reply@growvelt.com>", to: [input.recipient], reply_to: input.type.startsWith("refund_") ? "refund@growvelt.com" : "support@growvelt.com", subject: input.subject,
-        html: `<main style="font-family:Arial,sans-serif;max-width:620px;margin:auto;padding:32px;color:#171229"><p style="color:#8b20d7;font-weight:700">GROWVELT LEARNING</p><h1>${escapeHtml(input.heading)}</h1><p style="line-height:1.65">${escapeHtml(input.message)}</p><p style="line-height:1.65">Need help? Email <a href="mailto:${input.type.startsWith("refund_") ? "refund@growvelt.com" : "support@growvelt.com"}">${input.type.startsWith("refund_") ? "refund@growvelt.com" : "support@growvelt.com"}</a>.</p></main>`,
+        html: renderGrowveltEmail({ baseUrl: process.env.NEXT_PUBLIC_APP_URL || "https://learn.growvelt.com", greeting: "there", title: input.heading, paragraphs: [input.message], reason: "You received this email because of activity on your Growvelt Learning account." }),
       }), signal: AbortSignal.timeout(15000),
     });
     const body = await response.json().catch(() => null) as { id?: string } | null;

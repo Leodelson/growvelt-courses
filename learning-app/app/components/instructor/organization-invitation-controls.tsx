@@ -4,16 +4,39 @@ import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 
 export function OrganizationInvitationForm({ organizationId }: { organizationId: number }) {
-  const router = useRouter(); const [pending, setPending] = useState(false); const [message, setMessage] = useState<string | null>(null);
+  const router = useRouter(); const [pending, setPending] = useState(false); const [feedback, setFeedback] = useState<{ kind: "success" | "error"; text: string } | null>(null);
+  const failureMessage = (code?: string) => code === "invitee_not_found" ? "That email does not belong to a Growvelt Learning account yet." : code === "invitee_not_approved" ? "That account has not been approved as a Growvelt instructor yet." : code === "already_member" ? "That instructor is already an active member of this organization." : code === "organization_access_denied" ? "Your active Owner access could not be verified. Refresh and try again." : "We could not confirm that invitation. Please refresh once before trying again.";
+  async function confirmSavedInvitation(email: string) {
+    const response = await fetch(`/api/instructor/organizations/${organizationId}/invitations?email=${encodeURIComponent(email)}`, { credentials: "same-origin", cache: "no-store" });
+    if (!response.ok) return false;
+    const data = await response.json() as { invitation?: unknown };
+    return Boolean(data.invitation);
+  }
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); if (pending) return;
     const form = new FormData(event.currentTarget); const email = String(form.get("email") ?? "").trim(); const role = String(form.get("role") ?? "");
-    setPending(true); setMessage(null);
-    try { const response = await fetch(`/api/instructor/organizations/${organizationId}/invitations`, { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, role }) }); if (!response.ok) throw new Error("unavailable"); event.currentTarget.reset(); setMessage("Invitation created. The instructor must accept it from their organization workspace."); router.refresh(); }
-    catch { setMessage("We could not create that invitation. The person must already be an approved Growvelt instructor and not an active member."); }
+    setPending(true); setFeedback(null);
+    try {
+      const response = await fetch(`/api/instructor/organizations/${organizationId}/invitations`, { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, role }) });
+      const result = await response.json().catch(() => null) as { code?: string; notification?: "sent" | "not_configured" | "failed" } | null;
+      if (!response.ok) {
+        if (await confirmSavedInvitation(email)) {
+          event.currentTarget.reset(); setFeedback({ kind: "success", text: "Invitation is already saved and pending acceptance. We will not create a duplicate." }); window.setTimeout(() => router.refresh(), 1400); return;
+        }
+        setFeedback({ kind: "error", text: failureMessage(result?.code) }); return;
+      }
+      event.currentTarget.reset();
+      setFeedback({ kind: "success", text: result?.notification === "sent" ? "Invitation sent. The instructor has been emailed and can accept it from their Organizations page." : result?.notification === "not_configured" ? "Invitation sent and is pending acceptance. Email delivery is not configured yet, so let the instructor know to sign in and open Organizations." : "Invitation sent and is pending acceptance. We could not send the email notice, so let the instructor know to sign in and open Organizations." });
+      window.setTimeout(() => router.refresh(), 1400);
+    }
+    catch {
+      if (await confirmSavedInvitation(email).catch(() => false)) {
+        event.currentTarget.reset(); setFeedback({ kind: "success", text: "Invitation is already saved and pending acceptance. We will not create a duplicate." }); window.setTimeout(() => router.refresh(), 1400);
+      } else setFeedback({ kind: "error", text: "We could not confirm that invitation. Please refresh once before trying again." });
+    }
     finally { setPending(false); }
   }
-  return <form className="organization-invitation-form" onSubmit={submit}><label className="course-field">Approved instructor email<input name="email" type="email" placeholder="instructor@example.com" maxLength={320} required /><span>The person must already have an approved Growvelt instructor account. They will see and accept this invitation from this same Organizations page.</span></label><label className="course-field">Organization role<select name="role" defaultValue="instructor"><option value="instructor">Instructor</option><option value="admin">Admin</option></select><span>Admins can help organize the provider workspace. This phase does not give either role control over another instructor’s personal earnings.</span></label><button className="button button-secondary" disabled={pending}>{pending ? "Inviting…" : "Invite instructor"}</button>{message && <p className="payout-profile-feedback" role="status">{message}</p>}</form>;
+  return <form className="organization-invitation-form" onSubmit={submit}><label className="course-field">Approved instructor email<input name="email" type="email" placeholder="instructor@example.com" maxLength={320} required /><span>The person must already have an approved Growvelt instructor account. They will receive an email and can accept the invitation from their Organizations page.</span></label><label className="course-field">Organization role<select name="role" defaultValue="instructor"><option value="instructor">Instructor</option><option value="admin">Admin</option></select><span>Admins can help organize the provider workspace. This phase does not give either role control over another instructor’s personal earnings.</span></label><button className="button button-secondary" disabled={pending}>{pending ? "Inviting…" : "Invite instructor"}</button>{feedback && <p className={`payout-profile-feedback${feedback.kind === "error" ? " is-error" : ""}`} role="status">{feedback.text}</p>}</form>;
 }
 
 export function OrganizationInvitationAcceptance({ invitationId }: { invitationId: number }) {
