@@ -233,7 +233,7 @@ begin
   end if;
 end;$function$;
 
-drop function public.list_learning_instructor_payout_reconciliation_findings(uuid,integer);
+drop function if exists public.list_learning_instructor_payout_reconciliation_findings(uuid,integer);
 create function public.list_learning_instructor_payout_reconciliation_findings(p_operator_id uuid,p_limit integer default 100)
 returns table(finding_id bigint,payout_item_reference text,finding_type text,status text,detail text,created_at timestamptz) language plpgsql stable security definer set search_path to '' as $function$
 begin
