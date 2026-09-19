@@ -38,7 +38,7 @@ export function PayoutProfileForm({ hasActiveProfile }: Props) {
   return <section className="payout-profile-panel">
     <header><p className="eyebrow">Test-mode recipient</p><h2>{hasActiveProfile ? "Replace payout profile" : "Add payout profile"}</h2><p>Account validation uses Paystack Test Mode. Growvelt retains only bank metadata, the account name, and the last four digits. No payout or transfer is available.</p></header>
     <form className="payout-profile-form" onSubmit={submit}>
-      <label className="course-field">Bank code<input name="bankCode" inputMode="numeric" pattern="[A-Za-z0-9_-]{2,32}" maxLength={32} required /><span>Use the Paystack bank code.</span></label>
+      <label className="course-field">Paystack bank code (not SWIFT/BIC)<input name="bankCode" inputMode="numeric" pattern="[A-Za-z0-9_-]{2,32}" maxLength={32} required /><span>Enter your Nigerian bank's Paystack/NIBSS bank code. Do not enter a SWIFT or BIC code.</span></label>
       <label className="course-field">Account number<input name="accountNumber" inputMode="numeric" pattern="[0-9]{10}" maxLength={10} required /><span>Only the last four digits are retained after validation.</span></label>
       <button className="button button-primary" type="submit" disabled={pending}>{pending ? "Validating…" : hasActiveProfile ? "Replace Test recipient" : "Validate Test recipient"}</button>
     </form>
