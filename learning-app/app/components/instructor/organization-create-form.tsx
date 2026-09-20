@@ -25,7 +25,7 @@ export function OrganizationCreateForm() {
       router.refresh();
     } catch (error) {
       const code = error instanceof Error ? error.message : "organization_unavailable";
-      setIsError(true); setMessage(code === "organization_slug_taken" ? "That organization handle is already in use. Choose a different handle." : code === "approved_instructor_required" ? "Only an approved instructor can create an organization. Confirm this account still has approved Instructor access." : "We could not create that organization right now. Please try again shortly.");
+      setIsError(true); setMessage(code === "organization_slug_taken" ? "That organization handle is already in use. Choose a different handle." : code === "provider_workspace_exists" ? "This account already owns a provider workspace. Use it to manage your team, profile, branding, and courses." : code === "approved_instructor_required" ? "Only an approved instructor can create an organization. Confirm this account still has approved Instructor access." : "We could not create that organization right now. Please try again shortly.");
     } finally { setPending(false); }
   }
   return <form className="organization-create-form" onSubmit={submit}>

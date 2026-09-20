@@ -21,10 +21,10 @@ begin
     raise exception 'Organization owner membership was not created atomically';
   end if;
   begin
-    perform public.create_own_learning_provider_organization('Phase 2A1 Test Academy','phase2a1-test-academy');
-    raise exception 'Duplicate organization slug unexpectedly succeeded';
-  exception when unique_violation then
-    -- Expected: the immutable organization slug cannot be claimed again.
+    perform public.create_own_learning_provider_organization('A second test academy','phase2a1-second-test-academy');
+    raise exception 'Second provider workspace unexpectedly succeeded';
+  exception when sqlstate 'P0001' then
+    -- Expected: a provider owner keeps one provider workspace and invites its team.
     null;
   end;
 end $test$;

@@ -17,6 +17,7 @@ export async function POST(request: Request) {
   if (error) {
     console.error("Organization creation failed", { code: error.code, message: error.message });
     if (error.code === "23505") return NextResponse.json({ code: "organization_slug_taken" }, { status: 409 });
+    if (error.code === "P0001") return NextResponse.json({ code: "provider_workspace_exists" }, { status: 409 });
     if (error.code === "42501") return NextResponse.json({ code: "approved_instructor_required" }, { status: 403 });
     return NextResponse.json({ code: "organization_unavailable" }, { status: 500 });
   }
