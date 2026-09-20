@@ -33,6 +33,13 @@ export async function getOwnInstructorOrganizationInvitations() {
 export type OrganizationMember = { member_id: string; full_name: string | null; email: string; role: "owner" | "admin" | "instructor"; status: "active" | "suspended" | "revoked"; granted_at: string };
 export type OrganizationOwnerInvitation = { invitation_id: number; invited_email: string; role: "admin" | "instructor"; status: "pending" | "accepted" | "cancelled" | "expired"; created_at: string; expires_at: string; responded_at: string | null };
 export type OrganizationCourse = { course_id: number; title: string; slug: string; status: string; instructor_name: string; updated_at: string };
+export type OrganizationVerification = { organization_id: number; status: "pending" | "verified" | "rejected"; legal_name: string; contact_email: string; website_url: string | null; verification_statement: string; submitted_at: string; reviewed_at: string | null; review_note: string | null };
+
+export async function getOwnInstructorOrganizationVerifications() {
+  const { data, error } = await (await createClient()).rpc("list_own_learning_provider_organization_verifications");
+  if (error) throw new Error("Unable to load provider verification details.");
+  return (data ?? []) as OrganizationVerification[];
+}
 
 export async function getInstructorOrganizationManagement(organization: InstructorOrganization) {
   const supabase = await createClient();

@@ -1,0 +1,9 @@
+import { ProviderVerificationReviewForm } from "@/app/components/admin/provider-verification-review-form";
+import { getPendingProviderVerifications } from "@/app/lib/admin/provider-verifications";
+
+export const metadata = { title: "Provider verification" };
+
+export default async function ProviderVerificationQueuePage() {
+  const requests = await getPendingProviderVerifications();
+  return <section className="admin-page section-shell"><header className="admin-page-header admin-review-hero"><p className="eyebrow">Provider verification</p><h1>Review provider identity.</h1><p>Approve only after you have reviewed the organization’s submitted details. Approval is an internal provider status in this phase; it does not publish a provider page or public badge.</p></header>{requests.length ? <div className="provider-verification-list">{requests.map((request) => <article key={request.organization_id}><header><p className="admin-status">Pending verification</p><h2>{request.organization_name}</h2><p>Handle: {request.organization_slug} · Submitted {new Date(request.submitted_at).toLocaleDateString("en-NG")}</p></header><dl><div><dt>Registered/provider name</dt><dd>{request.legal_name}</dd></div><div><dt>Contact email</dt><dd>{request.contact_email}</dd></div><div><dt>Website</dt><dd>{request.website_url || "Not supplied"}</dd></div><div><dt>Submitted by</dt><dd>{request.submitted_by_name || request.submitted_by_email}</dd></div></dl><section><h3>Verification statement</h3><p>{request.verification_statement}</p></section><ProviderVerificationReviewForm organizationId={request.organization_id} /></article>)}</div> : <section className="admin-empty-state"><p className="eyebrow">All caught up</p><h2>No provider verification requests are pending.</h2><p>New requests will appear here after an organization owner submits their provider details.</p></section>}</section>;
+}
