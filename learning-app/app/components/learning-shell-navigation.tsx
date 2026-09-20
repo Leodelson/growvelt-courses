@@ -26,7 +26,7 @@ const mobileInstructorNavigation = [
   { href: "/dashboard/instructor/courses", label: "My courses", icon: "courses" as const },
   { href: "/dashboard/instructor/courses/new", label: "Create course", icon: "add-course" as const },
   { href: "/dashboard/instructor/organizations", label: "Organizations", icon: "organization" as const },
-  { href: "/dashboard/profile", labelKey: "nav.profile" as const, icon: "profile" as const },
+  { href: "/dashboard/instructor/earnings", label: "Earnings", icon: "earnings" as const },
 ];
 
 type WorkspaceAccess = { isInstructor: boolean; isAdmin: boolean };
