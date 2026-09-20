@@ -1026,9 +1026,9 @@ p { color: var(--muted); line-height: 1.65; }
 .mobile-dashboard-menu > nav a { display: flex; align-items: center; gap: 11px; padding: 11px; border-radius: 9px; color: var(--ink); font-size: 13px; font-weight: 750; white-space: nowrap; }
 .mobile-dashboard-menu > nav a[aria-current="page"], .mobile-dashboard-menu > nav a:hover { background: var(--surface-muted); color: var(--purple); }
 .mobile-dashboard-menu .workspace-links { margin-top: 12px; padding-top: 12px; }
-.mobile-dashboard-language { display: grid; gap: 4px; margin-top: 13px; padding: 13px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-muted); }
-.mobile-dashboard-language strong { font-size: 11px; text-transform: uppercase; letter-spacing: .07em; }
-.mobile-dashboard-language span { color: var(--ink); font-size: 13px; font-weight: 750; }
+.mobile-dashboard-language { display: grid; gap: 7px; margin-top: 13px; padding: 13px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-muted); }
+.mobile-dashboard-language label { font-size: 11px; font-weight: 850; letter-spacing: .07em; text-transform: uppercase; }
+.mobile-dashboard-language select { width: 100%; min-height: 42px; padding: 9px 34px 9px 11px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--ink); font: inherit; font-size: 13px; font-weight: 750; }
 .mobile-dashboard-language small { color: var(--muted); font-size: 10px; line-height: 1.4; }
 .mobile-language-options { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 2px; }
 .mobile-language-options button { min-height: 34px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); font: inherit; font-size: 12px; font-weight: 750; }
