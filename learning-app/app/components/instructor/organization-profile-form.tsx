@@ -13,8 +13,8 @@ type Profile = {
   instagram_url: string | null;
 } | undefined;
 
-function RequiredMark() {
-  return <><span className="required-mark" aria-hidden="true">*</span><span className="sr-only"> (required)</span></>;
+function FieldLabel({ children, optional = false }: { children: React.ReactNode; optional?: boolean }) {
+  return <span className="field-label">{children}{optional ? <span className="field-label-optional">(optional)</span> : <><span className="required-mark" aria-hidden="true">*</span><span className="sr-only"> (required)</span></>}</span>;
 }
 
 export function OrganizationProfileForm({ organizationId, organizationSlug, profile }: { organizationId: number; organizationSlug: string; profile: Profile }) {
@@ -56,14 +56,14 @@ export function OrganizationProfileForm({ organizationId, organizationSlug, prof
   return <form className="organization-profile-form" onSubmit={submit}>
     <p className="organization-profile-note">This is the public face of your verified provider. Do not include private documents, bank details, or sensitive personal information.</p>
     <div className="course-form-grid">
-      <label className="course-field">Provider headline <RequiredMark /><input name="headline" defaultValue={profile?.headline} minLength={8} maxLength={160} required placeholder="e.g. Practical technology training for ambitious teams" /></label>
-      <label className="course-field">Public contact email <RequiredMark /><input name="contactEmail" type="email" defaultValue={profile?.contact_email} minLength={5} maxLength={320} required placeholder="hello@example.com" /></label>
+      <label className="course-field"><FieldLabel>Provider headline</FieldLabel><input name="headline" defaultValue={profile?.headline} minLength={8} maxLength={160} required placeholder="e.g. Practical technology training for ambitious teams" /></label>
+      <label className="course-field"><FieldLabel>Public contact email</FieldLabel><input name="contactEmail" type="email" defaultValue={profile?.contact_email} minLength={5} maxLength={320} required placeholder="hello@example.com" /></label>
     </div>
-    <label className="course-field">About this provider <RequiredMark /><textarea name="description" defaultValue={profile?.description} minLength={80} maxLength={2400} rows={6} required placeholder="Describe what your provider teaches, who it serves, and how learners benefit." /><span>80–2,400 characters.</span></label>
+    <label className="course-field"><FieldLabel>About this provider</FieldLabel><textarea name="description" defaultValue={profile?.description} minLength={80} maxLength={2400} rows={6} required placeholder="Describe what your provider teaches, who it serves, and how learners benefit." /><span>80–2,400 characters.</span></label>
     <div className="course-form-grid">
-      <label className="course-field">Website <span className="field-label-optional">(optional)</span><input name="websiteUrl" type="url" defaultValue={profile?.website_url ?? ""} maxLength={400} placeholder="https://example.com" /></label>
-      <label className="course-field">LinkedIn <span className="field-label-optional">(optional)</span><input name="linkedinUrl" type="url" defaultValue={profile?.linkedin_url ?? ""} maxLength={400} placeholder="https://linkedin.com/company/example" /></label>
-      <label className="course-field">Instagram <span className="field-label-optional">(optional)</span><input name="instagramUrl" type="url" defaultValue={profile?.instagram_url ?? ""} maxLength={400} placeholder="https://instagram.com/example" /></label>
+      <label className="course-field"><FieldLabel optional>Website</FieldLabel><input name="websiteUrl" type="url" defaultValue={profile?.website_url ?? ""} maxLength={400} placeholder="https://example.com" /></label>
+      <label className="course-field"><FieldLabel optional>LinkedIn</FieldLabel><input name="linkedinUrl" type="url" defaultValue={profile?.linkedin_url ?? ""} maxLength={400} placeholder="https://linkedin.com/company/example" /></label>
+      <label className="course-field"><FieldLabel optional>Instagram</FieldLabel><input name="instagramUrl" type="url" defaultValue={profile?.instagram_url ?? ""} maxLength={400} placeholder="https://instagram.com/example" /></label>
     </div>
     <div className="organization-profile-actions"><button className="button button-primary" type="submit" disabled={pending}>{pending ? "Saving…" : profile ? "Save public profile" : "Publish provider profile"}</button>{profile && <Link className="button button-secondary" href={`/providers/${organizationSlug}`} target="_blank">View public profile</Link>}</div>
     {message && <p className={message.startsWith("Provider profile saved") ? "payout-profile-feedback" : "payout-profile-feedback is-error"} role="status">{message}</p>}
