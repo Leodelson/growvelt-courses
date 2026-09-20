@@ -18,7 +18,7 @@ export function SignOutButton() {
       // A local redirect still removes the user from protected UI. The proxy
       // will reject an unchanged or expired server session on the next request.
     }
-    window.location.assign("/signed-out");
+    window.location.assign("/sign-in");
   }
 
   return <ActionButton className="profile-button profile-sign-out" type="button" onClick={signOut} isPending={isBusy} pendingLabel="Logging Out…">Log Out</ActionButton>;
