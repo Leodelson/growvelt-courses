@@ -29,12 +29,12 @@ export function ConfirmationDialog({ title, description, confirmLabel, isPending
     if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
   }
 
-  return <div className="review-dialog-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !isPending) onCancel(); }}>
-    <div className="review-dialog" ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="confirmation-dialog-title" aria-describedby="confirmation-dialog-description" onKeyDown={handleKeyDown}>
+  return <div className="confirmation-dialog-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !isPending) onCancel(); }}>
+    <div className="confirmation-dialog" ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="confirmation-dialog-title" aria-describedby="confirmation-dialog-description" onKeyDown={handleKeyDown}>
       <p className="eyebrow">Confirm action</p>
       <h2 id="confirmation-dialog-title">{title}</h2>
-      <div id="confirmation-dialog-description">{description}</div>
-      <div className="review-dialog-actions">
+      <div className="confirmation-dialog-description" id="confirmation-dialog-description">{description}</div>
+      <div className="confirmation-dialog-actions">
         <button ref={cancelRef} className="button button-secondary" type="button" onClick={onCancel} disabled={isPending}>Cancel</button>
         <ActionButton className={`button ${tone === "danger" ? "button-danger" : "button-primary"}`} type="button" onClick={onConfirm} isPending={isPending} pendingLabel={pendingLabel}>{confirmLabel}</ActionButton>
       </div>
