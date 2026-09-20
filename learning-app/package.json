@@ -45,6 +45,7 @@
     "test:organizations:foundation:local": "node scripts/test-phase2a1-organization-foundation-local.mjs",
     "test:organizations:invitations:local": "node scripts/test-phase2a2-organization-invitations-local.mjs",
     "test:organizations:exit-controls:local": "node scripts/test-phase2a-exit-controls-local.mjs",
+    "test:organizations:provider-profiles:local": "node scripts/test-phase2b2-provider-profiles-local.mjs",
     "test:organizations:course-attribution:local": "node scripts/test-phase2a3-organization-course-attribution-local.mjs",
     "test:account-deletion:organization-guard:local": "node scripts/test-account-deletion-organization-guard-local.mjs",
     "test:account-deletion:retention:local": "node scripts/test-account-deletion-retention-local.mjs",

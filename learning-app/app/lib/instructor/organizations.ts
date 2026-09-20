@@ -34,11 +34,18 @@ export type OrganizationMember = { member_id: string; full_name: string | null; 
 export type OrganizationOwnerInvitation = { invitation_id: number; invited_email: string; role: "admin" | "instructor"; status: "pending" | "accepted" | "cancelled" | "expired"; created_at: string; expires_at: string; responded_at: string | null };
 export type OrganizationCourse = { course_id: number; title: string; slug: string; status: string; instructor_name: string; updated_at: string };
 export type OrganizationVerification = { organization_id: number; status: "pending" | "verified" | "rejected"; legal_name: string; contact_email: string; website_url: string | null; verification_statement: string; submitted_at: string; reviewed_at: string | null; review_note: string | null };
+export type OrganizationProfile = { organization_id: number; headline: string; description: string; contact_email: string; website_url: string | null; linkedin_url: string | null; instagram_url: string | null; updated_at: string };
 
 export async function getOwnInstructorOrganizationVerifications() {
   const { data, error } = await (await createClient()).rpc("list_own_learning_provider_organization_verifications");
   if (error) throw new Error("Unable to load provider verification details.");
   return (data ?? []) as OrganizationVerification[];
+}
+
+export async function getOwnInstructorOrganizationProfiles() {
+  const { data, error } = await (await createClient()).rpc("list_own_learning_provider_organization_profiles");
+  if (error) throw new Error("Unable to load provider profiles.");
+  return (data ?? []) as OrganizationProfile[];
 }
 
 export async function getInstructorOrganizationManagement(organization: InstructorOrganization) {
