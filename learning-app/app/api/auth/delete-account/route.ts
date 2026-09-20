@@ -34,6 +34,9 @@ export async function POST(request: Request) {
   if (outcome === "instructor_offboarding_required") {
     return NextResponse.json({ code: outcome, message: "Instructors with course content require managed offboarding." }, { status: 409 });
   }
+  if (outcome === "organization_offboarding_required") {
+    return NextResponse.json({ code: outcome, message: "Training organization participation requires managed offboarding." }, { status: 409 });
+  }
   if (outcome !== "ready") return NextResponse.json({ code: "delete_failed", message: "Account deletion could not be prepared." }, { status: 500 });
 
   const admin = createAdminClient(url, serviceRoleKey, { auth: { autoRefreshToken: false, persistSession: false } });

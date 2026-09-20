@@ -72,6 +72,7 @@ export function DeleteAccountControl() {
         if (body?.code === "certificate_choice_required") throw new Error(t("delete.certificateChoiceRequired"));
         if (body?.code === "admin_offboarding_required") throw new Error(t("delete.adminOffboarding"));
         if (body?.code === "instructor_offboarding_required") throw new Error(t("delete.instructorOffboarding"));
+        if (body?.code === "organization_offboarding_required") throw new Error(t("delete.organizationOffboarding"));
         throw new Error(t("delete.failed"));
       }
       await createClient().auth.signOut().catch(() => undefined);
