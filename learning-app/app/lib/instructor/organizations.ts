@@ -13,7 +13,7 @@ export type InstructorOrganization = {
 export async function getOwnInstructorOrganizations() {
   const { data, error } = await (await createClient()).rpc("list_own_learning_provider_organizations");
   if (error) throw new Error("Unable to load training organizations.");
-  return (data ?? []) as InstructorOrganization[];
+  return ((data ?? []) as InstructorOrganization[]).filter((organization) => organization.membership_status === "active");
 }
 
 export type InstructorOrganizationInvitation = {
