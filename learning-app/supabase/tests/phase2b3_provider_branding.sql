@@ -6,6 +6,7 @@ declare
   member_id uuid := '33333333-3333-4333-8333-333333333402';
   admin_id uuid := '33333333-3333-4333-8333-333333333403';
   organization_key bigint;
+  course_key bigint;
 begin
   insert into auth.users(id,aud,role,email,created_at,updated_at) values
     (owner_id,'authenticated','authenticated','phase2b3-owner@example.test',now(),now()),
@@ -31,6 +32,11 @@ begin
   perform set_config('request.jwt.claim.sub',admin_id::text,true);
   perform public.review_learning_provider_organization_verification(organization_key,'verified','Provider details reviewed and approved.');
   if not exists(select 1 from public.get_public_learning_provider_organization_profile_branding('phase2b3-branding-academy') where name='Phase 2B3 Branding Academy' and logo_storage_path like '%/logos/%' and cover_storage_path like '%/covers/%') then raise exception 'Verified provider branding was not public'; end if;
+
+  perform set_config('request.jwt.claim.sub',owner_id::text,true);
+  select course_id into course_key from public.create_learning_organization_course_draft(organization_key,'Verified provider course','A concise course summary','This verified provider course has enough detailed content to confirm its public provider attribution in the test fixture.','Business','Beginner',true,0,'NGN');
+  update public.learning_courses set status = 'published', published_at = now() where id = course_key;
+  if not exists(select 1 from public.list_public_learning_provider_courses('phase2b3-branding-academy',12) where course_id = course_key) then raise exception 'Verified provider course was not available from the public provider listing'; end if;
 
   perform set_config('request.jwt.claim.sub',member_id::text,true);
   begin

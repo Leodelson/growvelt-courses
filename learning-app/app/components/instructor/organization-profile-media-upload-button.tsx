@@ -15,7 +15,7 @@ export function OrganizationProfileMediaUploadButton({ organizationId, kind, cur
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
-  const label = kind === "logo" ? "Change provider logo" : "Change provider cover";
+  const label = kind === "logo" ? "Change logo" : "Change cover";
 
   async function upload(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];

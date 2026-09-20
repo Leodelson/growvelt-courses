@@ -6,10 +6,11 @@ import { ProfileSocialLinksForm } from "@/app/components/profile-social-links-fo
 import { isLearningAdmin } from "@/app/lib/admin/authorization";
 import { isApprovedInstructor } from "@/app/lib/instructor/authorization";
 import { getOwnLearningProfile } from "@/app/lib/learning-profile";
-import { getOwnInstructorOrganizationProfiles, getOwnInstructorOrganizations, getOwnInstructorOrganizationVerifications } from "@/app/lib/instructor/organizations";
+import { getOwnInstructorOrganizationProfileBranding, getOwnInstructorOrganizationProfiles, getOwnInstructorOrganizations, getOwnInstructorOrganizationVerifications } from "@/app/lib/instructor/organizations";
 import { getRequestLocale } from "@/app/lib/i18n-server";
 import { translate } from "@/app/lib/i18n";
 import { VerifiedProviderBadge } from "@/app/components/verified-provider-badge";
+import { createClient } from "@/app/lib/supabase/server";
 
 export const metadata = { title: "Your profile" };
 
@@ -41,6 +42,9 @@ export default async function DashboardProfilePage() {
   const completedSteps = setupSteps.filter((step) => step.complete).length;
   const setupPercent = Math.round((completedSteps / setupSteps.length) * 100);
   const managedProviders = organizations.filter((organization) => organization.membership_role === "owner" && organization.membership_status === "active" && organization.organization_status === "active");
+  const providerBrandings = await Promise.all(managedProviders.map(async (organization) => ({ organizationId: organization.organization_id, profile: await getOwnInstructorOrganizationProfileBranding(organization.organization_id).catch(() => null) })));
+  const supabase = await createClient();
+  const providerLogos = await Promise.all(providerBrandings.map(async ({ organizationId, profile }) => ({ organizationId, url: profile?.logo_storage_path ? (await supabase.storage.from("learning-provider-media").createSignedUrl(profile.logo_storage_path, 60 * 60)).data?.signedUrl ?? null : null })));
 
   return (
     <section className="profile-page section-shell">
@@ -92,8 +96,9 @@ export default async function DashboardProfilePage() {
 
       {managedProviders.map((organization) => {
         const providerProfile = providerProfiles.find((item) => item.organization_id === organization.organization_id);
+        const logoUrl = providerLogos.find((item) => item.organizationId === organization.organization_id)?.url;
         return <section className="profile-provider-card" key={organization.organization_id} aria-labelledby={`provider-profile-${organization.organization_id}`}>
-          <div className="profile-provider-mark" aria-hidden="true">{organization.name.charAt(0).toUpperCase() || "G"}</div>
+          <div className="profile-provider-mark" aria-hidden="true">{logoUrl ? <img src={logoUrl} alt="" /> : organization.name.charAt(0).toUpperCase() || "G"}</div>
           <div><p className="eyebrow">Provider organization</p><h2 id={`provider-profile-${organization.organization_id}`}>{organization.name} {verifications.some((verification) => verification.organization_id === organization.organization_id && verification.status === "verified") && <VerifiedProviderBadge />}</h2><p>{providerProfile ? "Your provider profile is connected to this owner account." : "Set up this organization’s details, cover, and logo, then submit it for verification when ready."}</p></div>
           <Link className="button button-primary" href={`/dashboard/instructor/organizations/${organization.organization_id}/profile`}>Manage provider profile <span aria-hidden="true">↗</span></Link>
         </section>;

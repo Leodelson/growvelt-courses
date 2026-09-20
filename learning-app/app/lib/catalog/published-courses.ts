@@ -127,6 +127,12 @@ export async function listPublishedLearningCourses(): Promise<PublishedCourse[]>
   return ((data ?? []) as PublishedCourseRow[]).map(mapPublishedCourse);
 }
 
+export async function listPublicVerifiedProviderCourses(providerSlug: string): Promise<PublishedCourse[]> {
+  const { data, error } = await (await createClient()).rpc("list_public_learning_provider_courses", { p_provider_slug: providerSlug, p_limit: 12 });
+  if (error) throw new Error("Unable to load this provider's courses.");
+  return ((data ?? []) as PublishedCourseRow[]).map((course) => ({ ...mapPublishedCourse(course), providerName: null, providerSlug: null, providerVerified: false }));
+}
+
 export async function searchPublicPublishedLearningCourses(query: PublicCatalogQuery): Promise<PublicCatalogResult> {
   const { data, error } = await (await createClient()).rpc("search_public_published_learning_courses", {
     p_query: query.query || null,

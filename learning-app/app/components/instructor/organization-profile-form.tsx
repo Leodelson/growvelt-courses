@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 type Profile = {
@@ -17,7 +16,7 @@ function FieldLabel({ children, optional = false }: { children: React.ReactNode;
   return <span className="field-label">{children}{optional ? <span className="field-label-optional">(optional)</span> : <><span className="required-mark" aria-hidden="true">*</span><span className="sr-only"> (required)</span></>}</span>;
 }
 
-export function OrganizationProfileForm({ organizationId, organizationSlug, profile, isVerified }: { organizationId: number; organizationSlug: string; profile: Profile; isVerified: boolean }) {
+export function OrganizationProfileForm({ organizationId, profile, isVerified }: { organizationId: number; profile: Profile; isVerified: boolean }) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -65,7 +64,7 @@ export function OrganizationProfileForm({ organizationId, organizationSlug, prof
       <label className="course-field"><FieldLabel optional>LinkedIn</FieldLabel><input name="linkedinUrl" type="url" defaultValue={profile?.linkedin_url ?? ""} maxLength={400} placeholder="https://linkedin.com/company/example" /></label>
       <label className="course-field"><FieldLabel optional>Instagram</FieldLabel><input name="instagramUrl" type="url" defaultValue={profile?.instagram_url ?? ""} maxLength={400} placeholder="https://instagram.com/example" /></label>
     </div>
-    <div className="organization-profile-actions"><button className="button button-primary" type="submit" disabled={pending}>{pending ? "Saving…" : profile ? "Save provider profile" : "Save provider profile"}</button>{profile && isVerified && <Link className="button button-secondary" href={`/providers/${organizationSlug}`} target="_blank">Preview public profile</Link>}</div>
+    <div className="organization-profile-actions"><button className="button button-primary" type="submit" disabled={pending}>{pending ? "Saving…" : "Save provider profile"}</button></div>
     {message && <p className={message.startsWith("Provider profile saved") ? "payout-profile-feedback" : "payout-profile-feedback is-error"} role="status">{message}</p>}
   </form>;
 }

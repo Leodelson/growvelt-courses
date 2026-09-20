@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/app/lib/supabase/server";
 import { VerifiedProviderBadge } from "@/app/components/verified-provider-badge";
+import { listPublicVerifiedProviderCourses } from "@/app/lib/catalog/published-courses";
 
 type ProviderProfile = {
   name: string;
@@ -34,6 +35,7 @@ export default async function PublicProviderProfilePage({ params }: { params: Pr
   const { slug } = await params;
   const provider = await getProviderProfile(slug);
   if (!provider) notFound();
+  const courses = await listPublicVerifiedProviderCourses(provider.slug).catch(() => []);
 
   const initial = provider.name.trim().charAt(0).toUpperCase() || "G";
   const supabase = await createClient();
@@ -48,20 +50,20 @@ export default async function PublicProviderProfilePage({ params }: { params: Pr
   ].filter(Boolean) as { label: string; href: string }[];
 
   return <main className="provider-profile-page section-shell">
-    <header className="provider-profile-cover">{coverMedia.data?.signedUrl && <img className="provider-profile-cover-image" src={coverMedia.data.signedUrl} alt="" />}<div className="provider-profile-cover-pattern" aria-hidden="true" /></header>
+    <header className="provider-profile-cover"><Link className="provider-profile-back" href="/courses"><span aria-hidden="true">←</span> Back</Link>{coverMedia.data?.signedUrl && <img className="provider-profile-cover-image" src={coverMedia.data.signedUrl} alt="" />}<div className="provider-profile-cover-pattern" aria-hidden="true" /></header>
     <section className="provider-profile-identity-card" aria-labelledby="provider-name">
       <div className="provider-profile-mark" aria-hidden="true">{logoMedia.data?.signedUrl ? <img src={logoMedia.data.signedUrl} alt="" /> : initial}</div>
       <div className="provider-profile-identity-copy">
         <p className="eyebrow">Verified training provider</p>
         <h1 id="provider-name">{provider.name} <VerifiedProviderBadge /></h1>
         <p className="provider-profile-headline">{provider.headline}</p>
-        <div className="provider-profile-meta"><span>Verified by Growvelt</span><span>Training organization</span></div>
+        <div className="provider-profile-meta"><span>Verified by Growvelt</span><span>{courses.length} active {courses.length === 1 ? "course" : "courses"}</span></div>
       </div>
     </section>
     <section className="provider-profile-details-grid" aria-label="Provider details">
       <article><p className="eyebrow">About</p><h2>Learning with {provider.name}</h2><p>{provider.description}</p></article>
       <aside><p className="eyebrow">Connect</p><h2>Contact this provider</h2><a className="provider-profile-email" href={`mailto:${provider.contact_email}`}>{provider.contact_email}</a>{links.length > 0 && <nav className="provider-profile-links" aria-label={`${provider.name} links`}>{links.map((link) => <a key={link.label} href={link.href} target="_blank" rel="noreferrer">{link.label} <span aria-hidden="true">↗</span></a>)}</nav>}</aside>
     </section>
-    <section className="provider-profile-footer-card"><div><p className="eyebrow">Growvelt Learning</p><h2>Explore courses built for your growth.</h2><p>Course listings and provider analytics will be added as this provider workspace grows.</p></div><Link href="/courses" className="button button-primary">Explore courses</Link></section>
+    <section className="provider-profile-courses" aria-labelledby="provider-courses-title"><header><div><p className="eyebrow">Courses</p><h2 id="provider-courses-title">Courses from {provider.name}</h2><p>Browse the active learning experiences this verified provider offers.</p></div><span>{courses.length} active {courses.length === 1 ? "course" : "courses"}</span></header>{courses.length ? <div className="provider-course-grid">{courses.map((course) => <article key={course.id}><div><p>{course.category || "Learning"} · {course.level || "All levels"}</p><h3>{course.title}</h3><span>{course.summary || "Explore this course and start learning with Growvelt."}</span></div><footer><strong>{course.isFree ? "Free" : `${course.priceCurrency || "NGN"} ${Number(course.priceAmount ?? 0).toLocaleString("en-NG")}`}</strong><Link href={`/courses/${encodeURIComponent(course.slug)}`}>View course <span aria-hidden="true">→</span></Link></footer></article>)}</div> : <div className="provider-course-empty"><h3>No public courses yet</h3><p>This provider has not published a course yet. Explore the Growvelt Learning catalog in the meantime.</p><Link href="/courses" className="button button-secondary">Explore courses</Link></div>}</section>
   </main>;
 }
