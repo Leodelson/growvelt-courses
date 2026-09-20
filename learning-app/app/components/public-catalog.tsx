@@ -23,11 +23,14 @@ type PublicCatalogCourseRow = {
   price_amount: number | null;
   price_currency: string | null;
   instructor_name: string | null;
+  provider_name: string | null;
+  provider_slug: string | null;
+  provider_verified: boolean;
   total_courses: number;
 };
 
 function toCourse(row: PublicCatalogCourseRow): PublishedCourse {
-  return { id: row.course_id, slug: row.slug, title: row.title, summary: row.summary, category: row.category, level: row.level, isFree: row.is_free, priceAmount: row.price_amount, priceCurrency: row.price_currency, instructorName: row.instructor_name };
+  return { id: row.course_id, slug: row.slug, title: row.title, summary: row.summary, category: row.category, level: row.level, isFree: row.is_free, priceAmount: row.price_amount, priceCurrency: row.price_currency, instructorName: row.instructor_name, providerName: row.provider_name, providerSlug: row.provider_slug, providerVerified: row.provider_verified };
 }
 
 export function PublicCatalog({ catalog, query, authenticated, savedCourseIds = [], basePath = "/learn", dashboard = false }: { catalog: PublicCatalogResult; query: PublicCatalogQuery; authenticated: boolean; savedCourseIds?: number[]; basePath?: string; dashboard?: boolean }) {

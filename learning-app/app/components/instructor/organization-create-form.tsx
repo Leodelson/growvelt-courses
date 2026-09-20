@@ -17,9 +17,12 @@ export function OrganizationCreateForm() {
     setPending(true); setMessage(null); setIsError(false);
     try {
       const response = await fetch("/api/instructor/organizations", { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name, slug }) });
-      const result = await response.json().catch(() => null) as { code?: string } | null;
+      const result = await response.json().catch(() => null) as { code?: string; organization?: { organization_id?: number } } | null;
       if (!response.ok) throw new Error(result?.code ?? "organization_unavailable");
-      event.currentTarget.reset(); setMessage("Your training organization is ready. You are its initial owner."); router.refresh();
+      const organizationId = result?.organization?.organization_id;
+      if (!organizationId) throw new Error("organization_unavailable");
+      router.push(`/dashboard/instructor/organizations/${organizationId}/profile`);
+      router.refresh();
     } catch (error) {
       const code = error instanceof Error ? error.message : "organization_unavailable";
       setIsError(true); setMessage(code === "organization_slug_taken" ? "That organization handle is already in use. Choose a different handle." : code === "approved_instructor_required" ? "Only an approved instructor can create an organization. Confirm this account still has approved Instructor access." : "We could not create that organization right now. Please try again shortly.");

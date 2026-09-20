@@ -15,6 +15,9 @@ export type PublishedCourse = {
   priceAmount: number | null;
   priceCurrency: string | null;
   instructorName: string | null;
+  providerName: string | null;
+  providerSlug: string | null;
+  providerVerified: boolean;
 };
 
 export type PublicCatalogResult = {
@@ -34,6 +37,9 @@ type PublishedCourseRow = {
   price_amount: number | null;
   price_currency: string | null;
   instructor_name: string | null;
+  provider_name: string | null;
+  provider_slug: string | null;
+  provider_verified: boolean;
 };
 
 type PublicCatalogCourseRow = PublishedCourseRow & {
@@ -54,6 +60,9 @@ function mapPublishedCourse(course: PublishedCourseRow): PublishedCourse {
     priceAmount: course.price_amount,
     priceCurrency: course.price_currency,
     instructorName: course.instructor_name,
+    providerName: course.provider_name,
+    providerSlug: course.provider_slug,
+    providerVerified: course.provider_verified,
   };
 }
 
@@ -69,6 +78,9 @@ type PublishedCourseDetailRow = {
   price_amount: number | null;
   price_currency: string | null;
   instructor_name: string | null;
+  provider_name: string | null;
+  provider_slug: string | null;
+  provider_verified: boolean;
   published_at: string | null;
   module_id: number | null;
   module_title: string | null;
@@ -176,6 +188,9 @@ export async function getPublishedLearningCourse(slug: string): Promise<Publishe
     priceAmount: first.price_amount,
     priceCurrency: first.price_currency,
     instructorName: first.instructor_name,
+    providerName: first.provider_name,
+    providerSlug: first.provider_slug,
+    providerVerified: first.provider_verified,
     publishedAt: first.published_at,
     modules: [...modules.values()],
   };

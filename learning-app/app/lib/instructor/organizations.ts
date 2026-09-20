@@ -35,6 +35,7 @@ export type OrganizationOwnerInvitation = { invitation_id: number; invited_email
 export type OrganizationCourse = { course_id: number; title: string; slug: string; status: string; instructor_name: string; updated_at: string };
 export type OrganizationVerification = { organization_id: number; status: "pending" | "verified" | "rejected"; legal_name: string; contact_email: string; website_url: string | null; verification_statement: string; submitted_at: string; reviewed_at: string | null; review_note: string | null };
 export type OrganizationProfile = { organization_id: number; headline: string; description: string; contact_email: string; website_url: string | null; linkedin_url: string | null; instagram_url: string | null; updated_at: string };
+export type OrganizationProfileBranding = OrganizationProfile & { logo_storage_path: string | null; cover_storage_path: string | null };
 
 export async function getOwnInstructorOrganizationVerifications() {
   const { data, error } = await (await createClient()).rpc("list_own_learning_provider_organization_verifications");
@@ -46,6 +47,12 @@ export async function getOwnInstructorOrganizationProfiles() {
   const { data, error } = await (await createClient()).rpc("list_own_learning_provider_organization_profiles");
   if (error) throw new Error("Unable to load provider profiles.");
   return (data ?? []) as OrganizationProfile[];
+}
+
+export async function getOwnInstructorOrganizationProfileBranding(organizationId: number) {
+  const { data, error } = await (await createClient()).rpc("get_own_learning_provider_organization_profile_branding", { p_organization_id: organizationId });
+  if (error) throw new Error("Unable to load provider profile branding.");
+  return ((data ?? [])[0] ?? null) as OrganizationProfileBranding | null;
 }
 
 export async function getInstructorOrganizationManagement(organization: InstructorOrganization) {

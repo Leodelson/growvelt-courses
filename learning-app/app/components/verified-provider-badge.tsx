@@ -1,0 +1,3 @@
+export function VerifiedProviderBadge({ className = "" }: { className?: string }) {
+  return <span className={`verified-provider-badge ${className}`.trim()} title="Verified provider" aria-label="Verified provider"><svg aria-hidden="true" viewBox="0 0 20 20" fill="none"><path d="M10 1.8 12.1 3l2.4-.1 1.1 2.1 2.1 1.1-.1 2.4 1.2 2.1-1.2 2.1.1 2.4-2.1 1.1-1.1 2.1-2.4-.1L10 18.2l-2.1-1.2-2.4.1-1.1-2.1-2.1-1.1.1-2.4-1.2-2.1 1.2-2.1-.1-2.4 2.1-1.1 1.1-2.1 2.4.1L10 1.8Z" fill="currentColor" /><path d="m6.4 10 2.1 2.1 5-5" stroke="white" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" /></svg><span className="sr-only">Verified provider</span></span>;
+}

@@ -17,7 +17,7 @@ function FieldLabel({ children, optional = false }: { children: React.ReactNode;
   return <span className="field-label">{children}{optional ? <span className="field-label-optional">(optional)</span> : <><span className="required-mark" aria-hidden="true">*</span><span className="sr-only"> (required)</span></>}</span>;
 }
 
-export function OrganizationProfileForm({ organizationId, organizationSlug, profile }: { organizationId: number; organizationSlug: string; profile: Profile }) {
+export function OrganizationProfileForm({ organizationId, organizationSlug, profile, isVerified }: { organizationId: number; organizationSlug: string; profile: Profile; isVerified: boolean }) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -43,18 +43,18 @@ export function OrganizationProfileForm({ organizationId, organizationSlug, prof
         }),
       });
       if (!response.ok) throw new Error((await response.json().catch(() => null) as { code?: string } | null)?.code ?? "profile_unavailable");
-      setMessage("Provider profile saved. It is now visible on your public provider page.");
+      setMessage(isVerified ? "Provider profile saved. It is visible on your public provider page." : "Provider profile saved as a private draft. Submit and complete verification to publish it publicly.");
       router.refresh();
     } catch (error) {
       const code = error instanceof Error ? error.message : "profile_unavailable";
-      setMessage(code === "verified_owner_required" ? "Only the active owner of a verified provider can update this profile." : code === "invalid_profile" ? "Check the required details and links, then try again." : "We could not save this provider profile right now. Please try again.");
+      setMessage(code === "verified_owner_required" ? "Only the active organization owner can update this profile." : code === "invalid_profile" ? "Check the required details and links, then try again." : "We could not save this provider profile right now. Please try again.");
     } finally {
       setPending(false);
     }
   }
 
   return <form className="organization-profile-form" onSubmit={submit}>
-    <p className="organization-profile-note">This is the public face of your verified provider. Do not include private documents, bank details, or sensitive personal information.</p>
+    <p className="organization-profile-note">{isVerified ? "This is the public face of your verified provider." : "This is a private provider-profile draft until Learning Admin approves verification."} Do not include private documents, bank details, or sensitive personal information.</p>
     <div className="course-form-grid">
       <label className="course-field"><FieldLabel>Provider headline</FieldLabel><input name="headline" defaultValue={profile?.headline} minLength={8} maxLength={160} required placeholder="e.g. Practical technology training for ambitious teams" /></label>
       <label className="course-field"><FieldLabel>Public contact email</FieldLabel><input name="contactEmail" type="email" defaultValue={profile?.contact_email} minLength={5} maxLength={320} required placeholder="hello@example.com" /></label>
@@ -65,7 +65,7 @@ export function OrganizationProfileForm({ organizationId, organizationSlug, prof
       <label className="course-field"><FieldLabel optional>LinkedIn</FieldLabel><input name="linkedinUrl" type="url" defaultValue={profile?.linkedin_url ?? ""} maxLength={400} placeholder="https://linkedin.com/company/example" /></label>
       <label className="course-field"><FieldLabel optional>Instagram</FieldLabel><input name="instagramUrl" type="url" defaultValue={profile?.instagram_url ?? ""} maxLength={400} placeholder="https://instagram.com/example" /></label>
     </div>
-    <div className="organization-profile-actions"><button className="button button-primary" type="submit" disabled={pending}>{pending ? "Saving…" : profile ? "Save public profile" : "Publish provider profile"}</button>{profile && <Link className="button button-secondary" href={`/providers/${organizationSlug}`} target="_blank">View public profile</Link>}</div>
+    <div className="organization-profile-actions"><button className="button button-primary" type="submit" disabled={pending}>{pending ? "Saving…" : profile ? "Save provider profile" : "Save provider profile"}</button>{profile && isVerified && <Link className="button button-secondary" href={`/providers/${organizationSlug}`} target="_blank">Preview public profile</Link>}</div>
     {message && <p className={message.startsWith("Provider profile saved") ? "payout-profile-feedback" : "payout-profile-feedback is-error"} role="status">{message}</p>}
   </form>;
 }

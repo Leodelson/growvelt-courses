@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/app/lib/supabase/server";
+import { VerifiedProviderBadge } from "@/app/components/verified-provider-badge";
 
 type ProviderProfile = {
   name: string;
@@ -12,11 +13,13 @@ type ProviderProfile = {
   website_url: string | null;
   linkedin_url: string | null;
   instagram_url: string | null;
+  logo_storage_path: string | null;
+  cover_storage_path: string | null;
 };
 
 async function getProviderProfile(slug: string) {
   if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) return null;
-  const { data, error } = await (await createClient()).rpc("get_public_learning_provider_organization_profile", { p_slug: slug });
+  const { data, error } = await (await createClient()).rpc("get_public_learning_provider_organization_profile_branding", { p_slug: slug });
   if (error) return null;
   return ((data ?? [])[0] ?? null) as ProviderProfile | null;
 }
@@ -33,6 +36,11 @@ export default async function PublicProviderProfilePage({ params }: { params: Pr
   if (!provider) notFound();
 
   const initial = provider.name.trim().charAt(0).toUpperCase() || "G";
+  const supabase = await createClient();
+  const [logoMedia, coverMedia] = await Promise.all([
+    provider.logo_storage_path ? supabase.storage.from("learning-provider-media").createSignedUrl(provider.logo_storage_path, 60 * 60) : Promise.resolve({ data: null }),
+    provider.cover_storage_path ? supabase.storage.from("learning-provider-media").createSignedUrl(provider.cover_storage_path, 60 * 60) : Promise.resolve({ data: null }),
+  ]);
   const links = [
     provider.website_url && { label: "Website", href: provider.website_url },
     provider.linkedin_url && { label: "LinkedIn", href: provider.linkedin_url },
@@ -40,12 +48,12 @@ export default async function PublicProviderProfilePage({ params }: { params: Pr
   ].filter(Boolean) as { label: string; href: string }[];
 
   return <main className="provider-profile-page section-shell">
-    <header className="provider-profile-cover"><div className="provider-profile-cover-pattern" aria-hidden="true" /></header>
+    <header className="provider-profile-cover">{coverMedia.data?.signedUrl && <img className="provider-profile-cover-image" src={coverMedia.data.signedUrl} alt="" />}<div className="provider-profile-cover-pattern" aria-hidden="true" /></header>
     <section className="provider-profile-identity-card" aria-labelledby="provider-name">
-      <div className="provider-profile-mark" aria-hidden="true">{initial}</div>
+      <div className="provider-profile-mark" aria-hidden="true">{logoMedia.data?.signedUrl ? <img src={logoMedia.data.signedUrl} alt="" /> : initial}</div>
       <div className="provider-profile-identity-copy">
         <p className="eyebrow">Verified training provider</p>
-        <h1 id="provider-name">{provider.name}</h1>
+        <h1 id="provider-name">{provider.name} <VerifiedProviderBadge /></h1>
         <p className="provider-profile-headline">{provider.headline}</p>
         <div className="provider-profile-meta"><span>Verified by Growvelt</span><span>Training organization</span></div>
       </div>

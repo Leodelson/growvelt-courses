@@ -8,6 +8,7 @@ import { getPublishedLearningCourse } from "@/app/lib/catalog/published-courses"
 import { absoluteLearningUrl, defaultSocialImage } from "@/app/lib/seo";
 import { getRequestLocale } from "@/app/lib/i18n-server";
 import { translate, type Locale } from "@/app/lib/i18n";
+import { VerifiedProviderBadge } from "@/app/components/verified-provider-badge";
 
 function lessonLabel(locale: Locale, type: "video" | "text" | "quiz" | "project") {
   if (type === "video") return translate(locale, "catalog.videoLesson");
@@ -77,6 +78,7 @@ export default async function PublicCoursePage({ params }: { params: Promise<{ s
           <h1>{course.title}</h1>
           <p className="published-course-summary">{description}</p>
           <div className="published-course-meta"><span>{course.level || t("catalog.allLevels")}</span><span>{pricing}</span><span>{course.instructorName ? `${t("catalog.byInstructor")} ${course.instructorName}` : t("catalog.defaultInstructor")}</span></div>
+          {course.providerVerified && course.providerName && course.providerSlug && <Link className="published-course-provider" href={`/providers/${course.providerSlug}`}>Provided by {course.providerName} <VerifiedProviderBadge /></Link>}
           <div className="published-course-video-cover">
             <div className="published-course-video-cover-fallback" aria-hidden="true"><span>Growvelt Learning</span><strong>{course.category || "Practical learning"}</strong></div>
             <CourseVideoCover courseId={course.id} alt="" loading="eager" />

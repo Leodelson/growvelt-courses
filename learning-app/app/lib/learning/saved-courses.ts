@@ -27,6 +27,9 @@ function mapSavedCourse(row: SavedCourseRow): PublishedCourse {
     priceAmount: row.price_amount,
     priceCurrency: row.price_currency,
     instructorName: row.instructor_name,
+    providerName: null,
+    providerSlug: null,
+    providerVerified: false,
   };
 }
 

@@ -23,11 +23,8 @@ begin
   perform set_config('request.jwt.claim.sub',owner_id::text,true);
   select result.organization_id into organization_key from public.create_own_learning_provider_organization('Phase 2B2 Profile Academy','phase2b2-profile-academy') as result;
 
-  begin
-    perform public.update_own_learning_provider_organization_profile(organization_key,'Practical technology training for teams','This provider offers hands-on programs that help learners build confident, practical technology skills for meaningful work and measurable growth.','profiles@example.test','https://example.test','https://www.linkedin.com/company/example','https://www.instagram.com/example');
-    raise exception 'Unverified provider profile update unexpectedly succeeded';
-  exception when sqlstate '42501' then null;
-  end;
+  perform public.update_own_learning_provider_organization_profile(organization_key,'Practical technology training for teams','This provider offers hands-on programs that help learners build confident, practical technology skills for meaningful work and measurable growth.','profiles@example.test','https://example.test','https://www.linkedin.com/company/example','https://www.instagram.com/example');
+  if exists(select 1 from public.get_public_learning_provider_organization_profile('phase2b2-profile-academy')) then raise exception 'Unverified provider profile became public'; end if;
 
   perform public.submit_own_learning_provider_organization_verification(organization_key,'Phase 2B2 Profile Academy Ltd','verification@example.test','https://example.test','I am authorized to represent this training provider and confirm these details are accurate.');
   perform set_config('request.jwt.claim.sub',admin_id::text,true);

@@ -21,6 +21,13 @@ const navigation = [
   { href: "/dashboard/certificates", labelKey: "nav.certificates" as const, icon: "certificate" as const },
 ];
 const mobileNavigation = navigation.filter((item) => item.href !== "/dashboard/saved-courses");
+const mobileInstructorNavigation = [
+  { href: "/dashboard", labelKey: "nav.home" as const, icon: "home" as const },
+  { href: "/dashboard/instructor/courses", label: "My courses", icon: "courses" as const },
+  { href: "/dashboard/instructor/courses/new", label: "Create course", icon: "add-course" as const },
+  { href: "/dashboard/instructor/organizations", label: "Organizations", icon: "organization" as const },
+  { href: "/dashboard/profile", labelKey: "nav.profile" as const, icon: "profile" as const },
+];
 
 type WorkspaceAccess = { isInstructor: boolean; isAdmin: boolean };
 type OpenPanel = "language" | "notifications" | "account" | "mobile" | null;
@@ -70,6 +77,8 @@ export function LearningShellNavigation({ children, initialSidebarCollapsed, isI
   const accountRef = useRef<HTMLDivElement>(null);
   const mobileRef = useRef<HTMLDivElement>(null);
   const isActive = (href: string) => pathname === href;
+  const bottomNavigation = isInstructor ? mobileInstructorNavigation : mobileNavigation;
+  const isBottomActive = (href: string) => href === "/dashboard/instructor/courses" ? pathname === href || /^\/dashboard\/instructor\/courses\/\d+/.test(pathname) : href === "/dashboard/instructor/organizations" ? pathname.startsWith(href) : isActive(href);
 
   useEffect(() => {
     function closeOnOutsideClick(event: PointerEvent) {
@@ -120,6 +129,6 @@ export function LearningShellNavigation({ children, initialSidebarCollapsed, isI
       </div></header>
       <main id="main-content" className="dashboard-main">{children}</main>
     </div>
-    <nav className="mobile-nav" aria-label="Learning navigation">{mobileNavigation.map((item) => { const active = !item.external && isActive(item.href); const label = t(item.mobileLabelKey ?? item.labelKey); return item.external ? <a href={item.href} target="_blank" rel="noreferrer" key={item.labelKey}><LearningIcon name={item.icon} size={18} /><small>{label}</small><span className="sr-only"> (opens Growvelt Jobs in a new tab)</span></a> : <Link className={active ? "active" : ""} aria-current={active ? "page" : undefined} href={item.href} key={item.labelKey}><LearningIcon name={item.icon} size={18} /><small>{label}</small></Link>; })}</nav>
+    <nav className="mobile-nav" aria-label="Learning navigation">{bottomNavigation.map((item) => { const active = !("external" in item && item.external) && isBottomActive(item.href); const label = "label" in item ? item.label : t(("mobileLabelKey" in item ? item.mobileLabelKey : item.labelKey) ?? item.labelKey); return "external" in item && item.external ? <a href={item.href} target="_blank" rel="noreferrer" key={item.href}><LearningIcon name={item.icon} size={18} /><small>{label}</small><span className="sr-only"> (opens Growvelt Jobs in a new tab)</span></a> : <Link className={active ? "active" : ""} aria-current={active ? "page" : undefined} href={item.href} key={item.href}><LearningIcon name={item.icon} size={18} /><small>{label}</small></Link>; })}</nav>
   </div>;
 }

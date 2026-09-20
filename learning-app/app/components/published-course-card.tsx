@@ -4,6 +4,7 @@ import { SaveCourseButton } from "@/app/components/learning/save-course-button";
 import { CourseVideoCover } from "@/app/components/course-video-cover";
 import type { PublishedCourse } from "@/app/lib/catalog/published-courses";
 import { useLanguage } from "@/app/components/language-provider";
+import { VerifiedProviderBadge } from "@/app/components/verified-provider-badge";
 
 const visualStyles = ["data", "sql", "ai", "product"] as const;
 
@@ -25,6 +26,7 @@ export function PublishedCourseCard({ course, index, href, highlightQuery = "", 
       <div className="course-meta"><span>{course.category || t("catalog.fallbackCategory")}</span><span>{course.level || t("catalog.allLevels")}</span><SaveCourseButton courseId={course.id} isSaved={isSaved} authenticated={authenticated} signInHref={`/sign-up?next=${encodeURIComponent(`/courses/${course.slug}`)}`} onSavedChange={onSavedChange} /></div>
       <h2>{highlight(course.title, highlightQuery)}</h2><p>{highlight(course.summary || t("catalog.fallbackSummary"), highlightQuery)}</p>
       <div className="course-details"><span>{course.instructorName ? `${t("catalog.byInstructor")} ${course.instructorName}` : t("catalog.defaultInstructor")}</span><span>{pricing}</span></div>
+      {course.providerVerified && course.providerName && course.providerSlug && <Link className="course-provider-link" href={`/providers/${course.providerSlug}`}>{course.providerName} <VerifiedProviderBadge /></Link>}
       <div className="course-card-footer"><strong>{course.isFree ? t("catalog.openToLearn") : pricing}</strong><Link href={href ?? `/courses/${encodeURIComponent(course.slug)}`}>{t("catalog.viewCourse")}</Link></div>
     </div>
   </article>;
