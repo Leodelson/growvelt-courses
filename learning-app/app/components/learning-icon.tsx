@@ -24,7 +24,7 @@ const paths: Record<IconName, React.ReactNode> = {
   "payment-operations": <><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M3 9h18M7 15h4" /><circle cx="17" cy="14" r="1.5" /></>,
   earnings: <><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" /><path d="m4 8 5-4 5 5 6-7" /></>,
   payout: <><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M7 10h5M7 14h3M16 9v6M14 13l2 2 2-2" /></>,
-  organization: <><rect x="4" y="4" width="16" height="16" rx="2" /><path d="M8 20V9h8v11M10 12h.01M14 12h.01M10 16h.01M14 16h.01" /></>,
+  organization: <><circle cx="9" cy="8" r="3" /><circle cx="17" cy="9" r="2.5" /><path d="M3.5 20a5.5 5.5 0 0 1 11 0M14 19a4.5 4.5 0 0 1 7 0" /></>,
   company: <><path d="M3 20h18M5 20V8l7-4 7 4v12M9 20v-5h6v5M8 10h.01M12 10h.01M16 10h.01" /></>,
   "provider-verification": <><path d="M5 4h14v16H5z" /><path d="m8 12 2.2 2.2L16 8.5" /><path d="M8 18h8" /></>,
   eye: <><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" /><circle cx="12" cy="12" r="2.5" /></>,
