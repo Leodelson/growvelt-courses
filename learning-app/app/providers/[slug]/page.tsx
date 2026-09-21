@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/app/lib/supabase/server";
 import { VerifiedProviderBadge } from "@/app/components/verified-provider-badge";
+import { BrowserBackLink } from "@/app/components/browser-back-link";
 import { listPublicVerifiedProviderCourses } from "@/app/lib/catalog/published-courses";
 
 type ProviderProfile = {
@@ -50,7 +51,7 @@ export default async function PublicProviderProfilePage({ params }: { params: Pr
   ].filter(Boolean) as { label: string; href: string }[];
 
   return <main className="provider-profile-page section-shell">
-    <header className="provider-profile-cover"><Link className="provider-profile-back" href="/courses"><span aria-hidden="true">←</span> Back</Link>{coverMedia.data?.signedUrl && <img className="provider-profile-cover-image" src={coverMedia.data.signedUrl} alt="" />}<div className="provider-profile-cover-pattern" aria-hidden="true" /></header>
+    <header className="provider-profile-cover"><BrowserBackLink className="provider-profile-back"><span aria-hidden="true">←</span> Back</BrowserBackLink>{coverMedia.data?.signedUrl && <img className="provider-profile-cover-image" src={coverMedia.data.signedUrl} alt="" />}<div className="provider-profile-cover-pattern" aria-hidden="true" /></header>
     <section className="provider-profile-identity-card" aria-labelledby="provider-name">
       <div className="provider-profile-mark" aria-hidden="true">{logoMedia.data?.signedUrl ? <img src={logoMedia.data.signedUrl} alt="" /> : initial}</div>
       <div className="provider-profile-identity-copy">
