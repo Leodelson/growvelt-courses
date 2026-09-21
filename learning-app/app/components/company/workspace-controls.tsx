@@ -1,8 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { ConfirmationDialog } from "@/app/components/ui/confirmation-dialog";
+import { LearningIcon } from "@/app/components/learning-icon";
 
 export function CompanyWorkspaceCreateForm() {
   const router = useRouter(); const [pending, setPending] = useState(false); const [message, setMessage] = useState<string | null>(null);
@@ -24,9 +26,9 @@ export function CompanyCourseAssignmentForm({ workspaceId, members, courses }: {
 }
 
 export function CompanyAssignmentCard({ assignment }: { assignment: { assignment_id: number; employee_name: string | null; employee_email: string; course_title: string; progress_percent: number; enrollment_status: string | null } }) {
-  const [menuOpen, setMenuOpen] = useState(false); const [showProgress, setShowProgress] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const initials = (assignment.employee_name || assignment.employee_email).trim().slice(0, 1).toUpperCase();
-  return <li className="company-assignment-card"><div className="company-assignment-card-header"><span className="company-assignment-avatar" aria-hidden="true">{initials}</span><span className="company-assignment-person"><strong>{assignment.employee_name || assignment.employee_email}</strong><small>{assignment.employee_email} · {assignment.course_title}</small></span><span className="company-assignment-progress">{assignment.progress_percent}%</span><span className="company-assignment-menu-wrap"><button className="company-assignment-menu-button" type="button" aria-label={`Options for ${assignment.employee_name || assignment.employee_email}`} aria-expanded={menuOpen} onClick={() => setMenuOpen((current) => !current)}>⋮</button>{menuOpen && <span className="company-assignment-menu" role="menu"><button type="button" onClick={() => { setShowProgress(true); setMenuOpen(false); }}>View progress</button></span>}</span></div>{showProgress && <div className="company-assignment-detail"><div><strong>Learning progress</strong><span>{assignment.enrollment_status || "not started"}</span></div><span className="company-progress-bar" aria-label={`${assignment.progress_percent}% complete`}><span style={{ width: `${assignment.progress_percent}%` }} /></span><p>{assignment.progress_percent === 100 ? "This employee has completed the assigned course." : `${assignment.progress_percent}% of the assigned course is complete.`}</p></div>}</li>;
+  return <li className="company-assignment-card"><div className="company-assignment-card-header"><span className="company-assignment-avatar" aria-hidden="true">{initials}</span><span className="company-assignment-person"><strong>{assignment.employee_name || assignment.employee_email}</strong><small>{assignment.employee_email} · {assignment.course_title}</small></span><span className="company-assignment-progress">{assignment.progress_percent}%</span><span className="company-assignment-menu-wrap"><button className="company-assignment-menu-button" type="button" aria-label={`Options for ${assignment.employee_name || assignment.employee_email}`} aria-expanded={menuOpen} onClick={() => setMenuOpen((current) => !current)}>⋮</button>{menuOpen && <span className="company-assignment-menu" role="menu"><Link href={`/dashboard/company/insights?assignment=${assignment.assignment_id}`} onClick={() => setMenuOpen(false)}><LearningIcon name="eye" size={16} />View progress</Link></span>}</span></div></li>;
 }
 
 export function CompanyInvitationResponse({ invitationId }: { invitationId: number }) {

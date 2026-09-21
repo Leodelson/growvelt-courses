@@ -1,6 +1,6 @@
 import { Heart, Settings } from "lucide-react";
 
-type IconName = "overview" | "home" | "learning" | "explore" | "heart" | "certificate" | "settings" | "menu" | "close" | "bell" | "collapse" | "profile" | "chevron" | "arrow-left" | "courses" | "add-course" | "instructor-review" | "course-review" | "payment-operations" | "earnings" | "organization" | "company" | "image" | "camera" | "jobs";
+type IconName = "overview" | "home" | "learning" | "explore" | "heart" | "certificate" | "settings" | "menu" | "close" | "bell" | "collapse" | "profile" | "chevron" | "arrow-left" | "courses" | "add-course" | "instructor-review" | "course-review" | "payment-operations" | "earnings" | "payout" | "organization" | "company" | "provider-verification" | "eye" | "image" | "camera" | "jobs";
 
 const paths: Record<IconName, React.ReactNode> = {
   overview: <><rect x="3" y="3" width="18" height="18" rx="4" /><path d="M7 15h3v3H7zM14 7h3v3h-3zM14 14h3v4h-3z" /></>,
@@ -23,8 +23,11 @@ const paths: Record<IconName, React.ReactNode> = {
   "course-review": <><path d="M5 3.5h11l3 3V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-15a1.5 1.5 0 0 1 1-1.5Z" /><path d="M15 3.5V7h4M8 11h8M8 15h5" /><path d="m16 18 1.5 1.5L21 16" /></>,
   "payment-operations": <><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M3 9h18M7 15h4" /><circle cx="17" cy="14" r="1.5" /></>,
   earnings: <><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" /><path d="m4 8 5-4 5 5 6-7" /></>,
+  payout: <><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M7 10h5M7 14h3M16 9v6M14 13l2 2 2-2" /></>,
   organization: <><rect x="4" y="4" width="16" height="16" rx="2" /><path d="M8 20V9h8v11M10 12h.01M14 12h.01M10 16h.01M14 16h.01" /></>,
   company: <><path d="M3 20h18M5 20V8l7-4 7 4v12M9 20v-5h6v5M8 10h.01M12 10h.01M16 10h.01" /></>,
+  "provider-verification": <><path d="M5 4h14v16H5z" /><path d="m8 12 2.2 2.2L16 8.5" /><path d="M8 18h8" /></>,
+  eye: <><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" /><circle cx="12" cy="12" r="2.5" /></>,
   image: <><rect x="3" y="4" width="18" height="16" rx="2" /><circle cx="8.5" cy="9" r="1.5" /><path d="m3 17 5-5 4 4 3-3 6 6" /></>,
   camera: <><path d="M4 8h3l1.4-2h7.2L17 8h3a1 1 0 0 1 1 1v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9a1 1 0 0 1 1-1Z" /><circle cx="12" cy="14" r="3.2" /></>,
   jobs: <><rect x="3" y="7" width="18" height="13" rx="2" /><path d="M8 7V5.5A1.5 1.5 0 0 1 9.5 4h5A1.5 1.5 0 0 1 16 5.5V7M3 12h18M10 12v2h4v-2" /></>,
