@@ -19,13 +19,14 @@ const navigation = [
   { href: "https://www.growvelt.com", labelKey: "nav.jobs" as const, icon: "jobs" as const, external: true },
   { href: "/dashboard/saved-courses", labelKey: "nav.saved" as const, icon: "heart" as const },
   { href: "/dashboard/certificates", labelKey: "nav.certificates" as const, icon: "certificate" as const },
+  { href: "/dashboard/company", labelKey: "nav.company" as const, icon: "organization" as const },
 ];
-const mobileNavigation = navigation.filter((item) => item.href !== "/dashboard/saved-courses");
+const mobileNavigation = navigation.filter((item) => item.href !== "/dashboard/saved-courses" && item.href !== "/dashboard/company");
 const mobileInstructorNavigation = [
   { href: "/dashboard", labelKey: "nav.home" as const, icon: "home" as const },
-  { href: "/dashboard/instructor/courses", label: "My courses", icon: "courses" as const },
-  { href: "/dashboard/instructor/courses/new", label: "Create course", icon: "add-course" as const },
-  { href: "/dashboard/instructor/organizations", label: "Organizations", icon: "organization" as const },
+  { href: "/dashboard/instructor/courses", label: "My courses", mobileLabel: "Courses", icon: "courses" as const },
+  { href: "/dashboard/instructor/courses/new", label: "Create course", mobileLabel: "Create", icon: "add-course" as const },
+  { href: "/dashboard/instructor/organizations", label: "Organizations", mobileLabel: "Org", icon: "organization" as const },
   { href: "/dashboard/instructor/earnings", label: "Earnings", icon: "earnings" as const },
 ];
 const mobileCompanyNavigation = { href: "/dashboard/company", label: "Company", icon: "organization" as const };
@@ -51,10 +52,9 @@ function WorkspaceLinks({ isInstructor, isAdmin, isCompany, pathname, onNavigate
   </nav>;
 }
 
-function MobileWorkspaceLinks({ isAdmin, isCompany, onNavigate }: Pick<WorkspaceAccess, "isAdmin" | "isCompany"> & { onNavigate: () => void }) {
-  if (!isAdmin && !isCompany) return null;
+function MobileWorkspaceLinks({ isAdmin, onNavigate }: Pick<WorkspaceAccess, "isAdmin"> & { onNavigate: () => void }) {
   return <div className="mobile-dashboard-workspaces">
-    {isCompany && <section><p className="eyebrow">Company learning</p><Link onClick={onNavigate} href="/dashboard/company"><LearningIcon name="organization" />Company learning</Link></section>}
+    <section><p className="eyebrow">Company learning</p><Link onClick={onNavigate} href="/dashboard/company"><LearningIcon name="organization" />Company learning</Link></section>
     {isAdmin && <section><p className="eyebrow">Admin Reviews</p><Link onClick={onNavigate} href="/dashboard/admin/instructors"><LearningIcon name="instructor-review" />Instructor reviews</Link><Link onClick={onNavigate} href="/dashboard/admin/courses"><LearningIcon name="course-review" />Course reviews</Link><Link onClick={onNavigate} href="/dashboard/admin/providers"><LearningIcon name="organization" />Provider verification</Link><Link onClick={onNavigate} href="/dashboard/admin/payments"><LearningIcon name="payment-operations" />Payment operations</Link><Link onClick={onNavigate} href="/dashboard/admin/commercial"><LearningIcon name="earnings" />Commercial earnings</Link></section>}
   </div>;
 }
@@ -87,7 +87,7 @@ export function LearningShellNavigation({ children, initialSidebarCollapsed, isI
   const accountRef = useRef<HTMLDivElement>(null);
   const mobileRef = useRef<HTMLDivElement>(null);
   const isActive = (href: string) => pathname === href;
-  const bottomNavigation = isInstructor ? [...mobileInstructorNavigation, ...(isCompany ? [mobileCompanyNavigation] : [])] : isCompany ? [...mobileNavigation.slice(0, 4), mobileCompanyNavigation] : mobileNavigation;
+  const bottomNavigation = isInstructor ? mobileInstructorNavigation : isCompany ? [...mobileNavigation.slice(0, 4), mobileCompanyNavigation] : mobileNavigation;
   const isBottomActive = (href: string) => href === "/dashboard/instructor/courses" ? pathname === href || /^\/dashboard\/instructor\/courses\/\d+/.test(pathname) : href === "/dashboard/instructor/organizations" ? pathname.startsWith(href) : isActive(href);
 
   useEffect(() => {
@@ -124,7 +124,7 @@ export function LearningShellNavigation({ children, initialSidebarCollapsed, isI
             <div className="mobile-dashboard-identity"><span className="dashboard-avatar" aria-hidden="true">{avatarUrl ? <img src={avatarUrl} alt="" /> : (displayName || userEmail).trim().charAt(0).toUpperCase() || "G"}</span><div><small>Signed in as</small><strong>{userEmail}</strong></div></div>
             <div className="mobile-dashboard-language"><label htmlFor="mobile-dashboard-language-select">{t("language.label")}</label><select id="mobile-dashboard-language-select" value={locale} onChange={(event) => setLocale(event.target.value as typeof locale)}>{languageOptions.map((language) => <option value={language.code} key={language.code}>{language.label}</option>)}</select><small>{t("language.browserRegion")}</small></div>
             <nav aria-label="Mobile dashboard links"><Link onClick={() => setOpenPanel(null)} href="/dashboard/profile"><LearningIcon name="profile" />{t("nav.profile")}</Link><Link onClick={() => setOpenPanel(null)} href="/dashboard/saved-courses"><LearningIcon name="heart" />{t("nav.saved")}</Link><Link onClick={() => setOpenPanel(null)} href="/dashboard/settings"><LearningIcon name="settings" />{t("nav.settings")}</Link></nav>
-            <MobileWorkspaceLinks isAdmin={isAdmin} isCompany={isCompany} onNavigate={() => setOpenPanel(null)} />
+            <MobileWorkspaceLinks isAdmin={isAdmin} onNavigate={() => setOpenPanel(null)} />
             <ThemeControl /><SignOutButton />
           </aside></>}
         </div>
@@ -139,6 +139,6 @@ export function LearningShellNavigation({ children, initialSidebarCollapsed, isI
       </div></header>
       <main id="main-content" className="dashboard-main">{children}</main>
     </div>
-    <nav className="mobile-nav" aria-label="Learning navigation">{bottomNavigation.map((item) => { const active = !("external" in item && item.external) && isBottomActive(item.href); const label = "label" in item ? item.label : t(("mobileLabelKey" in item ? item.mobileLabelKey : item.labelKey) ?? item.labelKey); return "external" in item && item.external ? <a href={item.href} target="_blank" rel="noreferrer" key={item.href}><LearningIcon name={item.icon} size={18} /><small>{label}</small><span className="sr-only"> (opens Growvelt Jobs in a new tab)</span></a> : <Link className={active ? "active" : ""} aria-current={active ? "page" : undefined} href={item.href} key={item.href}><LearningIcon name={item.icon} size={18} /><small>{label}</small></Link>; })}</nav>
+    <nav className="mobile-nav" aria-label="Learning navigation">{bottomNavigation.map((item) => { const active = !("external" in item && item.external) && isBottomActive(item.href); const label = "mobileLabel" in item ? item.mobileLabel : "label" in item ? item.label : t(("mobileLabelKey" in item ? item.mobileLabelKey : item.labelKey) ?? item.labelKey); return "external" in item && item.external ? <a href={item.href} target="_blank" rel="noreferrer" key={item.href}><LearningIcon name={item.icon} size={18} /><small>{label}</small><span className="sr-only"> (opens Growvelt Jobs in a new tab)</span></a> : <Link className={active ? "active" : ""} aria-current={active ? "page" : undefined} href={item.href} key={item.href}><LearningIcon name={item.icon} size={18} /><small>{label}</small></Link>; })}</nav>
   </div>;
 }

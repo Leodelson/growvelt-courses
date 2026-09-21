@@ -65,6 +65,7 @@ export function PublicHeader() {
     <Link href="/" onClick={closeMenu}>{t("public.home")}</Link>
     <Link href="/learn" onClick={closeMenu}>{t("public.explore")}</Link>
     <Link href="/teach" onClick={closeMenu}>{t("public.teach")}</Link>
+    <Link href="/company-learning" onClick={closeMenu}>Company learning</Link>
     <a href={jobsHref} target="_blank" rel="noreferrer" onClick={closeMenu}>{t("public.hire")}<span className="sr-only"> in a new tab</span></a>
     <div className="public-careers-menu"><strong>{t("public.careers")}</strong><a href={jobsHref} target="_blank" rel="noreferrer" onClick={closeMenu}>{t("public.applyJobs")}<span className="sr-only"> in a new tab</span></a></div>
   </>;
