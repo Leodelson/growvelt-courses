@@ -1772,8 +1772,8 @@ p { color: var(--muted); line-height: 1.65; }
 .auth-card .field-label > input { padding: 13px 15px; }
 .auth-checkbox { display: flex; align-items: center; gap: 10px; width: max-content; color: var(--ink); font-size: 14px; cursor: pointer; }
 .auth-checkbox input { width: 18px; height: 18px; margin: 0; accent-color: var(--purple); }
-.auth-story .learning-mark { display: inline-flex; width: 124px; height: 36px; overflow: hidden; }
-.auth-story .learning-mark img { width: 124px; height: 124px; max-width: none; object-fit: contain; object-position: center; filter: brightness(0) invert(1) drop-shadow(0 1px 2px rgba(14, 4, 35, .28)); }
+.auth-story .learning-mark { display: inline-flex; width: 132px; height: 42px; margin-top: 8px; padding: 3px 8px; overflow: hidden; border-radius: 11px; background: rgba(19, 7, 39, .38); }
+.auth-story .learning-mark img { width: 132px; height: 42px; max-width: none; object-fit: cover; object-position: 50% 44%; filter: none; }
 .auth-side-card-image { position: relative; z-index: 1; display: block; width: min(100%, 560px); height: auto; margin: auto auto 0; object-fit: contain; }
 .auth-story-motif { display: none; }
 .company-learning-public { display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, .9fr); gap: clamp(28px, 6vw, 78px); align-items: center; padding-block: clamp(56px, 10vw, 120px) !important; }

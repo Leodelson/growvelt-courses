@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { sendCompanyInvitationEmail } from "@/app/lib/email/company-notifications";
 import { isSameOriginRequest } from "@/app/lib/security/request-origin";
 import { createAdminClient } from "@/app/lib/supabase/admin";
@@ -12,7 +12,24 @@ export async function POST(request: Request, { params }: { params: Promise<{ wor
   const supabase = await createClient(); const { data: { user } } = await supabase.auth.getUser(); if (!user) return NextResponse.json({ code: "unauthorized" }, { status: 401 });
   const { data, error } = await supabase.rpc("create_learning_company_invitation", { p_workspace_id: workspaceId, p_invited_email: email, p_role: role });
   if (error) { const code = error.code === "23505" ? "already_member" : error.code === "P0001" ? "seat_limit_reached" : error.code === "42501" ? "company_access_denied" : "invitation_unavailable"; return NextResponse.json({ code }, { status: error.code === "42501" ? 403 : 409 }); }
-  const invitation = (data as Array<{ invitation_id: number; role: "admin" | "member" }> | null)?.[0]; let notification: "sent" | "not_configured" | "failed" = "not_configured";
-  if (invitation) { try { const admin = createAdminClient(); const [workspaceResult, inviterResult] = await Promise.all([admin.from("learning_company_workspaces").select("name").eq("id", workspaceId).maybeSingle(), admin.from("profiles").select("full_name").eq("id", user.id).maybeSingle()]); if (workspaceResult.data?.name) notification = await sendCompanyInvitationEmail({ recipient: email, organizationName: workspaceResult.data.name, inviterName: inviterResult.data?.full_name ?? null, role: invitation.role, invitationId: invitation.invitation_id, appBaseUrl: new URL(request.url).origin }); } catch { notification = "failed"; } }
-  return NextResponse.json({ invitation, notification }, { status: 201 });
+  const invitation = (data as Array<{ invitation_id: number; role: "admin" | "member" }> | null)?.[0];
+  if (invitation) {
+    // Persist the invitation response immediately. Email delivery must not make a
+    // successful seat invitation look like a failed request to the manager.
+    after(async () => {
+      try {
+        const admin = createAdminClient();
+        const [workspaceResult, inviterResult] = await Promise.all([
+          admin.from("learning_company_workspaces").select("name").eq("id", workspaceId).maybeSingle(),
+          admin.from("profiles").select("full_name").eq("id", user.id).maybeSingle(),
+        ]);
+        if (workspaceResult.data?.name) {
+          await sendCompanyInvitationEmail({ recipient: email, organizationName: workspaceResult.data.name, inviterName: inviterResult.data?.full_name ?? null, role: invitation.role, invitationId: invitation.invitation_id, appBaseUrl: new URL(request.url).origin });
+        }
+      } catch (error) {
+        console.error("company.invitation_email_queue_failed", { workspaceId, invitationId: invitation.invitation_id, message: error instanceof Error ? error.message : "unknown" });
+      }
+    });
+  }
+  return NextResponse.json({ invitation, notification: "queued" }, { status: 201 });
 }
