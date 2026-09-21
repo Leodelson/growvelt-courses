@@ -24,12 +24,12 @@ const navigation = [
 const mobileNavigation = navigation.filter((item) => item.href !== "/dashboard/saved-courses" && item.href !== "/dashboard/company");
 const mobileInstructorNavigation = [
   { href: "/dashboard", labelKey: "nav.home" as const, icon: "home" as const },
-  { href: "/dashboard/instructor/courses", label: "My courses", mobileLabel: "Courses", icon: "courses" as const },
+  { href: "/dashboard/instructor/courses", label: "My courses", mobileLabel: "My Courses", icon: "courses" as const },
   { href: "/dashboard/instructor/courses/new", label: "Create course", mobileLabel: "Create", icon: "add-course" as const },
   { href: "/dashboard/instructor/organizations", label: "Organizations", mobileLabel: "Org", icon: "organization" as const },
   { href: "/dashboard/instructor/earnings", label: "Earnings", icon: "earnings" as const },
 ];
-const mobileCompanyNavigation = { href: "/dashboard/company", label: "Company", icon: "organization" as const };
+const mobileCompanyNavigation = { href: "/dashboard/company", label: "Company", icon: "company" as const };
 
 type WorkspaceAccess = { isInstructor: boolean; isAdmin: boolean; isCompany: boolean };
 type OpenPanel = "language" | "notifications" | "account" | "mobile" | null;
@@ -52,9 +52,11 @@ function WorkspaceLinks({ isInstructor, isAdmin, isCompany, pathname, onNavigate
   </nav>;
 }
 
-function MobileWorkspaceLinks({ isAdmin, onNavigate }: Pick<WorkspaceAccess, "isAdmin"> & { onNavigate: () => void }) {
+function MobileWorkspaceLinks({ isAdmin, isInstructor, isCompany, onNavigate }: Pick<WorkspaceAccess, "isAdmin" | "isInstructor" | "isCompany"> & { onNavigate: () => void }) {
+  const { t } = useLanguage();
   return <div className="mobile-dashboard-workspaces">
-    <section><p className="eyebrow">Company learning</p><Link onClick={onNavigate} href="/dashboard/company"><LearningIcon name="organization" />Company learning</Link></section>
+    <section><p className="eyebrow">Learning</p>{navigation.filter((item) => item.href !== "/dashboard/saved-courses" && (item.href !== "/dashboard/company" || isCompany)).map((item) => item.external ? <a onClick={onNavigate} href={item.href} target="_blank" rel="noreferrer" key={item.href}><LearningIcon name={item.icon} />{t(item.labelKey)}</a> : <Link onClick={onNavigate} href={item.href} key={item.href}><LearningIcon name={item.icon} />{t(item.labelKey)}</Link>)}</section>
+    {isInstructor && <section><p className="eyebrow">Instructor workspace</p><Link onClick={onNavigate} href="/dashboard/instructor"><LearningIcon name="instructor-review" />{t("nav.instructor")}</Link><Link onClick={onNavigate} href="/dashboard/instructor/courses"><LearningIcon name="courses" />{t("nav.courses")}</Link><Link onClick={onNavigate} href="/dashboard/instructor/courses/new"><LearningIcon name="add-course" />{t("nav.createCourse")}</Link><Link onClick={onNavigate} href="/dashboard/instructor/organizations"><LearningIcon name="organization" />Organizations</Link><Link onClick={onNavigate} href="/dashboard/instructor/earnings"><LearningIcon name="earnings" />Earnings</Link><Link onClick={onNavigate} href="/dashboard/instructor/payout-profile"><LearningIcon name="earnings" />Payout profile</Link></section>}
     {isAdmin && <section><p className="eyebrow">Admin Reviews</p><Link onClick={onNavigate} href="/dashboard/admin/instructors"><LearningIcon name="instructor-review" />Instructor reviews</Link><Link onClick={onNavigate} href="/dashboard/admin/courses"><LearningIcon name="course-review" />Course reviews</Link><Link onClick={onNavigate} href="/dashboard/admin/providers"><LearningIcon name="organization" />Provider verification</Link><Link onClick={onNavigate} href="/dashboard/admin/payments"><LearningIcon name="payment-operations" />Payment operations</Link><Link onClick={onNavigate} href="/dashboard/admin/commercial"><LearningIcon name="earnings" />Commercial earnings</Link></section>}
   </div>;
 }
@@ -124,7 +126,7 @@ export function LearningShellNavigation({ children, initialSidebarCollapsed, isI
             <div className="mobile-dashboard-identity"><span className="dashboard-avatar" aria-hidden="true">{avatarUrl ? <img src={avatarUrl} alt="" /> : (displayName || userEmail).trim().charAt(0).toUpperCase() || "G"}</span><div><small>Signed in as</small><strong>{userEmail}</strong></div></div>
             <div className="mobile-dashboard-language"><label htmlFor="mobile-dashboard-language-select">{t("language.label")}</label><select id="mobile-dashboard-language-select" value={locale} onChange={(event) => setLocale(event.target.value as typeof locale)}>{languageOptions.map((language) => <option value={language.code} key={language.code}>{language.label}</option>)}</select><small>{t("language.browserRegion")}</small></div>
             <nav aria-label="Mobile dashboard links"><Link onClick={() => setOpenPanel(null)} href="/dashboard/profile"><LearningIcon name="profile" />{t("nav.profile")}</Link><Link onClick={() => setOpenPanel(null)} href="/dashboard/saved-courses"><LearningIcon name="heart" />{t("nav.saved")}</Link><Link onClick={() => setOpenPanel(null)} href="/dashboard/settings"><LearningIcon name="settings" />{t("nav.settings")}</Link></nav>
-            <MobileWorkspaceLinks isAdmin={isAdmin} onNavigate={() => setOpenPanel(null)} />
+            <MobileWorkspaceLinks isAdmin={isAdmin} isInstructor={isInstructor} isCompany={isCompany} onNavigate={() => setOpenPanel(null)} />
             <ThemeControl /><SignOutButton />
           </aside></>}
         </div>
