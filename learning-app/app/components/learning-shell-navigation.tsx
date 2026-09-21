@@ -28,14 +28,15 @@ const mobileInstructorNavigation = [
   { href: "/dashboard/instructor/organizations", label: "Organizations", icon: "organization" as const },
   { href: "/dashboard/instructor/earnings", label: "Earnings", icon: "earnings" as const },
 ];
+const mobileCompanyNavigation = { href: "/dashboard/company", label: "Company", icon: "organization" as const };
 
-type WorkspaceAccess = { isInstructor: boolean; isAdmin: boolean };
+type WorkspaceAccess = { isInstructor: boolean; isAdmin: boolean; isCompany: boolean };
 type OpenPanel = "language" | "notifications" | "account" | "mobile" | null;
 const sidebarPreferenceKey = "growvelt-learning-sidebar-collapsed";
 
-function WorkspaceLinks({ isInstructor, isAdmin, pathname, onNavigate }: WorkspaceAccess & { pathname: string; onNavigate?: () => void }) {
+function WorkspaceLinks({ isInstructor, isAdmin, isCompany, pathname, onNavigate }: WorkspaceAccess & { pathname: string; onNavigate?: () => void }) {
   const { t } = useLanguage();
-  if (!isInstructor && !isAdmin) return null;
+  if (!isInstructor && !isAdmin && !isCompany) return null;
   const isCurrent = (href: string) => {
     if (href === "/dashboard/instructor") return pathname === href;
     if (href === "/dashboard/instructor/courses/new") return pathname === href;
@@ -45,8 +46,17 @@ function WorkspaceLinks({ isInstructor, isAdmin, pathname, onNavigate }: Workspa
 
   return <nav className="workspace-links" aria-label="Available workspaces">
     {isInstructor && <section><p className="eyebrow">{t("nav.instructor")}</p><Link data-tooltip={t("nav.instructor")} onClick={onNavigate} href="/dashboard/instructor" aria-current={isCurrent("/dashboard/instructor") ? "page" : undefined}><LearningIcon name="instructor-review" /><span>{t("nav.instructor")}</span></Link><Link data-tooltip={t("nav.courses")} onClick={onNavigate} href="/dashboard/instructor/courses" aria-current={isCurrent("/dashboard/instructor/courses") ? "page" : undefined}><LearningIcon name="courses" /><span>{t("nav.courses")}</span></Link><Link data-tooltip="Organizations" onClick={onNavigate} href="/dashboard/instructor/organizations" aria-current={isCurrent("/dashboard/instructor/organizations") ? "page" : undefined}><LearningIcon name="organization" /><span>Organizations</span></Link><Link data-tooltip="Earnings" onClick={onNavigate} href="/dashboard/instructor/earnings" aria-current={isCurrent("/dashboard/instructor/earnings") ? "page" : undefined}><LearningIcon name="earnings" /><span>Earnings</span></Link><Link data-tooltip="Payout profile" onClick={onNavigate} href="/dashboard/instructor/payout-profile" aria-current={isCurrent("/dashboard/instructor/payout-profile") ? "page" : undefined}><LearningIcon name="earnings" /><span>Payout profile</span></Link><Link data-tooltip={t("nav.createCourse")} onClick={onNavigate} href="/dashboard/instructor/courses/new" aria-current={isCurrent("/dashboard/instructor/courses/new") ? "page" : undefined}><LearningIcon name="add-course" /><span>{t("nav.createCourse")}</span></Link></section>}
+    {isCompany && <section><p className="eyebrow">Company learning</p><Link data-tooltip="Company learning" onClick={onNavigate} href="/dashboard/company" aria-current={isCurrent("/dashboard/company") ? "page" : undefined}><LearningIcon name="organization" /><span>Company learning</span></Link></section>}
     {isAdmin && <section><p className="eyebrow">Admin Reviews</p><Link data-tooltip={t("nav.instructorReviews")} onClick={onNavigate} href="/dashboard/admin/instructors" aria-current={isCurrent("/dashboard/admin/instructors") ? "page" : undefined}><LearningIcon name="instructor-review" /><span>{t("nav.instructorReviews")}</span></Link><Link data-tooltip={t("nav.courseReviews")} onClick={onNavigate} href="/dashboard/admin/courses" aria-current={isCurrent("/dashboard/admin/courses") ? "page" : undefined}><LearningIcon name="course-review" /><span>{t("nav.courseReviews")}</span></Link><Link data-tooltip="Provider verification" onClick={onNavigate} href="/dashboard/admin/providers" aria-current={isCurrent("/dashboard/admin/providers") ? "page" : undefined}><LearningIcon name="organization" /><span>Provider verification</span></Link><Link data-tooltip={t("nav.paymentOperations")} onClick={onNavigate} href="/dashboard/admin/payments" aria-current={isCurrent("/dashboard/admin/payments") ? "page" : undefined}><LearningIcon name="payment-operations" /><span>{t("nav.paymentOperations")}</span></Link><Link data-tooltip="Commercial earnings" onClick={onNavigate} href="/dashboard/admin/commercial" aria-current={isCurrent("/dashboard/admin/commercial") ? "page" : undefined}><LearningIcon name="earnings" /><span>Commercial earnings</span></Link></section>}
   </nav>;
+}
+
+function MobileWorkspaceLinks({ isAdmin, isCompany, onNavigate }: Pick<WorkspaceAccess, "isAdmin" | "isCompany"> & { onNavigate: () => void }) {
+  if (!isAdmin && !isCompany) return null;
+  return <div className="mobile-dashboard-workspaces">
+    {isCompany && <section><p className="eyebrow">Company learning</p><Link onClick={onNavigate} href="/dashboard/company"><LearningIcon name="organization" />Company learning</Link></section>}
+    {isAdmin && <section><p className="eyebrow">Admin Reviews</p><Link onClick={onNavigate} href="/dashboard/admin/instructors"><LearningIcon name="instructor-review" />Instructor reviews</Link><Link onClick={onNavigate} href="/dashboard/admin/courses"><LearningIcon name="course-review" />Course reviews</Link><Link onClick={onNavigate} href="/dashboard/admin/providers"><LearningIcon name="organization" />Provider verification</Link><Link onClick={onNavigate} href="/dashboard/admin/payments"><LearningIcon name="payment-operations" />Payment operations</Link><Link onClick={onNavigate} href="/dashboard/admin/commercial"><LearningIcon name="earnings" />Commercial earnings</Link></section>}
+  </div>;
 }
 
 function LanguageMenu({ open, onToggle, menuRef }: { open: boolean; onToggle: () => void; menuRef: React.RefObject<HTMLDivElement | null> }) {
@@ -67,7 +77,7 @@ function AccountMenu({ userEmail, displayName, avatarUrl, open, onToggle, menuRe
   </div>;
 }
 
-export function LearningShellNavigation({ children, initialSidebarCollapsed, isInstructor, isAdmin, userEmail, displayName, avatarUrl }: { children: React.ReactNode; initialSidebarCollapsed: boolean; userEmail: string; displayName: string | null; avatarUrl: string | null } & WorkspaceAccess) {
+export function LearningShellNavigation({ children, initialSidebarCollapsed, isInstructor, isAdmin, isCompany, userEmail, displayName, avatarUrl }: { children: React.ReactNode; initialSidebarCollapsed: boolean; userEmail: string; displayName: string | null; avatarUrl: string | null } & WorkspaceAccess) {
   const { locale, setLocale, t } = useLanguage();
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(initialSidebarCollapsed);
@@ -77,7 +87,7 @@ export function LearningShellNavigation({ children, initialSidebarCollapsed, isI
   const accountRef = useRef<HTMLDivElement>(null);
   const mobileRef = useRef<HTMLDivElement>(null);
   const isActive = (href: string) => pathname === href;
-  const bottomNavigation = isInstructor ? mobileInstructorNavigation : mobileNavigation;
+  const bottomNavigation = isInstructor ? [...mobileInstructorNavigation, ...(isCompany ? [mobileCompanyNavigation] : [])] : isCompany ? [...mobileNavigation.slice(0, 4), mobileCompanyNavigation] : mobileNavigation;
   const isBottomActive = (href: string) => href === "/dashboard/instructor/courses" ? pathname === href || /^\/dashboard\/instructor\/courses\/\d+/.test(pathname) : href === "/dashboard/instructor/organizations" ? pathname.startsWith(href) : isActive(href);
 
   useEffect(() => {
@@ -101,7 +111,7 @@ export function LearningShellNavigation({ children, initialSidebarCollapsed, isI
       <button className="sidebar-collapse-button" type="button" aria-label={collapsed ? "Expand dashboard navigation" : "Collapse dashboard navigation"} aria-expanded={!collapsed} onClick={() => setCollapsed((current) => { const next = !current; document.cookie = `${sidebarPreferenceKey}=${next}; path=/; max-age=31536000; samesite=lax`; return next; })}><LearningIcon name="collapse" /></button>
       <LanguageMenu open={openPanel === "language"} onToggle={() => togglePanel("language")} menuRef={languageRef} />
       <nav aria-label="Learning navigation">{navigation.map((item) => { const active = !item.external && isActive(item.href); const label = t(item.labelKey); return item.external ? <a data-tooltip={label} href={item.href} target="_blank" rel="noreferrer" key={item.labelKey}><LearningIcon name={item.icon} /><span>{label}</span><span className="sr-only"> (opens Growvelt Jobs in a new tab)</span></a> : <Link className={active ? "active" : ""} data-tooltip={label} aria-current={active ? "page" : undefined} href={item.href} key={item.labelKey}><LearningIcon name={item.icon} /><span>{label}</span></Link>; })}</nav>
-      <WorkspaceLinks isInstructor={isInstructor} isAdmin={isAdmin} pathname={pathname} />
+      <WorkspaceLinks isInstructor={isInstructor} isAdmin={isAdmin} isCompany={isCompany} pathname={pathname} />
       <div className="sidebar-bottom"><p className="eyebrow">Growvelt Learning</p><p>Learn, teach, and grow from one account.</p><Link href="/teach/apply">{t("nav.teach")}</Link></div>
     </aside>
     <div className="shell-content">
@@ -114,6 +124,7 @@ export function LearningShellNavigation({ children, initialSidebarCollapsed, isI
             <div className="mobile-dashboard-identity"><span className="dashboard-avatar" aria-hidden="true">{avatarUrl ? <img src={avatarUrl} alt="" /> : (displayName || userEmail).trim().charAt(0).toUpperCase() || "G"}</span><div><small>Signed in as</small><strong>{userEmail}</strong></div></div>
             <div className="mobile-dashboard-language"><label htmlFor="mobile-dashboard-language-select">{t("language.label")}</label><select id="mobile-dashboard-language-select" value={locale} onChange={(event) => setLocale(event.target.value as typeof locale)}>{languageOptions.map((language) => <option value={language.code} key={language.code}>{language.label}</option>)}</select><small>{t("language.browserRegion")}</small></div>
             <nav aria-label="Mobile dashboard links"><Link onClick={() => setOpenPanel(null)} href="/dashboard/profile"><LearningIcon name="profile" />{t("nav.profile")}</Link><Link onClick={() => setOpenPanel(null)} href="/dashboard/saved-courses"><LearningIcon name="heart" />{t("nav.saved")}</Link><Link onClick={() => setOpenPanel(null)} href="/dashboard/settings"><LearningIcon name="settings" />{t("nav.settings")}</Link></nav>
+            <MobileWorkspaceLinks isAdmin={isAdmin} isCompany={isCompany} onNavigate={() => setOpenPanel(null)} />
             <ThemeControl /><SignOutButton />
           </aside></>}
         </div>
