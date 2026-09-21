@@ -5,6 +5,7 @@ declare
   owner_id uuid := '33333333-3333-4333-8333-333333333501';
   member_id uuid := '33333333-3333-4333-8333-333333333502';
   learner_id uuid := '33333333-3333-4333-8333-333333333503';
+  outsider_id uuid := '33333333-3333-4333-8333-333333333504';
   organization_key bigint;
   course_key bigint;
   insight_row record;
@@ -14,11 +15,13 @@ begin
   insert into auth.users(id,aud,role,email,created_at,updated_at) values
     (owner_id,'authenticated','authenticated','phase2b4-owner@example.test',now(),now()),
     (member_id,'authenticated','authenticated','phase2b4-member@example.test',now(),now()),
-    (learner_id,'authenticated','authenticated','phase2b4-learner@example.test',now(),now()) on conflict(id) do nothing;
+    (learner_id,'authenticated','authenticated','phase2b4-learner@example.test',now(),now()),
+    (outsider_id,'authenticated','authenticated','phase2b4-outsider@example.test',now(),now()) on conflict(id) do nothing;
   insert into public.profiles(id,email,full_name,onboarding_status) values
     (owner_id,'phase2b4-owner@example.test','Phase 2B4 Owner','complete'),
     (member_id,'phase2b4-member@example.test','Phase 2B4 Member','complete'),
-    (learner_id,'phase2b4-learner@example.test','Phase 2B4 Learner','complete') on conflict(id) do nothing;
+    (learner_id,'phase2b4-learner@example.test','Phase 2B4 Learner','complete'),
+    (outsider_id,'phase2b4-outsider@example.test','Phase 2B4 Outsider','complete') on conflict(id) do nothing;
   insert into public.account_capabilities(user_id,capability,status) values
     (owner_id,'instructor','active'),(member_id,'instructor','active') on conflict(user_id,capability) do update set status='active',revoked_at=null,revoked_by=null,reason=null;
   insert into public.instructor_profiles(user_id,approval_status) values(owner_id,'approved'),(member_id,'approved') on conflict(user_id) do update set approval_status='approved';
@@ -45,11 +48,15 @@ begin
   end if;
 
   perform set_config('request.jwt.claim.sub',member_id::text,true);
+  if not exists(select 1 from public.get_own_learning_provider_organization_insights(organization_key) where course_id=course_key) then
+    raise exception 'Active organization member could not read organization reporting';
+  end if;
+  perform set_config('request.jwt.claim.sub',outsider_id::text,true);
   begin
     perform public.get_own_learning_provider_organization_insights(organization_key);
   exception when sqlstate '42501' then blocked := true;
   end;
-  if not blocked then raise exception 'Non-owner could read provider reporting'; end if;
+  if not blocked then raise exception 'Non-member could read organization reporting'; end if;
 end $test$;
 
 do $security$
