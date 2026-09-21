@@ -3,6 +3,7 @@
 import QRCode from "qrcode";
 import { useEffect, useState } from "react";
 import { ActionButton } from "@/app/components/ui/action-button";
+import { VerifiedProviderBadge } from "@/app/components/verified-provider-badge";
 
 type CertificateRendererProps = {
   certificate: {
@@ -10,6 +11,8 @@ type CertificateRendererProps = {
     learnerName: string;
     courseTitle: string;
     instructorName?: string | null;
+    providerName?: string | null;
+    providerVerified?: boolean;
     completedAt: string;
     issuedAt: string;
     status: "issued" | "revoked";
@@ -56,7 +59,7 @@ export function CertificateRenderer({ certificate }: CertificateRendererProps) {
           <div className="certificate-rule" aria-hidden="true" />
           <p className="certificate-intro">For successfully completing the course</p>
           <h2>{certificate.courseTitle}</h2>
-          <p className="certificate-provider">Issued by Growvelt Technologies Limited</p>
+          <p className="certificate-provider">Issued by {certificate.providerName || "Growvelt Technologies Limited"}{certificate.providerName && certificate.providerVerified && <VerifiedProviderBadge />}</p>
           <p className="certificate-instructor">Course Instructor: {certificate.instructorName || "Growvelt Learning"}</p>
         </div>
 

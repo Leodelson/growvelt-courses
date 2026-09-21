@@ -1,5 +1,7 @@
 import { getRequestLocale } from "@/app/lib/i18n-server";
 import { createClient } from "@/app/lib/supabase/server";
+import Link from "next/link";
+import { VerifiedProviderBadge } from "@/app/components/verified-provider-badge";
 
 export const metadata = { title: "Certificate verification" };
 
@@ -27,6 +29,7 @@ export default async function VerifyCertificatePage({ params }: { params: Promis
             <dl>
               {certificate.learner_name && <div><dt>{text.recipient}</dt><dd>{certificate.learner_name}</dd></div>}
               <div><dt>{text.course}</dt><dd>{certificate.course_title}</dd></div>
+              {certificate.provider_name && <div><dt>Provider</dt><dd>{certificate.provider_verified && certificate.provider_slug ? <Link href={`/providers/${certificate.provider_slug}`}>{certificate.provider_name} <VerifiedProviderBadge /></Link> : certificate.provider_name}</dd></div>}
               <div><dt>{text.reference}</dt><dd>{certificate.certificate_code}</dd></div>
             </dl>
           </>
