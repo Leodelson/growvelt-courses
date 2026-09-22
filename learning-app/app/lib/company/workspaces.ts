@@ -46,8 +46,9 @@ export async function getCompanyManagement(workspace: CompanyWorkspace) {
     canManage ? supabase.rpc("list_own_learning_company_paid_courses", { p_workspace_id: workspace.workspace_id }) : Promise.resolve({ data: [], error: null }),
     canManage ? supabase.rpc("list_own_learning_company_paid_course_purchases", { p_workspace_id: workspace.workspace_id }) : Promise.resolve({ data: [], error: null }),
   ]);
-  if (members.error || invitations.error || courses.error || assignments.error || paidCourses.error || paidPurchases.error) throw new Error("Unable to load company workspace details.");
-  return { members: (members.data ?? []) as CompanyMember[], invitations: (invitations.data ?? []) as CompanyManagerInvitation[], courses: (courses.data ?? []) as CompanyAssignableCourse[], assignments: (assignments.data ?? []) as CompanyCourseAssignment[], paidCourses: (paidCourses.data ?? []) as CompanyPaidCourse[], paidPurchases: (paidPurchases.data ?? []) as CompanyPaidCoursePurchase[] };
+  const billingSchemaPending = [paidCourses.error, paidPurchases.error].some((error) => error?.code === "PGRST202" || error?.code === "42883" || /Could not find the function|does not exist/i.test(error?.message ?? ""));
+  if (members.error || invitations.error || courses.error || assignments.error || (!billingSchemaPending && (paidCourses.error || paidPurchases.error))) throw new Error("Unable to load company workspace details.");
+  return { members: (members.data ?? []) as CompanyMember[], invitations: (invitations.data ?? []) as CompanyManagerInvitation[], courses: (courses.data ?? []) as CompanyAssignableCourse[], assignments: (assignments.data ?? []) as CompanyCourseAssignment[], paidCourses: (paidCourses.data ?? []) as CompanyPaidCourse[], paidPurchases: (paidPurchases.data ?? []) as CompanyPaidCoursePurchase[], paidBillingAvailable: !billingSchemaPending };
 }
 
 export async function getOwnCompanyAssignedCourses() {
