@@ -11,6 +11,7 @@ export {
   parsePaystackTestRefundEvent,
   parsePaystackTestTransferEvent,
   parsePaystackChargeSuccess,
+  parsePaystackCompanyChargeSuccess,
   parsePaystackDisputeEvent,
   parsePaystackRefundEvent,
   parsePaystackTransferEvent,

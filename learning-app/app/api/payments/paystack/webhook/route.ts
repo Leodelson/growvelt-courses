@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/app/lib/supabase/admin";
-import { digestPaystackPayload, getPaystackConfig, parsePaystackChargeSuccess, parsePaystackTestDisputeEvent, parsePaystackTestRefundEvent, parsePaystackTestTransferEvent, verifyPaystackSignature } from "@/app/lib/payments/paystack";
+import { digestPaystackPayload, getPaystackConfig, parsePaystackChargeSuccess, parsePaystackCompanyChargeSuccess, parsePaystackTestDisputeEvent, parsePaystackTestRefundEvent, parsePaystackTestTransferEvent, verifyPaystackSignature } from "@/app/lib/payments/paystack";
 import { getOrderNotificationContext, paymentOperationsRecipient, sendPaymentNotification } from "@/app/lib/email/payment-notifications";
 
 export async function POST(request: Request) {
@@ -74,6 +74,23 @@ export async function POST(request: Request) {
       await sendPaymentNotification({ key: `access-revoked:refund:${receipt.event_id}`, type: "access_revoked", recipient: refundContext.email, subject: "Growvelt Learning course access updated", heading: "Course access has ended", message: `Access to ${refundContext.courseTitle} ended after the processed refund. Your historical learning activity remains retained.`, orderId: refundContext.orderId });
     } else if (refundContext && ["failed", "needs_attention"].includes(outcome ?? refund.status)) await sendPaymentNotification({ key: `refund-attention:${receipt.event_id}`, type: "refund_attention", recipient: refundContext.email, subject: "Your Growvelt Learning refund needs attention", heading: "Your refund needs attention", message: `The refund for ${refundContext.courseTitle} is not complete. Growvelt will review it; a pending or attention state is not a completed refund.`, orderId: refundContext.orderId });
     return NextResponse.json({ received: true });
+  }
+  const companyCharge = parsePaystackCompanyChargeSuccess(payload, config.mode);
+  if (companyCharge) {
+    const admin = createAdminClient();
+    const { data, error } = await admin.rpc("finalize_learning_company_paid_course_purchase_by_reference", {
+      p_provider_reference: companyCharge.reference,
+      p_provider_transaction_id: companyCharge.transactionId,
+      p_amount_minor: companyCharge.amountMinor,
+      p_currency: companyCharge.currency,
+      p_domain: companyCharge.domain,
+    });
+    if (error) {
+      console.error("company_learning.payment_webhook_finalization_deferred", { provider: "paystack", reference: companyCharge.reference, code: error.code });
+      return NextResponse.json({ code: "receipt_failed" }, { status: 500 });
+    }
+    const outcome = (data as Array<{ status?: string; granted_seat_count?: number }> | null)?.[0];
+    return NextResponse.json({ received: true, processing: outcome?.status === "paid" ? "paid_and_assigned" : "already_processed", grantedSeats: outcome?.granted_seat_count ?? 0 });
   }
   const parsed = parsePaystackChargeSuccess(payload, config.mode);
   if (!parsed) return new NextResponse(null, { status: 204 });

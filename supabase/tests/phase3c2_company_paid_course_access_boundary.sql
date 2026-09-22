@@ -36,11 +36,11 @@ begin
   begin perform public.start_learning_company_paid_course_checkout(purchase_key); exception when sqlstate '42501' then blocked := true; end;
   if not blocked then raise exception 'Outsider started a company checkout'; end if;
   perform set_config('request.jwt.claim.sub',owner_id::text,true);
-  select result.granted_seat_count into granted_count from public.finalize_learning_company_paid_course_purchase(purchase_key,payment_reference,'phase3c2-provider-transaction') result;
+  select result.granted_seat_count into granted_count from public.finalize_learning_company_paid_course_purchase_by_reference(payment_reference,'phase3c2-provider-transaction',1500000,'NGN','test') result;
   if granted_count <> 2 or not exists(select 1 from public.learning_company_paid_course_purchases where id=purchase_key and status='paid' and paid_at is not null) then raise exception 'Trusted finalization did not complete the company purchase'; end if;
   if (select count(*) from public.enrollments where learner_id in(employee_one_id,employee_two_id) and course_id=course_key and status='active') <> 2 then raise exception 'Paid purchase did not grant employee enrollments'; end if;
   if (select count(*) from public.learning_company_course_assignments where workspace_id=workspace_key and course_id=course_key and assigned_user_id in(employee_one_id,employee_two_id) and status='active') <> 2 then raise exception 'Paid purchase did not create private company assignments'; end if;
-  select result.granted_seat_count into granted_count from public.finalize_learning_company_paid_course_purchase(purchase_key,payment_reference,'phase3c2-provider-transaction') result;
+  select result.granted_seat_count into granted_count from public.finalize_learning_company_paid_course_purchase_by_reference(payment_reference,'phase3c2-provider-transaction',1500000,'NGN','test') result;
   if granted_count <> 2 then raise exception 'Finalization was not idempotent'; end if;
 end $test$;
 

@@ -202,6 +202,44 @@ export function parsePaystackChargeSuccess(value: unknown, expectedDomain: Payst
   };
 }
 
+export function parsePaystackCompanyChargeSuccess(value: unknown, expectedDomain: PaystackDomain): ChargeSuccess | null {
+  if (!value || typeof value !== "object") return null;
+  const event = value as { event?: unknown; data?: unknown };
+  if (event.event !== "charge.success" || !event.data || typeof event.data !== "object") return null;
+  const data = event.data as Record<string, unknown>;
+  const reference = typeof data.reference === "string" ? data.reference : "";
+  const transactionId = typeof data.id === "number" && Number.isSafeInteger(data.id)
+    ? String(data.id)
+    : typeof data.id === "string" && /^\d+$/.test(data.id) ? data.id : "";
+  if (
+    !/^CP-[A-F0-9]{32}$/.test(reference)
+    || !transactionId
+    || !Number.isSafeInteger(data.amount)
+    || Number(data.amount) <= 0
+    || data.currency !== "NGN"
+    || data.domain !== expectedDomain
+    || data.status !== "success"
+  ) return null;
+  return {
+    eventId: expectedDomain === "test" ? `company.charge.success:${transactionId}` : `company.charge.success:${expectedDomain}:${transactionId}`,
+    reference,
+    transactionId,
+    amountMinor: Number(data.amount),
+    currency: "NGN",
+    domain: expectedDomain,
+    payload: {
+      transaction_id: transactionId,
+      reference,
+      amount: data.amount,
+      currency: data.currency,
+      domain: data.domain,
+      status: data.status,
+      channel: data.channel ?? null,
+      paid_at: data.paid_at ?? null,
+    },
+  };
+}
+
 export function parsePaystackTestDisputeEvent(value: unknown) {
   return parsePaystackDisputeEvent(value, "test");
 }
