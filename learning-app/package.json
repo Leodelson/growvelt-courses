@@ -50,6 +50,7 @@
     "test:organizations:provider-insights:local": "node scripts/test-phase2b4-provider-insights-local.mjs",
     "test:company-learning:foundation:local": "node scripts/test-phase3a1-company-learning-local.mjs",
     "test:company-learning:paid-purchases:local": "node scripts/test-phase3c1-company-paid-course-purchases-local.mjs",
+    "test:company-learning:paid-access-boundary:local": "node scripts/test-phase3c2-company-paid-course-access-boundary-local.mjs",
     "test:organizations:course-attribution:local": "node scripts/test-phase2a3-organization-course-attribution-local.mjs",
     "test:account-deletion:organization-guard:local": "node scripts/test-account-deletion-organization-guard-local.mjs",
     "test:account-deletion:retention:local": "node scripts/test-account-deletion-retention-local.mjs",
