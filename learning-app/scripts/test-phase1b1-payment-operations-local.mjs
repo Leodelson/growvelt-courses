@@ -10,13 +10,19 @@ function run(args,input=""){return new Promise((resolve,reject)=>{const child=sp
 const target=await run(["inspect","--format","{{.Name}}|{{.State.Status}}|{{(index (index .NetworkSettings.Ports \"5432/tcp\") 0).HostPort}}",name]);
 if(target!==`/${name}|running|55432`) throw new Error(`Refusing unexpected database target: ${target}`);
 const migration=await readFile(path.join(root,"supabase","migrations","20260828000000_add_payment_operations_recovery.sql"),"utf8");
+const liveDomainMigration=await readFile(path.join(root,"supabase","migrations","20260902000000_add_paystack_live_domain_foundation.sql"),"utf8");
+const paymentFunctionLockdown=await readFile(path.join(root,"supabase","migrations","20260941000000_lock_down_payment_service_functions.sql"),"utf8");
 let tests=await readFile(path.join(root,"supabase","tests","phase1b1_payment_operations.sql"),"utf8");
 const authColumns=await run(["exec","-i",name,"psql","-X","-A","-t","-v","ON_ERROR_STOP=1","-U","postgres","-d","postgres"],"select string_agg(column_name,',') from information_schema.columns where table_schema='auth' and table_name='users' and column_name in('email_confirmed_at','confirmed_at','is_anonymous');");
 if(!authColumns.includes("email_confirmed_at")) tests=tests.replaceAll("email_confirmed_at","confirmed_at");
 if(!authColumns.includes("is_anonymous")){const boundary=tests.indexOf("insert into public.account_capabilities");tests=tests.slice(0,boundary).replace(",is_anonymous)",")").replaceAll(",false)",")")+tests.slice(boundary);}
+const paystackDomainPresent=await run([
+  "exec","-i",name,"psql","-X","-A","-t","-v","ON_ERROR_STOP=1","-U","postgres","-d","postgres",
+],"select exists (select 1 from information_schema.columns where table_schema='public' and table_name='learning_payment_attempts' and column_name='paystack_domain');");
+if(paystackDomainPresent.trim()!=="t") await run(["exec","-i",name,"psql","-X","-v","ON_ERROR_STOP=1","-U","postgres","-d","postgres"],liveDomainMigration);
 const phase1b1AlreadyPresent=await run([
   "exec","-i",name,"psql","-X","-A","-t","-v","ON_ERROR_STOP=1","-U","postgres","-d","postgres",
 ],"select exists (select 1 from information_schema.columns where table_schema='public' and table_name='learning_payment_provider_events' and column_name='processing_attempts');");
 const setup=phase1b1AlreadyPresent.trim()==="t" ? "" : migration;
-await run(["exec","-i",name,"psql","-X","-v","ON_ERROR_STOP=1","-U","postgres","-d","postgres"],`begin;\n${setup}\n${tests}\nrollback;`);
+await run(["exec","-i",name,"psql","-X","-v","ON_ERROR_STOP=1","-U","postgres","-d","postgres"],`begin;\n${setup}\n${paymentFunctionLockdown}\n${tests}\nrollback;`);
 console.log(`PASS Phase 1B1 payment recovery tests on isolated local Supabase (${setup ? "migration applied transactionally" : "declarative schema already synchronized"})`);

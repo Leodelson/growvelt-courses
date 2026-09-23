@@ -1,0 +1,58 @@
+-- Keep financial transitions server-only after later migrations replace their
+-- function bodies. Browser roles must never invoke payment state changes.
+
+revoke all on function
+  public.receive_paystack_test_charge_event(text,text,text,text,bigint,text,text,jsonb),
+  public.process_paystack_test_charge_event(bigint),
+  public.receive_paystack_test_verified_transaction(text,text,bigint,text,text,jsonb,uuid),
+  public.recover_paystack_test_charge_event(bigint,uuid),
+  public.abandon_verified_paystack_test_attempt(text,uuid,text,text),
+  public.list_learning_payment_operations(uuid,text,integer),
+  public.request_paystack_test_full_refund(text,uuid,uuid,text,text,text),
+  public.mark_paystack_test_refund_submitting(bigint,uuid),
+  public.record_paystack_test_refund_submission(bigint,text,text,text,uuid),
+  public.receive_paystack_test_refund_event(text,text,text,text,text,bigint,text,text,jsonb),
+  public.finalize_paystack_test_full_refund(bigint,bigint,text,uuid),
+  public.process_paystack_test_refund_event(bigint),
+  public.receive_paystack_test_verified_refund(bigint,text,text,text,bigint,text,text,jsonb,uuid),
+  public.recover_paystack_test_refund_event(bigint,uuid),
+  public.get_learning_refund_case_for_recovery(uuid,bigint),
+  public.list_learning_refund_cases(uuid,bigint),
+  public.list_learning_payment_case_events(uuid,bigint),
+  public.reconcile_paystack_test_refunds(),
+  public.receive_paystack_test_dispute_event(text,text,text,text,text,text,text,bigint,text,text,text,text,timestamptz,jsonb),
+  public.finalize_paystack_test_chargeback(bigint,bigint,text,uuid),
+  public.process_paystack_test_dispute_event(bigint),
+  public.receive_paystack_test_verified_dispute(bigint,text,text,bigint,text,text,text,text,timestamptz,jsonb,uuid),
+  public.get_learning_dispute_case_for_recovery(uuid,bigint),
+  public.list_learning_dispute_cases(uuid,bigint),
+  public.reconcile_paystack_test_disputes()
+from public, anon, authenticated;
+
+grant execute on function
+  public.receive_paystack_test_charge_event(text,text,text,text,bigint,text,text,jsonb),
+  public.process_paystack_test_charge_event(bigint),
+  public.receive_paystack_test_verified_transaction(text,text,bigint,text,text,jsonb,uuid),
+  public.recover_paystack_test_charge_event(bigint,uuid),
+  public.abandon_verified_paystack_test_attempt(text,uuid,text,text),
+  public.list_learning_payment_operations(uuid,text,integer),
+  public.request_paystack_test_full_refund(text,uuid,uuid,text,text,text),
+  public.mark_paystack_test_refund_submitting(bigint,uuid),
+  public.record_paystack_test_refund_submission(bigint,text,text,text,uuid),
+  public.receive_paystack_test_refund_event(text,text,text,text,text,bigint,text,text,jsonb),
+  public.finalize_paystack_test_full_refund(bigint,bigint,text,uuid),
+  public.process_paystack_test_refund_event(bigint),
+  public.receive_paystack_test_verified_refund(bigint,text,text,text,bigint,text,text,jsonb,uuid),
+  public.recover_paystack_test_refund_event(bigint,uuid),
+  public.get_learning_refund_case_for_recovery(uuid,bigint),
+  public.list_learning_refund_cases(uuid,bigint),
+  public.list_learning_payment_case_events(uuid,bigint),
+  public.reconcile_paystack_test_refunds(),
+  public.receive_paystack_test_dispute_event(text,text,text,text,text,text,text,bigint,text,text,text,text,timestamptz,jsonb),
+  public.finalize_paystack_test_chargeback(bigint,bigint,text,uuid),
+  public.process_paystack_test_dispute_event(bigint),
+  public.receive_paystack_test_verified_dispute(bigint,text,text,bigint,text,text,text,text,timestamptz,jsonb,uuid),
+  public.get_learning_dispute_case_for_recovery(uuid,bigint),
+  public.list_learning_dispute_cases(uuid,bigint),
+  public.reconcile_paystack_test_disputes()
+to postgres, service_role;

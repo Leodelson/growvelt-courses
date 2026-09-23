@@ -1,6 +1,6 @@
 -- Phase 1B2B dispute/chargeback regression suite. Isolated local database only.
 begin;
-insert into auth.users(id,aud,role,email,encrypted_password,confirmed_at,raw_app_meta_data,raw_user_meta_data,created_at,updated_at) values
+insert into auth.users(id,aud,role,email,encrypted_password,email_confirmed_at,raw_app_meta_data,raw_user_meta_data,created_at,updated_at) values
 ('15000000-0000-4000-a000-000000000001','authenticated','authenticated','learner@phase1b2b.invalid','',now(),'{}','{"full_name":"Dispute Learner"}',now(),now()),
 ('15000000-0000-4000-a000-000000000002','authenticated','authenticated','instructor@phase1b2b.invalid','',now(),'{}','{"full_name":"Dispute Instructor"}',now(),now()),
 ('15000000-0000-4000-a000-000000000003','authenticated','authenticated','admin@phase1b2b.invalid','',now(),'{}','{"full_name":"Dispute Admin"}',now(),now());
@@ -44,7 +44,7 @@ begin
 end;$won$;
 
 -- A second learner avoids the unique learner/course entitlement relationship.
-insert into auth.users(id,aud,role,email,encrypted_password,confirmed_at,raw_app_meta_data,raw_user_meta_data,created_at,updated_at) values('15000000-0000-4000-a000-000000000004','authenticated','authenticated','learner2@phase1b2b.invalid','',now(),'{}','{"full_name":"Dispute Learner Two"}',now(),now());
+insert into auth.users(id,aud,role,email,encrypted_password,email_confirmed_at,raw_app_meta_data,raw_user_meta_data,created_at,updated_at) values('15000000-0000-4000-a000-000000000004','authenticated','authenticated','learner2@phase1b2b.invalid','',now(),'{}','{"full_name":"Dispute Learner Two"}',now(),now());
 insert into public.learning_orders(learner_id,course_id,instructor_id,course_title_snapshot,instructor_name_snapshot,gross_amount_minor,currency,status,commercial_terms_version)
 values('15000000-0000-4000-a000-000000000004',:dispute_course_id,'15000000-0000-4000-a000-000000000002','[TEST] Phase 1B2B Dispute','Dispute Instructor',10000,'NGN','payment_pending','phase1b2b-test-v1') returning id,order_reference \gset lost_order_
 insert into public.learning_payment_attempts(order_id,provider,provider_reference,provider_transaction_id,amount_minor,currency,status) values(:lost_order_id,'paystack',:'lost_order_order_reference','150002',10000,'NGN','pending');

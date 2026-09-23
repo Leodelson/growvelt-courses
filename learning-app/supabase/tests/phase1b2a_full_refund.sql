@@ -1,7 +1,7 @@
 -- Phase 1B2A full-refund regression suite. Isolated local database only.
 begin;
 
-insert into auth.users(id,aud,role,email,encrypted_password,confirmed_at,raw_app_meta_data,raw_user_meta_data,created_at,updated_at)
+insert into auth.users(id,aud,role,email,encrypted_password,email_confirmed_at,raw_app_meta_data,raw_user_meta_data,created_at,updated_at)
 values
 ('14000000-0000-4000-a000-000000000001','authenticated','authenticated','learner@phase1b2a.invalid','',now(),'{}','{"full_name":"Refund Learner"}',now(),now()),
 ('14000000-0000-4000-a000-000000000002','authenticated','authenticated','instructor@phase1b2a.invalid','',now(),'{}','{"full_name":"Refund Instructor"}',now(),now()),

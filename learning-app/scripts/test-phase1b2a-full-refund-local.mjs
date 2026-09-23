@@ -10,6 +10,7 @@ function run(args,input=""){return new Promise((resolve,reject)=>{const child=sp
 const target=await run(["inspect","--format","{{.Name}}|{{.State.Status}}|{{(index (index .NetworkSettings.Ports \"5432/tcp\") 0).HostPort}}",name]);
 if(target!==`/${name}|running|55432`) throw new Error(`Refusing unexpected database target: ${target}`);
 const migration=await readFile(path.join(root,"supabase","migrations","20260830000000_add_full_refund_foundation.sql"),"utf8");
+const paymentFunctionLockdown=await readFile(path.join(root,"supabase","migrations","20260941000000_lock_down_payment_service_functions.sql"),"utf8");
 const tests=await readFile(path.join(root,"supabase","tests","phase1b2a_full_refund.sql"),"utf8");
 const present=await run(["exec","-i",name,"psql","-X","-A","-t","-v","ON_ERROR_STOP=1","-U","postgres","-d","postgres"],"select exists(select 1 from information_schema.tables where table_schema='public' and table_name='learning_payment_case_events');");
 if(present.trim()!=="t") await run(["exec","-i",name,"psql","-X","-v","ON_ERROR_STOP=1","-U","postgres","-d","postgres"],migration);
@@ -25,5 +26,6 @@ revoke all on function public.get_learning_refund_case_for_recovery(uuid,bigint)
 grant execute on function public.get_learning_refund_case_for_recovery(uuid,bigint) to postgres,service_role;`;
   await run(["exec","-i",name,"psql","-X","-v","ON_ERROR_STOP=1","-U","postgres","-d","postgres"],definitions);
 }
+await run(["exec","-i",name,"psql","-X","-v","ON_ERROR_STOP=1","-U","postgres","-d","postgres"],paymentFunctionLockdown);
 await run(["exec","-i",name,"psql","-X","-v","ON_ERROR_STOP=1","-U","postgres","-d","postgres"],tests);
 console.log("PASS Phase 1B2A full refund lifecycle on isolated local Supabase");
