@@ -33,11 +33,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ wor
   if (error || !checkout) return NextResponse.json({ code: error?.code === "42501" ? "company_access_denied" : "purchase_unavailable" }, { status: error?.code === "42501" ? 403 : 400 });
   const admin = createAdminClient();
   try {
+    // Record submission before contacting Paystack so a provider checkout can
+    // never be created without a matching, recoverable database attempt.
+    const { error: pendingError } = await admin.rpc("mark_learning_company_paid_course_checkout_pending", { p_provider_reference: checkout.provider_reference });
+    if (pendingError) throw pendingError;
     const callback = new URL(getPaystackTestConfig(true).callbackUrl);
     callback.searchParams.set("reference", checkout.provider_reference);
     const initialized = await initializePaystackTestTransaction({ email: user.email, amountMinor: checkout.amount_minor, reference: checkout.provider_reference, callbackUrl: callback.href });
-    const { error: pendingError } = await admin.rpc("mark_learning_company_paid_course_checkout_pending", { p_provider_reference: checkout.provider_reference });
-    if (pendingError) throw pendingError;
     return NextResponse.json({ authorizationUrl: initialized.authorizationUrl, reference: checkout.provider_reference });
   } catch (error) {
     const providerError = describeProviderError(error);
