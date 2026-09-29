@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/app/lib/supabase/admin";
-import { digestPaystackPayload, getPaystackConfig, parsePaystackChargeSuccess, parsePaystackCompanyChargeSuccess, parsePaystackTestDisputeEvent, parsePaystackTestRefundEvent, parsePaystackTestTransferEvent, verifyPaystackCompanyTestTransaction, verifyPaystackSignature } from "@/app/lib/payments/paystack";
+import { digestPaystackPayload, getPaystackConfig, parsePaystackChargeSuccess, parsePaystackCompanyChargeSuccess, parsePaystackTestDisputeEvent, parsePaystackTestRefundEvent, parsePaystackTestTransferEvent, verifyPaystackCompanyTransaction, verifyPaystackSignature } from "@/app/lib/payments/paystack";
 import { getOrderNotificationContext, paymentOperationsRecipient, sendPaymentNotification } from "@/app/lib/email/payment-notifications";
 import { recordCompanyPaymentManualReview } from "@/app/lib/company/payment-exceptions";
 
@@ -83,8 +83,7 @@ export async function POST(request: Request) {
     // transaction independently with Paystack.
     let verified;
     try {
-      if (config.mode !== "test") throw new Error("Company live payments are not activated.");
-      verified = await verifyPaystackCompanyTestTransaction(companyCharge.reference);
+      verified = await verifyPaystackCompanyTransaction(companyCharge.reference, config.mode);
       if (verified.transactionId !== companyCharge.transactionId || verified.amountMinor !== companyCharge.amountMinor) throw new Error("Company payment event did not match Paystack verification.");
     } catch (error) {
       console.error("company_learning.payment_webhook_verification_deferred", { reference: companyCharge.reference, message: error instanceof Error ? error.message : "Verification failed" });

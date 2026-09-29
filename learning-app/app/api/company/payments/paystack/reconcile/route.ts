@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCompanyPaymentForManager } from "@/app/lib/company/payment-status";
-import { verifyPaystackCompanyTestTransaction } from "@/app/lib/payments/paystack";
+import { getPaystackConfig, verifyPaystackCompanyTransaction } from "@/app/lib/payments/paystack";
 import { isSameOriginRequest } from "@/app/lib/security/request-origin";
 import { createAdminClient } from "@/app/lib/supabase/admin";
 import { createClient } from "@/app/lib/supabase/server";
@@ -18,7 +18,7 @@ export async function POST(request: Request) {
     if (!purchase) return NextResponse.json({ code: "payment_not_found" }, { status: 404 });
     if (purchase.status === "paid") return NextResponse.json({ status: "paid" });
     if (purchase.status !== "checkout_pending" || purchase.attemptStatus !== "pending") return NextResponse.json({ code: "payment_not_pending" }, { status: 409 });
-    const verified = await verifyPaystackCompanyTestTransaction(reference);
+    const verified = await verifyPaystackCompanyTransaction(reference, getPaystackConfig(false).mode);
     const admin = createAdminClient();
     const { data, error } = await admin.rpc("finalize_learning_company_paid_course_purchase_by_reference", {
       p_provider_reference: reference,

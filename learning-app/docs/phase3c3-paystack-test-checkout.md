@@ -67,7 +67,15 @@ migrations through the repository's migration workflow.
 
 ## Live cutover later
 
-After Paystack approves Live Mode, configure Production separately with
+Paystack approval alone does **not** authorize switching Production. Company
+live checkout remains off by default (`PAYMENTS_LIVE_COMPANY_CHECKOUT_ENABLED`
+and `PAYMENTS_LIVE_COMPANY_ACCOUNTING_READY` are absent). These are cutover
+switches, not proof that accounting is implemented. Before a controlled cutover, apply and verify the company payment-
+domain migration, finish marketplace accounting for company sales, review live
+refund/dispute handling and drain in-flight Test Mode attempts. Then review the
+production webhook, callback and kill switches with the owner.
+
+Only after those gates pass, configure Production separately with
 `PAYSTACK_MODE=live`, `PAYSTACK_LIVE_SECRET_KEY`, the exact production callback,
-and a separately approved checkout enablement window. Do not reuse the Preview
-test secret or enable both modes in one environment.
+and an explicitly approved checkout window. Remove the legacy test secret from
+that environment. Do not enable both domains with one webhook endpoint.
