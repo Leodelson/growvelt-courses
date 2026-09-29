@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/app/lib/supabase/admin";
 import { digestPaystackPayload, getPaystackConfig, parsePaystackChargeSuccess, parsePaystackCompanyChargeSuccess, parsePaystackTestDisputeEvent, parsePaystackTestRefundEvent, parsePaystackTestTransferEvent, verifyPaystackCompanyTestTransaction, verifyPaystackSignature } from "@/app/lib/payments/paystack";
 import { getOrderNotificationContext, paymentOperationsRecipient, sendPaymentNotification } from "@/app/lib/email/payment-notifications";
+import { recordCompanyPaymentManualReview } from "@/app/lib/company/payment-exceptions";
 
 export async function POST(request: Request) {
   let config; try { config = getPaystackConfig(false); } catch { return NextResponse.json({ code: "not_configured" }, { status: 503 }); }
@@ -99,6 +100,11 @@ export async function POST(request: Request) {
     });
     if (error) {
       console.error("company_learning.payment_webhook_finalization_deferred", { provider: "paystack", reference: companyCharge.reference, code: error.code });
+      const manualReviewRecorded = await recordCompanyPaymentManualReview(companyCharge.reference).catch(() => false);
+      if (manualReviewRecorded) {
+        console.error("company_learning.payment_webhook_manual_review", { provider: "paystack", reference: companyCharge.reference });
+        return NextResponse.json({ received: true, processing: "manual_review" });
+      }
       return NextResponse.json({ code: "receipt_failed" }, { status: 500 });
     }
     const outcome = (data as Array<{ status?: string; granted_seat_count?: number }> | null)?.[0];
