@@ -18,7 +18,7 @@ This is a status checkpoint, not a replacement for the agreed roadmap.
 
 1. Preserve the confirmed Test Mode company purchase flow.
 2. Add explicit payment-domain binding for company attempts and test the database migration.
-3. Complete live-capable learner and company charge paths behind independent disabled switches, including verified webhook/reconciliation and recovery.
+3. Implement the [company commercial accounting boundary](phase3c-company-commercial-accounting-design.md), then complete live-capable learner and company charge paths behind independent disabled switches, including verified webhook/reconciliation and recovery. The company route also requires a positive database accounting-capability check; a Vercel flag alone cannot enable it.
 4. Review live refunds, disputes, payout boundaries, operator procedures and production configuration before any real-money cutover.
 5. With explicit approval, enable a controlled low-value first live transaction and verify fulfillment, ledger, operations and rollback/kill switches.
 6. Finish remaining Phase 3C business billing scope, then Phase 4, Phase 5 and Phase 6 in order. Continue fixing obvious UI defects along the way.

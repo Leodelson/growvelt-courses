@@ -24,10 +24,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ wor
   let config;
   try {
     config = getPaystackConfig(true);
-    if (config.mode === "live" && (
-      process.env.PAYMENTS_LIVE_COMPANY_CHECKOUT_ENABLED !== "true"
-      || process.env.PAYMENTS_LIVE_COMPANY_ACCOUNTING_READY !== "true"
-    )) throw new Error("Live company checkout is disabled pending commercial accounting review.");
+    if (config.mode === "live" && process.env.PAYMENTS_LIVE_COMPANY_CHECKOUT_ENABLED !== "true") {
+      throw new Error("Live company checkout is disabled.");
+    }
   } catch { return NextResponse.json({ code: "checkout_disabled", message: "Company checkout is not enabled in this environment." }, { status: 503 }); }
   const { workspaceId: workspaceText, purchaseId: purchaseText } = await params;
   const workspaceId = Number(workspaceText); const purchaseId = Number(purchaseText);
@@ -35,10 +34,21 @@ export async function POST(request: Request, { params }: { params: Promise<{ wor
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user?.email) return NextResponse.json({ code: "not_authenticated" }, { status: 401 });
+  const admin = createAdminClient();
+  if (config.mode === "live") {
+    // An environment flag cannot attest that company sales, refunds and
+    // instructor liabilities have a working database implementation.
+    // The RPC does not exist until that accounting migration is approved;
+    // an absent or failing capability check must keep real-money checkout off.
+    const { data: accountingReady, error: accountingError } = await admin.rpc("is_learning_company_live_accounting_ready");
+    if (accountingError || accountingReady !== true) {
+      console.error("company_learning.live_accounting_not_ready", { code: accountingError?.code ?? "not_ready" });
+      return NextResponse.json({ code: "checkout_disabled", message: "Company checkout is not enabled in this environment." }, { status: 503 });
+    }
+  }
   const { data, error } = await supabase.rpc("start_learning_company_paid_course_checkout", { p_purchase_id: purchaseId });
   const checkout = (data as CheckoutRow[] | null)?.[0];
   if (error || !checkout) return NextResponse.json({ code: error?.code === "42501" ? "company_access_denied" : "purchase_unavailable" }, { status: error?.code === "42501" ? 403 : 400 });
-  const admin = createAdminClient();
   const { error: domainError } = await admin.rpc("set_learning_company_paid_checkout_domain", {
     p_provider_reference: checkout.provider_reference,
     p_domain: config.mode,

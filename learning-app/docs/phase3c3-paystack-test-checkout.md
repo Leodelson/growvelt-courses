@@ -69,8 +69,10 @@ migrations through the repository's migration workflow.
 
 Paystack approval alone does **not** authorize switching Production. Company
 live checkout remains off by default (`PAYMENTS_LIVE_COMPANY_CHECKOUT_ENABLED`
-and `PAYMENTS_LIVE_COMPANY_ACCOUNTING_READY` are absent). These are cutover
-switches, not proof that accounting is implemented. Before a controlled cutover, apply and verify the company payment-
+is absent). Even if that switch is enabled, the server requires a positive
+`is_learning_company_live_accounting_ready` database capability check, which
+does not exist yet. A configuration switch is not proof that accounting is
+implemented. Before a controlled cutover, apply and verify the company payment-
 domain migration, finish marketplace accounting for company sales, review live
 refund/dispute handling and drain in-flight Test Mode attempts. Then review the
 production webhook, callback and kill switches with the owner.
