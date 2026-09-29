@@ -98,6 +98,28 @@ export async function verifyPaystackTestTransaction(reference: string): Promise<
   return { reference, transactionId, amountMinor: Number(data.amount), currency: "NGN", domain: "test", status: data.status, paidAt: typeof data.paid_at === "string" ? data.paid_at : null };
 }
 
+export async function verifyPaystackCompanyTestTransaction(reference: string) {
+  if (!/^CP-[A-F0-9]{32}$/.test(reference)) throw new Error("Invalid company payment reference.");
+  const { secretKey } = getPaystackTestConfig(false);
+  const response = await fetch(`https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`, {
+    headers: { Authorization: `Bearer ${secretKey}` }, cache: "no-store", signal: AbortSignal.timeout(15000),
+  });
+  const result = await response.json().catch(() => null) as { status?: unknown; data?: Record<string, unknown> } | null;
+  const data = result?.data;
+  const transactionId = typeof data?.id === "number" && Number.isSafeInteger(data.id) ? String(data.id)
+    : typeof data?.id === "string" && /^\d+$/.test(data.id) ? data.id : "";
+  const amountMinor = typeof data?.amount === "number" ? data.amount : typeof data?.amount === "string" && /^\d+$/.test(data.amount) ? Number(data.amount) : NaN;
+  const requestedAmountMinor = typeof data?.requested_amount === "number" ? data.requested_amount
+    : typeof data?.requested_amount === "string" && /^\d+$/.test(data.requested_amount) ? Number(data.requested_amount) : NaN;
+  if (!response.ok || result?.status !== true || data?.reference !== reference || !transactionId
+    || data.status !== "success" || data.domain !== "test" || data.currency !== "NGN"
+    || !Number.isSafeInteger(amountMinor) || !Number.isSafeInteger(requestedAmountMinor)
+    || requestedAmountMinor <= 0 || amountMinor < requestedAmountMinor) {
+    throw new Error("Paystack company payment verification was inconclusive.");
+  }
+  return { reference, transactionId, amountMinor, requestedAmountMinor, currency: "NGN" as const, domain: "test" as const };
+}
+
 export async function verifyPaystackTransaction(reference: string, expectedDomain: PaystackDomain) {
   if (!/^GL-[A-F0-9]{32}$/.test(reference)) throw new Error("Invalid Growvelt payment reference.");
   const config = getPaystackConfig(false);

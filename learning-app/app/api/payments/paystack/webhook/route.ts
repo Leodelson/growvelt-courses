@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/app/lib/supabase/admin";
-import { digestPaystackPayload, getPaystackConfig, parsePaystackChargeSuccess, parsePaystackCompanyChargeSuccess, parsePaystackTestDisputeEvent, parsePaystackTestRefundEvent, parsePaystackTestTransferEvent, verifyPaystackSignature } from "@/app/lib/payments/paystack";
+import { digestPaystackPayload, getPaystackConfig, parsePaystackChargeSuccess, parsePaystackCompanyChargeSuccess, parsePaystackTestDisputeEvent, parsePaystackTestRefundEvent, parsePaystackTestTransferEvent, verifyPaystackCompanyTestTransaction, verifyPaystackSignature } from "@/app/lib/payments/paystack";
 import { getOrderNotificationContext, paymentOperationsRecipient, sendPaymentNotification } from "@/app/lib/email/payment-notifications";
 
 export async function POST(request: Request) {
@@ -77,11 +77,23 @@ export async function POST(request: Request) {
   }
   const companyCharge = parsePaystackCompanyChargeSuccess(payload, config.mode);
   if (companyCharge) {
+    // Paystack may add fees to the amount charged. Compare the original
+    // requested amount with our locked purchase price after verifying the
+    // transaction independently with Paystack.
+    let verified;
+    try {
+      if (config.mode !== "test") throw new Error("Company live payments are not activated.");
+      verified = await verifyPaystackCompanyTestTransaction(companyCharge.reference);
+      if (verified.transactionId !== companyCharge.transactionId || verified.amountMinor !== companyCharge.amountMinor) throw new Error("Company payment event did not match Paystack verification.");
+    } catch (error) {
+      console.error("company_learning.payment_webhook_verification_deferred", { reference: companyCharge.reference, message: error instanceof Error ? error.message : "Verification failed" });
+      return NextResponse.json({ code: "verification_deferred" }, { status: 500 });
+    }
     const admin = createAdminClient();
     const { data, error } = await admin.rpc("finalize_learning_company_paid_course_purchase_by_reference", {
       p_provider_reference: companyCharge.reference,
       p_provider_transaction_id: companyCharge.transactionId,
-      p_amount_minor: companyCharge.amountMinor,
+      p_amount_minor: verified.requestedAmountMinor,
       p_currency: companyCharge.currency,
       p_domain: companyCharge.domain,
     });

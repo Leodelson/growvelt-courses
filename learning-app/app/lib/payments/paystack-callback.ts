@@ -3,7 +3,7 @@ export type PaystackCallbackSearchParams = {
   trxref?: string | string[];
 };
 
-const ORDER_REFERENCE_PATTERN = /^GL-[A-F0-9]{32}$/;
+const ORDER_REFERENCE_PATTERN = /^(?:GL|CP)-[A-F0-9]{32}$/;
 
 function valuesOf(value: string | string[] | undefined) {
   return value === undefined ? [] : Array.isArray(value) ? value : [value];
