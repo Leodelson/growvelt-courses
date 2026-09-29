@@ -1,6 +1,6 @@
 # Phase 3C company purchase accounting boundary
 
-Status: design and safety gate only. No live-company accounting capability is deployed or asserted by this document.
+Status: an isolated, un-deployed company capture/allocation migration is drafted. It does not create spendable instructor earnings or assert live-company accounting readiness.
 
 ## Current behavior and the mismatch
 
@@ -10,13 +10,15 @@ Status: design and safety gate only. No live-company accounting capability is de
 
 ## Required model before a live company charge
 
-1. Snapshot the selling entity, instructor/payee, commercial-terms version, course, NGN unit amount, seat list and total when the company manager prepares a purchase. Organization-owned courses must credit the provider organization under its own payout policy; a team member's personal-course earnings must not appear in organization reports.
+1. Snapshot the selling entity, instructor/payee, commercial-terms version, course, NGN unit amount, seat list and total when the company manager prepares a purchase. For an organization-owned course, the organization owner is the provisional payee snapshot; team members' personal-course earnings must not appear in organization reports. Confirm the provider payout policy before release.
 2. Record **one** Paystack capture for the full company purchase, keyed by provider domain, reference and transaction ID. Allocate its exact total to immutable per-seat sale lines (`unit amount × seat count = capture amount`). Never treat Paystack's charge amount plus fees as the course price.
 3. Post balanced platform-share and seller-liability entries from the seat lines. The company owner/admin sees its own invoice and seats; the selling instructor or provider sees only its own attributed sales. Company staff must not see Growvelt's commission or an instructor's unrelated earnings.
 4. Make webhook and callback reconciliation idempotent. Replaying the same verified charge must create neither extra seats nor extra accounting lines. A mismatched amount, currency, domain, reference or transaction ID must stop fulfillment and raise an operator review.
 5. Keep company-origin earnings on hold until the charge's refund/dispute window and company reversal policy are implemented. Existing learner payout functions must not reserve or transfer a company earning merely because a learner-style hold date elapsed.
 6. Model Paystack's **partial refund on one transaction** as a company purchase adjustment tied to affected seat lines, with proportional seller/platform reversals and the correct employee access consequence. A full refund or lost dispute must reverse the entire sale exactly once. A pending refund is not a completed reversal. See [Paystack refund documentation](https://paystack.com/docs/payments/refunds/) and [dispute documentation](https://paystack.com/docs/payments/manage-disputes/).
 7. Only after capture, allocation, reversal, privacy, payout-hold, reconciliation and recovery tests pass may a service-only database capability return `true` from `is_learning_company_live_accounting_ready`. The checkout route fails closed when this function is absent, errors, or returns anything else. The environment switch remains a separate operator-controlled gate.
+
+The draft `20260944000000` migration covers items 1–3 at the **held-liability** stage and an idempotent posting/reconciliation path. It does not expose company proceeds through the existing personal-earnings or payout functions. It intentionally leaves historical Test purchases with no terms snapshot unallocated and reportable for manual review. Items 5–7, including company refunds/disputes and controlled earnings release, remain open.
 
 ## Test cases required for the accounting migration
 
