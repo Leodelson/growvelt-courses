@@ -1,0 +1,15 @@
+.company-billing-records { display: grid; gap: 14px; }
+.company-billing-record { min-width: 0; padding: 18px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); }
+.company-billing-record-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; }
+.company-billing-record-heading h3, .company-billing-record-heading p { margin: 0; }
+.company-billing-record-heading h3 { font-size: 1.1rem; }
+.company-billing-record-heading p { margin-top: 3px; color: var(--muted); }
+.company-billing-record dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 22px; margin: 20px 0 0; }
+.company-billing-record dl div { min-width: 0; padding-top: 12px; border-top: 1px solid var(--line); }
+.company-billing-record dt { color: var(--muted); font-size: .82rem; }
+.company-billing-record dd { margin: 5px 0 0; font-weight: 750; }
+.company-billing-reference { overflow-wrap: anywhere; user-select: all; }
+@media (max-width: 640px) {
+  .company-billing-record-heading { flex-direction: column; gap: 7px; }
+  .company-billing-record dl { grid-template-columns: 1fr; gap: 10px; }
+}
