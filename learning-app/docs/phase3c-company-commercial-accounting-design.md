@@ -1,6 +1,6 @@
 # Phase 3C company purchase accounting boundary
 
-Status: an isolated, un-deployed company capture/allocation migration is drafted. It does not create spendable instructor earnings or assert live-company accounting readiness.
+Status: an isolated, un-deployed company capture/allocation migration is drafted. It does not create spendable instructor earnings or assert live-company accounting readiness. Migrations 43–44 passed a disposable PGlite PostgreSQL 18.3 test with a minimal dependency schema on 30 September 2026; this is **not** a full Supabase/PostgreSQL 17 deployment test.
 
 ## Current behavior and the mismatch
 
@@ -19,6 +19,8 @@ Status: an isolated, un-deployed company capture/allocation migration is drafted
 7. Only after capture, allocation, reversal, privacy, payout-hold, reconciliation and recovery tests pass may a service-only database capability return `true` from `is_learning_company_live_accounting_ready`. The checkout route fails closed when this function is absent, errors, or returns anything else. The environment switch remains a separate operator-controlled gate.
 
 The draft `20260944000000` migration covers items 1–3 at the **held-liability** stage and an idempotent posting/reconciliation path. It does not expose company proceeds through the existing personal-earnings or payout functions. It intentionally leaves historical Test purchases with no terms snapshot unallocated and reportable for manual review. Items 5–7, including company refunds/disputes and controlled earnings release, remain open.
+
+The reusable isolated check is `scripts/test-phase3c-company-ledger-local.cjs`. It requires `@electric-sql/pglite` as a local test-only package (or `PGLITE_PACKAGE_PATH` pointing to an extracted copy). It verifies two seat lines, exact rounding, balanced capture/allocation ledgers, idempotence, append-only records, historical-purchase detection, and amount/domain rejection. It never connects to Supabase.
 
 ## Test cases required for the accounting migration
 
