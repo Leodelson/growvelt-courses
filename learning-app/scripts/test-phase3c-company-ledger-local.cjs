@@ -8,6 +8,7 @@ const migration43 = readFileSync(path.resolve(__dirname,'../supabase/migrations/
 const migration44 = readFileSync(path.resolve(__dirname,'../supabase/migrations/20260944000000_add_company_commercial_sale_ledger.sql'), 'utf8');
 const migration45 = readFileSync(path.resolve(__dirname,'../supabase/migrations/20260945000000_add_company_reversal_event_inbox.sql'), 'utf8');
 const migration46 = readFileSync(path.resolve(__dirname,'../supabase/migrations/20260946000000_record_company_paid_seat_access_provenance.sql'), 'utf8');
+const migration47 = readFileSync(path.resolve(__dirname,'../supabase/migrations/20260947000000_record_company_commercial_reversals.sql'), 'utf8');
 const owner = '00000000-0000-4000-8000-000000000001';
 const teacher = '00000000-0000-4000-8000-000000000002';
 const employee1 = '00000000-0000-4000-8000-000000000003';
@@ -88,6 +89,7 @@ async function main() {
     await db.exec(migration44);
     await db.exec(migration45);
     await db.exec(migration46);
+    await db.exec(migration47);
     await db.exec(`
       insert into public.learning_company_paid_course_purchases
         (id,workspace_id,course_id,requested_by,course_title_snapshot,provider_name_snapshot,
@@ -203,8 +205,60 @@ async function main() {
     assert.equal((await db.query('select count(*) as n from public.learning_company_course_assignments')).rows[0].n,2);
     await db.exec('select * from public.grant_paid_learning_company_purchase_access(100)');
     assert.equal((await db.query('select count(*) as n from public.learning_company_paid_seat_access where purchase_id=100')).rows[0].n,2);
+    const postRefund = `select public.post_learning_company_commercial_reversal(${firstNotice.event_id},'12345','processed',null,101,array['${employee1}']::uuid[]) as id`;
+    let pendingRejected = false;
+    try { await db.exec(`select public.post_learning_company_commercial_reversal(${firstNotice.event_id},'12345','pending',null,101,array['${employee1}']::uuid[])`); }
+    catch { pendingRejected = true; }
+    assert.equal(pendingRejected,true);
+    const refundId = (await db.query(postRefund)).rows[0].id;
+    assert.equal((await db.query(postRefund)).rows[0].id,refundId);
+    const refund = (await db.query(`select * from public.learning_company_commercial_reversals where id=${refundId}`)).rows[0];
+    assert.equal(refund.gross_amount_minor,101);
+    assert.equal(refund.platform_commission_minor,25);
+    assert.equal(refund.seller_gross_minor,76);
+    assert.equal(Number((await db.query(`select sum(amount_minor) as balance from public.learning_company_commercial_reversal_ledger_entries where reversal_id=${refundId}`)).rows[0].balance),0);
+    assert.equal((await db.query(`select count(*) as n from public.learning_company_commercial_reversal_lines where reversal_id=${refundId}`)).rows[0].n,1);
+    let duplicateSeatRejected = false;
+    const secondNotice = (await db.query(receiveSql,['refund.processed:124','c'.repeat(64),'refund.processed',ref1,'124','processed',101,'NGN','test'])).rows[0];
+    try { await db.exec(`select public.post_learning_company_commercial_reversal(${secondNotice.event_id},'12345','processed',null,101,array['${employee1}']::uuid[])`); }
+    catch { duplicateSeatRejected = true; }
+    assert.equal(duplicateSeatRejected,true);
+    assert.equal((await db.query('select count(*) as n from public.learning_company_commercial_reversals')).rows[0].n,1);
+    await db.exec(`
+      insert into public.learning_company_paid_course_purchases
+        (id,workspace_id,course_id,requested_by,course_title_snapshot,provider_name_snapshot,
+         unit_amount_minor,total_amount_minor,currency,seat_count,status)
+      values (102,1,19,'${buyer}','Course 3','Provider',101,202,'NGN',2,'checkout_pending');
+      insert into public.learning_company_paid_course_purchase_seats values
+        (102,'${employee1}'),(102,'${employee2}');
+      insert into public.learning_company_paid_course_purchase_attempts
+        (purchase_id,provider,provider_reference,amount_minor,currency,status)
+      values (102,'paystack','CP-${'E'.repeat(32)}',202,'NGN','pending');
+      update public.learning_company_paid_course_purchases set status='paid' where id=102;
+      update public.learning_company_paid_course_purchase_attempts
+        set status='succeeded',provider_transaction_id='23456' where purchase_id=102;
+      select * from public.grant_paid_learning_company_purchase_access(102);
+    `);
+    const disputeNotice = (await db.query(receiveSql,[
+      'charge.dispute.resolve:888','d'.repeat(64),'charge.dispute.resolve',`CP-${'E'.repeat(32)}`,
+      '888','resolved',202,'NGN','test'])).rows[0];
+    let incompleteDisputeRejected = false;
+    try { await db.exec(`select public.post_learning_company_commercial_reversal(${disputeNotice.event_id},'23456','resolved','merchant-accepted',101,array['${employee1}']::uuid[])`); }
+    catch { incompleteDisputeRejected = true; }
+    assert.equal(incompleteDisputeRejected,true);
+    let unresolvedDisputeRejected = false;
+    try { await db.exec(`select public.post_learning_company_commercial_reversal(${disputeNotice.event_id},'23456','pending','merchant-accepted',202,array['${employee1}','${employee2}']::uuid[])`); }
+    catch { unresolvedDisputeRejected = true; }
+    assert.equal(unresolvedDisputeRejected,true);
+    const fullDispute = `select public.post_learning_company_commercial_reversal(${disputeNotice.event_id},'23456','resolved','merchant-accepted',202,array['${employee1}','${employee2}']::uuid[]) as id`;
+    const disputeId = (await db.query(fullDispute)).rows[0].id;
+    assert.equal((await db.query(fullDispute)).rows[0].id,disputeId);
+    assert.equal(Number((await db.query(`select sum(amount_minor) as balance from public.learning_company_commercial_reversal_ledger_entries where reversal_id=${disputeId}`)).rows[0].balance),0);
+    assert.equal((await db.query(`select count(*) as n from public.learning_company_commercial_reversal_lines where reversal_id=${disputeId}`)).rows[0].n,2);
+    assert.deepEqual((await db.query('select * from public.reconcile_learning_company_commercial_reversals()')).rows,[]);
     await db.exec(`update public.learning_company_paid_seat_access set status='refunded',revoked_at=now()
-      where purchase_id=100 and assigned_user_id='${employee2}'`);
+      where purchase_id=100 and assigned_user_id in ('${employee1}','${employee2}')`);
+    assert.equal((await db.query(postRefund)).rows[0].id,refundId);
     let regrantRejected = false;
     try { await db.exec('select * from public.grant_paid_learning_company_purchase_access(100)'); }
     catch { regrantRejected = true; }
@@ -213,7 +267,13 @@ async function main() {
     const provenanceIssues = (await db.query('select * from public.reconcile_learning_company_paid_seat_access()')).rows;
     assert.ok(provenanceIssues.some(row => row.purchase_id === 99 && row.issue_type === 'paid_seat_missing_access_provenance'));
     assert.ok(provenanceIssues.some(row => row.purchase_id === 101 && row.issue_type === 'paid_seat_missing_access_provenance'));
-    console.log('PASS isolated company sale, reversal inbox, and paid-seat provenance migrations: balanced allocation, idempotence, privacy, access-source preservation, replay guard');
+    const reversalPermissions = (await db.query(`select
+      has_table_privilege('authenticated','public.learning_company_commercial_reversals','SELECT') as member_read,
+      has_function_privilege('authenticated','public.post_learning_company_commercial_reversal(bigint,text,text,text,bigint,uuid[])','EXECUTE') as member_execute,
+      has_function_privilege('service_role','public.post_learning_company_commercial_reversal(bigint,text,text,text,bigint,uuid[])','EXECUTE') as service_execute`)).rows[0];
+    assert.deepEqual(reversalPermissions,{member_read:false,member_execute:false,service_execute:true});
+    assert.equal((await db.query(`select status from public.enrollments where learner_id='${employee1}' and course_id=19`)).rows[0].status,'active');
+    console.log('PASS isolated company sale, reversal inbox, access provenance, and held-liability reversal migrations');
   } finally {
     await db.close();
   }
