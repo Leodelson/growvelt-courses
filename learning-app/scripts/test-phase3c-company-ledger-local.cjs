@@ -6,6 +6,7 @@ const { PGlite } = require(pglitePath);
 
 const migration43 = readFileSync(path.resolve(__dirname,'../supabase/migrations/20260943000000_guard_company_paystack_payment_domains.sql'), 'utf8');
 const migration44 = readFileSync(path.resolve(__dirname,'../supabase/migrations/20260944000000_add_company_commercial_sale_ledger.sql'), 'utf8');
+const migration45 = readFileSync(path.resolve(__dirname,'../supabase/migrations/20260945000000_add_company_reversal_event_inbox.sql'), 'utf8');
 const owner = '00000000-0000-4000-8000-000000000001';
 const teacher = '00000000-0000-4000-8000-000000000002';
 const employee1 = '00000000-0000-4000-8000-000000000003';
@@ -71,6 +72,7 @@ async function main() {
       values (99,'paystack','${ref2}','998',101,'NGN','succeeded');
     `);
     await db.exec(migration44);
+    await db.exec(migration45);
     await db.exec(`
       insert into public.learning_company_paid_course_purchases
         (id,workspace_id,course_id,requested_by,course_title_snapshot,provider_name_snapshot,
@@ -140,7 +142,36 @@ async function main() {
       await db.exec(`select * from public.finalize_learning_company_paid_course_purchase_by_reference('${ref1}','12345',202,'NGN','live');`);
     } catch { rejected = true; }
     assert.equal(rejected,true);
-    console.log('PASS isolated company sale migration: 2 seats, balanced ledgers, idempotence, immutability, legacy detection, amount/domain mismatch');
+    const eventArgs = ['refund.processed:123','a'.repeat(64),'refund.processed',ref1,'123','processed',101,'NGN','test'];
+    const receiveSql = 'select * from public.receive_learning_company_reversal_notice($1,$2,$3,$4,$5,$6,$7,$8,$9)';
+    const firstNotice = (await db.query(receiveSql,eventArgs)).rows[0];
+    assert.equal(firstNotice.outcome,'pending_manual_review');
+    assert.equal((await db.query(receiveSql,eventArgs)).rows[0].outcome,'already_received');
+    assert.equal((await db.query('select count(*) as n from public.learning_company_reversal_event_inbox')).rows[0].n,1);
+    let conflictingNotice = false;
+    try { await db.query(receiveSql,[eventArgs[0],'b'.repeat(64),...eventArgs.slice(2)]); }
+    catch { conflictingNotice = true; }
+    assert.equal(conflictingNotice,true);
+    let wrongDomainNotice = false;
+    try { await db.query(receiveSql,[...eventArgs.slice(0,8),'live']); }
+    catch { wrongDomainNotice = true; }
+    assert.equal(wrongDomainNotice,true);
+    let unknownChargeNotice = false;
+    try { await db.query(receiveSql,[...eventArgs.slice(0,3),`CP-${'D'.repeat(32)}`,...eventArgs.slice(4)]); }
+    catch { unknownChargeNotice = true; }
+    assert.equal(unknownChargeNotice,true);
+    let mutableNotice = false;
+    try { await db.exec('delete from public.learning_company_reversal_event_inbox'); }
+    catch { mutableNotice = true; }
+    assert.equal(mutableNotice,true);
+    const permissions = (await db.query(`select
+      has_table_privilege('authenticated','public.learning_company_reversal_event_inbox','SELECT') as member_read,
+      has_function_privilege('authenticated','public.receive_learning_company_reversal_notice(text,text,text,text,text,text,bigint,text,text)','EXECUTE') as member_execute,
+      has_function_privilege('service_role','public.receive_learning_company_reversal_notice(text,text,text,text,text,text,bigint,text,text)','EXECUTE') as service_execute`)).rows[0];
+    assert.deepEqual(permissions,{member_read:false,member_execute:false,service_execute:true});
+    assert.equal((await db.query('select status from public.learning_company_paid_course_purchases where id=100')).rows[0].status,'paid');
+    assert.equal((await db.query('select count(*) as n from public.learning_company_commercial_sales where purchase_id=100')).rows[0].n,1);
+    console.log('PASS isolated company sale and reversal inbox migrations: balanced allocation, idempotence, privacy, immutable notice, conflict/domain rejection, no automatic financial or access change');
   } finally {
     await db.close();
   }

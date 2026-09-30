@@ -61,6 +61,53 @@ export type PaystackDisputeEvent = {
   payload: Record<string, unknown>;
 };
 
+export type PaystackCompanyReversalNotice = {
+  eventType: "refund.pending" | "refund.processing" | "refund.needs-attention" | "refund.failed" | "refund.processed" | "charge.dispute.create" | "charge.dispute.remind" | "charge.dispute.resolve";
+  transactionReference: string;
+  providerCaseId: string;
+  providerStatus: string;
+  amountMinor: number;
+  currency: "NGN";
+  domain: PaystackDomain;
+};
+
+const companyReversalEventTypes = new Set<PaystackCompanyReversalNotice["eventType"]>([
+  "refund.pending", "refund.processing", "refund.needs-attention", "refund.failed", "refund.processed",
+  "charge.dispute.create", "charge.dispute.remind", "charge.dispute.resolve",
+]);
+
+export function isPaystackCompanyReversalEvent(value: unknown) {
+  if (!value || typeof value !== "object") return false;
+  const event = value as { event?: unknown; data?: unknown };
+  if (typeof event.event !== "string" || !companyReversalEventTypes.has(event.event as PaystackCompanyReversalNotice["eventType"]) || !event.data || typeof event.data !== "object") return false;
+  const data = event.data as Record<string, unknown>;
+  const transaction = data.transaction && typeof data.transaction === "object" ? data.transaction as Record<string, unknown> : {};
+  const reference = data.transaction_reference ?? data.merchant_transaction_reference ?? transaction.reference;
+  return typeof reference === "string" && /^CP-[A-F0-9]{32}$/.test(reference);
+}
+
+export function parsePaystackCompanyReversalNotice(value: unknown, expectedDomain: PaystackDomain): PaystackCompanyReversalNotice | null {
+  if (!isPaystackCompanyReversalEvent(value)) return null;
+  const event = value as { event: PaystackCompanyReversalNotice["eventType"]; data: Record<string, unknown> };
+  const data = event.data;
+  const transaction = data.transaction && typeof data.transaction === "object" ? data.transaction as Record<string, unknown> : {};
+  const reference = data.transaction_reference ?? data.merchant_transaction_reference ?? transaction.reference;
+  const rawCaseId = data.id ?? data.refund_reference;
+  const providerCaseId = typeof rawCaseId === "number" && Number.isSafeInteger(rawCaseId) && rawCaseId > 0
+    ? String(rawCaseId) : typeof rawCaseId === "string" && /^[A-Za-z0-9_-]{1,120}$/.test(rawCaseId) ? rawCaseId : "";
+  const rawAmount = data.refund_amount ?? data.amount ?? transaction.amount;
+  const amountMinor = typeof rawAmount === "string" && /^\d+$/.test(rawAmount) ? Number(rawAmount) : rawAmount;
+  const currency = data.currency ?? transaction.currency;
+  const domain = data.domain ?? transaction.domain;
+  const expectedRefundStatus = event.event.startsWith("refund.") ? event.event.slice("refund.".length) : null;
+  const providerStatus = expectedRefundStatus ?? (typeof data.status === "string" ? data.status : "");
+  if (!providerCaseId || typeof reference !== "string" || !Number.isSafeInteger(amountMinor) || Number(amountMinor) <= 0
+      || currency !== "NGN" || domain !== expectedDomain || !providerStatus || providerStatus.length > 80
+      || (expectedRefundStatus && typeof data.status === "string" && data.status !== expectedRefundStatus)) return null;
+  return { eventType: event.event, transactionReference: reference, providerCaseId, providerStatus,
+    amountMinor: Number(amountMinor), currency: "NGN", domain: expectedDomain };
+}
+
 export type PaystackTransferEvent = {
   eventId: string;
   eventType: "transfer.success" | "transfer.failed" | "transfer.reversed";

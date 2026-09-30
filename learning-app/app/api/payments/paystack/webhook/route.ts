@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/app/lib/supabase/admin";
-import { digestPaystackPayload, getPaystackConfig, parsePaystackChargeSuccess, parsePaystackCompanyChargeSuccess, parsePaystackTestDisputeEvent, parsePaystackTestRefundEvent, parsePaystackTestTransferEvent, verifyPaystackCompanyTransaction, verifyPaystackSignature } from "@/app/lib/payments/paystack";
+import { digestPaystackPayload, getPaystackConfig, isPaystackCompanyReversalEvent, parsePaystackChargeSuccess, parsePaystackCompanyChargeSuccess, parsePaystackCompanyReversalNotice, parsePaystackTestDisputeEvent, parsePaystackTestRefundEvent, parsePaystackTestTransferEvent, verifyPaystackCompanyTransaction, verifyPaystackSignature } from "@/app/lib/payments/paystack";
 import { getOrderNotificationContext, paymentOperationsRecipient, sendPaymentNotification } from "@/app/lib/email/payment-notifications";
 import { recordCompanyPaymentManualReview } from "@/app/lib/company/payment-exceptions";
 
@@ -30,6 +30,42 @@ export async function POST(request: Request) {
     const { error: processError } = await admin.rpc("process_learning_instructor_payout_provider_event", { p_provider_event_id: receipt.provider_event_id });
     if (processError) console.error("payout.transfer_webhook_processing_deferred", { provider: "paystack", reference: transfer.reference, code: processError.code });
     return NextResponse.json({ received: true, processing: processError ? "deferred" : "processed" });
+  }
+  if (isPaystackCompanyReversalEvent(payload)) {
+    // A signed refund/dispute notice is evidence to retain, not proof that
+    // money moved. Company reversals need their own verified seat-level flow.
+    const notice = parsePaystackCompanyReversalNotice(payload, config.mode);
+    if (!notice) {
+      console.error("company_learning.reversal_notice_invalid");
+      return NextResponse.json({ code: "company_reversal_notice_invalid" }, { status: 503 });
+    }
+    const digest = digestPaystackPayload(rawBody);
+    const admin = createAdminClient();
+    const { data, error } = await admin.rpc("receive_learning_company_reversal_notice", {
+      p_provider_event_key: `${notice.eventType}:${notice.providerCaseId}:${digest.slice(0, 32)}`,
+      p_payload_digest: digest,
+      p_event_type: notice.eventType,
+      p_provider_reference: notice.transactionReference,
+      p_provider_case_id: notice.providerCaseId,
+      p_provider_status: notice.providerStatus,
+      p_reported_amount_minor: notice.amountMinor,
+      p_currency: notice.currency,
+      p_domain: notice.domain,
+    });
+    const receipt = (data as Array<{ event_id?: number; outcome?: string }> | null)?.[0];
+    if (error || !receipt?.event_id) {
+      console.error("company_learning.reversal_notice_receive_failed", { reference: notice.transactionReference, code: error?.code });
+      return NextResponse.json({ code: "company_reversal_notice_deferred" }, { status: 500 });
+    }
+    await sendPaymentNotification({
+      key: `company-reversal-manual-review:${receipt.event_id}`,
+      type: "operator_reconciliation",
+      recipient: paymentOperationsRecipient(),
+      subject: "Growvelt Learning company payment reversal needs review",
+      heading: "A company payment notice needs verification",
+      message: `Paystack sent ${notice.eventType} for company payment ${notice.transactionReference}. Review inbox event ${receipt.event_id} and verify the provider outcome before changing any employee access or financial records. This signed notice alone has not reversed the sale.`,
+    });
+    return NextResponse.json({ received: true, processing: "pending_manual_review" });
   }
   // Refund and dispute operations remain test-only until a separately approved
   // live-domain foundation exists. Live charge events continue below.
