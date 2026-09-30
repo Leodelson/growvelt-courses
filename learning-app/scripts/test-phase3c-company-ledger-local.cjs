@@ -4,8 +4,8 @@ const path = require('node:path');
 const pglitePath = process.env.PGLITE_PACKAGE_PATH || '@electric-sql/pglite';
 const { PGlite } = require(pglitePath);
 
-const migration43 = readFileSync(path.resolve(__dirname,'../../supabase/migrations/20260943000000_guard_company_paystack_payment_domains.sql'), 'utf8');
-const migration44 = readFileSync(path.resolve(__dirname,'../../supabase/migrations/20260944000000_add_company_commercial_sale_ledger.sql'), 'utf8');
+const migration43 = readFileSync(path.resolve(__dirname,'../supabase/migrations/20260943000000_guard_company_paystack_payment_domains.sql'), 'utf8');
+const migration44 = readFileSync(path.resolve(__dirname,'../supabase/migrations/20260944000000_add_company_commercial_sale_ledger.sql'), 'utf8');
 const owner = '00000000-0000-4000-8000-000000000001';
 const teacher = '00000000-0000-4000-8000-000000000002';
 const employee1 = '00000000-0000-4000-8000-000000000003';

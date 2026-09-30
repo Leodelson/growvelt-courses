@@ -20,7 +20,7 @@ Status: an isolated, un-deployed company capture/allocation migration is drafted
 
 The draft `20260944000000` migration covers items 1–3 at the **held-liability** stage and an idempotent posting/reconciliation path. It does not expose company proceeds through the existing personal-earnings or payout functions. It intentionally leaves historical Test purchases with no terms snapshot unallocated and reportable for manual review. Items 5–7, including company refunds/disputes and controlled earnings release, remain open.
 
-The reusable isolated check is `scripts/test-phase3c-company-ledger-local.cjs`. It requires `@electric-sql/pglite` as a local test-only package (or `PGLITE_PACKAGE_PATH` pointing to an extracted copy). It verifies two seat lines, exact rounding, balanced capture/allocation ledgers, idempotence, append-only records, historical-purchase detection, and amount/domain rejection. It never connects to Supabase.
+The reusable isolated check is `scripts/test-phase3c-company-ledger-local.cjs`. It requires `@electric-sql/pglite` as a local test-only package (or `PGLITE_PACKAGE_PATH` pointing to an extracted copy). It reads the migrations from this project's deployable `supabase/migrations` directory. It verifies two seat lines, exact rounding, balanced capture/allocation ledgers, idempotence, append-only records, historical-purchase detection, and amount/domain rejection. It never connects to Supabase.
 
 ## Test cases required for the accounting migration
 
@@ -32,4 +32,4 @@ The reusable isolated check is `scripts/test-phase3c-company-ledger-local.cjs`. 
 
 ## Deployment dependency
 
-The pending payment-domain migration must be applied and checked first. Build and test the accounting migration against an isolated database before production. The earlier linked-DB connection timeout and unrecorded checkout-status migration must be reconciled; do not bypass that history with an improvised Dashboard SQL edit.
+The pending payment-domain migration must be applied and checked first. Build and test the accounting migration against an isolated database before production. A read-only linked-project check on 30 September 2026 found migrations 38–41 recorded remotely and migrations 42–44 pending in the CLI history. A schema-only export showed the two migration-42 function bodies present remotely despite its missing history entry. Exact, hash-verified copies of migrations 38–44 were placed in this project's `supabase/migrations` directory, which is the directory used by `supabase migration list --linked`; keep the root copies in sync while older local tests still read them. Do not run `db push` until the migration-42 history discrepancy is reviewed, migration 43–44 are validated against a full PostgreSQL 17/Supabase schema, and company reversal/payout safeguards are complete. The schema-only export was deleted after comparison.
