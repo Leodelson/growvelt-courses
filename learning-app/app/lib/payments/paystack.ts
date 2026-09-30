@@ -1,5 +1,5 @@
 import "server-only";
-import { isTrustedPaystackAuthorizationUrl } from "@/app/lib/payments/paystack-core";
+import { isTrustedPaystackAuthorizationUrl, parseVerifiedPaystackCompanyDispute, parseVerifiedPaystackCompanyRefund } from "@/app/lib/payments/paystack-core";
 import { resolvePaystackConfiguration } from "@/app/lib/payments/paystack-config";
 import type { PaystackDomain } from "@/app/lib/payments/paystack-core";
 
@@ -126,6 +126,39 @@ export async function verifyPaystackCompanyTransaction(reference: string, expect
 
 export function verifyPaystackCompanyTestTransaction(reference: string) {
   return verifyPaystackCompanyTransaction(reference, "test");
+}
+
+type CompanyReversalLookup = {
+  caseId: string;
+  transactionId: string;
+  transactionReference: string;
+  domain: PaystackDomain;
+};
+
+async function fetchCompanyReversalRecord(kind: "refund" | "dispute", input: CompanyReversalLookup) {
+  if (!/^[1-9]\d*$/.test(input.caseId) || !/^[1-9]\d*$/.test(input.transactionId)
+      || !/^CP-[A-F0-9]{32}$/.test(input.transactionReference)) throw new Error("Invalid company reversal lookup.");
+  const config = getPaystackConfig(false);
+  if (config.mode !== input.domain) throw new Error("Paystack environment does not match this company reversal.");
+  const response = await fetch(`https://api.paystack.co/${kind}/${encodeURIComponent(input.caseId)}`, {
+    headers: { Authorization: `Bearer ${config.secretKey}` }, cache: "no-store", signal: AbortSignal.timeout(15000),
+  });
+  const result = await response.json().catch(() => null) as { status?: unknown; data?: unknown } | null;
+  if (!response.ok || result?.status !== true) throw new Error("Paystack company reversal lookup failed.");
+  const expected = { transactionId: input.transactionId, transactionReference: input.transactionReference, domain: input.domain };
+  const verified = kind === "refund"
+    ? parseVerifiedPaystackCompanyRefund(result.data, { ...expected, refundId: input.caseId })
+    : parseVerifiedPaystackCompanyDispute(result.data, { ...expected, disputeId: input.caseId });
+  if (!verified) throw new Error("Paystack company reversal identity or status was inconclusive.");
+  return verified;
+}
+
+export function verifyPaystackCompanyRefund(input: CompanyReversalLookup) {
+  return fetchCompanyReversalRecord("refund", input);
+}
+
+export function verifyPaystackCompanyDispute(input: CompanyReversalLookup) {
+  return fetchCompanyReversalRecord("dispute", input);
 }
 
 export async function verifyPaystackTransaction(reference: string, expectedDomain: PaystackDomain) {

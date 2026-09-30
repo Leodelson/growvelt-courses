@@ -71,6 +71,77 @@ export type PaystackCompanyReversalNotice = {
   domain: PaystackDomain;
 };
 
+export type VerifiedPaystackCompanyReversal = {
+  providerCaseId: string;
+  transactionId: string;
+  transactionReference: string;
+  domain: PaystackDomain;
+  currency: "NGN";
+  amountMinor: number;
+  providerStatus: string;
+  providerResolution: string | null;
+  finalOutcome: "processed_refund" | "lost_dispute" | null;
+};
+
+function paystackNumericId(value: unknown) {
+  return typeof value === "number" && Number.isSafeInteger(value) && value > 0 ? String(value)
+    : typeof value === "string" && /^[1-9]\d*$/.test(value) ? value : "";
+}
+
+function paystackPositiveAmount(value: unknown) {
+  const parsed = typeof value === "string" && /^\d+$/.test(value) ? Number(value) : value;
+  return typeof parsed === "number" && Number.isSafeInteger(parsed) && parsed > 0 ? parsed : null;
+}
+
+export function parseVerifiedPaystackCompanyRefund(
+  value: unknown,
+  expected: { refundId: string; transactionId: string; transactionReference: string; domain: PaystackDomain },
+): VerifiedPaystackCompanyReversal | null {
+  if (!value || typeof value !== "object" || !/^CP-[A-F0-9]{32}$/.test(expected.transactionReference)
+      || !paystackNumericId(expected.refundId) || !paystackNumericId(expected.transactionId)) return null;
+  const data = value as Record<string, unknown>;
+  // Paystack's refund fetch can return a numeric transaction ID without a reference.
+  const transaction = data.transaction && typeof data.transaction === "object"
+    ? data.transaction as Record<string, unknown> : null;
+  const transactionId = paystackNumericId(transaction?.id ?? data.transaction);
+  const reference = transaction?.reference ?? data.transaction_reference;
+  if (paystackNumericId(data.id) !== expected.refundId || transactionId !== expected.transactionId
+      || (reference !== undefined && reference !== null && reference !== expected.transactionReference)
+      || data.domain !== expected.domain || data.currency !== "NGN") return null;
+  const amountMinor = paystackPositiveAmount(data.amount);
+  const status = data.status;
+  if (!amountMinor || typeof status !== "string"
+      || !["pending", "processing", "needs-attention", "failed", "processed"].includes(status)) return null;
+  return { providerCaseId: expected.refundId, transactionId, transactionReference: expected.transactionReference,
+    domain: expected.domain, currency: "NGN", amountMinor, providerStatus: status,
+    providerResolution: null, finalOutcome: status === "processed" ? "processed_refund" : null };
+}
+
+export function parseVerifiedPaystackCompanyDispute(
+  value: unknown,
+  expected: { disputeId: string; transactionId: string; transactionReference: string; domain: PaystackDomain },
+): VerifiedPaystackCompanyReversal | null {
+  if (!value || typeof value !== "object" || !/^CP-[A-F0-9]{32}$/.test(expected.transactionReference)
+      || !paystackNumericId(expected.disputeId) || !paystackNumericId(expected.transactionId)) return null;
+  const data = value as Record<string, unknown>;
+  const transaction = data.transaction && typeof data.transaction === "object"
+    ? data.transaction as Record<string, unknown> : null;
+  if (!transaction || paystackNumericId(data.id) !== expected.disputeId
+      || paystackNumericId(transaction.id) !== expected.transactionId
+      || transaction.reference !== expected.transactionReference
+      || data.domain !== expected.domain || transaction.domain !== expected.domain
+      || transaction.currency !== "NGN"
+      || (data.currency != null && data.currency !== "NGN")) return null;
+  const amountMinor = paystackPositiveAmount(data.refund_amount ?? transaction.amount);
+  const status = data.status;
+  const resolution = typeof data.resolution === "string" ? data.resolution : null;
+  if (!amountMinor || typeof status !== "string" || !status) return null;
+  return { providerCaseId: expected.disputeId, transactionId: expected.transactionId,
+    transactionReference: expected.transactionReference, domain: expected.domain,
+    currency: "NGN", amountMinor, providerStatus: status, providerResolution: resolution,
+    finalOutcome: status === "resolved" && resolution === "merchant-accepted" ? "lost_dispute" : null };
+}
+
 const companyReversalEventTypes = new Set<PaystackCompanyReversalNotice["eventType"]>([
   "refund.pending", "refund.processing", "refund.needs-attention", "refund.failed", "refund.processed",
   "charge.dispute.create", "charge.dispute.remind", "charge.dispute.resolve",
