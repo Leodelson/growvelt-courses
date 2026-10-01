@@ -32,6 +32,7 @@ const atomicReversalMigration = await read("../supabase/migrations/2026095200000
 const checkout = await read("../app/api/company/workspaces/[workspaceId]/purchases/[purchaseId]/checkout/route.ts");
 const webhook = await read("../app/api/payments/paystack/webhook/route.ts");
 const reconciliation = await read("../app/api/company/payments/paystack/reconcile/route.ts");
+const reversalRecovery = await read("../app/api/admin/payments/company-reversal/commit-test/route.ts");
 assert.match(migration, /paystack_domain text not null default 'test'/);
 assert.match(migration, /p_domain <> attempt_row\.paystack_domain/);
 assert.match(migration, /p_amount_minor <> attempt_row\.amount_minor/);
@@ -98,4 +99,15 @@ assert.match(webhook, /verifyPaystackCompanyTransaction\(companyCharge\.referenc
 assert.match(webhook, /receive_learning_company_reversal_notice/);
 assert.ok(webhook.indexOf("isPaystackCompanyReversalEvent(payload)") < webhook.indexOf("parsePaystackTestDisputeEvent(payload)"), "Company reversal notices must be captured before learner-only parsers");
 assert.match(reconciliation, /verifyPaystackCompanyTransaction\(reference, getPaystackConfig\(false\)\.mode\)/);
+assert.match(reversalRecovery, /PAYMENTS_TEST_COMPANY_REVERSAL_COMMIT_ENABLED !== "true"/);
+assert.match(reversalRecovery, /isSameOriginRequest\(request\)/);
+assert.match(reversalRecovery, /is_growvelt_learning_admin/);
+assert.match(reversalRecovery, /notice\.paystack_domain !== "test"/);
+assert.match(reversalRecovery, /verifyPaystackCompanyRefund\(lookup\).*verifyPaystackCompanyDispute\(lookup\)/s);
+assert.match(reversalRecovery, /verified\.finalOutcome !== expectedKind/);
+assert.match(reversalRecovery, /verified\.amountMinor !== notice\.reported_amount_minor/);
+assert.match(reversalRecovery, /planCompanySeatReversal\(/);
+assert.match(reversalRecovery, /reversal_replay_conflict/);
+assert.match(reversalRecovery, /commit_learning_company_reversal_after_verification/);
+assert.doesNotMatch(reversalRecovery, /initializePaystack|create.*Refund|create.*Dispute|update.*enrollment/i);
 console.log("PASS Phase 3C company domain separation, sale/reversal structure, conservative access review, and disabled-by-default live checkout wiring (static checks)");
