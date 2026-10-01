@@ -47,6 +47,11 @@ begin
   if not found then
     raise exception 'Only published free courses can be assigned until company billing is available' using errcode='22023';
   end if;
+  -- Use the same learner/course lock as paid-seat grants and reversals.
+  -- The already-assigned branch can otherwise record a free origin after
+  -- a reversal has decided that no independent source exists.
+  perform pg_advisory_xact_lock(hashtextextended('learning-company-paid-access:'||
+    p_course_id::text||':'||p_assigned_user_id::text,0));
   perform pg_advisory_xact_lock(hashtextextended('learning-company-course-assignment:'||
     p_workspace_id::text||':'||p_course_id::text||':'||p_assigned_user_id::text,0));
   select * into existing from public.learning_company_course_assignments assignment_row

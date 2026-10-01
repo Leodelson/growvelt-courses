@@ -36,6 +36,10 @@ begin
   if not found then
     raise exception 'This course is not currently available for free enrollment' using errcode = '22023';
   end if;
+  -- Serialize the independent claim with paid-seat grants and reversals,
+  -- including when the shared enrollment is already active.
+  perform pg_advisory_xact_lock(hashtextextended('learning-company-paid-access:' ||
+    p_course_id::text || ':' || auth.uid()::text,0));
   -- Retain the original enrollment timestamp and any completed progress.
   insert into public.enrollments(learner_id,course_id,status)
   values(auth.uid(),p_course_id,'active')

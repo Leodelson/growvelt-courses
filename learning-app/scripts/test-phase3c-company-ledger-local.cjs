@@ -411,9 +411,24 @@ async function main() {
     assert.equal((await sourceDecision(employee3)).decision,'not_enrolled');
     assert.deepEqual((await db.query(`select * from public.commit_learning_company_reversal_after_verification(
       ${thirdNotice.event_id},'34567','processed',null,101,array['${employee3}']::uuid[])`)).rows[0],thirdRefund);
-    // A later personal purchase restores the same shared enrollment while
-    // retaining the earlier cancelled paid-company assignment as history.
-    await db.exec(`update public.enrollments set status='active' where learner_id='${employee3}'`);
+    // A free choice after reversal must restore the same enrollment; the
+    // cancelled paid-company assignment remains an auditable prior source.
+    await db.exec(`
+      update public.learning_courses set is_free=true,price_amount=0 where id=19;
+      select set_config('request.jwt.claim.sub','${employee3}',false);
+      select * from public.enroll_in_free_learning_course(19);
+    `);
+    assert.equal((await db.query(`select status from public.enrollments where learner_id='${employee3}'`)).rows[0].status,'active');
+    assert.equal((await sourceDecision(employee3)).decision,'confirmed_source');
+    await db.exec(`
+      select set_config('request.jwt.claim.sub','${buyer}',false);
+      select * from public.assign_learning_company_course(1,19,'${employee3}');
+      update public.learning_courses set is_free=false,price_amount=101 where id=19;
+    `);
+    assert.equal((await db.query(`select count(*) as n from public.learning_company_course_assignments
+      where assigned_user_id='${employee3}' and status='active'`)).rows[0].n,1);
+    // A later personal purchase can also coexist with those independent
+    // sources without changing the already-posted company reversal.
     await db.exec(`insert into public.learning_course_entitlements(learner_id,course_id,status)
       values ('${employee3}',19,'active')`);
     assert.equal((await assess(thirdRefundId))[0].decision,'retain_independent_source');
