@@ -14,6 +14,7 @@ const migration49 = readFileSync(path.resolve(__dirname,'../supabase/migrations/
 const migration50 = readFileSync(path.resolve(__dirname,'../supabase/migrations/20260950000000_record_company_free_assignment_origins.sql'), 'utf8');
 const migration51 = readFileSync(path.resolve(__dirname,'../supabase/migrations/20260951000000_assess_company_reversal_access_sources.sql'), 'utf8');
 const migration52 = readFileSync(path.resolve(__dirname,'../supabase/migrations/20260952000000_commit_company_reversal_atomically.sql'), 'utf8');
+const migration53 = readFileSync(path.resolve(__dirname,'../supabase/migrations/20260953000000_resolve_company_learning_access_sources.sql'), 'utf8');
 const owner = '00000000-0000-4000-8000-000000000001';
 const teacher = '00000000-0000-4000-8000-000000000002';
 const employee1 = '00000000-0000-4000-8000-000000000003';
@@ -118,6 +119,7 @@ async function main() {
     await db.exec(migration50);
     await db.exec(migration51);
     await db.exec(migration52);
+    await db.exec(migration53);
     await db.exec(`
       insert into public.learning_company_workspaces values(1,'active');
       insert into public.learning_company_memberships values
@@ -330,6 +332,14 @@ async function main() {
     assert.equal((await assess(refundId))[0].decision,'manual_review');
     assert.equal((await assess(secondRefundId))[0].decision,'unproven_exclusive_candidate');
     assert.equal((await assess(secondRefundId))[0].preexisting_access,false);
+    const sourceDecision = async (id) => (await db.query(
+      `select * from public.resolve_learning_course_access_sources('${id}',19)`)).rows[0];
+    assert.equal((await sourceDecision(employee1)).decision,'manual_review');
+    // An overlapping earlier paid seat makes the later purchase's
+    // pre-existing snapshot ambiguous even after both seats reverse.
+    assert.equal((await sourceDecision(employee2)).decision,'manual_review');
+    assert.equal((await sourceDecision(employee2)).has_reversed_company_seat,true);
+    assert.equal((await sourceDecision(employee3)).decision,'not_enrolled');
     await db.exec(`
       update public.learning_courses set is_free=true,price_amount=0 where id=19;
       select set_config('request.jwt.claim.sub','${employee1}',false);
@@ -338,6 +348,7 @@ async function main() {
     `);
     assert.equal((await assess(refundId))[0].decision,'retain_independent_source');
     assert.equal((await assess(refundId))[0].free_self_claim,true);
+    assert.equal((await sourceDecision(employee1)).decision,'confirmed_source');
     await db.exec(`
       update public.learning_courses set is_free=true,price_amount=0 where id=19;
       select set_config('request.jwt.claim.sub','${buyer}',false);
@@ -346,16 +357,20 @@ async function main() {
     `);
     assert.equal((await assess(secondRefundId))[0].decision,'retain_independent_source');
     assert.equal((await assess(secondRefundId))[0].active_free_company_assignment,true);
+    assert.equal((await sourceDecision(employee2)).decision,'confirmed_source');
     await db.exec(`update public.learning_company_memberships set status='removed' where user_id='${employee2}'`);
     assert.equal((await assess(secondRefundId))[0].decision,'unproven_exclusive_candidate');
+    assert.equal((await sourceDecision(employee2)).decision,'manual_review');
     await db.exec(`insert into public.learning_company_course_assignments(
       workspace_id,course_id,assigned_user_id,assigned_by)
       values(2,19,'${employee2}','${buyer}')`);
     assert.equal((await assess(secondRefundId))[0].decision,'manual_review');
     assert.equal((await assess(secondRefundId))[0].unknown_active_assignment,true);
+    assert.equal((await sourceDecision(employee2)).decision,'manual_review');
     await db.exec(`delete from public.learning_company_course_assignments where workspace_id=2`);
     await db.exec(`update public.enrollments set status='cancelled' where learner_id='${employee2}'`);
     assert.equal((await assess(secondRefundId))[0].decision,'already_inactive');
+    assert.equal((await sourceDecision(employee2)).decision,'not_enrolled');
     await db.exec(`update public.enrollments set status='active' where learner_id='${employee2}'`);
     await db.exec(`
       insert into public.learning_company_paid_course_purchases
@@ -370,8 +385,6 @@ async function main() {
       update public.learning_company_paid_course_purchase_attempts
         set status='succeeded',provider_transaction_id='34567' where purchase_id=103;
       select * from public.grant_paid_learning_company_purchase_access(103);
-      insert into public.learning_course_entitlements(learner_id,course_id,status)
-      values ('${employee3}',19,'active');
     `);
     const thirdNotice = (await db.query(receiveSql,[
       'refund.processed:125','e'.repeat(64),'refund.processed',`CP-${'F'.repeat(32)}`,
@@ -383,8 +396,12 @@ async function main() {
       {reversal_id:thirdRefundId,reversed_seat_count:1,assignments_cancelled:0,enrollments_cancelled:0});
     assert.equal((await db.query(`select status from public.enrollments where learner_id='${employee3}'`)).rows[0].status,'active');
     assert.equal((await db.query(`select status from public.learning_company_course_assignments where assigned_user_id='${employee3}'`)).rows[0].status,'active');
+    assert.equal((await sourceDecision(employee3)).decision,'reversed_only');
+    await db.exec(`insert into public.learning_course_entitlements(learner_id,course_id,status)
+      values ('${employee3}',19,'active')`);
     assert.equal((await assess(thirdRefundId))[0].decision,'retain_independent_source');
     assert.equal((await assess(thirdRefundId))[0].active_personal_entitlement,true);
+    assert.equal((await sourceDecision(employee3)).decision,'confirmed_source');
     await db.exec(`update public.enrollments set status='completed' where learner_id='${employee2}'`);
     assert.equal((await assess(secondRefundId))[0].decision,'manual_review');
     await db.exec(`update public.enrollments set status='active' where learner_id='${employee2}'`);
@@ -396,6 +413,10 @@ async function main() {
       has_function_privilege('authenticated','public.assess_learning_company_reversal_access(bigint)','EXECUTE') as member_execute,
       has_function_privilege('service_role','public.assess_learning_company_reversal_access(bigint)','EXECUTE') as service_execute`)).rows[0];
     assert.deepEqual(assessorPermissions,{member_execute:false,service_execute:true});
+    const sourcePermissions = (await db.query(`select
+      has_function_privilege('authenticated','public.resolve_learning_course_access_sources(uuid,bigint)','EXECUTE') as member_execute,
+      has_function_privilege('service_role','public.resolve_learning_course_access_sources(uuid,bigint)','EXECUTE') as service_execute`)).rows[0];
+    assert.deepEqual(sourcePermissions,{member_execute:false,service_execute:true});
     const reviewIssues = (await db.query('select * from public.reconcile_learning_company_reversal_access()')).rows;
     assert.equal(reviewIssues.length,5);
     assert.ok(reviewIssues.every(row => row.issue_type === 'company_reversal_shared_access_review_required'));
@@ -416,7 +437,7 @@ async function main() {
       has_function_privilege('service_role','public.commit_learning_company_reversal_after_verification(bigint,text,text,text,bigint,uuid[])','EXECUTE') as service_atomic_execute`)).rows[0];
     assert.deepEqual(reversalPermissions,{member_read:false,member_execute:false,service_post_execute:false,service_access_execute:false,service_atomic_execute:true});
     assert.equal((await db.query(`select status from public.enrollments where learner_id='${employee1}' and course_id=19`)).rows[0].status,'active');
-    console.log('PASS integrated company sale, free-grant provenance, atomic reversal rollback, and access assessment');
+    console.log('PASS integrated company sale, free-grant provenance, atomic reversal, and source-aware access decisions');
   } finally {
     await db.close();
   }

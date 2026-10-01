@@ -29,6 +29,7 @@ const freeClaimMigration = await read("../supabase/migrations/20260949000000_rec
 const freeAssignmentMigration = await read("../supabase/migrations/20260950000000_record_company_free_assignment_origins.sql");
 const accessAssessmentMigration = await read("../supabase/migrations/20260951000000_assess_company_reversal_access_sources.sql");
 const atomicReversalMigration = await read("../supabase/migrations/20260952000000_commit_company_reversal_atomically.sql");
+const sourceDecisionMigration = await read("../supabase/migrations/20260953000000_resolve_company_learning_access_sources.sql");
 const checkout = await read("../app/api/company/workspaces/[workspaceId]/purchases/[purchaseId]/checkout/route.ts");
 const webhook = await read("../app/api/payments/paystack/webhook/route.ts");
 const reconciliation = await read("../app/api/company/payments/paystack/reconcile/route.ts");
@@ -89,6 +90,12 @@ assert.match(atomicReversalMigration, /from public\.apply_learning_company_rever
 assert.match(atomicReversalMigration, /from service_role/);
 assert.match(atomicReversalMigration, /to postgres,service_role/);
 assert.doesNotMatch(atomicReversalMigration, /update public\.enrollments|update public\.learning_company_course_assignments/);
+assert.match(sourceDecisionMigration, /resolve_learning_course_access_sources/);
+assert.match(sourceDecisionMigration, /'confirmed_source'/);
+assert.match(sourceDecisionMigration, /'reversed_only'/);
+assert.match(sourceDecisionMigration, /'manual_review'/);
+assert.match(sourceDecisionMigration, /from public,anon,authenticated/);
+assert.doesNotMatch(sourceDecisionMigration, /update public\.|delete from public\.|insert into public\./);
 assert.match(checkout, /PAYMENTS_LIVE_COMPANY_CHECKOUT_ENABLED !== "true"/);
 assert.match(checkout, /admin\.rpc\("is_learning_company_live_accounting_ready"\)/);
 assert.match(checkout, /accountingError \|\| accountingReady !== true/);
