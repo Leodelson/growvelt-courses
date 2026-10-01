@@ -103,7 +103,9 @@ async function main() {
     await db.exec(`
       insert into public.profiles values ('${owner}'),('${teacher}'),('${employee1}'),('${employee2}'),('${buyer}'),('${employee3}');
       insert into public.learning_provider_organizations values (7);
-      insert into public.learning_provider_organization_memberships values (7,'${owner}','owner','active');
+      insert into public.learning_provider_organization_memberships values
+        (7,'${owner}','owner','active'),
+        (7,'${teacher}','instructor','active');
       insert into public.learning_courses values (19,'${teacher}',7);
       insert into public.learning_commercial_terms values ('terms-v1',2500);
       insert into public.learning_company_paid_course_purchases
@@ -469,7 +471,47 @@ async function main() {
       has_function_privilege('service_role','public.commit_learning_company_reversal_after_verification(bigint,text,text,text,bigint,uuid[])','EXECUTE') as service_atomic_execute`)).rows[0];
     assert.deepEqual(reversalPermissions,{member_read:false,member_execute:false,service_post_execute:false,service_access_execute:false,service_atomic_execute:true});
     assert.equal((await db.query(`select status from public.enrollments where learner_id='${employee1}' and course_id=19`)).rows[0].status,'active');
-    console.log('PASS integrated company sale, atomic reversal, independent grants, and exclusive-seat access revocation');
+    // A company purchase of a personal course pays its instructor, not the
+    // company buyer or an unrelated provider owner. The organization sale
+    // above proves that an active team instructor is not the organization payee.
+    await db.exec(`
+      insert into public.learning_courses values (20,'${teacher}',null);
+      insert into public.learning_company_paid_course_purchases
+        (id,workspace_id,course_id,requested_by,course_title_snapshot,provider_name_snapshot,
+         unit_amount_minor,total_amount_minor,currency,seat_count,status)
+      values (104,1,20,'${buyer}','Personal course','Instructor',101,101,'NGN',1,'checkout_pending');
+      insert into public.learning_company_paid_course_purchase_seats values (104,'${employee3}');
+      insert into public.learning_company_paid_course_purchase_attempts
+        (purchase_id,provider,provider_reference,amount_minor,currency,status)
+      values (104,'paystack','CP-${'9'.repeat(32)}',101,'NGN','pending');
+      update public.learning_company_paid_course_purchases set status='paid' where id=104;
+      update public.learning_company_paid_course_purchase_attempts
+        set status='succeeded',provider_transaction_id='45678' where purchase_id=104;
+    `);
+    const personalSale = (await db.query('select * from public.learning_company_commercial_sales where purchase_id=104')).rows[0];
+    assert.equal(personalSale.seller_payee_id, teacher);
+    assert.equal(personalSale.seller_instructor_id, teacher);
+    assert.equal(personalSale.seller_organization_id, null);
+    assert.equal(personalSale.seller_gross_minor, 76);
+
+    // An organization course without an active owner must fail closed before
+    // a purchase or company seller liability can be created.
+    await db.exec(`
+      insert into public.learning_provider_organizations values (8);
+      insert into public.learning_courses values (21,'${teacher}',8);
+    `);
+    let ownerRequired = false;
+    try {
+      await db.exec(`insert into public.learning_company_paid_course_purchases
+        (id,workspace_id,course_id,requested_by,course_title_snapshot,provider_name_snapshot,
+         unit_amount_minor,total_amount_minor,currency,seat_count,status)
+      values (105,1,21,'${buyer}','Ownerless course','Organization',101,101,'NGN',1,'checkout_pending');`);
+    } catch (error) {
+      ownerRequired = /no active owner/i.test(error.message);
+    }
+    assert.equal(ownerRequired, true);
+    assert.equal((await db.query('select count(*) as n from public.learning_company_paid_course_purchases where id=105')).rows[0].n, 0);
+    console.log('PASS integrated company sale, payee attribution, atomic reversal, independent grants, and exclusive-seat access revocation');
   } finally {
     await db.close();
   }
