@@ -26,6 +26,7 @@ const provenanceMigration = await read("../supabase/migrations/20260946000000_re
 const commercialReversalMigration = await read("../supabase/migrations/20260947000000_record_company_commercial_reversals.sql");
 const reversalAccessMigration = await read("../supabase/migrations/20260948000000_finalize_company_reversal_access_safely.sql");
 const freeClaimMigration = await read("../supabase/migrations/20260949000000_record_free_learning_enrollment_claims.sql");
+const freeAssignmentMigration = await read("../supabase/migrations/20260950000000_record_company_free_assignment_origins.sql");
 const checkout = await read("../app/api/company/workspaces/[workspaceId]/purchases/[purchaseId]/checkout/route.ts");
 const webhook = await read("../app/api/payments/paystack/webhook/route.ts");
 const reconciliation = await read("../app/api/company/payments/paystack/reconcile/route.ts");
@@ -69,6 +70,11 @@ assert.match(freeClaimMigration, /create table public\.learning_free_enrollment_
 assert.match(freeClaimMigration, /on conflict\(learner_id,course_id\) do nothing/);
 assert.match(freeClaimMigration, /where enrollment\.learner_id=auth\.uid\(\) and enrollment\.course_id=p_course_id/);
 assert.doesNotMatch(freeClaimMigration, /update public\.learning_company_paid_seat_access|update public\.learning_company_course_assignments/);
+assert.match(freeAssignmentMigration, /create table public\.learning_company_free_assignment_origins/);
+assert.match(freeAssignmentMigration, /on conflict on constraint learning_company_free_assignment_origins_pkey do nothing/);
+assert.match(freeAssignmentMigration, /if enrollment_key is not null then/);
+assert.match(freeAssignmentMigration, /manager\.role in \('owner','admin'\)/);
+assert.doesNotMatch(freeAssignmentMigration, /update public\.learning_company_paid_seat_access|update public\.enrollments set status='cancelled'/);
 assert.match(checkout, /PAYMENTS_LIVE_COMPANY_CHECKOUT_ENABLED !== "true"/);
 assert.match(checkout, /admin\.rpc\("is_learning_company_live_accounting_ready"\)/);
 assert.match(checkout, /accountingError \|\| accountingReady !== true/);
