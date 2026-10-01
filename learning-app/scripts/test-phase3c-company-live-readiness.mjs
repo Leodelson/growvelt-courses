@@ -27,6 +27,7 @@ const commercialReversalMigration = await read("../supabase/migrations/202609470
 const reversalAccessMigration = await read("../supabase/migrations/20260948000000_finalize_company_reversal_access_safely.sql");
 const freeClaimMigration = await read("../supabase/migrations/20260949000000_record_free_learning_enrollment_claims.sql");
 const freeAssignmentMigration = await read("../supabase/migrations/20260950000000_record_company_free_assignment_origins.sql");
+const accessAssessmentMigration = await read("../supabase/migrations/20260951000000_assess_company_reversal_access_sources.sql");
 const checkout = await read("../app/api/company/workspaces/[workspaceId]/purchases/[purchaseId]/checkout/route.ts");
 const webhook = await read("../app/api/payments/paystack/webhook/route.ts");
 const reconciliation = await read("../app/api/company/payments/paystack/reconcile/route.ts");
@@ -75,6 +76,12 @@ assert.match(freeAssignmentMigration, /on conflict on constraint learning_compan
 assert.match(freeAssignmentMigration, /if enrollment_key is not null then/);
 assert.match(freeAssignmentMigration, /manager\.role in \('owner','admin'\)/);
 assert.doesNotMatch(freeAssignmentMigration, /update public\.learning_company_paid_seat_access|update public\.enrollments set status='cancelled'/);
+assert.match(accessAssessmentMigration, /create or replace function public\.assess_learning_company_reversal_access/);
+assert.match(accessAssessmentMigration, /'unproven_exclusive_candidate'/);
+assert.match(accessAssessmentMigration, /'retain_independent_source'/);
+assert.match(accessAssessmentMigration, /'manual_review'/);
+assert.match(accessAssessmentMigration, /join public\.learning_company_reversal_access_results result_row/);
+assert.doesNotMatch(accessAssessmentMigration, /update public\.|delete from public\.|insert into public\./);
 assert.match(checkout, /PAYMENTS_LIVE_COMPANY_CHECKOUT_ENABLED !== "true"/);
 assert.match(checkout, /admin\.rpc\("is_learning_company_live_accounting_ready"\)/);
 assert.match(checkout, /accountingError \|\| accountingReady !== true/);
