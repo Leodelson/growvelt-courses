@@ -24,6 +24,7 @@ const saleMigration = await read("../supabase/migrations/20260944000000_add_comp
 const reversalMigration = await read("../supabase/migrations/20260945000000_add_company_reversal_event_inbox.sql");
 const provenanceMigration = await read("../supabase/migrations/20260946000000_record_company_paid_seat_access_provenance.sql");
 const commercialReversalMigration = await read("../supabase/migrations/20260947000000_record_company_commercial_reversals.sql");
+const reversalAccessMigration = await read("../supabase/migrations/20260948000000_finalize_company_reversal_access_safely.sql");
 const checkout = await read("../app/api/company/workspaces/[workspaceId]/purchases/[purchaseId]/checkout/route.ts");
 const webhook = await read("../app/api/payments/paystack/webhook/route.ts");
 const reconciliation = await read("../app/api/company/payments/paystack/reconcile/route.ts");
@@ -59,6 +60,10 @@ assert.match(commercialReversalMigration, /Final provider reversal outcome is re
 assert.match(commercialReversalMigration, /Company reversal ledger is not balanced/);
 assert.match(commercialReversalMigration, /reconcile_learning_company_commercial_reversals/);
 assert.doesNotMatch(commercialReversalMigration, /update public\.enrollments|update public\.learning_company_course_assignments|insert into public\.learning_instructor_earnings/);
+assert.match(reversalAccessMigration, /requires_manual_access_review boolean not null/);
+assert.match(reversalAccessMigration, /company_reversal_shared_access_review_required/);
+assert.match(reversalAccessMigration, /where purchase_id = purchase_row\.id and assigned_user_id = seat_row\.assigned_user_id/);
+assert.doesNotMatch(reversalAccessMigration, /update public\.enrollments|update public\.learning_company_course_assignments/);
 assert.match(checkout, /PAYMENTS_LIVE_COMPANY_CHECKOUT_ENABLED !== "true"/);
 assert.match(checkout, /admin\.rpc\("is_learning_company_live_accounting_ready"\)/);
 assert.match(checkout, /accountingError \|\| accountingReady !== true/);
@@ -69,4 +74,4 @@ assert.match(webhook, /verifyPaystackCompanyTransaction\(companyCharge\.referenc
 assert.match(webhook, /receive_learning_company_reversal_notice/);
 assert.ok(webhook.indexOf("isPaystackCompanyReversalEvent(payload)") < webhook.indexOf("parsePaystackTestDisputeEvent(payload)"), "Company reversal notices must be captured before learner-only parsers");
 assert.match(reconciliation, /verifyPaystackCompanyTransaction\(reference, getPaystackConfig\(false\)\.mode\)/);
-console.log("PASS Phase 3C company domain separation, sale-ledger structure, and disabled-by-default live checkout wiring (static checks)");
+console.log("PASS Phase 3C company domain separation, sale/reversal structure, conservative access review, and disabled-by-default live checkout wiring (static checks)");
