@@ -13,6 +13,7 @@ const migration48 = readFileSync(path.resolve(__dirname,'../supabase/migrations/
 const migration49 = readFileSync(path.resolve(__dirname,'../supabase/migrations/20260949000000_record_free_learning_enrollment_claims.sql'), 'utf8');
 const migration50 = readFileSync(path.resolve(__dirname,'../supabase/migrations/20260950000000_record_company_free_assignment_origins.sql'), 'utf8');
 const migration51 = readFileSync(path.resolve(__dirname,'../supabase/migrations/20260951000000_assess_company_reversal_access_sources.sql'), 'utf8');
+const migration52 = readFileSync(path.resolve(__dirname,'../supabase/migrations/20260952000000_commit_company_reversal_atomically.sql'), 'utf8');
 const owner = '00000000-0000-4000-8000-000000000001';
 const teacher = '00000000-0000-4000-8000-000000000002';
 const employee1 = '00000000-0000-4000-8000-000000000003';
@@ -116,6 +117,7 @@ async function main() {
     await db.exec(migration49);
     await db.exec(migration50);
     await db.exec(migration51);
+    await db.exec(migration52);
     await db.exec(`
       insert into public.learning_company_workspaces values(1,'active');
       insert into public.learning_company_memberships values
@@ -300,9 +302,26 @@ async function main() {
     const refundAccess = (await db.query(`select * from public.apply_learning_company_reversal_access(${refundId})`)).rows[0];
     assert.deepEqual(refundAccess,{reversed_seat_count:1,assignments_cancelled:0,enrollments_cancelled:0});
     assert.deepEqual((await db.query(`select * from public.apply_learning_company_reversal_access(${refundId})`)).rows[0],refundAccess);
-    const secondRefundId = (await db.query(`select public.post_learning_company_commercial_reversal(${secondNotice.event_id},'12345','processed',null,101,array['${employee2}']::uuid[]) as id`)).rows[0].id;
-    const secondRefundAccess = (await db.query(`select * from public.apply_learning_company_reversal_access(${secondRefundId})`)).rows[0];
-    assert.deepEqual(secondRefundAccess,{reversed_seat_count:1,assignments_cancelled:0,enrollments_cancelled:0});
+    const secondCommit = `select * from public.commit_learning_company_reversal_after_verification(
+      ${secondNotice.event_id},'12345','processed',null,101,array['${employee2}']::uuid[])`;
+    await db.exec('begin');
+    await db.exec(`create or replace function public.apply_learning_company_reversal_access(p_reversal_id bigint)
+      returns table(reversed_seat_count integer,assignments_cancelled integer,enrollments_cancelled integer)
+      language plpgsql security definer set search_path to '' as $failure$
+      begin raise exception 'Injected access failure'; end;$failure$;`);
+    let atomicRollback = false;
+    try { await db.query(secondCommit); }
+    catch { atomicRollback = true; }
+    await db.exec('rollback');
+    assert.equal(atomicRollback,true);
+    assert.equal((await db.query(`select count(*) as n from public.learning_company_commercial_reversals
+      where inbox_event_id=${secondNotice.event_id}`)).rows[0].n,0);
+    assert.equal((await db.query(`select status from public.learning_company_paid_seat_access
+      where purchase_id=100 and assigned_user_id='${employee2}'`)).rows[0].status,'active');
+    const secondRefundAccess = (await db.query(secondCommit)).rows[0];
+    const secondRefundId = secondRefundAccess.reversal_id;
+    assert.deepEqual(secondRefundAccess,{reversal_id:secondRefundId,reversed_seat_count:1,assignments_cancelled:0,enrollments_cancelled:0});
+    assert.deepEqual((await db.query(secondCommit)).rows[0],secondRefundAccess);
     assert.equal((await db.query(`select status from public.enrollments where learner_id='${employee1}'`)).rows[0].status,'active');
     assert.equal((await db.query(`select status from public.enrollments where learner_id='${employee2}'`)).rows[0].status,'active');
     assert.equal((await db.query(`select status from public.learning_company_course_assignments where assigned_user_id='${employee1}'`)).rows[0].status,'active');
@@ -357,9 +376,11 @@ async function main() {
     const thirdNotice = (await db.query(receiveSql,[
       'refund.processed:125','e'.repeat(64),'refund.processed',`CP-${'F'.repeat(32)}`,
       '125','processed',101,'NGN','test'])).rows[0];
-    const thirdRefundId = (await db.query(`select public.post_learning_company_commercial_reversal(${thirdNotice.event_id},'34567','processed',null,101,array['${employee3}']::uuid[]) as id`)).rows[0].id;
-    assert.deepEqual((await db.query(`select * from public.apply_learning_company_reversal_access(${thirdRefundId})`)).rows[0],
-      {reversed_seat_count:1,assignments_cancelled:0,enrollments_cancelled:0});
+    const thirdRefund = (await db.query(`select * from public.commit_learning_company_reversal_after_verification(
+      ${thirdNotice.event_id},'34567','processed',null,101,array['${employee3}']::uuid[])`)).rows[0];
+    const thirdRefundId = thirdRefund.reversal_id;
+    assert.deepEqual(thirdRefund,
+      {reversal_id:thirdRefundId,reversed_seat_count:1,assignments_cancelled:0,enrollments_cancelled:0});
     assert.equal((await db.query(`select status from public.enrollments where learner_id='${employee3}'`)).rows[0].status,'active');
     assert.equal((await db.query(`select status from public.learning_company_course_assignments where assigned_user_id='${employee3}'`)).rows[0].status,'active');
     assert.equal((await assess(thirdRefundId))[0].decision,'retain_independent_source');
@@ -390,10 +411,12 @@ async function main() {
     const reversalPermissions = (await db.query(`select
       has_table_privilege('authenticated','public.learning_company_commercial_reversals','SELECT') as member_read,
       has_function_privilege('authenticated','public.post_learning_company_commercial_reversal(bigint,text,text,text,bigint,uuid[])','EXECUTE') as member_execute,
-      has_function_privilege('service_role','public.post_learning_company_commercial_reversal(bigint,text,text,text,bigint,uuid[])','EXECUTE') as service_execute`)).rows[0];
-    assert.deepEqual(reversalPermissions,{member_read:false,member_execute:false,service_execute:true});
+      has_function_privilege('service_role','public.post_learning_company_commercial_reversal(bigint,text,text,text,bigint,uuid[])','EXECUTE') as service_post_execute,
+      has_function_privilege('service_role','public.apply_learning_company_reversal_access(bigint)','EXECUTE') as service_access_execute,
+      has_function_privilege('service_role','public.commit_learning_company_reversal_after_verification(bigint,text,text,text,bigint,uuid[])','EXECUTE') as service_atomic_execute`)).rows[0];
+    assert.deepEqual(reversalPermissions,{member_read:false,member_execute:false,service_post_execute:false,service_access_execute:false,service_atomic_execute:true});
     assert.equal((await db.query(`select status from public.enrollments where learner_id='${employee1}' and course_id=19`)).rows[0].status,'active');
-    console.log('PASS integrated isolated company sale, free-grant provenance, reversal accounting, and independent-access assessment');
+    console.log('PASS integrated company sale, free-grant provenance, atomic reversal rollback, and access assessment');
   } finally {
     await db.close();
   }
