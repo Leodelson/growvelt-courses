@@ -25,6 +25,7 @@ const reversalMigration = await read("../supabase/migrations/20260945000000_add_
 const provenanceMigration = await read("../supabase/migrations/20260946000000_record_company_paid_seat_access_provenance.sql");
 const commercialReversalMigration = await read("../supabase/migrations/20260947000000_record_company_commercial_reversals.sql");
 const reversalAccessMigration = await read("../supabase/migrations/20260948000000_finalize_company_reversal_access_safely.sql");
+const freeClaimMigration = await read("../supabase/migrations/20260949000000_record_free_learning_enrollment_claims.sql");
 const checkout = await read("../app/api/company/workspaces/[workspaceId]/purchases/[purchaseId]/checkout/route.ts");
 const webhook = await read("../app/api/payments/paystack/webhook/route.ts");
 const reconciliation = await read("../app/api/company/payments/paystack/reconcile/route.ts");
@@ -64,6 +65,10 @@ assert.match(reversalAccessMigration, /requires_manual_access_review boolean not
 assert.match(reversalAccessMigration, /company_reversal_shared_access_review_required/);
 assert.match(reversalAccessMigration, /where purchase_id = purchase_row\.id and assigned_user_id = seat_row\.assigned_user_id/);
 assert.doesNotMatch(reversalAccessMigration, /update public\.enrollments|update public\.learning_company_course_assignments/);
+assert.match(freeClaimMigration, /create table public\.learning_free_enrollment_claims/);
+assert.match(freeClaimMigration, /on conflict\(learner_id,course_id\) do nothing/);
+assert.match(freeClaimMigration, /where enrollment\.learner_id=auth\.uid\(\) and enrollment\.course_id=p_course_id/);
+assert.doesNotMatch(freeClaimMigration, /update public\.learning_company_paid_seat_access|update public\.learning_company_course_assignments/);
 assert.match(checkout, /PAYMENTS_LIVE_COMPANY_CHECKOUT_ENABLED !== "true"/);
 assert.match(checkout, /admin\.rpc\("is_learning_company_live_accounting_ready"\)/);
 assert.match(checkout, /accountingError \|\| accountingReady !== true/);
