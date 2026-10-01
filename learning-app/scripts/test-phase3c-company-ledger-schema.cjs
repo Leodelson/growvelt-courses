@@ -1,3 +1,4 @@
+const assert = require('node:assert/strict');
 const { readFileSync, readdirSync } = require('node:fs');
 const path = require('node:path');
 const { PGlite } = require(process.env.PGLITE_PACKAGE_PATH || '@electric-sql/pglite');
@@ -52,7 +53,44 @@ async function main() {
       await db.exec(readFileSync(path.join(migrationsDir, name), 'utf8'));
       console.log(`ok ${name}`);
     }
+    stage = 'payout-source isolation';
+    const { rows: foreignKeys } = await db.query(`
+      select source_table.relname as source, target_table.relname as target
+      from pg_constraint constraint_row
+      join pg_class source_table on source_table.oid = constraint_row.conrelid
+      join pg_class target_table on target_table.oid = constraint_row.confrelid
+      where constraint_row.contype = 'f' and constraint_row.conrelid in (
+        'public.learning_instructor_earnings'::regclass,
+        'public.learning_commercial_allocations'::regclass,
+        'public.learning_company_commercial_sales'::regclass)
+    `);
+    const hasEdge = (source, target) => foreignKeys.some((row) =>
+      row.source === source && row.target === target);
+    assert.ok(hasEdge('learning_instructor_earnings', 'learning_commercial_allocations'));
+    assert.ok(hasEdge('learning_commercial_allocations', 'learning_orders'));
+    assert.ok(hasEdge('learning_company_commercial_sales', 'learning_company_paid_course_purchases'));
+    assert.ok(!foreignKeys.some((row) => row.source === 'learning_company_commercial_sales'
+      && ['learning_orders', 'learning_commercial_allocations', 'learning_instructor_earnings'].includes(row.target)));
+
+    const payoutFunctions = [
+      ['release_matured_learning_instructor_earnings(integer,uuid)', ['learning_instructor_earnings', 'learning_commercial_allocations', 'learning_orders']],
+      ['reserve_learning_instructor_earning(bigint,uuid,text,uuid)', ['learning_instructor_earnings', 'learning_commercial_allocations', 'learning_orders']],
+      ['approve_learning_instructor_payout_item(bigint,text,uuid)', ['learning_instructor_earnings', 'learning_commercial_allocations', 'learning_orders']],
+    ];
+    for (const [signature, requiredTables] of payoutFunctions) {
+      const { rows } = await db.query('select pg_get_functiondef($1::regprocedure) as definition',
+        [`public.${signature}`]);
+      const definition = rows[0]?.definition || '';
+      for (const table of requiredTables) assert.ok(definition.includes(table), `${signature} lost ${table}`);
+      assert.ok(!definition.includes('learning_company_commercial_sales'),
+        `${signature} must not release or pay company-held proceeds`);
+    }
+    const companyMigrationSql = migrationNames.map((name) =>
+      readFileSync(path.join(migrationsDir, name), 'utf8')).join('\n');
+    assert.doesNotMatch(companyMigrationSql,
+      /(?:insert\s+into|update|delete\s+from)\s+public\.(?:learning_instructor_earnings|learning_commercial_allocations|learning_instructor_payout_items)\b/i);
     console.log('Pending company migrations apply to the supplied public schema.');
+    console.log('Company proceeds remain isolated from personal earnings and payout functions.');
   } catch (error) {
     console.error(`Failed at ${stage}: ${error.message}`);
     process.exitCode = 1;
