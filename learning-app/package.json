@@ -55,6 +55,7 @@
     "test:company-learning:reversal-plan": "node --experimental-strip-types scripts/test-phase3c-company-reversal-plan.mjs",
     "test:company-learning:provider-reversal-verification": "node --experimental-strip-types scripts/test-phase3c-company-provider-reversal-verification.mjs",
     "test:company-learning:access-surface-inventory": "node scripts/test-phase3c-access-surface-inventory.mjs",
+    "test:company-learning:ledger-schema": "node scripts/test-phase3c-company-ledger-schema.cjs",
     "test:organizations:course-attribution:local": "node scripts/test-phase2a3-organization-course-attribution-local.mjs",
     "test:account-deletion:organization-guard:local": "node scripts/test-account-deletion-organization-guard-local.mjs",
     "test:account-deletion:retention:local": "node scripts/test-account-deletion-retention-local.mjs",
