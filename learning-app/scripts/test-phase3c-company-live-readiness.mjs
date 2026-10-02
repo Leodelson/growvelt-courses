@@ -31,6 +31,7 @@ const accessAssessmentMigration = await read("../supabase/migrations/20260951000
 const atomicReversalMigration = await read("../supabase/migrations/20260952000000_commit_company_reversal_atomically.sql");
 const sourceDecisionMigration = await read("../supabase/migrations/20260953000000_resolve_company_learning_access_sources.sql");
 const sourceEnforcementMigration = await read("../supabase/migrations/20260954000000_enforce_proven_reversed_company_seat_access.sql");
+const heldLiabilityMigration = await read("../supabase/migrations/20260955000000_reconcile_company_seller_held_liabilities.sql");
 const checkout = await read("../app/api/company/workspaces/[workspaceId]/purchases/[purchaseId]/checkout/route.ts");
 const webhook = await read("../app/api/payments/paystack/webhook/route.ts");
 const reconciliation = await read("../app/api/company/payments/paystack/reconcile/route.ts");
@@ -103,6 +104,10 @@ assert.match(sourceEnforcementMigration, /update public\.enrollments set status=
 assert.match(sourceEnforcementMigration, /source_decision\.decision='manual_review'/);
 assert.match(sourceEnforcementMigration, /commit_learning_company_reversal_after_verification/);
 assert.doesNotMatch(sourceEnforcementMigration, /delete from public\.enrollments|delete from public\.lesson_progress/);
+assert.match(heldLiabilityMigration, /list_learning_company_seller_held_liabilities/);
+assert.match(heldLiabilityMigration, /reconcile_learning_company_seller_held_liabilities/);
+assert.doesNotMatch(heldLiabilityMigration, /create or replace function public\.is_learning_company_live_accounting_ready/);
+assert.doesNotMatch(heldLiabilityMigration, /\b(?:insert\s+into|update|delete\s+from)\s+public\./i);
 assert.match(checkout, /PAYMENTS_LIVE_COMPANY_CHECKOUT_ENABLED !== "true"/);
 assert.match(checkout, /admin\.rpc\("is_learning_company_live_accounting_ready"\)/);
 assert.match(checkout, /accountingError \|\| accountingReady !== true/);

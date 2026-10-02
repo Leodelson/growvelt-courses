@@ -16,6 +16,7 @@ const migration51 = readFileSync(path.resolve(__dirname,'../supabase/migrations/
 const migration52 = readFileSync(path.resolve(__dirname,'../supabase/migrations/20260952000000_commit_company_reversal_atomically.sql'), 'utf8');
 const migration53 = readFileSync(path.resolve(__dirname,'../supabase/migrations/20260953000000_resolve_company_learning_access_sources.sql'), 'utf8');
 const migration54 = readFileSync(path.resolve(__dirname,'../supabase/migrations/20260954000000_enforce_proven_reversed_company_seat_access.sql'), 'utf8');
+const migration55 = readFileSync(path.resolve(__dirname,'../supabase/migrations/20260955000000_reconcile_company_seller_held_liabilities.sql'), 'utf8');
 const owner = '00000000-0000-4000-8000-000000000001';
 const teacher = '00000000-0000-4000-8000-000000000002';
 const employee1 = '00000000-0000-4000-8000-000000000003';
@@ -128,6 +129,7 @@ async function main() {
     await db.exec(migration52);
     await db.exec(migration53);
     await db.exec(migration54);
+    await db.exec(migration55);
     await db.exec(`
       insert into public.learning_company_workspaces values(1,'active');
       insert into public.learning_company_memberships values
@@ -493,6 +495,20 @@ async function main() {
     assert.equal(personalSale.seller_instructor_id, teacher);
     assert.equal(personalSale.seller_organization_id, null);
     assert.equal(personalSale.seller_gross_minor, 76);
+    const heldBalances = (await db.query(`select purchase_id,seller_payee_id,original_held_minor,
+      reversed_minor,remaining_held_minor from public.list_learning_company_seller_held_liabilities()
+      order by purchase_id`)).rows;
+    assert.deepEqual(heldBalances, [
+      { purchase_id: 100, seller_payee_id: owner, original_held_minor: 152, reversed_minor: 152, remaining_held_minor: 0 },
+      { purchase_id: 102, seller_payee_id: owner, original_held_minor: 152, reversed_minor: 152, remaining_held_minor: 0 },
+      { purchase_id: 103, seller_payee_id: owner, original_held_minor: 76, reversed_minor: 76, remaining_held_minor: 0 },
+      { purchase_id: 104, seller_payee_id: teacher, original_held_minor: 76, reversed_minor: 0, remaining_held_minor: 76 },
+    ]);
+    assert.deepEqual((await db.query('select * from public.reconcile_learning_company_seller_held_liabilities()')).rows, []);
+    const holdPermissions = (await db.query(`select
+      has_function_privilege('authenticated','public.list_learning_company_seller_held_liabilities()','EXECUTE') as member_read,
+      has_function_privilege('service_role','public.list_learning_company_seller_held_liabilities()','EXECUTE') as service_read`)).rows[0];
+    assert.deepEqual(holdPermissions, { member_read: false, service_read: true });
 
     // An organization course without an active owner must fail closed before
     // a purchase or company seller liability can be created.
@@ -511,7 +527,14 @@ async function main() {
     }
     assert.equal(ownerRequired, true);
     assert.equal((await db.query('select count(*) as n from public.learning_company_paid_course_purchases where id=105')).rows[0].n, 0);
-    console.log('PASS integrated company sale, payee attribution, atomic reversal, independent grants, and exclusive-seat access revocation');
+    // Simulate a malformed extra ledger posting; reconciliation must flag it.
+    await db.exec(`insert into public.learning_company_sale_ledger_entries
+      (transaction_id,line_number,account_code,amount_minor,currency)
+      values (${personalSale.allocation_ledger_transaction_id},4,
+        'liability.company_seller_earnings_held',1,'NGN');`);
+    assert.deepEqual((await db.query('select * from public.reconcile_learning_company_seller_held_liabilities()')).rows,
+      [{ purchase_id: 104, issue_type: 'company_seller_held_capture_mismatch' }]);
+    console.log('PASS integrated company sale, held seller balances, atomic reversal, independent grants, and exclusive-seat access revocation');
   } finally {
     await db.close();
   }
