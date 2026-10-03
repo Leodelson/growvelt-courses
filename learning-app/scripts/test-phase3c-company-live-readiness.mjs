@@ -62,6 +62,24 @@ assert.match(provenanceMigration, /enrollment_was_active_before_purchase boolean
 assert.match(provenanceMigration, /A reversed company seat cannot be granted again/);
 assert.match(provenanceMigration, /paid_seat_missing_access_provenance/);
 assert.doesNotMatch(provenanceMigration, /update public\.learning_company_course_assignments|update public\.enrollments/);
+const functionBody = (migrationSql, functionName) => {
+  const marker = `create or replace function public.${functionName}(`;
+  const start = migrationSql.indexOf(marker);
+  assert.ok(start >= 0, `${functionName} is missing`);
+  const end = migrationSql.indexOf("end;$function$;", start);
+  assert.ok(end > start, `${functionName} body is incomplete`);
+  return migrationSql.slice(start, end);
+};
+const assertPaidSeatLockOrder = (body, functionName) => {
+  const purchaseLock = body.search(/purchase\.status\s*=\s*'paid'\s+for update/);
+  const orderedSeats = body.search(/order by (?:seat|line)\.assigned_user_id/);
+  const advisoryLock = body.indexOf("pg_advisory_xact_lock(hashtextextended('learning-company-paid-access:'");
+  const accessLock = body.indexOf("for update;", advisoryLock);
+  assert.ok(purchaseLock >= 0 && orderedSeats > purchaseLock && advisoryLock > orderedSeats
+    && accessLock > advisoryLock, `${functionName} must lock purchase, then ordered seats, then access`);
+};
+assertPaidSeatLockOrder(functionBody(provenanceMigration, "grant_paid_learning_company_purchase_access"),
+  "grant_paid_learning_company_purchase_access");
 assert.match(commercialReversalMigration, /create table public\.learning_company_commercial_reversals/);
 assert.match(commercialReversalMigration, /unique\(purchase_id,assigned_user_id\)/);
 assert.match(commercialReversalMigration, /Final provider reversal outcome is required/);
@@ -104,6 +122,8 @@ assert.match(sourceEnforcementMigration, /update public\.enrollments set status=
 assert.match(sourceEnforcementMigration, /source_decision\.decision='manual_review'/);
 assert.match(sourceEnforcementMigration, /commit_learning_company_reversal_after_verification/);
 assert.doesNotMatch(sourceEnforcementMigration, /delete from public\.enrollments|delete from public\.lesson_progress/);
+assertPaidSeatLockOrder(functionBody(sourceEnforcementMigration, "apply_learning_company_reversal_access"),
+  "apply_learning_company_reversal_access");
 assert.match(heldLiabilityMigration, /list_learning_company_seller_held_liabilities/);
 assert.match(heldLiabilityMigration, /reconcile_learning_company_seller_held_liabilities/);
 assert.doesNotMatch(heldLiabilityMigration, /create or replace function public\.is_learning_company_live_accounting_ready/);

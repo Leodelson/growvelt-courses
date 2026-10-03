@@ -527,6 +527,30 @@ async function main() {
     }
     assert.equal(ownerRequired, true);
     assert.equal((await db.query('select count(*) as n from public.learning_company_paid_course_purchases where id=105')).rows[0].n, 0);
+    // A refunded seat must stay revoked, while a separately purchased seat
+    // for the same learner and course remains a valid new access source.
+    await db.exec(`
+      insert into public.learning_company_paid_course_purchases
+        (id,workspace_id,course_id,requested_by,course_title_snapshot,provider_name_snapshot,
+         unit_amount_minor,total_amount_minor,currency,seat_count,status)
+      values (106,1,19,'${buyer}','Replacement seat','Provider',101,101,'NGN',1,'checkout_pending');
+      insert into public.learning_company_paid_course_purchase_seats values (106,'${employee3}');
+      insert into public.learning_company_paid_course_purchase_attempts
+        (purchase_id,provider,provider_reference,amount_minor,currency,status)
+      values (106,'paystack','CP-${'8'.repeat(32)}',101,'NGN','pending');
+      update public.learning_company_paid_course_purchases set status='paid' where id=106;
+      update public.learning_company_paid_course_purchase_attempts
+        set status='succeeded',provider_transaction_id='56789' where purchase_id=106;
+      select * from public.grant_paid_learning_company_purchase_access(106);
+    `);
+    assert.equal((await db.query(`select status from public.learning_company_paid_seat_access
+      where purchase_id=103 and assigned_user_id='${employee3}'`)).rows[0].status, 'refunded');
+    assert.equal((await db.query(`select status from public.learning_company_paid_seat_access
+      where purchase_id=106 and assigned_user_id='${employee3}'`)).rows[0].status, 'active');
+    let oldSeatRegrantRejected = false;
+    try { await db.exec('select * from public.grant_paid_learning_company_purchase_access(103)'); }
+    catch { oldSeatRegrantRejected = true; }
+    assert.equal(oldSeatRegrantRejected, true);
     // Simulate a malformed extra ledger posting; reconciliation must flag it.
     await db.exec(`insert into public.learning_company_sale_ledger_entries
       (transaction_id,line_number,account_code,amount_minor,currency)
