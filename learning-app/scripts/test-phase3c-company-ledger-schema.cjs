@@ -62,20 +62,33 @@ async function main() {
       where constraint_row.contype = 'f' and constraint_row.conrelid in (
         'public.learning_instructor_earnings'::regclass,
         'public.learning_commercial_allocations'::regclass,
-        'public.learning_company_commercial_sales'::regclass)
+        'public.learning_company_commercial_sales'::regclass,
+        'public.learning_instructor_earning_reservations'::regclass,
+        'public.learning_instructor_payout_items'::regclass,
+        'public.learning_instructor_payout_settlements'::regclass)
     `);
     const hasEdge = (source, target) => foreignKeys.some((row) =>
       row.source === source && row.target === target);
     assert.ok(hasEdge('learning_instructor_earnings', 'learning_commercial_allocations'));
     assert.ok(hasEdge('learning_commercial_allocations', 'learning_orders'));
     assert.ok(hasEdge('learning_company_commercial_sales', 'learning_company_paid_course_purchases'));
+    assert.ok(hasEdge('learning_instructor_earning_reservations', 'learning_instructor_earnings'));
+    assert.ok(hasEdge('learning_instructor_payout_items', 'learning_instructor_earning_reservations'));
+    assert.ok(hasEdge('learning_instructor_payout_items', 'learning_instructor_earnings'));
+    assert.ok(hasEdge('learning_instructor_payout_settlements', 'learning_instructor_payout_items'));
     assert.ok(!foreignKeys.some((row) => row.source === 'learning_company_commercial_sales'
       && ['learning_orders', 'learning_commercial_allocations', 'learning_instructor_earnings'].includes(row.target)));
+    assert.ok(!foreignKeys.some((row) =>
+      ['learning_instructor_earning_reservations', 'learning_instructor_payout_items',
+        'learning_instructor_payout_settlements'].includes(row.source)
+      && ['learning_company_paid_course_purchases', 'learning_company_commercial_sales'].includes(row.target)));
 
     const payoutFunctions = [
       ['release_matured_learning_instructor_earnings(integer,uuid)', ['learning_instructor_earnings', 'learning_commercial_allocations', 'learning_orders']],
       ['reserve_learning_instructor_earning(bigint,uuid,text,uuid)', ['learning_instructor_earnings', 'learning_commercial_allocations', 'learning_orders']],
       ['approve_learning_instructor_payout_item(bigint,text,uuid)', ['learning_instructor_earnings', 'learning_commercial_allocations', 'learning_orders']],
+      ['list_learning_instructor_payout_candidates(uuid,integer)', ['learning_instructor_earnings', 'learning_commercial_allocations', 'learning_orders']],
+      ['process_learning_instructor_payout_provider_event(bigint)', ['learning_instructor_earnings', 'learning_commercial_allocations', 'learning_orders']],
     ];
     for (const [signature, requiredTables] of payoutFunctions) {
       const { rows } = await db.query('select pg_get_functiondef($1::regprocedure) as definition',
