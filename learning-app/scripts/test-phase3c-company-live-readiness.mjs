@@ -32,6 +32,7 @@ const atomicReversalMigration = await read("../supabase/migrations/2026095200000
 const sourceDecisionMigration = await read("../supabase/migrations/20260953000000_resolve_company_learning_access_sources.sql");
 const sourceEnforcementMigration = await read("../supabase/migrations/20260954000000_enforce_proven_reversed_company_seat_access.sql");
 const heldLiabilityMigration = await read("../supabase/migrations/20260955000000_reconcile_company_seller_held_liabilities.sql");
+const historicalExclusionMigration = await read("../supabase/migrations/20260956000000_exclude_precommercial_company_test_sale.sql");
 const checkout = await read("../app/api/company/workspaces/[workspaceId]/purchases/[purchaseId]/checkout/route.ts");
 const webhook = await read("../app/api/payments/paystack/webhook/route.ts");
 const reconciliation = await read("../app/api/company/payments/paystack/reconcile/route.ts");
@@ -49,6 +50,10 @@ assert.match(saleMigration, /purchase_row\.unit_amount_minor \* purchase_row\.se
 assert.match(saleMigration, /after update of status on public\.learning_company_paid_course_purchase_attempts/);
 assert.match(saleMigration, /old\.status is distinct from new\.status/);
 assert.match(saleMigration, /paid_purchase_missing_commercial_sale/);
+assert.match(historicalExclusionMigration, /learning_company_historical_test_sale_exclusions/);
+assert.match(historicalExclusionMigration, /attempt\.paystack_domain = 'test' and attempt\.status = 'succeeded'/);
+assert.match(historicalExclusionMigration, /purchase\.commercial_terms_version is null/);
+assert.doesNotMatch(historicalExclusionMigration, /update public\.learning_company_paid_course_purchases|update public\.learning_company_paid_course_purchase_seats|update public\.enrollments/);
 assert.match(saleMigration, /company_sale_ledger_identity_mismatch/);
 assert.doesNotMatch(saleMigration, /insert into public\.learning_instructor_earnings/);
 assert.doesNotMatch(saleMigration, /create or replace function public\.is_learning_company_live_accounting_ready/);

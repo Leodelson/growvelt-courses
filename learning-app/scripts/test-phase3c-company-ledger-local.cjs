@@ -17,6 +17,7 @@ const migration52 = readFileSync(path.resolve(__dirname,'../supabase/migrations/
 const migration53 = readFileSync(path.resolve(__dirname,'../supabase/migrations/20260953000000_resolve_company_learning_access_sources.sql'), 'utf8');
 const migration54 = readFileSync(path.resolve(__dirname,'../supabase/migrations/20260954000000_enforce_proven_reversed_company_seat_access.sql'), 'utf8');
 const migration55 = readFileSync(path.resolve(__dirname,'../supabase/migrations/20260955000000_reconcile_company_seller_held_liabilities.sql'), 'utf8');
+const migration56 = readFileSync(path.resolve(__dirname,'../supabase/migrations/20260956000000_exclude_precommercial_company_test_sale.sql'), 'utf8');
 const owner = '00000000-0000-4000-8000-000000000001';
 const teacher = '00000000-0000-4000-8000-000000000002';
 const employee1 = '00000000-0000-4000-8000-000000000003';
@@ -130,6 +131,7 @@ async function main() {
     await db.exec(migration53);
     await db.exec(migration54);
     await db.exec(migration55);
+    await db.exec(migration56);
     await db.exec(`
       insert into public.learning_company_workspaces values(1,'active');
       insert into public.learning_company_memberships values
@@ -175,7 +177,20 @@ async function main() {
     const saleCount = (await db.query('select count(*) as n from public.learning_company_commercial_sales where purchase_id=100')).rows[0].n;
     assert.equal(saleCount,1);
     const issues = (await db.query('select * from public.reconcile_learning_company_commercial_sales() order by purchase_id,issue_type')).rows;
-    assert.deepEqual(issues,[{purchase_id:99,issue_type:'paid_purchase_missing_commercial_sale'}]);
+    assert.deepEqual(issues,[]);
+    const exclusion = (await db.query(`select purchase_id,reason from public.learning_company_historical_test_sale_exclusions`)).rows;
+    assert.deepEqual(exclusion,[{purchase_id:99,reason:'pre_commercial_test_without_terms'}]);
+    assert.equal((await db.query(`select count(*) as n from public.learning_company_commercial_sales where purchase_id=99`)).rows[0].n,0);
+    const exclusionPrivileges = (await db.query(`select
+      has_table_privilege('authenticated','public.learning_company_historical_test_sale_exclusions','SELECT') as member_read,
+      has_table_privilege('service_role','public.learning_company_historical_test_sale_exclusions','SELECT') as service_read,
+      has_table_privilege('service_role','public.learning_company_historical_test_sale_exclusions','INSERT') as service_insert`)).rows[0];
+    assert.deepEqual(exclusionPrivileges,{member_read:false,service_read:true,service_insert:false});
+    let exclusionImmutable = false;
+    try { await db.exec(`delete from public.learning_company_historical_test_sale_exclusions where purchase_id=99`); }
+    catch { exclusionImmutable = true; }
+    assert.equal(exclusionImmutable,true);
+    assert.equal((await db.query(`select count(*) as n from public.learning_company_paid_course_purchase_seats where purchase_id=99`)).rows[0].n,1);
     let immutable = false;
     try { await db.exec(`update public.learning_company_commercial_sale_lines set unit_amount_minor=102 where purchase_id=100;`); }
     catch { immutable = true; }

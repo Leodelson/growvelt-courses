@@ -11,10 +11,10 @@ if (!schemaPath) {
 
 const migrationsDir = path.resolve(__dirname, '../supabase/migrations');
 const migrationNames = readdirSync(migrationsDir)
-  .filter((name) => /^202609(4[3-9]|5[0-5])000000_.*\.sql$/.test(name))
+  .filter((name) => /^202609(4[3-9]|5[0-6])000000_.*\.sql$/.test(name))
   .sort();
-if (migrationNames.length !== 13) {
-  throw new Error(`Expected migrations 43–55; found ${migrationNames.length}`);
+if (migrationNames.length !== 14) {
+  throw new Error(`Expected migrations 43–56; found ${migrationNames.length}`);
 }
 
 async function main() {
@@ -106,6 +106,11 @@ async function main() {
       has_function_privilege('authenticated','public.list_learning_company_seller_held_liabilities()','EXECUTE') as member_read,
       has_function_privilege('service_role','public.list_learning_company_seller_held_liabilities()','EXECUTE') as service_read`);
     assert.deepEqual(holdPermissions[0], { member_read: false, service_read: true });
+    const { rows: exclusionPermissions } = await db.query(`select
+      has_table_privilege('authenticated','public.learning_company_historical_test_sale_exclusions','SELECT') as member_read,
+      has_table_privilege('service_role','public.learning_company_historical_test_sale_exclusions','SELECT') as service_read,
+      has_table_privilege('service_role','public.learning_company_historical_test_sale_exclusions','INSERT') as service_insert`);
+    assert.deepEqual(exclusionPermissions[0], { member_read: false, service_read: true, service_insert: false });
     console.log('Pending company migrations apply to the supplied public schema.');
     console.log('Company proceeds remain isolated from personal earnings and payout functions.');
   } catch (error) {
