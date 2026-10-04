@@ -20,6 +20,7 @@ const migration55 = readFileSync(path.resolve(__dirname,'../supabase/migrations/
 const migration56 = readFileSync(path.resolve(__dirname,'../supabase/migrations/20260956000000_exclude_precommercial_company_test_sale.sql'), 'utf8');
 const migration57 = readFileSync(path.resolve(__dirname,'../supabase/migrations/20260957000000_assess_company_seller_payout_review.sql'), 'utf8');
 const migration58 = readFileSync(path.resolve(__dirname,'../supabase/migrations/20260958000000_record_company_seller_payout_reviews.sql'), 'utf8');
+const migration59 = readFileSync(path.resolve(__dirname,'../supabase/migrations/20260959000000_assess_company_seller_release_gate.sql'), 'utf8');
 const owner = '00000000-0000-4000-8000-000000000001';
 const teacher = '00000000-0000-4000-8000-000000000002';
 const employee1 = '00000000-0000-4000-8000-000000000003';
@@ -140,6 +141,7 @@ async function main() {
     await db.exec(migration56);
     await db.exec(migration57);
     await db.exec(migration58);
+    await db.exec(migration59);
     await db.exec(`
       insert into public.learning_company_workspaces values(1,'active');
       insert into public.learning_company_memberships values
@@ -522,7 +524,11 @@ async function main() {
     const reviewState = async (purchaseId) => (await db.query(
       `select review_state from public.list_learning_company_seller_payout_review_queue() where purchase_id=$1`,
       [purchaseId])).rows[0]?.review_state;
+    const releaseGate = async (purchaseId) => (await db.query(
+      `select * from public.assess_learning_company_seller_release_gate($1)`,
+      [purchaseId])).rows[0];
     assert.equal(await reviewState(104), 'hold_active');
+    assert.equal((await releaseGate(104)).release_gate_state, 'hold_active');
     let holdBlockedApproval = false;
     try { await db.query(`select public.record_learning_company_seller_payout_review(
       104,'${buyer}','approve_for_future_release','settlement-review-104','review-104-too-early')`); }
@@ -531,6 +537,7 @@ async function main() {
     await db.exec(`update public.learning_company_paid_course_purchases
       set paid_at=now()-interval '15 days' where id=104`);
     assert.equal(await reviewState(104), 'manual_admin_review_required');
+    assert.equal((await releaseGate(104)).release_gate_state, 'admin_approval_missing');
     let nonAdminRejected = false;
     try { await db.query(`select public.record_learning_company_seller_payout_review(
       104,'${teacher}','approve_for_future_release','settlement-review-104','review-104-nonadmin')`); }
@@ -539,6 +546,11 @@ async function main() {
     const { rows: approvedReviews } = await db.query(`select public.record_learning_company_seller_payout_review(
       104,'${buyer}','approve_for_future_release','settlement-review-104','review-104-approved') as id`);
     const reviewId = approvedReviews[0].id;
+    assert.equal((await releaseGate(104)).latest_review_id, reviewId);
+    assert.equal((await releaseGate(104)).release_gate_state, 'test_mode_nonpayable');
+    await db.exec(`update public.account_capabilities set status='inactive' where user_id='${buyer}'`);
+    assert.equal((await releaseGate(104)).release_gate_state, 'approval_actor_inactive');
+    await db.exec(`update public.account_capabilities set status='active' where user_id='${buyer}'`);
     assert.equal((await db.query(`select public.record_learning_company_seller_payout_review(
       104,'${buyer}','approve_for_future_release','settlement-review-104','review-104-approved') as id`)).rows[0].id,reviewId);
     let changedReplayRejected = false;
@@ -555,6 +567,7 @@ async function main() {
       from public.learning_company_paid_course_purchase_attempts attempt
       where attempt.purchase_id=104`);
     assert.equal(await reviewState(104), 'reversal_notice_review_required');
+    assert.equal((await releaseGate(104)).release_gate_state, 'reversal_notice_review_required');
     let noticeBlockedApproval = false;
     try { await db.query(`select public.record_learning_company_seller_payout_review(
       104,'${buyer}','approve_for_future_release','settlement-review-104','review-104-after-notice')`); }
@@ -562,6 +575,7 @@ async function main() {
     assert.equal(noticeBlockedApproval,true);
     await db.query(`select public.record_learning_company_seller_payout_review(
       104,'${buyer}','continue_hold','pending-refund-review-104','review-104-held')`);
+    assert.equal((await releaseGate(104)).release_gate_state, 'reversal_notice_review_required');
     let immutableReview = false;
     try { await db.exec(`delete from public.learning_company_seller_payout_reviews where id=${reviewId}`); }
     catch { immutableReview = true; }
@@ -570,6 +584,10 @@ async function main() {
       has_function_privilege('authenticated','public.list_learning_company_seller_payout_review_queue()','EXECUTE') as member_read,
       has_function_privilege('service_role','public.list_learning_company_seller_payout_review_queue()','EXECUTE') as service_read`)).rows[0];
     assert.deepEqual(reviewPermissions,{member_read:false,service_read:true});
+    const gatePermissions = (await db.query(`select
+      has_function_privilege('authenticated','public.assess_learning_company_seller_release_gate(bigint)','EXECUTE') as member_read,
+      has_function_privilege('service_role','public.assess_learning_company_seller_release_gate(bigint)','EXECUTE') as service_read`)).rows[0];
+    assert.deepEqual(gatePermissions,{member_read:false,service_read:true});
     const decisionPermissions = (await db.query(`select
       has_table_privilege('authenticated','public.learning_company_seller_payout_reviews','SELECT') as member_read,
       has_table_privilege('service_role','public.learning_company_seller_payout_reviews','INSERT') as service_insert,

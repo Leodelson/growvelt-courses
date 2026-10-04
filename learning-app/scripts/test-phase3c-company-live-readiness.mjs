@@ -35,6 +35,7 @@ const heldLiabilityMigration = await read("../supabase/migrations/20260955000000
 const historicalExclusionMigration = await read("../supabase/migrations/20260956000000_exclude_precommercial_company_test_sale.sql");
 const sellerPayoutReviewMigration = await read("../supabase/migrations/20260957000000_assess_company_seller_payout_review.sql");
 const sellerPayoutDecisionMigration = await read("../supabase/migrations/20260958000000_record_company_seller_payout_reviews.sql");
+const sellerReleaseGateMigration = await read("../supabase/migrations/20260959000000_assess_company_seller_release_gate.sql");
 const checkout = await read("../app/api/company/workspaces/[workspaceId]/purchases/[purchaseId]/checkout/route.ts");
 const webhook = await read("../app/api/payments/paystack/webhook/route.ts");
 const reconciliation = await read("../app/api/company/payments/paystack/reconcile/route.ts");
@@ -63,6 +64,10 @@ assert.doesNotMatch(sellerPayoutReviewMigration, /(?:insert\s+into|update|delete
 assert.match(sellerPayoutDecisionMigration, /capability\.capability = 'admin'/);
 assert.match(sellerPayoutDecisionMigration, /review_row\.review_state <> 'manual_admin_review_required'/);
 assert.doesNotMatch(sellerPayoutDecisionMigration, /(?:insert\s+into|update|delete\s+from)\s+public\.(?:learning_instructor_earnings|learning_instructor_payout_items|learning_company_sale_ledger_entries)/);
+assert.match(sellerReleaseGateMigration, /when queue\.review_state <> 'manual_admin_review_required'/);
+assert.match(sellerReleaseGateMigration, /test_mode_nonpayable/);
+assert.match(sellerReleaseGateMigration, /provider_settlement_verification_required/);
+assert.doesNotMatch(sellerReleaseGateMigration, /(?:insert\s+into|update|delete\s+from)\s+public\./);
 assert.match(saleMigration, /company_sale_ledger_identity_mismatch/);
 assert.doesNotMatch(saleMigration, /insert into public\.learning_instructor_earnings/);
 assert.doesNotMatch(saleMigration, /create or replace function public\.is_learning_company_live_accounting_ready/);
