@@ -21,6 +21,7 @@ const migration56 = readFileSync(path.resolve(__dirname,'../supabase/migrations/
 const migration57 = readFileSync(path.resolve(__dirname,'../supabase/migrations/20260957000000_assess_company_seller_payout_review.sql'), 'utf8');
 const migration58 = readFileSync(path.resolve(__dirname,'../supabase/migrations/20260958000000_record_company_seller_payout_reviews.sql'), 'utf8');
 const migration59 = readFileSync(path.resolve(__dirname,'../supabase/migrations/20260959000000_assess_company_seller_release_gate.sql'), 'utf8');
+const migration60 = readFileSync(path.resolve(__dirname,'../supabase/migrations/20260960000000_guard_company_reversals_after_seller_outflow.sql'), 'utf8');
 const owner = '00000000-0000-4000-8000-000000000001';
 const teacher = '00000000-0000-4000-8000-000000000002';
 const employee1 = '00000000-0000-4000-8000-000000000003';
@@ -142,6 +143,7 @@ async function main() {
     await db.exec(migration57);
     await db.exec(migration58);
     await db.exec(migration59);
+    await db.exec(migration60);
     await db.exec(`
       insert into public.learning_company_workspaces values(1,'active');
       insert into public.learning_company_memberships values
@@ -604,6 +606,43 @@ async function main() {
       { purchase_id: 104, seller_payee_id: teacher, original_held_minor: 76, reversed_minor: 0, remaining_held_minor: 76 },
     ]);
     assert.deepEqual((await db.query('select * from public.reconcile_learning_company_seller_held_liabilities()')).rows, []);
+    let wrongPayeeRejected = false;
+    try { await db.exec(`insert into public.learning_company_seller_outflow_boundaries
+      (purchase_id,seller_payee_id,boundary_kind,amount_minor,currency,movement_reference)
+      values(104,'${owner}','released',76,'NGN','wrong-payee-104')`); }
+    catch { wrongPayeeRejected = true; }
+    assert.equal(wrongPayeeRejected,true);
+    await db.exec(`insert into public.learning_company_seller_outflow_boundaries
+      (purchase_id,seller_payee_id,boundary_kind,amount_minor,currency,movement_reference)
+      values(104,'${teacher}','released',76,'NGN','future-release-104');
+      insert into public.learning_company_reversal_event_inbox
+        (purchase_id,attempt_id,paystack_domain,provider_event_key,payload_digest,event_type,
+          provider_reference,provider_case_id,provider_status,reported_amount_minor,currency)
+      select 104,attempt.id,'test','post-release-104','${'b'.repeat(64)}','refund.processed',
+        attempt.provider_reference,'105','processed',101,'NGN'
+      from public.learning_company_paid_course_purchase_attempts attempt
+      where attempt.purchase_id=104;`);
+    assert.equal((await releaseGate(104)).release_gate_state,'seller_outflow_manual_review_required');
+    const finalNoticeId = (await db.query(`select id from public.learning_company_reversal_event_inbox
+      where provider_event_key='post-release-104'`)).rows[0].id;
+    let postReleaseReversalRejected = false;
+    try { await db.query(`select * from public.commit_learning_company_reversal_after_verification(
+      ${finalNoticeId},'45678','processed',null,101,array['${employee3}'::uuid])`); }
+    catch (error) { postReleaseReversalRejected = /manual post-release reversal accounting/i.test(error.message); }
+    assert.equal(postReleaseReversalRejected,true);
+    assert.equal((await db.query(`select count(*) as n from public.learning_company_commercial_reversals
+      where purchase_id=104`)).rows[0].n,0);
+    assert.equal((await db.query(`select status from public.learning_company_paid_seat_access
+      where purchase_id=104 and assigned_user_id='${employee3}'`)).rows[0].status,'active');
+    let boundaryImmutable = false;
+    try { await db.exec(`delete from public.learning_company_seller_outflow_boundaries
+      where movement_reference='future-release-104'`); }
+    catch { boundaryImmutable = true; }
+    assert.equal(boundaryImmutable,true);
+    const boundaryPermissions = (await db.query(`select
+      has_table_privilege('authenticated','public.learning_company_seller_outflow_boundaries','SELECT') as member_read,
+      has_table_privilege('service_role','public.learning_company_seller_outflow_boundaries','INSERT') as service_insert`)).rows[0];
+    assert.deepEqual(boundaryPermissions,{member_read:false,service_insert:false});
     const holdPermissions = (await db.query(`select
       has_function_privilege('authenticated','public.list_learning_company_seller_held_liabilities()','EXECUTE') as member_read,
       has_function_privilege('service_role','public.list_learning_company_seller_held_liabilities()','EXECUTE') as service_read`)).rows[0];

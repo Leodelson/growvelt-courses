@@ -36,6 +36,7 @@ const historicalExclusionMigration = await read("../supabase/migrations/20260956
 const sellerPayoutReviewMigration = await read("../supabase/migrations/20260957000000_assess_company_seller_payout_review.sql");
 const sellerPayoutDecisionMigration = await read("../supabase/migrations/20260958000000_record_company_seller_payout_reviews.sql");
 const sellerReleaseGateMigration = await read("../supabase/migrations/20260959000000_assess_company_seller_release_gate.sql");
+const postReleaseReversalGuardMigration = await read("../supabase/migrations/20260960000000_guard_company_reversals_after_seller_outflow.sql");
 const checkout = await read("../app/api/company/workspaces/[workspaceId]/purchases/[purchaseId]/checkout/route.ts");
 const webhook = await read("../app/api/payments/paystack/webhook/route.ts");
 const reconciliation = await read("../app/api/company/payments/paystack/reconcile/route.ts");
@@ -72,6 +73,9 @@ assert.match(providerClient, /getPaystackLiveConfig\(false\)/);
 assert.match(providerClient, /verifyCompanySettlementEvidence\(input/);
 assert.match(providerClient, /settlement\/\$\{encodeURIComponent\(settlementId\)\}\/transactions/);
 assert.doesNotMatch(sellerReleaseGateMigration, /(?:insert\s+into|update|delete\s+from)\s+public\./);
+assert.match(postReleaseReversalGuardMigration, /before insert on public\.learning_company_commercial_reversals/);
+assert.match(postReleaseReversalGuardMigration, /seller_outflow_manual_review_required/);
+assert.doesNotMatch(postReleaseReversalGuardMigration, /(?:insert\s+into|update|delete\s+from)\s+public\.(?:learning_instructor_earnings|learning_instructor_payout_items)/);
 assert.match(saleMigration, /company_sale_ledger_identity_mismatch/);
 assert.doesNotMatch(saleMigration, /insert into public\.learning_instructor_earnings/);
 assert.doesNotMatch(saleMigration, /create or replace function public\.is_learning_company_live_accounting_ready/);
