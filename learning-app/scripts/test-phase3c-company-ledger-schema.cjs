@@ -11,10 +11,10 @@ if (!schemaPath) {
 
 const migrationsDir = path.resolve(__dirname, '../supabase/migrations');
 const migrationNames = readdirSync(migrationsDir)
-  .filter((name) => /^202609(4[3-9]|5[0-7])000000_.*\.sql$/.test(name))
+  .filter((name) => /^202609(4[3-9]|5[0-8])000000_.*\.sql$/.test(name))
   .sort();
-if (migrationNames.length !== 15) {
-  throw new Error(`Expected migrations 43–57; found ${migrationNames.length}`);
+if (migrationNames.length !== 16) {
+  throw new Error(`Expected migrations 43–58; found ${migrationNames.length}`);
 }
 
 async function main() {
@@ -124,6 +124,7 @@ async function main() {
       'learning_company_paid_seat_access',
       'learning_company_reversal_access_results',
       'learning_company_historical_test_sale_exclusions',
+      'learning_company_seller_payout_reviews',
     ];
     for (const table of privateTables) {
       const { rows } = await db.query(`select
@@ -149,6 +150,7 @@ async function main() {
       ['list_learning_company_seller_held_liabilities()', true],
       ['reconcile_learning_company_seller_held_liabilities()', true],
       ['list_learning_company_seller_payout_review_queue()', true],
+      ['record_learning_company_seller_payout_review(bigint,uuid,text,text,text)', true],
     ];
     for (const [signature, serviceExecute] of privateFunctions) {
       const { rows } = await db.query(`select

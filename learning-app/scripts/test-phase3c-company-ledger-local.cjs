@@ -19,6 +19,7 @@ const migration54 = readFileSync(path.resolve(__dirname,'../supabase/migrations/
 const migration55 = readFileSync(path.resolve(__dirname,'../supabase/migrations/20260955000000_reconcile_company_seller_held_liabilities.sql'), 'utf8');
 const migration56 = readFileSync(path.resolve(__dirname,'../supabase/migrations/20260956000000_exclude_precommercial_company_test_sale.sql'), 'utf8');
 const migration57 = readFileSync(path.resolve(__dirname,'../supabase/migrations/20260957000000_assess_company_seller_payout_review.sql'), 'utf8');
+const migration58 = readFileSync(path.resolve(__dirname,'../supabase/migrations/20260958000000_record_company_seller_payout_reviews.sql'), 'utf8');
 const owner = '00000000-0000-4000-8000-000000000001';
 const teacher = '00000000-0000-4000-8000-000000000002';
 const employee1 = '00000000-0000-4000-8000-000000000003';
@@ -40,6 +41,7 @@ async function main() {
         select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid
       $$;
       create table public.profiles(id uuid primary key);
+      create table public.account_capabilities(user_id uuid,capability text,status text);
       create table public.learning_provider_organizations(id bigint primary key);
       create table public.learning_provider_organization_memberships(
         organization_id bigint, user_id uuid, role text, status text);
@@ -107,6 +109,7 @@ async function main() {
     await db.exec(migration43);
     await db.exec(`
       insert into public.profiles values ('${owner}'),('${teacher}'),('${employee1}'),('${employee2}'),('${buyer}'),('${employee3}');
+      insert into public.account_capabilities values ('${buyer}','admin','active');
       insert into public.learning_provider_organizations values (7);
       insert into public.learning_provider_organization_memberships values
         (7,'${owner}','owner','active'),
@@ -136,6 +139,7 @@ async function main() {
     await db.exec(migration55);
     await db.exec(migration56);
     await db.exec(migration57);
+    await db.exec(migration58);
     await db.exec(`
       insert into public.learning_company_workspaces values(1,'active');
       insert into public.learning_company_memberships values
@@ -519,9 +523,30 @@ async function main() {
       `select review_state from public.list_learning_company_seller_payout_review_queue() where purchase_id=$1`,
       [purchaseId])).rows[0]?.review_state;
     assert.equal(await reviewState(104), 'hold_active');
+    let holdBlockedApproval = false;
+    try { await db.query(`select public.record_learning_company_seller_payout_review(
+      104,'${buyer}','approve_for_future_release','settlement-review-104','review-104-too-early')`); }
+    catch { holdBlockedApproval = true; }
+    assert.equal(holdBlockedApproval,true);
     await db.exec(`update public.learning_company_paid_course_purchases
       set paid_at=now()-interval '15 days' where id=104`);
     assert.equal(await reviewState(104), 'manual_admin_review_required');
+    let nonAdminRejected = false;
+    try { await db.query(`select public.record_learning_company_seller_payout_review(
+      104,'${teacher}','approve_for_future_release','settlement-review-104','review-104-nonadmin')`); }
+    catch { nonAdminRejected = true; }
+    assert.equal(nonAdminRejected,true);
+    const { rows: approvedReviews } = await db.query(`select public.record_learning_company_seller_payout_review(
+      104,'${buyer}','approve_for_future_release','settlement-review-104','review-104-approved') as id`);
+    const reviewId = approvedReviews[0].id;
+    assert.equal((await db.query(`select public.record_learning_company_seller_payout_review(
+      104,'${buyer}','approve_for_future_release','settlement-review-104','review-104-approved') as id`)).rows[0].id,reviewId);
+    let changedReplayRejected = false;
+    try { await db.query(`select public.record_learning_company_seller_payout_review(
+      104,'${buyer}','continue_hold','settlement-review-104','review-104-approved')`); }
+    catch { changedReplayRejected = true; }
+    assert.equal(changedReplayRejected,true);
+    assert.equal((await db.query(`select count(*) as n from public.learning_company_seller_payout_reviews where purchase_id=104`)).rows[0].n,1);
     await db.exec(`insert into public.learning_company_reversal_event_inbox
       (purchase_id,attempt_id,paystack_domain,provider_event_key,payload_digest,event_type,
         provider_reference,provider_case_id,provider_status,reported_amount_minor,currency)
@@ -530,10 +555,27 @@ async function main() {
       from public.learning_company_paid_course_purchase_attempts attempt
       where attempt.purchase_id=104`);
     assert.equal(await reviewState(104), 'reversal_notice_review_required');
+    let noticeBlockedApproval = false;
+    try { await db.query(`select public.record_learning_company_seller_payout_review(
+      104,'${buyer}','approve_for_future_release','settlement-review-104','review-104-after-notice')`); }
+    catch { noticeBlockedApproval = true; }
+    assert.equal(noticeBlockedApproval,true);
+    await db.query(`select public.record_learning_company_seller_payout_review(
+      104,'${buyer}','continue_hold','pending-refund-review-104','review-104-held')`);
+    let immutableReview = false;
+    try { await db.exec(`delete from public.learning_company_seller_payout_reviews where id=${reviewId}`); }
+    catch { immutableReview = true; }
+    assert.equal(immutableReview,true);
     const reviewPermissions = (await db.query(`select
       has_function_privilege('authenticated','public.list_learning_company_seller_payout_review_queue()','EXECUTE') as member_read,
       has_function_privilege('service_role','public.list_learning_company_seller_payout_review_queue()','EXECUTE') as service_read`)).rows[0];
     assert.deepEqual(reviewPermissions,{member_read:false,service_read:true});
+    const decisionPermissions = (await db.query(`select
+      has_table_privilege('authenticated','public.learning_company_seller_payout_reviews','SELECT') as member_read,
+      has_table_privilege('service_role','public.learning_company_seller_payout_reviews','INSERT') as service_insert,
+      has_function_privilege('authenticated','public.record_learning_company_seller_payout_review(bigint,uuid,text,text,text)','EXECUTE') as member_execute,
+      has_function_privilege('service_role','public.record_learning_company_seller_payout_review(bigint,uuid,text,text,text)','EXECUTE') as service_execute`)).rows[0];
+    assert.deepEqual(decisionPermissions,{member_read:false,service_insert:false,member_execute:false,service_execute:true});
     const heldBalances = (await db.query(`select purchase_id,seller_payee_id,original_held_minor,
       reversed_minor,remaining_held_minor from public.list_learning_company_seller_held_liabilities()
       order by purchase_id`)).rows;
