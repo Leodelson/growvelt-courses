@@ -111,8 +111,55 @@ async function main() {
       has_table_privilege('service_role','public.learning_company_historical_test_sale_exclusions','SELECT') as service_read,
       has_table_privilege('service_role','public.learning_company_historical_test_sale_exclusions','INSERT') as service_insert`);
     assert.deepEqual(exclusionPermissions[0], { member_read: false, service_read: true, service_insert: false });
+    stage = 'company financial role permissions';
+    const privateTables = [
+      'learning_company_sale_ledger_transactions',
+      'learning_company_sale_ledger_entries',
+      'learning_company_commercial_sales',
+      'learning_company_commercial_sale_lines',
+      'learning_company_reversal_event_inbox',
+      'learning_company_commercial_reversals',
+      'learning_company_commercial_reversal_lines',
+      'learning_company_commercial_reversal_ledger_entries',
+      'learning_company_paid_seat_access',
+      'learning_company_reversal_access_results',
+      'learning_company_historical_test_sale_exclusions',
+    ];
+    for (const table of privateTables) {
+      const { rows } = await db.query(`select
+        has_table_privilege('anon',$1,'SELECT') as anonymous_read,
+        has_table_privilege('authenticated',$1,'SELECT') as member_read,
+        has_table_privilege('service_role',$1,'SELECT') as service_read,
+        has_table_privilege('service_role',$1,'INSERT') as service_insert`, [`public.${table}`]);
+      assert.deepEqual(rows[0], {
+        anonymous_read: false, member_read: false, service_read: true, service_insert: false,
+      }, `${table} must remain service-readable but not browser-readable or service-writable`);
+    }
+    const privateFunctions = [
+      ['post_learning_company_commercial_sale(bigint)', true],
+      ['reconcile_learning_company_commercial_sales()', true],
+      ['receive_learning_company_reversal_notice(text,text,text,text,text,text,bigint,text,text)', true],
+      ['grant_paid_learning_company_purchase_access(bigint)', true],
+      ['reconcile_learning_company_paid_seat_access()', true],
+      ['assess_learning_company_reversal_access(bigint)', true],
+      ['resolve_learning_course_access_sources(uuid,bigint)', true],
+      ['post_learning_company_commercial_reversal(bigint,text,text,text,bigint,uuid[])', false],
+      ['apply_learning_company_reversal_access(bigint)', false],
+      ['commit_learning_company_reversal_after_verification(bigint,text,text,text,bigint,uuid[])', true],
+      ['list_learning_company_seller_held_liabilities()', true],
+      ['reconcile_learning_company_seller_held_liabilities()', true],
+    ];
+    for (const [signature, serviceExecute] of privateFunctions) {
+      const { rows } = await db.query(`select
+        has_function_privilege('anon',$1,'EXECUTE') as anonymous_execute,
+        has_function_privilege('authenticated',$1,'EXECUTE') as member_execute,
+        has_function_privilege('service_role',$1,'EXECUTE') as service_execute`, [`public.${signature}`]);
+      assert.deepEqual(rows[0], {
+        anonymous_execute: false, member_execute: false, service_execute: serviceExecute,
+      }, `${signature} must retain its reviewed role boundary`);
+    }
     console.log('Pending company migrations apply to the supplied public schema.');
-    console.log('Company proceeds remain isolated from personal earnings and payout functions.');
+    console.log('Company proceeds remain isolated from personal payouts; private financial role grants match the reviewed matrix.');
   } catch (error) {
     console.error(`Failed at ${stage}: ${error.message}`);
     process.exitCode = 1;
