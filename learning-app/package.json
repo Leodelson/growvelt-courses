@@ -57,6 +57,7 @@
     "test:company-learning:access-surface-inventory": "node scripts/test-phase3c-access-surface-inventory.mjs",
     "test:company-learning:ledger-schema": "node scripts/test-phase3c-company-ledger-schema.cjs",
     "test:company-learning:settlement-evidence": "node --experimental-strip-types scripts/test-phase3c-company-settlement-evidence.mjs",
+    "test:company-learning:reversal-funding-plan": "node --experimental-strip-types scripts/test-phase3c-company-reversal-funding-plan.mjs",
     "test:organizations:course-attribution:local": "node scripts/test-phase2a3-organization-course-attribution-local.mjs",
     "test:account-deletion:organization-guard:local": "node scripts/test-account-deletion-organization-guard-local.mjs",
     "test:account-deletion:retention:local": "node scripts/test-account-deletion-retention-local.mjs",
