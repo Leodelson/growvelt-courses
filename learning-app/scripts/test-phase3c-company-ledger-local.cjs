@@ -22,6 +22,7 @@ const migration57 = readFileSync(path.resolve(__dirname,'../supabase/migrations/
 const migration58 = readFileSync(path.resolve(__dirname,'../supabase/migrations/20260958000000_record_company_seller_payout_reviews.sql'), 'utf8');
 const migration59 = readFileSync(path.resolve(__dirname,'../supabase/migrations/20260959000000_assess_company_seller_release_gate.sql'), 'utf8');
 const migration60 = readFileSync(path.resolve(__dirname,'../supabase/migrations/20260960000000_guard_company_reversals_after_seller_outflow.sql'), 'utf8');
+const migration61 = readFileSync(path.resolve(__dirname,'../supabase/migrations/20260961000000_add_company_seller_liability_movement_ledger.sql'), 'utf8');
 const owner = '00000000-0000-4000-8000-000000000001';
 const teacher = '00000000-0000-4000-8000-000000000002';
 const employee1 = '00000000-0000-4000-8000-000000000003';
@@ -144,6 +145,7 @@ async function main() {
     await db.exec(migration58);
     await db.exec(migration59);
     await db.exec(migration60);
+    await db.exec(migration61);
     await db.exec(`
       insert into public.learning_company_workspaces values(1,'active');
       insert into public.learning_company_memberships values
@@ -685,6 +687,61 @@ async function main() {
       where purchase_id=103 and assigned_user_id='${employee3}'`)).rows[0].status, 'refunded');
     assert.equal((await db.query(`select status from public.learning_company_paid_seat_access
       where purchase_id=106 and assigned_user_id='${employee3}'`)).rows[0].status, 'active');
+    assert.equal((await db.query(`select remaining_held_minor from public.list_learning_company_seller_held_liabilities()
+      where purchase_id=106`)).rows[0].remaining_held_minor, 76);
+    await db.exec(`
+      insert into public.learning_company_seller_outflow_boundaries
+        (purchase_id,seller_payee_id,boundary_kind,amount_minor,currency,movement_reference)
+      values(106,'${owner}','released',76,'NGN','release-ledger-106');
+      insert into public.learning_company_seller_liability_movements
+        (boundary_id,purchase_id,seller_payee_id,movement_kind,amount_minor,currency)
+      select id,106,'${owner}','released',76,'NGN'
+      from public.learning_company_seller_outflow_boundaries
+      where movement_reference='release-ledger-106';
+      insert into public.learning_company_seller_outflow_boundaries
+        (purchase_id,seller_payee_id,boundary_kind,amount_minor,currency,movement_reference)
+      values(106,'${owner}','reserved',76,'NGN','reserve-ledger-106');
+      insert into public.learning_company_seller_liability_movements
+        (boundary_id,purchase_id,seller_payee_id,movement_kind,amount_minor,currency)
+      select id,106,'${owner}','reserved',76,'NGN'
+      from public.learning_company_seller_outflow_boundaries
+      where movement_reference='reserve-ledger-106';
+    `);
+    assert.equal((await db.query(`select remaining_held_minor from public.list_learning_company_seller_held_liabilities()
+      where purchase_id=106`)).rows[0].remaining_held_minor, 0);
+    assert.deepEqual((await db.query(`select movement_kind,
+      sum(entry.amount_minor)::bigint as entry_sum,
+      count(*)::bigint as line_count
+      from public.learning_company_seller_liability_movements movement
+      join public.learning_company_seller_liability_movement_entries entry on entry.movement_id=movement.id
+      where movement.purchase_id=106 group by movement_kind order by movement_kind`)).rows,
+      [{movement_kind:'released',entry_sum:0,line_count:2},
+        {movement_kind:'reserved',entry_sum:0,line_count:2}]);
+    assert.equal((await db.query(`select count(*)::bigint as n
+      from public.reconcile_learning_company_seller_liability_movements()
+      where purchase_id=106`)).rows[0].n, 0);
+    let extraReleaseRejected = false;
+    await db.exec(`insert into public.learning_company_seller_outflow_boundaries
+      (purchase_id,seller_payee_id,boundary_kind,amount_minor,currency,movement_reference)
+      values(106,'${owner}','released',1,'NGN','excess-release-106');`);
+    try { await db.exec(`insert into public.learning_company_seller_liability_movements
+      (boundary_id,purchase_id,seller_payee_id,movement_kind,amount_minor,currency)
+      select id,106,'${owner}','released',1,'NGN'
+      from public.learning_company_seller_outflow_boundaries
+      where movement_reference='excess-release-106';`); }
+    catch (error) { extraReleaseRejected = /exceeds its source balance/i.test(error.message); }
+    assert.equal(extraReleaseRejected, true);
+    assert.equal((await db.query(`select count(*)::bigint as n from public.reconcile_learning_company_seller_liability_movements()
+      where purchase_id=106 and issue_type='company_seller_outflow_boundary_without_ledger'`)).rows[0].n, 1);
+    const movementPermissions = (await db.query(`select
+      has_table_privilege('authenticated','public.learning_company_seller_liability_movements','SELECT') as member_read,
+      has_table_privilege('service_role','public.learning_company_seller_liability_movements','INSERT') as service_insert,
+      has_function_privilege('service_role','public.validate_learning_company_seller_liability_movement()','EXECUTE') as service_validate`)).rows[0];
+    assert.deepEqual(movementPermissions,{member_read:false,service_insert:false,service_validate:false});
+    let movementImmutable = false;
+    try { await db.exec(`delete from public.learning_company_seller_liability_movements where purchase_id=106`); }
+    catch { movementImmutable = true; }
+    assert.equal(movementImmutable,true);
     let oldSeatRegrantRejected = false;
     try { await db.exec('select * from public.grant_paid_learning_company_purchase_access(103)'); }
     catch { oldSeatRegrantRejected = true; }

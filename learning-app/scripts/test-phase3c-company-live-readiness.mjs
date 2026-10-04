@@ -37,6 +37,7 @@ const sellerPayoutReviewMigration = await read("../supabase/migrations/202609570
 const sellerPayoutDecisionMigration = await read("../supabase/migrations/20260958000000_record_company_seller_payout_reviews.sql");
 const sellerReleaseGateMigration = await read("../supabase/migrations/20260959000000_assess_company_seller_release_gate.sql");
 const postReleaseReversalGuardMigration = await read("../supabase/migrations/20260960000000_guard_company_reversals_after_seller_outflow.sql");
+const sellerLiabilityMovementMigration = await read("../supabase/migrations/20260961000000_add_company_seller_liability_movement_ledger.sql");
 const checkout = await read("../app/api/company/workspaces/[workspaceId]/purchases/[purchaseId]/checkout/route.ts");
 const webhook = await read("../app/api/payments/paystack/webhook/route.ts");
 const reconciliation = await read("../app/api/company/payments/paystack/reconcile/route.ts");
@@ -76,6 +77,11 @@ assert.doesNotMatch(sellerReleaseGateMigration, /(?:insert\s+into|update|delete\
 assert.match(postReleaseReversalGuardMigration, /before insert on public\.learning_company_commercial_reversals/);
 assert.match(postReleaseReversalGuardMigration, /seller_outflow_manual_review_required/);
 assert.doesNotMatch(postReleaseReversalGuardMigration, /(?:insert\s+into|update|delete\s+from)\s+public\.(?:learning_instructor_earnings|learning_instructor_payout_items)/);
+assert.match(sellerLiabilityMovementMigration, /before insert on public\.learning_company_seller_liability_movements/);
+assert.match(sellerLiabilityMovementMigration, /reserved_total > released_total/);
+assert.match(sellerLiabilityMovementMigration, /company_seller_outflow_boundary_without_ledger/);
+assert.doesNotMatch(sellerLiabilityMovementMigration, /(?:insert\s+into|update|delete\s+from)\s+public\.(?:learning_instructor_earnings|learning_instructor_payout_items|learning_commercial_allocations)/);
+assert.doesNotMatch(sellerLiabilityMovementMigration, /grant\s+insert\s+on|paystack.*transfer|create\s+or\s+replace\s+function\s+public\.is_learning_company_live_accounting_ready/i);
 assert.match(saleMigration, /company_sale_ledger_identity_mismatch/);
 assert.doesNotMatch(saleMigration, /insert into public\.learning_instructor_earnings/);
 assert.doesNotMatch(saleMigration, /create or replace function public\.is_learning_company_live_accounting_ready/);

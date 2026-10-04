@@ -11,10 +11,10 @@ if (!schemaPath) {
 
 const migrationsDir = path.resolve(__dirname, '../supabase/migrations');
 const migrationNames = readdirSync(migrationsDir)
-  .filter((name) => /^202609(4[3-9]|5[0-9]|60)000000_.*\.sql$/.test(name))
+  .filter((name) => /^202609(4[3-9]|5[0-9]|6[01])000000_.*\.sql$/.test(name))
   .sort();
-if (migrationNames.length !== 18) {
-  throw new Error(`Expected migrations 43–60; found ${migrationNames.length}`);
+if (migrationNames.length !== 19) {
+  throw new Error(`Expected migrations 43–61; found ${migrationNames.length}`);
 }
 
 async function main() {
@@ -126,6 +126,8 @@ async function main() {
       'learning_company_historical_test_sale_exclusions',
       'learning_company_seller_payout_reviews',
       'learning_company_seller_outflow_boundaries',
+      'learning_company_seller_liability_movements',
+      'learning_company_seller_liability_movement_entries',
     ];
     for (const table of privateTables) {
       const { rows } = await db.query(`select
@@ -155,6 +157,9 @@ async function main() {
       ['assess_learning_company_seller_release_gate(bigint)', true],
       ['guard_learning_company_seller_outflow_boundary()', false],
       ['guard_learning_company_held_only_reversal()', false],
+      ['validate_learning_company_seller_liability_movement()', false],
+      ['post_learning_company_seller_liability_movement_entries()', false],
+      ['reconcile_learning_company_seller_liability_movements()', true],
     ];
     for (const [signature, serviceExecute] of privateFunctions) {
       const { rows } = await db.query(`select
