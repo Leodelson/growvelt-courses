@@ -1,6 +1,8 @@
 import "server-only";
 import { isTrustedPaystackAuthorizationUrl, parseVerifiedPaystackCompanyDispute, parseVerifiedPaystackCompanyRefund } from "@/app/lib/payments/paystack-core";
 import { resolvePaystackConfiguration } from "@/app/lib/payments/paystack-config";
+import { verifyCompanySettlementEvidence } from "@/app/lib/payments/company-settlement-core";
+import type { CompanySettlementLookup } from "@/app/lib/payments/company-settlement-core";
 import type { PaystackDomain } from "@/app/lib/payments/paystack-core";
 
 export {
@@ -126,6 +128,22 @@ export async function verifyPaystackCompanyTransaction(reference: string, expect
 
 export function verifyPaystackCompanyTestTransaction(reference: string) {
   return verifyPaystackCompanyTransaction(reference, "test");
+}
+
+/** Read-only provider evidence; never releases, reserves, or transfers funds. */
+export async function verifyPaystackCompanyLiveSettlement(input: CompanySettlementLookup) {
+  const { secretKey } = getPaystackLiveConfig(false);
+  return verifyCompanySettlementEvidence(input, async (kind, settlementId, page) => {
+    const url = kind === "settlements"
+      ? `https://api.paystack.co/settlement?status=success&perPage=100&page=${page}`
+      : `https://api.paystack.co/settlement/${encodeURIComponent(settlementId)}/transactions?perPage=100&page=${page}`;
+    const response = await fetch(url, {
+      headers: { Authorization: `Bearer ${secretKey}` }, cache: "no-store",
+      signal: AbortSignal.timeout(15000),
+    });
+    if (!response.ok) throw new Error("Paystack settlement lookup failed.");
+    return response.json().catch(() => { throw new Error("Paystack settlement response was invalid."); });
+  });
 }
 
 type CompanyReversalLookup = {

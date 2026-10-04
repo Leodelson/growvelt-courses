@@ -40,6 +40,7 @@ const checkout = await read("../app/api/company/workspaces/[workspaceId]/purchas
 const webhook = await read("../app/api/payments/paystack/webhook/route.ts");
 const reconciliation = await read("../app/api/company/payments/paystack/reconcile/route.ts");
 const reversalRecovery = await read("../app/api/admin/payments/company-reversal/commit-test/route.ts");
+const providerClient = await read("../app/lib/payments/paystack.ts");
 assert.match(migration, /paystack_domain text not null default 'test'/);
 assert.match(migration, /p_domain <> attempt_row\.paystack_domain/);
 assert.match(migration, /p_amount_minor <> attempt_row\.amount_minor/);
@@ -67,6 +68,9 @@ assert.doesNotMatch(sellerPayoutDecisionMigration, /(?:insert\s+into|update|dele
 assert.match(sellerReleaseGateMigration, /when queue\.review_state <> 'manual_admin_review_required'/);
 assert.match(sellerReleaseGateMigration, /test_mode_nonpayable/);
 assert.match(sellerReleaseGateMigration, /provider_settlement_verification_required/);
+assert.match(providerClient, /getPaystackLiveConfig\(false\)/);
+assert.match(providerClient, /verifyCompanySettlementEvidence\(input/);
+assert.match(providerClient, /settlement\/\$\{encodeURIComponent\(settlementId\)\}\/transactions/);
 assert.doesNotMatch(sellerReleaseGateMigration, /(?:insert\s+into|update|delete\s+from)\s+public\./);
 assert.match(saleMigration, /company_sale_ledger_identity_mismatch/);
 assert.doesNotMatch(saleMigration, /insert into public\.learning_instructor_earnings/);
