@@ -38,10 +38,12 @@ const sellerPayoutDecisionMigration = await read("../supabase/migrations/2026095
 const sellerReleaseGateMigration = await read("../supabase/migrations/20260959000000_assess_company_seller_release_gate.sql");
 const postReleaseReversalGuardMigration = await read("../supabase/migrations/20260960000000_guard_company_reversals_after_seller_outflow.sql");
 const sellerLiabilityMovementMigration = await read("../supabase/migrations/20260961000000_add_company_seller_liability_movement_ledger.sql");
+const settlementEvidenceMigration = await read("../supabase/migrations/20260962000000_record_company_paystack_settlement_evidence.sql");
 const checkout = await read("../app/api/company/workspaces/[workspaceId]/purchases/[purchaseId]/checkout/route.ts");
 const webhook = await read("../app/api/payments/paystack/webhook/route.ts");
 const reconciliation = await read("../app/api/company/payments/paystack/reconcile/route.ts");
 const reversalRecovery = await read("../app/api/admin/payments/company-reversal/commit-test/route.ts");
+const settlementRecording = await read("../app/api/admin/payments/company-settlement/record-live/route.ts");
 const providerClient = await read("../app/lib/payments/paystack.ts");
 assert.match(migration, /paystack_domain text not null default 'test'/);
 assert.match(migration, /p_domain <> attempt_row\.paystack_domain/);
@@ -82,6 +84,14 @@ assert.match(sellerLiabilityMovementMigration, /reserved_total > released_total/
 assert.match(sellerLiabilityMovementMigration, /company_seller_outflow_boundary_without_ledger/);
 assert.doesNotMatch(sellerLiabilityMovementMigration, /(?:insert\s+into|update|delete\s+from)\s+public\.(?:learning_instructor_earnings|learning_instructor_payout_items|learning_commercial_allocations)/);
 assert.doesNotMatch(sellerLiabilityMovementMigration, /grant\s+insert\s+on|paystack.*transfer|create\s+or\s+replace\s+function\s+public\.is_learning_company_live_accounting_ready/i);
+assert.match(settlementEvidenceMigration, /learning_company_paystack_settlement_evidence/);
+assert.match(settlementEvidenceMigration, /sale_row\.paystack_domain <> 'live'/);
+assert.match(settlementEvidenceMigration, /attempt_row\.status <> 'succeeded'/);
+assert.doesNotMatch(settlementEvidenceMigration, /(?:insert\s+into|update|delete\s+from)\s+public\.(?:learning_instructor_earnings|learning_instructor_payout_items|learning_company_seller_liability_movements)/i);
+assert.match(settlementRecording, /PAYMENTS_LIVE_COMPANY_SETTLEMENT_RECORDING_ENABLED !== "true"/);
+assert.match(settlementRecording, /verifyPaystackCompanyLiveSettlement\(/);
+assert.match(settlementRecording, /record_learning_company_paystack_settlement_evidence/);
+assert.doesNotMatch(settlementRecording, /initializePaystack|submitPaystackTransfer|reserve_learning_instructor|release_matured_learning_instructor/);
 assert.match(saleMigration, /company_sale_ledger_identity_mismatch/);
 assert.doesNotMatch(saleMigration, /insert into public\.learning_instructor_earnings/);
 assert.doesNotMatch(saleMigration, /create or replace function public\.is_learning_company_live_accounting_ready/);

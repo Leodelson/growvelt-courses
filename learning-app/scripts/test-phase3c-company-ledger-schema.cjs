@@ -11,10 +11,10 @@ if (!schemaPath) {
 
 const migrationsDir = path.resolve(__dirname, '../supabase/migrations');
 const migrationNames = readdirSync(migrationsDir)
-  .filter((name) => /^202609(4[3-9]|5[0-9]|6[01])000000_.*\.sql$/.test(name))
+  .filter((name) => /^202609(4[3-9]|5[0-9]|6[0-2])000000_.*\.sql$/.test(name))
   .sort();
-if (migrationNames.length !== 19) {
-  throw new Error(`Expected migrations 43–61; found ${migrationNames.length}`);
+if (migrationNames.length !== 20) {
+  throw new Error(`Expected migrations 43–62; found ${migrationNames.length}`);
 }
 
 async function main() {
@@ -44,7 +44,12 @@ async function main() {
       create function auth.uid() returns uuid language sql as 'select null::uuid';
     `);
     stage = 'public schema import';
-    await db.exec(readFileSync(path.resolve(schemaPath), 'utf8'));
+    // Supabase's schema export includes managed extensions unavailable in
+    // PGlite. Their declarations are irrelevant to public-schema compatibility.
+    const schemaSql = readFileSync(path.resolve(schemaPath), 'utf8')
+      .replace(/^CREATE EXTENSION IF NOT EXISTS .*;\r?$/gm, '')
+      .replace(/^ALTER PUBLICATION "supabase_realtime" OWNER TO "postgres";\r?$/gm, '');
+    await db.exec(schemaSql);
     // pg_dump disables function-body checking while restoring out-of-order
     // functions. Re-enable it for each new migration definition.
     await db.exec('set check_function_bodies = true');
@@ -128,6 +133,7 @@ async function main() {
       'learning_company_seller_outflow_boundaries',
       'learning_company_seller_liability_movements',
       'learning_company_seller_liability_movement_entries',
+      'learning_company_paystack_settlement_evidence',
     ];
     for (const table of privateTables) {
       const { rows } = await db.query(`select
@@ -160,6 +166,7 @@ async function main() {
       ['validate_learning_company_seller_liability_movement()', false],
       ['post_learning_company_seller_liability_movement_entries()', false],
       ['reconcile_learning_company_seller_liability_movements()', true],
+      ['record_learning_company_paystack_settlement_evidence(bigint,uuid,text,text,text,bigint,timestamptz)', true],
     ];
     for (const [signature, serviceExecute] of privateFunctions) {
       const { rows } = await db.query(`select

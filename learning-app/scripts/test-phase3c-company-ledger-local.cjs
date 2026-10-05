@@ -23,6 +23,7 @@ const migration58 = readFileSync(path.resolve(__dirname,'../supabase/migrations/
 const migration59 = readFileSync(path.resolve(__dirname,'../supabase/migrations/20260959000000_assess_company_seller_release_gate.sql'), 'utf8');
 const migration60 = readFileSync(path.resolve(__dirname,'../supabase/migrations/20260960000000_guard_company_reversals_after_seller_outflow.sql'), 'utf8');
 const migration61 = readFileSync(path.resolve(__dirname,'../supabase/migrations/20260961000000_add_company_seller_liability_movement_ledger.sql'), 'utf8');
+const migration62 = readFileSync(path.resolve(__dirname,'../supabase/migrations/20260962000000_record_company_paystack_settlement_evidence.sql'), 'utf8');
 const owner = '00000000-0000-4000-8000-000000000001';
 const teacher = '00000000-0000-4000-8000-000000000002';
 const employee1 = '00000000-0000-4000-8000-000000000003';
@@ -146,6 +147,7 @@ async function main() {
     await db.exec(migration59);
     await db.exec(migration60);
     await db.exec(migration61);
+    await db.exec(migration62);
     await db.exec(`
       insert into public.learning_company_workspaces values(1,'active');
       insert into public.learning_company_memberships values
@@ -742,6 +744,57 @@ async function main() {
     try { await db.exec(`delete from public.learning_company_seller_liability_movements where purchase_id=106`); }
     catch { movementImmutable = true; }
     assert.equal(movementImmutable,true);
+    // A synthetic Live sale can retain exact independently checked settlement
+    // evidence. The record itself must not release any seller proceeds.
+    const liveRef = `CP-${'7'.repeat(32)}`;
+    await db.exec(`
+      insert into public.learning_company_paid_course_purchases
+        (id,workspace_id,course_id,requested_by,course_title_snapshot,provider_name_snapshot,
+         unit_amount_minor,total_amount_minor,currency,seat_count,status)
+      values (107,1,19,'${buyer}','Live evidence fixture','Provider',101,101,'NGN',1,'checkout_pending');
+      insert into public.learning_company_paid_course_purchase_seats values (107,'${employee2}');
+      insert into public.learning_company_paid_course_purchase_attempts
+        (purchase_id,provider,provider_reference,amount_minor,currency,status)
+      values (107,'paystack','${liveRef}',101,'NGN','initialized');
+      select public.set_learning_company_paid_checkout_domain('${liveRef}','live');
+      update public.learning_company_paid_course_purchase_attempts set status='pending' where purchase_id=107;
+      update public.learning_company_paid_course_purchases set status='paid' where id=107;
+      update public.learning_company_paid_course_purchase_attempts
+        set status='succeeded',provider_transaction_id='777' where purchase_id=107;
+    `);
+    const recordSettlement = (settlementId,transactionId,actor=buyer,amount=101) =>
+      db.query(`select public.record_learning_company_paystack_settlement_evidence(
+        107,'${actor}','${settlementId}','${transactionId}','${liveRef}',${amount},
+        coalesce((select settled_at from public.learning_company_paystack_settlement_evidence
+          where purchase_id=107),now())) as purchase_id`);
+    assert.equal((await recordSettlement('9001','777')).rows[0].purchase_id,107);
+    assert.equal((await recordSettlement('9001','777')).rows[0].purchase_id,107);
+    for (const attempt of [
+      () => recordSettlement('9002','777'),
+      () => recordSettlement('9001','778'),
+      () => recordSettlement('9001','777',teacher),
+      () => recordSettlement('9001','777',buyer,102),
+      () => db.query(`select public.record_learning_company_paystack_settlement_evidence(
+        104,'${buyer}','9001','45678','CP-${'9'.repeat(32)}',101,now())`),
+    ]) await assert.rejects(attempt);
+    assert.equal((await db.query(`select count(*) as n from public.learning_company_paystack_settlement_evidence`)).rows[0].n,1);
+    assert.equal((await db.query(`select count(*) as n from public.learning_company_seller_liability_movements
+      where purchase_id=107`)).rows[0].n,0);
+    assert.equal((await db.query(`select count(*) as n from public.learning_company_seller_outflow_boundaries
+      where purchase_id=107`)).rows[0].n,0);
+    const settlementPermissions = (await db.query(`select
+      has_table_privilege('authenticated','public.learning_company_paystack_settlement_evidence','SELECT') as member_read,
+      has_table_privilege('service_role','public.learning_company_paystack_settlement_evidence','INSERT') as service_insert,
+      has_function_privilege('authenticated',
+        'public.record_learning_company_paystack_settlement_evidence(bigint,uuid,text,text,text,bigint,timestamptz)',
+        'EXECUTE') as member_execute,
+      has_function_privilege('service_role',
+        'public.record_learning_company_paystack_settlement_evidence(bigint,uuid,text,text,text,bigint,timestamptz)',
+        'EXECUTE') as service_execute`)).rows[0];
+    assert.deepEqual(settlementPermissions,
+      {member_read:false,service_insert:false,member_execute:false,service_execute:true});
+    await assert.rejects(() => db.exec(`delete from public.learning_company_paystack_settlement_evidence
+      where purchase_id=107`));
     let oldSeatRegrantRejected = false;
     try { await db.exec('select * from public.grant_paid_learning_company_purchase_access(103)'); }
     catch { oldSeatRegrantRejected = true; }
