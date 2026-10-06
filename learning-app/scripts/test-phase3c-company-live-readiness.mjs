@@ -39,6 +39,7 @@ const sellerReleaseGateMigration = await read("../supabase/migrations/2026095900
 const postReleaseReversalGuardMigration = await read("../supabase/migrations/20260960000000_guard_company_reversals_after_seller_outflow.sql");
 const sellerLiabilityMovementMigration = await read("../supabase/migrations/20260961000000_add_company_seller_liability_movement_ledger.sql");
 const settlementEvidenceMigration = await read("../supabase/migrations/20260962000000_record_company_paystack_settlement_evidence.sql");
+const releaseSettlementAssessmentMigration = await read("../supabase/migrations/20261008000000_assess_company_seller_release_settlement_evidence.sql");
 const checkout = await read("../app/api/company/workspaces/[workspaceId]/purchases/[purchaseId]/checkout/route.ts");
 const webhook = await read("../app/api/payments/paystack/webhook/route.ts");
 const reconciliation = await read("../app/api/company/payments/paystack/reconcile/route.ts");
@@ -88,6 +89,11 @@ assert.match(settlementEvidenceMigration, /learning_company_paystack_settlement_
 assert.match(settlementEvidenceMigration, /sale_row\.paystack_domain <> 'live'/);
 assert.match(settlementEvidenceMigration, /attempt_row\.status <> 'succeeded'/);
 assert.doesNotMatch(settlementEvidenceMigration, /(?:insert\s+into|update|delete\s+from)\s+public\.(?:learning_instructor_earnings|learning_instructor_payout_items|learning_company_seller_liability_movements)/i);
+assert.match(releaseSettlementAssessmentMigration, /provider_settlement_verification_required/);
+assert.match(releaseSettlementAssessmentMigration, /settlement_evidence_mismatch/);
+assert.match(releaseSettlementAssessmentMigration, /settlement_verified_release_writer_not_enabled/);
+assert.match(releaseSettlementAssessmentMigration, /evidence\.provider_transaction_id = sale\.provider_transaction_id/);
+assert.doesNotMatch(releaseSettlementAssessmentMigration, /(?:insert\s+into|update|delete\s+from)\s+public\./i);
 assert.match(settlementRecording, /PAYMENTS_LIVE_COMPANY_SETTLEMENT_RECORDING_ENABLED !== "true"/);
 assert.match(settlementRecording, /verifyPaystackCompanyLiveSettlement\(/);
 assert.match(settlementRecording, /record_learning_company_paystack_settlement_evidence/);
@@ -179,7 +185,7 @@ assert.match(checkout, /set_learning_company_paid_checkout_domain/);
 assert.match(checkout, /config\.mode === "live" \? initializePaystackLiveTransaction : initializePaystackTestTransaction/);
 assert.match(webhook, /verifyPaystackCompanyTransaction\(companyCharge\.reference, config\.mode\)/);
 assert.match(webhook, /receive_learning_company_reversal_notice/);
-assert.ok(webhook.indexOf("isPaystackCompanyReversalEvent(payload)") < webhook.indexOf("parsePaystackTestDisputeEvent(payload)"), "Company reversal notices must be captured before learner-only parsers");
+assert.ok(webhook.indexOf("isPaystackCompanyReversalEvent(payload)") < webhook.indexOf("parsePaystackDisputeEvent(payload, config.mode)"), "Company reversal notices must be captured before learner-only parsers");
 assert.match(reconciliation, /verifyPaystackCompanyTransaction\(reference, getPaystackConfig\(false\)\.mode\)/);
 assert.match(reversalRecovery, /PAYMENTS_TEST_COMPANY_REVERSAL_COMMIT_ENABLED !== "true"/);
 assert.match(reversalRecovery, /isSameOriginRequest\(request\)/);

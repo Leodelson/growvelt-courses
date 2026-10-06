@@ -24,6 +24,7 @@ const migration59 = readFileSync(path.resolve(__dirname,'../supabase/migrations/
 const migration60 = readFileSync(path.resolve(__dirname,'../supabase/migrations/20260960000000_guard_company_reversals_after_seller_outflow.sql'), 'utf8');
 const migration61 = readFileSync(path.resolve(__dirname,'../supabase/migrations/20260961000000_add_company_seller_liability_movement_ledger.sql'), 'utf8');
 const migration62 = readFileSync(path.resolve(__dirname,'../supabase/migrations/20260962000000_record_company_paystack_settlement_evidence.sql'), 'utf8');
+const migration63 = readFileSync(path.resolve(__dirname,'../supabase/migrations/20261008000000_assess_company_seller_release_settlement_evidence.sql'), 'utf8');
 const owner = '00000000-0000-4000-8000-000000000001';
 const teacher = '00000000-0000-4000-8000-000000000002';
 const employee1 = '00000000-0000-4000-8000-000000000003';
@@ -148,6 +149,7 @@ async function main() {
     await db.exec(migration60);
     await db.exec(migration61);
     await db.exec(migration62);
+    await db.exec(migration63);
     await db.exec(`
       insert into public.learning_company_workspaces values(1,'active');
       insert into public.learning_company_memberships values
@@ -759,9 +761,16 @@ async function main() {
       select public.set_learning_company_paid_checkout_domain('${liveRef}','live');
       update public.learning_company_paid_course_purchase_attempts set status='pending' where purchase_id=107;
       update public.learning_company_paid_course_purchases set status='paid' where id=107;
+      update public.learning_company_paid_course_purchases
+        set paid_at=now()-interval '15 days' where id=107;
       update public.learning_company_paid_course_purchase_attempts
         set status='succeeded',provider_transaction_id='777' where purchase_id=107;
+      select * from public.grant_paid_learning_company_purchase_access(107);
     `);
+    await db.query(`select public.record_learning_company_seller_payout_review(
+      107,'${buyer}','approve_for_future_release','settlement-check-107','settlement-check-review-107')`);
+    assert.equal((await releaseGate(107)).release_gate_state,
+      'provider_settlement_verification_required');
     const recordSettlement = (settlementId,transactionId,actor=buyer,amount=101) =>
       db.query(`select public.record_learning_company_paystack_settlement_evidence(
         107,'${actor}','${settlementId}','${transactionId}','${liveRef}',${amount},
@@ -769,6 +778,8 @@ async function main() {
           where purchase_id=107),now())) as purchase_id`);
     assert.equal((await recordSettlement('9001','777')).rows[0].purchase_id,107);
     assert.equal((await recordSettlement('9001','777')).rows[0].purchase_id,107);
+    assert.equal((await releaseGate(107)).release_gate_state,
+      'settlement_verified_release_writer_not_enabled');
     for (const attempt of [
       () => recordSettlement('9002','777'),
       () => recordSettlement('9001','778'),

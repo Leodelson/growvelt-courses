@@ -5,16 +5,22 @@ const { PGlite } = require(process.env.PGLITE_PACKAGE_PATH || '@electric-sql/pgl
 
 const schemaPath = process.argv[2];
 if (!schemaPath) {
-  console.error('Usage: node scripts/test-phase3c-company-ledger-schema.cjs <public-schema-dump.sql>');
+  console.error('Usage: node scripts/test-phase3c-company-ledger-schema.cjs <public-schema-dump.sql> [--after-company-ledger-62]');
   process.exit(2);
 }
 
 const migrationsDir = path.resolve(__dirname, '../supabase/migrations');
+const applyAfterMigration62Only = process.argv[3] === '--after-company-ledger-62';
 const migrationNames = readdirSync(migrationsDir)
-  .filter((name) => /^202609(4[3-9]|5[0-9]|6[0-2])000000_.*\.sql$/.test(name))
+  .filter((name) => applyAfterMigration62Only
+    ? name === '20261008000000_assess_company_seller_release_settlement_evidence.sql'
+    : /^202609(4[3-9]|5[0-9]|6[0-2])000000_.*\.sql$/.test(name)
+      || name === '20261008000000_assess_company_seller_release_settlement_evidence.sql')
   .sort();
-if (migrationNames.length !== 20) {
-  throw new Error(`Expected migrations 43–62; found ${migrationNames.length}`);
+const expectedMigrationCount = applyAfterMigration62Only ? 1 : 21;
+if (migrationNames.length !== expectedMigrationCount) {
+  const expectedRange = applyAfterMigration62Only ? 'migration 63 only' : 'migrations 43–63';
+  throw new Error(`Expected ${expectedRange}; found ${migrationNames.length}`);
 }
 
 async function main() {
@@ -177,7 +183,15 @@ async function main() {
         anonymous_execute: false, member_execute: false, service_execute: serviceExecute,
       }, `${signature} must retain its reviewed role boundary`);
     }
-    console.log('Pending company migrations apply to the supplied public schema.');
+    const { rows: releaseGateDefinition } = await db.query(`select
+      pg_get_functiondef('public.assess_learning_company_seller_release_gate(bigint)'::regprocedure) as definition`);
+    assert.ok(releaseGateDefinition[0].definition.includes('settlement_verified_release_writer_not_enabled'),
+      'Exact settlement evidence must remain blocked without a release writer');
+    assert.ok(releaseGateDefinition[0].definition.includes('settlement_evidence_mismatch'),
+      'Mismatched settlement evidence must fail closed');
+    console.log(applyAfterMigration62Only
+      ? 'Migration 63 applies cleanly to the supplied post-migration-62 public schema.'
+      : 'Company migrations 43–63 apply to the supplied pre-migration public schema.');
     console.log('Company proceeds remain isolated from personal payouts; private financial role grants match the reviewed matrix.');
   } catch (error) {
     console.error(`Failed at ${stage}: ${error.message}`);
