@@ -5,6 +5,7 @@ export type PaystackConfiguration = {
   secretKey: string;
   callbackUrl: string;
   checkoutEnabled: boolean;
+  liveLearnerCheckoutEnabled: boolean;
   refundsEnabled: boolean;
 };
 
@@ -20,6 +21,7 @@ export function resolvePaystackConfiguration(environment: PaystackEnvironment): 
   const liveSecret = environment.PAYSTACK_LIVE_SECRET_KEY?.trim();
   const callbackUrl = environment.PAYSTACK_CALLBACK_URL?.trim();
   const checkoutEnabled = environment.PAYMENTS_CHECKOUT_ENABLED === "true";
+  const liveLearnerCheckoutEnabled = environment.PAYMENTS_LIVE_LEARNER_CHECKOUT_ENABLED === "true";
   const refundsEnabled = environment.PAYMENTS_REFUNDS_ENABLED === "true";
 
   if (mode !== "test" && mode !== "live") throw new Error("Paystack mode must be test or live.");
@@ -38,5 +40,5 @@ export function resolvePaystackConfiguration(environment: PaystackEnvironment): 
     throw new Error("Paystack live callback URL must be the Growvelt Learning HTTPS callback.");
   }
 
-  return { mode, secretKey, callbackUrl: parsedCallback.href, checkoutEnabled, refundsEnabled };
+  return { mode, secretKey, callbackUrl: parsedCallback.href, checkoutEnabled, liveLearnerCheckoutEnabled, refundsEnabled };
 }

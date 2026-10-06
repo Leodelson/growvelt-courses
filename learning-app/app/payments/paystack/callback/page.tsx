@@ -16,7 +16,7 @@ export default async function PaystackCallbackPage({ searchParams }: { searchPar
     const purchase = user ? await getCompanyPaymentForManager(reference, user.id) : null;
     const complete = purchase?.status === "paid";
     return <main className="payment-callback-page"><section className="auth-card payment-callback-card">
-      <p className="eyebrow">PAYSTACK TEST MODE</p>
+      <p className="eyebrow">PAYMENT STATUS</p>
       <h1>{complete ? "Company course purchase confirmed." : "We’re confirming your company payment."}</h1>
       <p>{!user ? "Sign in to view this company payment." : !purchase ? "This company payment is not available to your account." : complete ? `${purchase.seatCount} employee${purchase.seatCount === 1 ? "" : "s"} now have access to ${purchase.courseTitle}.` : "Your payment is being checked against Paystack. Please do not pay again."}</p>
       {user && purchase && !complete && <CompanyPaymentReturnCheck reference={reference} />}
@@ -30,8 +30,8 @@ export default async function PaystackCallbackPage({ searchParams }: { searchPar
   const status = (data as PaymentStatus[] | null)?.[0];
   const complete = status?.order_status === "paid" && status.entitlement_active;
   return <main className="payment-callback-page"><section className="auth-card payment-callback-card">
-    <p className="eyebrow">PAYSTACK TEST MODE</p><h1>{complete ? "Course access is ready." : "We’re confirming your payment."}</h1>
-    <p>{!user ? "Sign in to view this payment status." : complete ? "Growvelt verified the test payment and added the course to My Learning." : status ? "The browser return does not prove payment. Access appears only after the verified Paystack webhook is processed." : "We couldn’t find this payment for the signed-in account."}</p>
+    <p className="eyebrow">PAYMENT STATUS</p><h1>{complete ? "Course access is ready." : "We’re confirming your payment."}</h1>
+    <p>{!user ? "Sign in to view this payment status." : complete ? "Growvelt verified the payment and added the course to My Learning." : status ? "The browser return does not prove payment. Access appears only after the verified Paystack webhook is processed." : "We couldn’t find this payment for the signed-in account."}</p>
     <div className="auth-actions">
       {!user ? <Link className="button button-primary" href={`/sign-in?next=${encodeURIComponent(reference ? `/payments/paystack/callback?reference=${reference}` : "/payments/paystack/callback")}`}>Sign in</Link> : complete && status?.course_slug ? <Link className="button button-primary" href={`/dashboard/my-learning/${encodeURIComponent(status.course_slug)}`}>Open course</Link> : reference ? <Link className="button button-primary" href={`/payments/paystack/callback?reference=${encodeURIComponent(reference)}`}>Check again</Link> : null}
       <Link className="button button-secondary" href="/dashboard/my-learning">My Learning</Link>

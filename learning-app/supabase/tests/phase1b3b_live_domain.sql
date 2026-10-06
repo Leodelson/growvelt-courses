@@ -1,7 +1,7 @@
 -- Phase 1B3B live-domain isolation. Runs only in the isolated local database.
 begin;
 
-insert into auth.users(id,aud,role,email,encrypted_password,confirmed_at,raw_app_meta_data,raw_user_meta_data,created_at,updated_at) values
+insert into auth.users(id,aud,role,email,encrypted_password,email_confirmed_at,raw_app_meta_data,raw_user_meta_data,created_at,updated_at) values
 ('16000000-0000-4000-a000-000000000001','authenticated','authenticated','learner@phase1b3b.invalid','',now(),'{}','{"full_name":"Live learner"}',now(),now()),
 ('16000000-0000-4000-a000-000000000004','authenticated','authenticated','test-learner@phase1b3b.invalid','',now(),'{}','{"full_name":"Test learner"}',now(),now()),
 ('16000000-0000-4000-a000-000000000002','authenticated','authenticated','instructor@phase1b3b.invalid','',now(),'{}','{"full_name":"Live instructor"}',now(),now()),
@@ -46,7 +46,32 @@ begin
   if (select count(*) from public.learning_ledger_entries e join public.learning_ledger_transactions t on t.id=e.transaction_id where t.order_id=live_order and t.transaction_type='payment_capture')<>2 then raise exception 'Live capture ledger is not balanced pair'; end if;
   if not exists(select 1 from public.learning_course_entitlements where order_id=live_order and status='active') then raise exception 'Live success lacked entitlement'; end if;
   if not exists(select 1 from public.enrollments e join public.learning_course_entitlements x on x.enrollment_id=e.id where x.order_id=live_order and e.status='active') then raise exception 'Live success lacked enrollment'; end if;
-  if has_function_privilege('authenticated','public.initialize_paystack_live_learning_order(uuid,bigint)','execute') or has_function_privilege('anon','public.receive_paystack_live_charge_event(text,text,text,text,bigint,text,text,jsonb)','execute') then raise exception 'Browser roles can invoke live financial mutation'; end if;
+  if has_function_privilege('authenticated','public.initialize_paystack_live_learning_order(uuid,bigint)','execute') or has_function_privilege('anon','public.receive_paystack_live_charge_event(text,text,text,text,bigint,text,text,jsonb)','execute') or has_function_privilege('authenticated','public.fail_paystack_live_learning_attempt(text,text,text)','execute') then raise exception 'Browser roles can invoke live financial mutation'; end if;
+end $test$;
+
+-- Initialization failures only close a matching Live attempt and order.
+select * from public.initialize_paystack_live_learning_order('16000000-0000-4000-a000-000000000004',:live_course_id) \gset failed_
+select public.mark_paystack_live_learning_attempt_pending(:'failed_order_reference');
+select public.fail_paystack_live_learning_attempt(:'failed_order_reference','provider_unavailable','[TEST] local initialization failure');
+select set_config('phase1b3b.failed_reference', :'failed_order_reference', true);
+do $test$
+begin
+  if not exists(select 1 from public.learning_orders where order_reference=current_setting('phase1b3b.failed_reference') and status='cancelled') then raise exception 'Failed live initialization did not cancel its pending order'; end if;
+  if not exists(select 1 from public.learning_payment_attempts where provider_reference=current_setting('phase1b3b.failed_reference') and paystack_domain='live' and status='failed' and failure_code='provider_unavailable') then raise exception 'Failed live initialization did not fail its live attempt'; end if;
+end $test$;
+
+-- Even a direct Live initializer call cannot charge the Test-only fixture.
+insert into public.learning_paystack_test_fixtures(course_id,tester_id,expires_at,activated_by)
+values(:live_course_id,'16000000-0000-4000-a000-000000000004',now()+interval '1 day','16000000-0000-4000-a000-000000000003');
+select set_config('phase1b3b.fixture_course_id', :'live_course_id', true);
+do $test$
+declare blocked boolean:=false;
+begin
+  begin
+    perform * from public.initialize_paystack_live_learning_order('16000000-0000-4000-a000-000000000001',current_setting('phase1b3b.fixture_course_id')::bigint);
+  exception when insufficient_privilege then blocked:=true;
+  end;
+  if not blocked then raise exception 'Live initializer accepted the controlled Test Mode fixture'; end if;
 end $test$;
 
 -- A live event for a test attempt remains detached and cannot finalize it.

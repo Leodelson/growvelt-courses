@@ -11,9 +11,11 @@ function run(args,input=" "){return new Promise((resolve,reject)=>{const child=s
 const target=await run(["inspect","--format","{{.Name}}|{{.State.Status}}|{{(index (index .NetworkSettings.Ports \"5432/tcp\") 0).HostPort}}",name]);
 if(target!==`/${name}|running|55432`)throw new Error(`Refusing unexpected database target: ${target}`);
 const migration=await readFile(path.join(root,"supabase","migrations","20260902000000_add_paystack_live_domain_foundation.sql"),"utf8");
+const failureMigration=await readFile(path.join(root,"supabase","migrations","20261006000000_add_live_learner_checkout_failure_recovery.sql"),"utf8");
 const exists=await run(["exec","-i",name,"psql","-X","-A","-t","-v","ON_ERROR_STOP=1","-U","postgres","-d","postgres"],"select to_regprocedure('public.initialize_paystack_live_learning_order(uuid,bigint)') is not null;");
 if(exists.trim()!=="t")await run(["exec","-i",name,"psql","-X","-v","ON_ERROR_STOP=1","-U","postgres","-d","postgres"],migration);
 else {const validation=migration.slice(migration.indexOf("create or replace function public.validate_learning_provider_event_links"),migration.indexOf("create or replace function public.initialize_paystack_live_learning_order"));const liveFunctions=migration.slice(migration.indexOf("create or replace function public.initialize_paystack_live_learning_order"));await run(["exec","-i",name,"psql","-X","-v","ON_ERROR_STOP=1","-U","postgres","-d","postgres"],validation+liveFunctions);}
+await run(["exec","-i",name,"psql","-X","-v","ON_ERROR_STOP=1","-U","postgres","-d","postgres"],failureMigration);
 const tests=await readFile(path.join(root,"supabase","tests","phase1b3b_live_domain.sql"),"utf8");
 await run(["exec","-i",name,"psql","-X","-v","ON_ERROR_STOP=1","-U","postgres","-d","postgres"],tests);
 console.log("PASS Phase 1B3B live-domain isolation on isolated local Supabase");

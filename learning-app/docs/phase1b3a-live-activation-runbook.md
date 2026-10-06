@@ -12,6 +12,7 @@ Configure **only Growvelt Learning Production** in Vercel. Keep Growvelt Jobs se
 | `PAYSTACK_LIVE_SECRET_KEY` | Growvelt Learning `sk_live_...` | Server-only Vercel secret. Never place in Git, browser code, logs, or Preview/Development. |
 | `PAYSTACK_CALLBACK_URL` | `https://learn.growvelt.com/payments/paystack/callback` | HTTPS and exact host/path are validated. |
 | `PAYMENTS_CHECKOUT_ENABLED` | `false` initially | Independent checkout kill switch. |
+| `PAYMENTS_LIVE_LEARNER_CHECKOUT_ENABLED` | `false` | Additional learner Live Mode gate; keep off until live refund/dispute operations and the controlled transaction plan are reviewed. |
 | `PAYMENTS_REFUNDS_ENABLED` | `false` initially | Independent refund kill switch. |
 
 Remove `PAYSTACK_SECRET_KEY` and `PAYSTACK_TEST_SECRET_KEY` from the Production environment before setting Live Mode. Test credentials remain only in local/test-specific environments. A Paystack public key is not needed for the server-initialized hosted redirect architecture.
@@ -29,13 +30,13 @@ The webhook continues to validate the raw body using `x-paystack-signature` HMAC
 2. Confirm the Live webhook and callback URLs above in Paystack; do not change the Test integration.
 3. Add the Live secret only to Vercel Production. Remove Production test-secret variables before selecting `live`.
 4. Keep both kill switches `false`, deploy, and confirm the configuration test passes without printing any secret.
-5. Confirm `POST /api/payments/paystack/initialize` returns `checkout_disabled` and refund initiation returns `refunds_disabled`.
+5. Confirm `POST /api/payments/paystack/initialize` returns `checkout_disabled` while either checkout switch is false, and refund initiation returns `refunds_disabled`.
 6. Confirm the signed webhook endpoint is publicly reachable and invalid signatures are rejected. Do not send a fabricated event.
-7. Deploy the separately reviewed forward-only database migration that permits verified provider domain `live`; this migration is intentionally **not** part of Phase 1B3A.
+7. Verify the already-deployed Live-domain database foundation and the forward-only initialization-failure cleanup migration. Do not edit financial rows manually.
 
 ## First approved low-value live transaction
 
-Only after a founder authorizes the cutover:
+Only after live refund/dispute handling is ready and the founder authorizes the cutover:
 
 1. Reconfirm clean reconciliation, active administrator access, policy pages, support coverage, and the rollback owner.
 2. Enable checkout only for the approved controlled scope; leave refunds disabled.

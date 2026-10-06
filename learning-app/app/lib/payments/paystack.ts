@@ -32,10 +32,9 @@ export function getPaystackConfig(requireCheckout = false) {
 
 export function getPaystackTestConfig(requireCheckout = false): PaystackTestConfig {
   const config = getPaystackConfig(requireCheckout);
-  // The database currently accepts only verified `domain = test` financial
-  // events. A later, separately approved live-domain migration is required
-  // before provider operations may run in live mode.
-  if (config.mode !== "test") throw new Error("Live Paystack provider operations are not activated.");
+  // Test-only helpers must never select Live credentials. Live provider
+  // operations use their explicit Live-mode counterparts below.
+  if (config.mode !== "test") throw new Error("This Paystack operation requires Test Mode.");
   return config;
 }
 

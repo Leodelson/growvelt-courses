@@ -18,7 +18,7 @@ export function CompanyPaymentReturnCheck({ reference }: { reference: string }) 
       if (!response.ok || result?.status !== "paid") throw new Error("verification_deferred");
       router.refresh();
     } catch {
-      setMessage("We could not confirm this test payment yet. Please do not pay again. You can check this payment again.");
+      setMessage("We could not confirm this payment yet. Please do not pay again. You can check this payment again.");
     } finally {
       setChecking(false);
     }

@@ -26,16 +26,22 @@ export default async function PublishedCourseDetailPage({ params }: { params: Pr
   if (!slug || slug.length > 220) notFound();
   const course = await getPublishedLearningCourse(slug);
   if (!course) notFound();
+  const paystackMode = process.env.PAYSTACK_MODE === "live" ? "live" : "test";
   const [enrollment, savedCourseIds, fixtureEligibility] = await Promise.all([
     getEnrollmentState(course.id),
     getOwnSavedLearningCourseIds(),
-    course.isFree ? Promise.resolve({ eligible: false }) : getOwnPaystackTestFixtureEligibility(course.id),
+    course.isFree || paystackMode === "live" ? Promise.resolve({ eligible: false }) : getOwnPaystackTestFixtureEligibility(course.id),
   ]);
   const pricing = course.isFree ? "Free" : `${course.priceCurrency || "NGN"} ${Number(course.priceAmount ?? 0).toLocaleString("en-NG")}`;
   const activityCount = course.modules.reduce((total, module) => total + module.lessons.filter((lesson) => lesson.type !== "project").length, 0);
-  const paidCheckoutEnabled = process.env.PAYSTACK_MODE === "test"
-    && process.env.PAYMENTS_CHECKOUT_ENABLED === "true"
-    && fixtureEligibility.eligible;
+  const checkoutMode = process.env.PAYMENTS_CHECKOUT_ENABLED === "true"
+    && paystackMode === "live"
+    && process.env.PAYMENTS_LIVE_LEARNER_CHECKOUT_ENABLED === "true"
+    ? "live"
+    : process.env.PAYMENTS_CHECKOUT_ENABLED === "true" && paystackMode === "test" && fixtureEligibility.eligible
+      ? "test"
+      : null;
+  const paidCheckoutEnabled = checkoutMode !== null;
 
   return <section className="published-course-page section-shell">
     <header className="published-course-hero">
@@ -64,8 +70,8 @@ export default async function PublishedCourseDetailPage({ params }: { params: Pr
         <div className="published-course-save"><SaveCourseButton courseId={course.id} authenticated isSaved={savedCourseIds.includes(course.id)} /><span>Save course</span></div>
         <p className="eyebrow">Course access</p>
         <h2>{enrollment.isEnrolled ? "You’re enrolled" : course.isFree ? "Start learning for free" : paidCheckoutEnabled ? "Purchase this course securely" : "Paid access is coming later"}</h2>
-        <p>{enrollment.isEnrolled ? "Open My Learning to continue lessons, complete quizzes, and follow your saved course progress." : course.isFree ? "Enroll to access the lesson player, complete text and video lessons, take quizzes, and track your progress." : paidCheckoutEnabled ? "Complete a Paystack test-mode checkout. Access is granted only after Growvelt verifies the payment event." : "Growvelt has not enabled paid enrollment or checkout yet."}</p>
-        <EnrollmentButton courseId={course.id} slug={course.slug} isFree={course.isFree} isEnrolled={enrollment.isEnrolled} paidCheckoutEnabled={paidCheckoutEnabled} displayedPrice={pricing} />
+        <p>{enrollment.isEnrolled ? "Open My Learning to continue lessons, complete quizzes, and follow your saved course progress." : course.isFree ? "Enroll to access the lesson player, complete text and video lessons, take quizzes, and track your progress." : paidCheckoutEnabled ? checkoutMode === "live" ? "Complete a real Paystack payment. Access is granted only after Growvelt verifies the payment event." : "Complete a Paystack test-mode checkout. Access is granted only after Growvelt verifies the payment event." : "Growvelt has not enabled paid enrollment or checkout yet."}</p>
+        <EnrollmentButton courseId={course.id} slug={course.slug} isFree={course.isFree} isEnrolled={enrollment.isEnrolled} paidCheckoutEnabled={paidCheckoutEnabled} checkoutMode={checkoutMode ?? "test"} displayedPrice={pricing} />
         <Link className="text-link" href="/dashboard/explore">Browse more courses</Link>
       </aside>
     </div>

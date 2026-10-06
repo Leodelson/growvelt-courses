@@ -67,8 +67,8 @@ export async function POST(request: Request) {
     });
     return NextResponse.json({ received: true, processing: "pending_manual_review" });
   }
-  // Refund and dispute operations remain test-only until a separately approved
-  // live-domain foundation exists. Live charge events continue below.
+  // Live charge verification is active, but Live refund/dispute processing
+  // still needs its own verified handlers and accounting before Live checkout.
   const dispute = config.mode === "test" ? parsePaystackTestDisputeEvent(payload) : null;
   if (dispute) {
     const admin = createAdminClient();
