@@ -42,6 +42,7 @@ const settlementEvidenceMigration = await read("../supabase/migrations/202609620
 const releaseSettlementAssessmentMigration = await read("../supabase/migrations/20261008000000_assess_company_seller_release_settlement_evidence.sql");
 const sellerTransferEvidenceMigration = await read("../supabase/migrations/20261009000000_add_company_seller_transfer_evidence.sql");
 const transferredRecoveryMigration = await read("../supabase/migrations/20261010000000_post_transferred_company_refunds_to_recovery_receivable.sql");
+const sellerRecoveryReceiptMigration = await read("../supabase/migrations/20261011000000_add_company_seller_recovery_receipts.sql");
 const checkout = await read("../app/api/company/workspaces/[workspaceId]/purchases/[purchaseId]/checkout/route.ts");
 const webhook = await read("../app/api/payments/paystack/webhook/route.ts");
 const reconciliation = await read("../app/api/company/payments/paystack/reconcile/route.ts");
@@ -109,6 +110,16 @@ assert.match(transferredRecoveryMigration, /transferable_remaining <> sale_row\.
 assert.match(transferredRecoveryMigration, /Current settlement evidence and prior active-admin approval are required/);
 assert.match(transferredRecoveryMigration, /list_learning_company_seller_recovery_receivables/);
 assert.doesNotMatch(transferredRecoveryMigration, /learning_instructor_earnings|learning_instructor_payout_items|submitPaystackTransfer|initiatePaystack/i);
+assert.match(sellerRecoveryReceiptMigration, /create table public\.learning_company_seller_recovery_receipts/);
+assert.match(sellerRecoveryReceiptMigration, /create table public\.learning_company_seller_recovery_receipt_ledger_entries/);
+assert.match(sellerRecoveryReceiptMigration, /asset\.company_seller_recovery_cash_clearing/);
+assert.match(sellerRecoveryReceiptMigration, /asset\.company_seller_recovery_receivable',-p_amount_minor/);
+assert.match(sellerRecoveryReceiptMigration, /Active Learning Admin required to confirm seller recovery/);
+assert.match(sellerRecoveryReceiptMigration, /new\.amount_minor > receivable_minor - received_minor/);
+assert.match(sellerRecoveryReceiptMigration, /list_learning_company_seller_recovery_balances/);
+assert.match(sellerRecoveryReceiptMigration, /reconcile_learning_company_seller_recovery_receipts/);
+assert.match(sellerRecoveryReceiptMigration, /grant execute on function public\.reconcile_learning_company_seller_recovery_receipts\(\),/);
+assert.doesNotMatch(sellerRecoveryReceiptMigration, /grant\s+insert\s+on|update public\.learning_company_seller_recovery_receipts|delete from public\.learning_company_seller_recovery_receipts|learning_instructor_earnings|learning_instructor_payout_items|submitPaystackTransfer|initiatePaystack/i);
 assert.match(settlementRecording, /PAYMENTS_LIVE_COMPANY_SETTLEMENT_RECORDING_ENABLED !== "true"/);
 assert.match(settlementRecording, /verifyPaystackCompanyLiveSettlement\(/);
 assert.match(settlementRecording, /record_learning_company_paystack_settlement_evidence/);

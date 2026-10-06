@@ -27,6 +27,7 @@ const migration62 = readFileSync(path.resolve(__dirname,'../supabase/migrations/
 const migration63 = readFileSync(path.resolve(__dirname,'../supabase/migrations/20261008000000_assess_company_seller_release_settlement_evidence.sql'), 'utf8');
 const migration64 = readFileSync(path.resolve(__dirname,'../supabase/migrations/20261009000000_add_company_seller_transfer_evidence.sql'), 'utf8');
 const migration65 = readFileSync(path.resolve(__dirname,'../supabase/migrations/20261010000000_post_transferred_company_refunds_to_recovery_receivable.sql'), 'utf8');
+const migration66 = readFileSync(path.resolve(__dirname,'../supabase/migrations/20261011000000_add_company_seller_recovery_receipts.sql'), 'utf8');
 const owner = '00000000-0000-4000-8000-000000000001';
 const teacher = '00000000-0000-4000-8000-000000000002';
 const employee1 = '00000000-0000-4000-8000-000000000003';
@@ -162,6 +163,7 @@ async function main() {
     await db.exec(migration63);
     await db.exec(migration64);
     await db.exec(migration65);
+    await db.exec(migration66);
     await db.exec(`
       insert into public.learning_company_workspaces values(1,'active');
       insert into public.learning_company_memberships values
@@ -886,6 +888,34 @@ async function main() {
     ]);
     assert.deepEqual((await db.query(`select * from public.list_learning_company_seller_recovery_receivables()
       where purchase_id=107`)).rows,[{purchase_id:107,seller_payee_id:owner,receivable_minor:76,currency:'NGN'}]);
+    const firstRecoveryReceipt = (await db.query(`select public.record_learning_company_seller_recovery_receipt(
+      107,'${owner}',30,'bank_transfer','BANK-REF-107-1','${buyer}') as id`)).rows[0].id;
+    assert.ok(firstRecoveryReceipt > 0);
+    assert.deepEqual((await db.query(`select line_number,account_code,amount_minor,currency
+      from public.learning_company_seller_recovery_receipt_ledger_entries
+      where receipt_id=${firstRecoveryReceipt} order by line_number`)).rows,[
+      {line_number:1,account_code:'asset.company_seller_recovery_cash_clearing',amount_minor:30,currency:'NGN'},
+      {line_number:2,account_code:'asset.company_seller_recovery_receivable',amount_minor:-30,currency:'NGN'},
+    ]);
+    assert.deepEqual((await db.query(`select * from public.list_learning_company_seller_recovery_balances()
+      where purchase_id=107`)).rows,[{purchase_id:107,seller_payee_id:owner,booked_minor:76,
+        recovered_minor:30,outstanding_minor:46,currency:'NGN'}]);
+    await assert.rejects(() => db.query(`select public.record_learning_company_seller_recovery_receipt(
+      107,'${owner}',47,'bank_transfer','BANK-REF-107-2','${buyer}')`));
+    await assert.rejects(() => db.query(`select public.record_learning_company_seller_recovery_receipt(
+      107,'${owner}',10,'bank_transfer','BANK-REF-107-1','${buyer}')`));
+    await assert.rejects(() => db.query(`select public.record_learning_company_seller_recovery_receipt(
+      107,'${owner}',10,'bank_transfer','BANK-REF-107-3','${teacher}')`));
+    const finalRecoveryReceipt = (await db.query(`select public.record_learning_company_seller_recovery_receipt(
+      107,'${owner}',46,'other','MANUAL-REF-107-2','${buyer}') as id`)).rows[0].id;
+    assert.ok(finalRecoveryReceipt > firstRecoveryReceipt);
+    assert.deepEqual((await db.query(`select * from public.list_learning_company_seller_recovery_balances()
+      where purchase_id=107`)).rows,[{purchase_id:107,seller_payee_id:owner,booked_minor:76,
+        recovered_minor:76,outstanding_minor:0,currency:'NGN'}]);
+    assert.deepEqual((await db.query(`select * from public.reconcile_learning_company_seller_recovery_receipts()
+      where purchase_id=107`)).rows,[]);
+    await assert.rejects(() => db.query(`select public.record_learning_company_seller_recovery_receipt(
+      107,'${owner}',1,'bank_transfer','BANK-REF-107-3','${buyer}')`));
     assert.deepEqual((await db.query(`select * from public.reconcile_learning_company_commercial_reversals()
       where reversal_id=${transferredRefund.reversal_id}`)).rows,[]);
     assert.equal((await db.query(`select remaining_held_minor from public.list_learning_company_seller_held_liabilities()
@@ -927,7 +957,25 @@ async function main() {
     assert.deepEqual((await db.query('select * from public.reconcile_learning_company_seller_held_liabilities()')).rows,
       [{ purchase_id: 104, issue_type: 'company_seller_held_capture_mismatch' }]);
     assert.equal(await reviewState(104), 'accounting_review_required');
-    console.log('PASS company seller ledgers, release gates, independent grants, private transfer evidence, and post-transfer refund recovery receivables');
+    const recoveryReceiptPermissions = (await db.query(`select
+      has_table_privilege('anon','public.learning_company_seller_recovery_receipts','SELECT') as anon_read,
+      has_table_privilege('authenticated','public.learning_company_seller_recovery_receipts','SELECT') as member_read,
+      has_table_privilege('service_role','public.learning_company_seller_recovery_receipts','SELECT') as service_read,
+      has_table_privilege('service_role','public.learning_company_seller_recovery_receipts','INSERT') as service_insert,
+      has_table_privilege('authenticated','public.learning_company_seller_recovery_receipt_ledger_entries','SELECT') as member_ledger_read,
+      has_table_privilege('service_role','public.learning_company_seller_recovery_receipt_ledger_entries','INSERT') as service_ledger_insert,
+      has_function_privilege('authenticated',
+        'public.record_learning_company_seller_recovery_receipt(bigint,uuid,bigint,text,text,uuid)','EXECUTE') as member_record,
+      has_function_privilege('service_role',
+        'public.record_learning_company_seller_recovery_receipt(bigint,uuid,bigint,text,text,uuid)','EXECUTE') as service_record`)).rows[0];
+    assert.deepEqual(recoveryReceiptPermissions,{anon_read:false,member_read:false,service_read:true,
+      service_insert:false,member_ledger_read:false,service_ledger_insert:false,
+      member_record:false,service_record:true});
+    await assert.rejects(() => db.exec(`delete from public.learning_company_seller_recovery_receipts
+      where purchase_id=107`));
+    await assert.rejects(() => db.exec(`delete from public.learning_company_seller_recovery_receipt_ledger_entries
+      where receipt_id=${firstRecoveryReceipt}`));
+    console.log('PASS company seller ledgers, private transfer evidence, post-transfer refund receivables, and admin-confirmed recovery receipts');
   } finally {
     await db.close();
   }
