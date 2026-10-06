@@ -40,6 +40,7 @@ const postReleaseReversalGuardMigration = await read("../supabase/migrations/202
 const sellerLiabilityMovementMigration = await read("../supabase/migrations/20260961000000_add_company_seller_liability_movement_ledger.sql");
 const settlementEvidenceMigration = await read("../supabase/migrations/20260962000000_record_company_paystack_settlement_evidence.sql");
 const releaseSettlementAssessmentMigration = await read("../supabase/migrations/20261008000000_assess_company_seller_release_settlement_evidence.sql");
+const sellerTransferEvidenceMigration = await read("../supabase/migrations/20261009000000_add_company_seller_transfer_evidence.sql");
 const checkout = await read("../app/api/company/workspaces/[workspaceId]/purchases/[purchaseId]/checkout/route.ts");
 const webhook = await read("../app/api/payments/paystack/webhook/route.ts");
 const reconciliation = await read("../app/api/company/payments/paystack/reconcile/route.ts");
@@ -94,6 +95,13 @@ assert.match(releaseSettlementAssessmentMigration, /settlement_evidence_mismatch
 assert.match(releaseSettlementAssessmentMigration, /settlement_verified_release_writer_not_enabled/);
 assert.match(releaseSettlementAssessmentMigration, /evidence\.provider_transaction_id = sale\.provider_transaction_id/);
 assert.doesNotMatch(releaseSettlementAssessmentMigration, /(?:insert\s+into|update|delete\s+from)\s+public\./i);
+assert.match(sellerTransferEvidenceMigration, /create table public\.learning_company_seller_transfer_evidence/);
+assert.match(sellerTransferEvidenceMigration, /boundary_row\.boundary_kind <> 'transferred'/);
+assert.match(sellerTransferEvidenceMigration, /payout_profile_row\.recipient_code <> new\.recipient_code/);
+assert.match(sellerTransferEvidenceMigration, /new\.amount_minor > reserved_total - transferred_total/);
+assert.match(sellerTransferEvidenceMigration, /Active Learning Admin required for transfer evidence/);
+assert.match(sellerTransferEvidenceMigration, /reconcile_learning_company_seller_transfers/);
+assert.doesNotMatch(sellerTransferEvidenceMigration, /grant\s+insert\s+on|initiatePaystack|create\s+or\s+replace\s+function\s+public\.is_learning_company_live_accounting_ready/i);
 assert.match(settlementRecording, /PAYMENTS_LIVE_COMPANY_SETTLEMENT_RECORDING_ENABLED !== "true"/);
 assert.match(settlementRecording, /verifyPaystackCompanyLiveSettlement\(/);
 assert.match(settlementRecording, /record_learning_company_paystack_settlement_evidence/);
