@@ -19,6 +19,7 @@ This checkpoint supersedes the 29 September status snapshot where they differ. I
 - Commit `7d3d824` is on `main` and its Vercel Production deployment is Ready.
 - Supabase migrations 43–63 are applied. Migration 63 only refines the read-only company seller release gate.
 - The exact settlement-evidence state remains `settlement_verified_release_writer_not_enabled`. The live-accounting readiness function is absent; company live checkout and company seller payouts are disabled.
+- A server-only, read-only verifier now checks a company transfer reference against Paystack's successful Live response, recipient code, NGN amount and source. Its isolated tests use a fake provider response. No route calls it, and it creates no database evidence or accounting entry; company transfers remain disabled. The provider lookup is Paystack's documented [Verify Transfer GET endpoint](https://paystack.com/docs/api/transfer/).
 - The confirmed company Test Mode purchase remains accessible and excluded from seller earnings under the owner's decision. No production company seller outflow or live company attempt was found at the latest checkpoint.
 - No Paystack or Vercel secret values were changed as part of this checkpoint.
 
