@@ -16,7 +16,9 @@ export default async function PaymentOperationsPage({ searchParams }: { searchPa
   const refundByOrder = new Map(refundCases.map((item) => [item.order_id, item]));
   const refundEventsByCase = new Map(refundCases.map((item) => [item.case_id, refundEvents.filter((event) => event.payment_case_id === item.case_id)]));
   const disputeByOrder=new Map(disputeCases.map(item=>[item.order_id,item]));
-  const refundsEnabled = process.env.PAYSTACK_MODE === "test" && process.env.PAYMENTS_REFUNDS_ENABLED === "true";
+  const refundsEnabled = process.env.PAYSTACK_MODE === "live"
+    ? process.env.PAYMENTS_LIVE_REFUNDS_ENABLED === "true"
+    : process.env.PAYSTACK_MODE === "test" && process.env.PAYMENTS_REFUNDS_ENABLED === "true";
   return <section className="admin-page section-shell">
     <header className="admin-page-header admin-review-hero">
       <p className="eyebrow">Finance operations</p><h1>Payment reconciliation</h1>

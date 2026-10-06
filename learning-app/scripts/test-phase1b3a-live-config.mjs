@@ -21,9 +21,12 @@ assert.equal(live.mode, "live");
 assert.equal(live.checkoutEnabled, false);
 assert.equal(live.liveLearnerCheckoutEnabled, false);
 assert.equal(live.refundsEnabled, false);
+assert.equal(live.liveRefundsEnabled, false);
 const liveGate = resolvePaystackConfiguration({ PAYSTACK_MODE: "live", PAYSTACK_LIVE_SECRET_KEY: "sk_live_example", PAYSTACK_CALLBACK_URL: liveCallback, PAYMENTS_CHECKOUT_ENABLED: "true", PAYMENTS_LIVE_LEARNER_CHECKOUT_ENABLED: "true", PAYMENTS_REFUNDS_ENABLED: "false" });
 assert.equal(liveGate.checkoutEnabled, true);
 assert.equal(liveGate.liveLearnerCheckoutEnabled, true);
+const liveRefundGate = resolvePaystackConfiguration({ PAYSTACK_MODE: "live", PAYSTACK_LIVE_SECRET_KEY: "sk_live_example", PAYSTACK_CALLBACK_URL: liveCallback, PAYMENTS_LIVE_REFUNDS_ENABLED: "true" });
+assert.equal(liveRefundGate.liveRefundsEnabled, true);
 for (const invalid of [
   {},
   { PAYSTACK_MODE: "sandbox", PAYSTACK_SECRET_KEY: "sk_test_example", PAYSTACK_CALLBACK_URL: liveCallback },
@@ -37,8 +40,7 @@ for (const invalid of [
   { PAYSTACK_MODE: "test", PAYSTACK_SECRET_KEY: "sk_live_example", PAYSTACK_CALLBACK_URL: "http://localhost:3000/payments/paystack/callback" },
 ]) assert.throws(() => resolvePaystackConfiguration(invalid));
 // Test provider operations stay bound to Test credentials. Learner Live
-// checkout needs both switches, and payment operations remain Test-only until
-// Live refund/dispute operations are ready.
+// checkout needs both switches; Live refunds have an independent switch.
 assert.match(providerSource, /config\.mode !== "test"/);
 assert.match(coursePageSource, /paystackMode === "test" && fixtureEligibility\.eligible/);
 assert.match(coursePageSource, /PAYMENTS_LIVE_LEARNER_CHECKOUT_ENABLED === "true"/);
@@ -46,5 +48,5 @@ assert.match(initializeRouteSource, /configuration\.mode === "live" && !configur
 assert.match(initializeRouteSource, /initialize_paystack_live_learning_order/);
 assert.match(initializeRouteSource, /initialize_paystack_test_learning_order/);
 assert.match(initializeRouteSource, /fail_paystack_live_learning_attempt/);
-assert.match(paymentOperationsSource, /process\.env\.PAYSTACK_MODE === "test"/);
+assert.match(paymentOperationsSource, /PAYMENTS_LIVE_REFUNDS_ENABLED === "true"/);
 console.log("PASS Phase 1B3A strict Paystack test/live configuration boundaries, server-only secrets, and independent disabled kill switches");

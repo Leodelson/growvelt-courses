@@ -227,8 +227,9 @@ export function parsePaystackDisputeEvent(value: unknown, expectedDomain: Paysta
   const deadline = typeof deadlineValue === "string" && !Number.isNaN(Date.parse(deadlineValue)) ? new Date(deadlineValue).toISOString() : null;
   if (!disputeId || !/^GL-[A-F0-9]{32}$/.test(transactionReference) || !Number.isSafeInteger(amount) || Number(amount) <= 0 || currency !== "NGN" || domain !== expectedDomain || !status) return null;
   const occurrence = data.updated_at ?? data.updatedAt ?? data.resolved_at ?? data.due_at ?? `${status}:${resolution ?? "none"}`;
+  const liveEventNamespace = expectedDomain === "live" ? ":live" : "";
   return {
-    eventId: `${event.event}:${disputeId}:${String(occurrence)}`,
+    eventId: `${event.event}${liveEventNamespace}:${disputeId}:${String(occurrence)}`,
     eventType: event.event as PaystackDisputeEvent["eventType"],
     transactionReference,
     disputeId,
@@ -257,8 +258,9 @@ export function parsePaystackRefundEvent(value: unknown, expectedDomain: Paystac
   const refundReference = typeof data.refund_reference === "string" && data.refund_reference.trim() ? data.refund_reference : null;
   const amount = typeof data.amount === "string" && /^\d+$/.test(data.amount) ? Number(data.amount) : data.amount;
   if (!/^GL-[A-F0-9]{32}$/.test(transactionReference) || !Number.isSafeInteger(amount) || Number(amount) <= 0 || data.currency !== "NGN" || data.domain !== expectedDomain || (typeof data.status === "string" && data.status !== status)) return null;
+  const liveEventNamespace = expectedDomain === "live" ? ":live" : "";
   return {
-    eventId: `${event.event}:${refundId ?? refundReference ?? `${transactionReference}:${Number(amount)}`}`,
+    eventId: `${event.event}${liveEventNamespace}:${refundId ?? refundReference ?? `${transactionReference}:${Number(amount)}`}`,
     eventType: event.event as PaystackRefundEvent["eventType"],
     transactionReference,
     refundId,

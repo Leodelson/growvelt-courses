@@ -14,6 +14,7 @@ Configure **only Growvelt Learning Production** in Vercel. Keep Growvelt Jobs se
 | `PAYMENTS_CHECKOUT_ENABLED` | `false` initially | Independent checkout kill switch. |
 | `PAYMENTS_LIVE_LEARNER_CHECKOUT_ENABLED` | `false` | Additional learner Live Mode gate; keep off until live refund/dispute operations and the controlled transaction plan are reviewed. |
 | `PAYMENTS_REFUNDS_ENABLED` | `false` initially | Independent refund kill switch. |
+| `PAYMENTS_LIVE_REFUNDS_ENABLED` | `false` | Separate Live refund-initiation kill switch. Live verification/recovery and signed webhook processing remain available when it is off. |
 
 Remove `PAYSTACK_SECRET_KEY` and `PAYSTACK_TEST_SECRET_KEY` from the Production environment before setting Live Mode. Test credentials remain only in local/test-specific environments. A Paystack public key is not needed for the server-initialized hosted redirect architecture.
 
@@ -47,4 +48,4 @@ Only after live refund/dispute handling is ready and the founder authorizes the 
 
 ## Immediate rollback
 
-If any assertion fails, set `PAYMENTS_CHECKOUT_ENABLED=false`, redeploy, and leave the webhook reachable for already-created transactions. Do not edit financial rows manually. Use the existing administrator verification/recovery path only after provider verification, then record the incident and reconcile. Keep `PAYMENTS_REFUNDS_ENABLED=false` unless a separately approved refund action is required.
+If any assertion fails, set `PAYMENTS_CHECKOUT_ENABLED=false`, redeploy, and leave the webhook reachable for already-created transactions. Do not edit financial rows manually. Use the administrator verification/recovery path only after provider verification, then record the incident and reconcile. Keep both `PAYMENTS_REFUNDS_ENABLED` and `PAYMENTS_LIVE_REFUNDS_ENABLED` false unless a separately approved refund action is required.

@@ -15,15 +15,22 @@ for (const route of [initiate, recover]) {
   assert.match(route, /isSameOriginRequest/);
   assert.match(route, /getUser\(\)/);
   assert.match(route, /is_growvelt_learning_admin/);
-  assert.match(route, /requirePaystackTestRefundsEnabled/);
 }
 
+assert.match(initiate, /requirePaystackTestRefundsEnabled/);
+assert.match(initiate, /requirePaystackLiveRefundsEnabled/);
+assert.match(initiate, /request_paystack_live_full_refund/);
+assert.match(initiate, /record_paystack_live_refund_submission/);
 assert.match(initiate, /confirmation !== reference/);
 assert.match(initiate, /request_paystack_test_full_refund/);
 assert.doesNotMatch(initiate, /amount_minor\s*:\s*body/);
 assert.match(initiate, /p_provider_status: "needs-attention"/);
 assert.doesNotMatch(initiate, /p_provider_status: "failed"/);
-assert.match(recover, /get_learning_refund_case_for_recovery/);
+assert.match(recover, /get_learning_test_refund_case_for_recovery/);
+assert.match(recover, /get_learning_live_refund_case_for_recovery/);
+assert.match(recover, /verifyPaystackLiveRefund/);
+assert.match(recover, /recover_paystack_live_refund_event/);
+assert.doesNotMatch(recover, /requirePaystackTestRefundsEnabled/);
 assert.doesNotMatch(recover, /body\?\.providerCaseId/);
 assert.doesNotMatch(recover, /body\?\.reference/);
 assert.match(provider, /resolvePaystackConfiguration/);
@@ -35,5 +42,7 @@ assert.match(provider, /api\.paystack\.co\/refund\/\$\{encodeURIComponent\(input
 assert.match(webhook, /verifyPaystackSignature\(rawBody/);
 assert.match(webhook, /receive_paystack_test_refund_event/);
 assert.match(webhook, /process_paystack_test_refund_event/);
+assert.match(webhook, /receive_paystack_live_refund_event/);
+assert.match(webhook, /process_paystack_live_refund_event/);
 
 console.log("PASS Phase 1B2A refund routes retain flag, origin, admin, amount, and signed-webhook boundaries");

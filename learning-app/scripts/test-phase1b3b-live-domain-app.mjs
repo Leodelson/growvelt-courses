@@ -18,7 +18,12 @@ const migration = await readFile(new URL("../supabase/migrations/20260902000000_
 const failureMigration = await readFile(new URL("../supabase/migrations/20261006000000_add_live_learner_checkout_failure_recovery.sql", import.meta.url), "utf8");
 assert.match(webhook, /parsePaystackChargeSuccess\(payload, config\.mode\)/);
 assert.match(webhook, /receive_paystack_live_charge_event/);
-assert.match(webhook, /config\.mode === "test" \? parsePaystackTestRefundEvent/);
+assert.match(webhook, /parsePaystackDisputeEvent\(payload, config\.mode\)/);
+assert.match(webhook, /parsePaystackRefundEvent\(payload, config\.mode\)/);
+assert.match(webhook, /receive_paystack_live_dispute_event/);
+assert.match(webhook, /process_paystack_live_dispute_event/);
+assert.match(webhook, /receive_paystack_live_refund_event/);
+assert.match(webhook, /process_paystack_live_refund_event/);
 assert.match(recovery, /verifyPaystackTransaction\(reference, "live"\)/);
 assert.match(recovery, /receive_paystack_live_verified_transaction/);
 assert.match(initializeRoute, /liveLearnerCheckoutEnabled/);
@@ -32,4 +37,10 @@ assert.match(migration, /revoke all on function public\.protect_learning_payment
 assert.match(failureMigration, /paystack_domain = 'live'/);
 assert.match(failureMigration, /learning_paystack_test_fixtures where course_id = p_course_id/);
 assert.match(failureMigration, /revoke all on function public\.fail_paystack_live_learning_attempt/);
-console.log("PASS Phase 1B3B app-level domain parsing, live charge routing, test-only refund/dispute routing, and server-only live recovery boundaries");
+const reversalMigration = await readFile(new URL("../supabase/migrations/20261007000000_add_live_learner_refund_dispute_operations.sql", import.meta.url), "utf8");
+assert.match(reversalMigration, /request_paystack_live_full_refund/);
+assert.match(reversalMigration, /finalize_paystack_live_full_refund/);
+assert.match(reversalMigration, /receive_paystack_live_dispute_event/);
+assert.match(reversalMigration, /finalize_paystack_live_chargeback/);
+assert.match(reversalMigration, /a\.paystack_domain='live'/);
+console.log("PASS Phase 1B3B app-level Live charge, refund, dispute, recovery, and server-only domain boundaries");
