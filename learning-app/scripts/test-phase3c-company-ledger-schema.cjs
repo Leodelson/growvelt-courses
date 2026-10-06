@@ -14,14 +14,16 @@ const applyAfterMigration62Only = process.argv[3] === '--after-company-ledger-62
 const migrationNames = readdirSync(migrationsDir)
   .filter((name) => applyAfterMigration62Only
     ? ['20261008000000_assess_company_seller_release_settlement_evidence.sql',
-      '20261009000000_add_company_seller_transfer_evidence.sql'].includes(name)
+      '20261009000000_add_company_seller_transfer_evidence.sql',
+      '20261010000000_post_transferred_company_refunds_to_recovery_receivable.sql'].includes(name)
     : /^202609(4[3-9]|5[0-9]|6[0-2])000000_.*\.sql$/.test(name)
       || ['20261008000000_assess_company_seller_release_settlement_evidence.sql',
-        '20261009000000_add_company_seller_transfer_evidence.sql'].includes(name))
+        '20261009000000_add_company_seller_transfer_evidence.sql',
+        '20261010000000_post_transferred_company_refunds_to_recovery_receivable.sql'].includes(name))
   .sort();
-const expectedMigrationCount = applyAfterMigration62Only ? 2 : 22;
+const expectedMigrationCount = applyAfterMigration62Only ? 3 : 23;
 if (migrationNames.length !== expectedMigrationCount) {
-  const expectedRange = applyAfterMigration62Only ? 'migrations 63–64' : 'migrations 43–64';
+  const expectedRange = applyAfterMigration62Only ? 'migrations 63–65' : 'migrations 43–65';
   throw new Error(`Expected ${expectedRange}; found ${migrationNames.length}`);
 }
 
@@ -178,6 +180,7 @@ async function main() {
       ['record_learning_company_paystack_settlement_evidence(bigint,uuid,text,text,text,bigint,timestamptz)', true],
       ['validate_learning_company_seller_transfer_evidence()', false],
       ['reconcile_learning_company_seller_transfers()', true],
+      ['list_learning_company_seller_recovery_receivables()', true],
     ];
     for (const [signature, serviceExecute] of privateFunctions) {
       const { rows } = await db.query(`select
@@ -195,8 +198,8 @@ async function main() {
     assert.ok(releaseGateDefinition[0].definition.includes('settlement_evidence_mismatch'),
       'Mismatched settlement evidence must fail closed');
     console.log(applyAfterMigration62Only
-      ? 'Migrations 63–64 apply cleanly to the supplied post-migration-62 public schema.'
-      : 'Company migrations 43–64 apply to the supplied pre-migration public schema.');
+      ? 'Migrations 63–65 apply cleanly to the supplied post-migration-62 public schema.'
+      : 'Company migrations 43–65 apply to the supplied pre-migration public schema.');
     console.log('Company proceeds remain isolated from personal payouts; private financial role grants match the reviewed matrix.');
   } catch (error) {
     console.error(`Failed at ${stage}: ${error.message}`);

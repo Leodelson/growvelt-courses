@@ -26,6 +26,7 @@ const migration61 = readFileSync(path.resolve(__dirname,'../supabase/migrations/
 const migration62 = readFileSync(path.resolve(__dirname,'../supabase/migrations/20260962000000_record_company_paystack_settlement_evidence.sql'), 'utf8');
 const migration63 = readFileSync(path.resolve(__dirname,'../supabase/migrations/20261008000000_assess_company_seller_release_settlement_evidence.sql'), 'utf8');
 const migration64 = readFileSync(path.resolve(__dirname,'../supabase/migrations/20261009000000_add_company_seller_transfer_evidence.sql'), 'utf8');
+const migration65 = readFileSync(path.resolve(__dirname,'../supabase/migrations/20261010000000_post_transferred_company_refunds_to_recovery_receivable.sql'), 'utf8');
 const owner = '00000000-0000-4000-8000-000000000001';
 const teacher = '00000000-0000-4000-8000-000000000002';
 const employee1 = '00000000-0000-4000-8000-000000000003';
@@ -160,6 +161,7 @@ async function main() {
     await db.exec(migration62);
     await db.exec(migration63);
     await db.exec(migration64);
+    await db.exec(migration65);
     await db.exec(`
       insert into public.learning_company_workspaces values(1,'active');
       insert into public.learning_company_memberships values
@@ -868,6 +870,27 @@ async function main() {
     await expectTransferEvidenceRejection({reference:`lcs-${'e'.repeat(32)}`,actor:teacher});
     assert.equal((await db.query(`select count(*) as n from public.learning_company_seller_transfer_evidence
       where purchase_id=107`)).rows[0].n,1);
+    const recoveryNotice = (await db.query(receiveSql,[
+      'refund.processed:live-107','f'.repeat(64),'refund.processed',liveRef,
+      '91007','processed',101,'NGN','live'])).rows[0];
+    const transferredRefundSql = `select * from public.commit_learning_company_reversal_after_verification(
+      ${recoveryNotice.event_id},'777','processed',null,101,array['${employee2}']::uuid[])`;
+    const transferredRefund = (await db.query(transferredRefundSql)).rows[0];
+    const recoveryEntries = (await db.query(`select entry.account_code,entry.amount_minor
+      from public.learning_company_commercial_reversal_ledger_entries entry
+      where entry.reversal_id=${transferredRefund.reversal_id} order by entry.line_number`)).rows;
+    assert.deepEqual(recoveryEntries,[
+      {account_code:'revenue.platform_commission',amount_minor:25},
+      {account_code:'asset.company_seller_recovery_receivable',amount_minor:76},
+      {account_code:'asset.paystack_receivable',amount_minor:-101},
+    ]);
+    assert.deepEqual((await db.query(`select * from public.list_learning_company_seller_recovery_receivables()
+      where purchase_id=107`)).rows,[{purchase_id:107,seller_payee_id:owner,receivable_minor:76,currency:'NGN'}]);
+    assert.deepEqual((await db.query(`select * from public.reconcile_learning_company_commercial_reversals()
+      where reversal_id=${transferredRefund.reversal_id}`)).rows,[]);
+    assert.equal((await db.query(`select remaining_held_minor from public.list_learning_company_seller_held_liabilities()
+      where purchase_id=107`)).rows[0].remaining_held_minor,0);
+    assert.deepEqual((await db.query(transferredRefundSql)).rows[0],transferredRefund);
     const transferPermissions = (await db.query(`select
       has_table_privilege('anon','public.learning_company_seller_transfer_evidence','SELECT') as anon_read,
       has_table_privilege('authenticated','public.learning_company_seller_transfer_evidence','SELECT') as member_read,
@@ -904,7 +927,7 @@ async function main() {
     assert.deepEqual((await db.query('select * from public.reconcile_learning_company_seller_held_liabilities()')).rows,
       [{ purchase_id: 104, issue_type: 'company_seller_held_capture_mismatch' }]);
     assert.equal(await reviewState(104), 'accounting_review_required');
-    console.log('PASS company sale/reversal ledger, seller holds and release gates, independent grants, exclusive-seat access, and private transfer-evidence validation');
+    console.log('PASS company seller ledgers, release gates, independent grants, private transfer evidence, and post-transfer refund recovery receivables');
   } finally {
     await db.close();
   }
