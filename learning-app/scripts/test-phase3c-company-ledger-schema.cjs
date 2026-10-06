@@ -16,16 +16,18 @@ const migrationNames = readdirSync(migrationsDir)
     ? ['20261008000000_assess_company_seller_release_settlement_evidence.sql',
       '20261009000000_add_company_seller_transfer_evidence.sql',
       '20261010000000_post_transferred_company_refunds_to_recovery_receivable.sql',
-      '20261011000000_add_company_seller_recovery_receipts.sql'].includes(name)
+      '20261011000000_add_company_seller_recovery_receipts.sql',
+      '20261012000000_record_company_seller_transfer_evidence.sql'].includes(name)
     : /^202609(4[3-9]|5[0-9]|6[0-2])000000_.*\.sql$/.test(name)
       || ['20261008000000_assess_company_seller_release_settlement_evidence.sql',
         '20261009000000_add_company_seller_transfer_evidence.sql',
         '20261010000000_post_transferred_company_refunds_to_recovery_receivable.sql',
-        '20261011000000_add_company_seller_recovery_receipts.sql'].includes(name))
+        '20261011000000_add_company_seller_recovery_receipts.sql',
+        '20261012000000_record_company_seller_transfer_evidence.sql'].includes(name))
   .sort();
-const expectedMigrationCount = applyAfterMigration62Only ? 4 : 24;
+const expectedMigrationCount = applyAfterMigration62Only ? 5 : 25;
 if (migrationNames.length !== expectedMigrationCount) {
-  const expectedRange = applyAfterMigration62Only ? 'migrations 63–66' : 'migrations 43–66';
+  const expectedRange = applyAfterMigration62Only ? 'migrations 63–67' : 'migrations 43–67';
   throw new Error(`Expected ${expectedRange}; found ${migrationNames.length}`);
 }
 
@@ -190,6 +192,7 @@ async function main() {
       ['record_learning_company_seller_recovery_receipt(bigint,uuid,bigint,text,text,uuid)', true],
       ['list_learning_company_seller_recovery_balances()', true],
       ['reconcile_learning_company_seller_recovery_receipts()', true],
+      ['record_learning_company_seller_transfer_evidence(bigint,bigint,text,text,text,bigint,uuid)', true],
     ];
     for (const [signature, serviceExecute] of privateFunctions) {
       const { rows } = await db.query(`select
@@ -207,8 +210,8 @@ async function main() {
     assert.ok(releaseGateDefinition[0].definition.includes('settlement_evidence_mismatch'),
       'Mismatched settlement evidence must fail closed');
     console.log(applyAfterMigration62Only
-      ? 'Migrations 63–66 apply cleanly to the supplied post-migration-62 public schema.'
-      : 'Company migrations 43–66 apply to the supplied pre-migration public schema.');
+      ? 'Migrations 63–67 apply cleanly to the supplied post-migration-62 public schema.'
+      : 'Company migrations 43–67 apply to the supplied pre-migration public schema.');
     console.log('Company proceeds remain isolated from personal payouts; private financial role grants match the reviewed matrix.');
   } catch (error) {
     console.error(`Failed at ${stage}: ${error.message}`);

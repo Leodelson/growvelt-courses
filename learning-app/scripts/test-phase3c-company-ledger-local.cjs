@@ -28,6 +28,7 @@ const migration63 = readFileSync(path.resolve(__dirname,'../supabase/migrations/
 const migration64 = readFileSync(path.resolve(__dirname,'../supabase/migrations/20261009000000_add_company_seller_transfer_evidence.sql'), 'utf8');
 const migration65 = readFileSync(path.resolve(__dirname,'../supabase/migrations/20261010000000_post_transferred_company_refunds_to_recovery_receivable.sql'), 'utf8');
 const migration66 = readFileSync(path.resolve(__dirname,'../supabase/migrations/20261011000000_add_company_seller_recovery_receipts.sql'), 'utf8');
+const migration67 = readFileSync(path.resolve(__dirname,'../supabase/migrations/20261012000000_record_company_seller_transfer_evidence.sql'), 'utf8');
 const owner = '00000000-0000-4000-8000-000000000001';
 const teacher = '00000000-0000-4000-8000-000000000002';
 const employee1 = '00000000-0000-4000-8000-000000000003';
@@ -164,6 +165,7 @@ async function main() {
     await db.exec(migration64);
     await db.exec(migration65);
     await db.exec(migration66);
+    await db.exec(migration67);
     await db.exec(`
       insert into public.learning_company_workspaces values(1,'active');
       insert into public.learning_company_memberships values
@@ -831,14 +833,17 @@ async function main() {
       insert into public.learning_company_seller_outflow_boundaries
         (purchase_id,seller_payee_id,boundary_kind,amount_minor,currency,movement_reference)
       values (107,'${owner}','transferred',76,'NGN','${transferReference}');
-      insert into public.learning_company_seller_transfer_evidence
-        (boundary_id,purchase_id,seller_payee_id,payout_profile_id,provider_reference,
-         provider_transfer_id,provider_transfer_code,recipient_code,amount_minor,verified_by)
-      select boundary.id,107,'${owner}',1,'${transferReference}','90001','TRF_Company107',
-        'RCP_CompanyOwner',76,'${buyer}'
-      from public.learning_company_seller_outflow_boundaries boundary
-      where boundary.movement_reference='${transferReference}';
     `);
+    const transferBoundaryId = (await db.query(`select id from public.learning_company_seller_outflow_boundaries
+      where movement_reference='${transferReference}'`)).rows[0].id;
+    const transferEvidenceId = (await db.query(`select public.record_learning_company_seller_transfer_evidence(
+      ${transferBoundaryId},1,'90001','TRF_Company107','RCP_CompanyOwner',76,'${buyer}') as id`)).rows[0].id;
+    assert.ok(transferEvidenceId > 0);
+    assert.equal((await db.query(`select public.record_learning_company_seller_transfer_evidence(
+      ${transferBoundaryId},1,'90001','TRF_Company107','RCP_CompanyOwner',76,'${buyer}') as id`)).rows[0].id,
+      transferEvidenceId);
+    await assert.rejects(() => db.query(`select public.record_learning_company_seller_transfer_evidence(
+      ${transferBoundaryId},1,'90001','TRF_Company107','RCP_CompanyOwner',76,'${teacher}')`));
     const transferEvidence = (await db.query(`select provider_transfer_id,provider_reference,
       amount_minor,currency,paystack_domain,provider_status from public.learning_company_seller_transfer_evidence
       where purchase_id=107`)).rows;
@@ -927,9 +932,13 @@ async function main() {
       has_table_privilege('service_role','public.learning_company_seller_transfer_evidence','SELECT') as service_read,
       has_table_privilege('service_role','public.learning_company_seller_transfer_evidence','INSERT') as service_insert,
       has_function_privilege('service_role','public.validate_learning_company_seller_transfer_evidence()','EXECUTE') as service_validate,
-      has_function_privilege('service_role','public.reconcile_learning_company_seller_transfers()','EXECUTE') as service_reconcile`)).rows[0];
+      has_function_privilege('service_role','public.reconcile_learning_company_seller_transfers()','EXECUTE') as service_reconcile,
+      has_function_privilege('authenticated',
+        'public.record_learning_company_seller_transfer_evidence(bigint,bigint,text,text,text,bigint,uuid)','EXECUTE') as member_record,
+      has_function_privilege('service_role',
+        'public.record_learning_company_seller_transfer_evidence(bigint,bigint,text,text,text,bigint,uuid)','EXECUTE') as service_record`)).rows[0];
     assert.deepEqual(transferPermissions,{anon_read:false,member_read:false,service_read:true,
-      service_insert:false,service_validate:false,service_reconcile:true});
+      service_insert:false,service_validate:false,service_reconcile:true,member_record:false,service_record:true});
     await assert.rejects(() => db.exec(`delete from public.learning_company_seller_transfer_evidence
       where purchase_id=107`));
     const settlementPermissions = (await db.query(`select
@@ -975,7 +984,7 @@ async function main() {
       where purchase_id=107`));
     await assert.rejects(() => db.exec(`delete from public.learning_company_seller_recovery_receipt_ledger_entries
       where receipt_id=${firstRecoveryReceipt}`));
-    console.log('PASS company seller ledgers, private transfer evidence, post-transfer refund receivables, and admin-confirmed recovery receipts');
+    console.log('PASS company seller ledgers, verified transfer evidence recording, post-transfer recovery receivables, and admin-confirmed receipts');
   } finally {
     await db.close();
   }
