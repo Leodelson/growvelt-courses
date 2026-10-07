@@ -17,6 +17,7 @@ type CourseValues = {
   is_free: boolean;
   price_amount: number | null;
   price_currency: string | null;
+  company_test_mode_only?: boolean;
 };
 
 type CourseDraftFormProps = {
@@ -51,6 +52,12 @@ export function CourseDraftForm({ mode, courseId, initialValues = defaultValues,
   const [isPending, setIsPending] = useState(false);
   const [feedback, setFeedback] = useState<{ variant: "error" | "success" | "info"; message: string } | null>(null);
   const isEditable = status === "draft";
+  const [companyTestModeOnly, setCompanyTestModeOnly] = useState(initialValues.company_test_mode_only ?? false);
+  const companyTestModeText = locale === "fr"
+    ? { label: "Réservé au mode test de l’apprentissage en entreprise", help: "Visible uniquement aux gestionnaires d’entreprise pour les achats Paystack en mode Test. Jamais listé publiquement et les paiements en direct restent bloqués.", saveError: "Les détails du brouillon ont été enregistrés, mais le paramètre Company Test Mode n’a pas pu être enregistré. Réessayez." }
+    : locale === "es"
+      ? { label: "Solo para el modo de prueba de aprendizaje empresarial", help: "Solo visible para los administradores de empresa para compras de prueba de Paystack. Nunca aparece públicamente y los pagos reales permanecen bloqueados.", saveError: "Se guardaron los detalles del borrador, pero no se pudo guardar la configuración de prueba de empresa. Inténtalo de nuevo." }
+      : { label: "Company Test Mode only", help: "Visible only to company managers for Paystack Test Mode purchases. Never listed publicly; live payment remains blocked.", saveError: "Draft details were saved, but the Company Test Mode setting was not. Please save again." };
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -64,6 +71,7 @@ export function CourseDraftForm({ mode, courseId, initialValues = defaultValues,
     const level = String(form.get("level") ?? "");
     const organizationId = Number(form.get("organization_id") ?? 0) || null;
     const priceAmount = isFree ? 0 : getSafePrice(form.get("price_amount"));
+    const nextCompanyTestModeOnly = mode === "edit" && !isFree && companyTestModeOnly;
 
     if (title.length < 3 || summary.length < 10 || description.length < 40 || (!isFree && (!priceAmount || priceAmount <= 0))) {
       setFeedback({ variant: "error", message: text.invalid });
@@ -99,6 +107,16 @@ export function CourseDraftForm({ mode, courseId, initialValues = defaultValues,
 
       const { error } = await supabase.rpc("update_instructor_course_draft", { p_course_id: courseId, ...input });
       if (error) throw new Error("save_failed");
+      if (nextCompanyTestModeOnly !== Boolean(initialValues.company_test_mode_only)) {
+        const { error: testModeError } = await supabase.rpc("set_own_learning_course_company_test_mode", {
+          p_course_id: courseId,
+          p_test_mode_only: nextCompanyTestModeOnly,
+        });
+        if (testModeError) {
+          setFeedback({ variant: "error", message: companyTestModeText.saveError });
+          return;
+        }
+      }
       setFeedback({ variant: "success", message: text.saved });
       router.refresh();
     } catch {
@@ -121,7 +139,7 @@ export function CourseDraftForm({ mode, courseId, initialValues = defaultValues,
       </div>
       {mode === "create" && organizations.length > 0 && <label className="course-field">Provider organization (optional)<select name="organization_id" defaultValue=""><option value="">Personal instructor course</option>{organizations.filter((organization) => organization.organization_status === "active" && organization.membership_status === "active").map((organization) => <option key={organization.organization_id} value={organization.organization_id}>{organization.name} ({organization.membership_role})</option>)}</select><span>Choose an organization to create this as an organization-owned draft. You remain its lead instructor and commercial owner until a later provider-commerce phase.</span></label>}
       <fieldset className="course-pricing-fieldset">
-        <legend>{text.access}</legend><label className="course-choice"><input type="radio" name="access" checked={isFree} onChange={() => setIsFree(true)} />{text.free}<span>{text.freeHelp}</span></label><label className="course-choice"><input type="radio" name="access" checked={!isFree} onChange={() => setIsFree(false)} />{text.paid}<span>{text.paidHelp}</span></label>{!isFree && <label className="course-field course-price-field">{text.price}<input name="price_amount" type="number" min="1" max="10000000" step="0.01" defaultValue={initialValues.price_amount ?? ""} required /><span>{text.priceHelp}</span></label>}
+        <legend>{text.access}</legend><label className="course-choice"><input type="radio" name="access" checked={isFree} onChange={() => { setIsFree(true); setCompanyTestModeOnly(false); }} />{text.free}<span>{text.freeHelp}</span></label><label className="course-choice"><input type="radio" name="access" checked={!isFree} onChange={() => setIsFree(false)} />{text.paid}<span>{text.paidHelp}</span></label>{!isFree && <label className="course-field course-price-field">{text.price}<input name="price_amount" type="number" min="1" max="10000000" step="0.01" defaultValue={initialValues.price_amount ?? ""} required /><span>{text.priceHelp}</span></label>}{mode === "edit" && !isFree && <label className="course-choice"><input type="checkbox" checked={companyTestModeOnly} onChange={(event) => setCompanyTestModeOnly(event.target.checked)} /><span><strong>{companyTestModeText.label}</strong><span>{companyTestModeText.help}</span></span></label>}
       </fieldset>
     </fieldset>
     {isEditable && <ActionButton className="button button-primary" type="submit" isPending={isPending} pendingLabel={mode === "create" ? text.creating : text.saving}>{mode === "create" ? text.create : text.save}</ActionButton>}

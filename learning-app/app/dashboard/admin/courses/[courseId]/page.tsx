@@ -67,7 +67,7 @@ export default async function AdminCourseDetailPage({ params }: { params: Promis
         <section><p className="eyebrow">{text.rights}</p><p>{course.declaration.version || text.noDeclaration} · {course.declaration.basis || text.noBasis}</p><p>{course.declaration.acceptedAt ? `${text.accepted} ${new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(new Date(course.declaration.acceptedAt))}` : text.noAcceptance}</p></section>
         <section><p className="eyebrow">{text.curriculum}</p><div className="course-review-curriculum">{course.modules.map((module, moduleIndex) => <section className="course-review-module" key={module.id}><header><span>{text.module} {String(moduleIndex + 1).padStart(2, "0")}</span><h2>{module.title}</h2><small>{module.lessons.length} {module.lessons.length === 1 ? text.lesson : text.lessonPlural}</small></header><div>{module.lessons.map((lesson, lessonIndex) => <LessonReview lesson={lesson} lessonIndex={lessonIndex} locale={locale} key={lesson.id} />)}</div></section>)}</div></section>
       </article>
-      <CourseModerationForm courseId={course.courseId} />
+      <CourseModerationForm courseId={course.courseId} companyTestModeOnly={course.companyTestModeOnly} />
     </div>
   </section>;
 }

@@ -70,6 +70,7 @@ export type CourseReviewSnapshot = {
   category: string | null;
   level: string | null;
   isFree: boolean;
+  companyTestModeOnly: boolean;
   priceAmount: number | null;
   priceCurrency: string | null;
   status: "pending_review";
@@ -168,6 +169,9 @@ export async function getLearningCourseForReview(courseId: number): Promise<Cour
   const first = rows[0];
   if (!first) return null;
 
+  const { data: companyTestModeOnly, error: testModeError } = await supabase.rpc("get_learning_course_test_mode_for_review", { p_course_id: courseId });
+  if (testModeError) throwAdminCourseReaderError("Unable to load this course’s payment-mode restriction.", testModeError);
+
   const quizRows = (quizResult.data ?? []) as QuizReviewRow[];
   const quizzes = new Map<number, CourseReviewQuiz>();
   for (const row of quizRows) {
@@ -191,5 +195,5 @@ export async function getLearningCourseForReview(courseId: number): Promise<Cour
     modules.set(row.module_id, courseModule);
   }
 
-  return { courseId: first.course_id, title: first.course_title, summary: first.summary, description: first.description, category: first.category, level: first.level, isFree: first.is_free, priceAmount: first.price_amount, priceCurrency: first.price_currency, status: first.course_status, submittedAt: first.submitted_at, reviewedAt: first.reviewed_at, reviewedBy: first.reviewed_by, reviewNote: first.review_note, instructor: { id: first.instructor_id, name: first.instructor_name, email: first.instructor_email }, declaration: { version: first.declaration_version, basis: first.rights_basis, acceptedAt: first.declaration_accepted_at }, modules: [...modules.values()] };
+  return { courseId: first.course_id, title: first.course_title, summary: first.summary, description: first.description, category: first.category, level: first.level, isFree: first.is_free, companyTestModeOnly: companyTestModeOnly === true, priceAmount: first.price_amount, priceCurrency: first.price_currency, status: first.course_status, submittedAt: first.submitted_at, reviewedAt: first.reviewed_at, reviewedBy: first.reviewed_by, reviewNote: first.review_note, instructor: { id: first.instructor_id, name: first.instructor_name, email: first.instructor_email }, declaration: { version: first.declaration_version, basis: first.rights_basis, acceptedAt: first.declaration_accepted_at }, modules: [...modules.values()] };
 }

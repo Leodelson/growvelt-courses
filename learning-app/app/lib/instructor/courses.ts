@@ -19,6 +19,7 @@ export type InstructorCourse = InstructorCourseListItem & {
   slug: string;
   description: string | null;
   created_at: string;
+  company_test_mode_only: boolean;
 };
 
 export async function getOwnInstructorCourses() {
@@ -45,7 +46,10 @@ export async function searchOwnInstructorCourses(query: string, status: string, 
 export async function getOwnInstructorCourse(courseId: number) {
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("get_own_instructor_course", { p_course_id: courseId }).maybeSingle();
-
   if (error) throw new Error("Unable to load this course.");
-  return data as InstructorCourse | null;
+  if (!data) return null;
+
+  const { data: testModeOnly, error: testModeError } = await supabase.rpc("get_own_learning_course_company_test_mode", { p_course_id: courseId });
+  if (testModeError) throw new Error("Unable to load this course.");
+  return { ...data, company_test_mode_only: testModeOnly === true } as InstructorCourse;
 }

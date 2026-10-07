@@ -20,6 +20,16 @@ export function CourseSubmissionForm({ courseId }: { courseId: number }) {
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [isPending, setIsPending] = useState(false);
   const [feedback, setFeedback] = useState<SubmissionFeedback>(null);
+  const companyTestModeRequired = locale === "fr"
+    ? "Pour soumettre un brouillon payant, enregistrez-le comme cours personnel et activez « Réservé au mode test de l’apprentissage en entreprise » dans la section des tarifs. Il ne sera pas public et les paiements en direct resteront bloqués."
+    : locale === "es"
+      ? "Para enviar un borrador de pago, guárdalo como curso personal y activa « Solo para el modo de prueba de aprendizaje empresarial » en la sección de precios. No será público y los pagos reales seguirán bloqueados."
+      : "To submit a paid draft, save it as a personal course and enable Company Test Mode only in the pricing section. It will not be public, and live payments remain blocked.";
+  const curriculumHint = locale === "fr"
+    ? "Ajoutez au moins un module, puis enregistrez une leçon valide à l’intérieur. Les types pris en charge sont Texte, Vidéo YouTube ou Quiz."
+    : locale === "es"
+      ? "Añade al menos un módulo y guarda una lección válida dentro. Los tipos admitidos son Texto, vídeo de YouTube o cuestionario."
+      : "Add at least one module, then save a valid lesson inside it. Supported lesson types are Text, YouTube video, or Quiz.";
 
   function prepareSubmission(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -46,6 +56,18 @@ export function CourseSubmissionForm({ courseId }: { courseId: number }) {
       if (error.message.includes("Quiz assessment is incomplete")) {
         setShowConfirmation(false);
         setFeedback({ variant: "error", message: text.quizError });
+        return;
+      }
+      if (error.message.includes("Paid courses can be submitted only as personal Company Test Mode-only drafts")) {
+        setShowConfirmation(false);
+        setFeedback({ variant: "error", message: companyTestModeRequired });
+        return;
+      }
+      if (error.message.includes("Add at least one module and one lesson")
+        || error.message.includes("Complete every module title")
+        || error.message.includes("Complete every lesson with valid text")) {
+        setShowConfirmation(false);
+        setFeedback({ variant: "error", message: curriculumHint });
         return;
       }
       setShowConfirmation(false);

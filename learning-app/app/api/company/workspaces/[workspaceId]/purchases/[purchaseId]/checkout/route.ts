@@ -36,6 +36,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ wor
   if (!user?.email) return NextResponse.json({ code: "not_authenticated" }, { status: 401 });
   const admin = createAdminClient();
   if (config.mode === "live") {
+    // Test-only catalog courses must never cross into a live Paystack attempt.
+    // Fail closed if the database cannot verify the purchase restriction.
+    const { data: testModeOnly, error: testModeError } = await admin.rpc("is_learning_company_purchase_test_only", { p_purchase_id: purchaseId });
+    if (testModeError || testModeOnly === true) {
+      console.error("company_learning.live_checkout_test_only_course_blocked", { purchaseId, code: testModeError?.code ?? null });
+      return NextResponse.json({ code: "checkout_disabled", message: "This company course is restricted to Test Mode checkout." }, { status: 503 });
+    }
     // An environment flag cannot attest that company sales, refunds and
     // instructor liabilities have a working database implementation.
     // The RPC does not exist until that accounting migration is approved;
