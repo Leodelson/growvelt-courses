@@ -24,6 +24,7 @@
 .notice { border-color: color-mix(in srgb, #c78316 45%, var(--line)); background: color-mix(in srgb, #c78316 7%, var(--surface)); }
 .notice strong, .safety strong { display: block; margin-bottom: 7px; }
 .action { display: grid; max-width: 560px; gap: 9px; padding-top: 14px; border-top: 1px solid var(--line); }
+.action > p:first-child { margin: 0 0 4px; color: var(--muted); font-size: .86rem; line-height: 1.5; }
 .action label { font-size: .82rem; font-weight: 750; }
 .action input, .action select { width: 100%; min-width: 0; padding: 11px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--canvas); color: var(--ink); }
 .action button { justify-self: start; margin-top: 3px; }

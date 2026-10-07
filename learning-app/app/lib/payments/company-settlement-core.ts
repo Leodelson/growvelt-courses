@@ -16,6 +16,7 @@ export type CompanySettlementEvidence = {
   reference: string;
   requestedAmountMinor: number;
   settledAt: string;
+  effectiveAmountMinor: number | null;
 };
 
 function numericId(value: unknown): string | null {
@@ -90,5 +91,6 @@ export async function verifyCompanySettlementEvidence(
     settlementId: input.settlementId, transactionId: input.transactionId,
     reference: input.reference, requestedAmountMinor: input.requestedAmountMinor,
     settledAt: settlement.settlement_date,
+    effectiveAmountMinor: positiveMinor(settlement.effective_amount),
   };
 }

@@ -4,7 +4,7 @@ import { verifyCompanySettlementEvidence } from "../app/lib/payments/company-set
 const reference = `CP-${"A".repeat(32)}`;
 const input = { settlementId: "9001", transactionId: "9002", reference, requestedAmountMinor: 10000 };
 const settlement = { id: 9001, domain: "live", status: "success", currency: "NGN",
-  total_processed: 20000, settlement_date: "2026-10-02T09:00:00.000Z" };
+  total_processed: 20000, effective_amount: 19750, settlement_date: "2026-10-02T09:00:00.000Z" };
 const transaction = { id: 9002, reference, domain: "live", status: "success", currency: "NGN",
   amount: 10000, requested_amount: 10000 };
 const envelope = (rows, page = 1, pageCount = 1) =>
@@ -13,7 +13,7 @@ const pages = (settlements, transactions) => async (kind, _id, page) =>
   kind === "settlements" ? settlements[page - 1] : transactions[page - 1];
 const good = pages([envelope([settlement])], [envelope([transaction])]);
 const evidence = await verifyCompanySettlementEvidence(input, good);
-assert.deepEqual(evidence, { ...input, settledAt: settlement.settlement_date });
+assert.deepEqual(evidence, { ...input, settledAt: settlement.settlement_date, effectiveAmountMinor: 19750 });
 
 const reject = async (changedInput, reader) => {
   await assert.rejects(verifyCompanySettlementEvidence(changedInput, reader));

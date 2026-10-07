@@ -29,6 +29,7 @@ const migration64 = readFileSync(path.resolve(__dirname,'../supabase/migrations/
 const migration65 = readFileSync(path.resolve(__dirname,'../supabase/migrations/20261010000000_post_transferred_company_refunds_to_recovery_receivable.sql'), 'utf8');
 const migration66 = readFileSync(path.resolve(__dirname,'../supabase/migrations/20261011000000_add_company_seller_recovery_receipts.sql'), 'utf8');
 const migration67 = readFileSync(path.resolve(__dirname,'../supabase/migrations/20261012000000_record_company_seller_transfer_evidence.sql'), 'utf8');
+const migration68 = readFileSync(path.resolve(__dirname,'../supabase/migrations/20261013000000_reconcile_company_paystack_settlement_to_bank.sql'), 'utf8');
 const owner = '00000000-0000-4000-8000-000000000001';
 const teacher = '00000000-0000-4000-8000-000000000002';
 const employee1 = '00000000-0000-4000-8000-000000000003';
@@ -166,6 +167,7 @@ async function main() {
     await db.exec(migration65);
     await db.exec(migration66);
     await db.exec(migration67);
+    await db.exec(migration68);
     await db.exec(`
       insert into public.learning_company_workspaces values(1,'active');
       insert into public.learning_company_memberships values
@@ -795,7 +797,22 @@ async function main() {
     assert.equal((await recordSettlement('9001','777')).rows[0].purchase_id,107);
     assert.equal((await recordSettlement('9001','777')).rows[0].purchase_id,107);
     assert.equal((await releaseGate(107)).release_gate_state,
-      'settlement_verified_release_writer_not_enabled');
+      'bank_settlement_reconciliation_required');
+    const recordBankSettlement = (amount=200,reference='BANK-STATEMENT-9001',actor=buyer,date='current_date') =>
+      db.query(`select public.record_learning_company_paystack_bank_settlement_evidence(
+        '9001',107,(select settled_at from public.learning_company_paystack_settlement_evidence
+          where purchase_id=107),200,${amount},'${reference}',${date},'${actor}') as settlement_id`);
+    assert.equal((await recordBankSettlement()).rows[0].settlement_id,'9001');
+    assert.equal((await recordBankSettlement()).rows[0].settlement_id,'9001');
+    assert.equal((await releaseGate(107)).release_gate_state,
+      'bank_settlement_reconciled_release_writer_not_enabled');
+    for (const attempt of [
+      () => recordBankSettlement(199,'BANK-MISMATCH-9001'),
+      () => recordBankSettlement(200,'BANK-UNAUTHORIZED-9001',teacher),
+      () => recordBankSettlement(200,'BANK-NO-CHARGE-9002',buyer,"'2026-01-01'"),
+      () => recordBankSettlement(200,'BANK-FUTURE-9001',buyer,"current_date + 1"),
+    ]) await assert.rejects(attempt);
+    assert.equal((await db.query(`select count(*) as n from public.learning_company_paystack_bank_settlement_evidence`)).rows[0].n,1);
     for (const attempt of [
       () => recordSettlement('9002','777'),
       () => recordSettlement('9001','778'),
@@ -954,6 +971,21 @@ async function main() {
       {member_read:false,service_insert:false,member_execute:false,service_execute:true});
     await assert.rejects(() => db.exec(`delete from public.learning_company_paystack_settlement_evidence
       where purchase_id=107`));
+    const bankSettlementPermissions = (await db.query(`select
+      has_table_privilege('anon','public.learning_company_paystack_bank_settlement_evidence','SELECT') as anon_read,
+      has_table_privilege('authenticated','public.learning_company_paystack_bank_settlement_evidence','SELECT') as member_read,
+      has_table_privilege('service_role','public.learning_company_paystack_bank_settlement_evidence','SELECT') as service_read,
+      has_table_privilege('service_role','public.learning_company_paystack_bank_settlement_evidence','INSERT') as service_insert,
+      has_function_privilege('authenticated',
+        'public.record_learning_company_paystack_bank_settlement_evidence(text,bigint,timestamptz,bigint,bigint,text,date,uuid)',
+        'EXECUTE') as member_execute,
+      has_function_privilege('service_role',
+        'public.record_learning_company_paystack_bank_settlement_evidence(text,bigint,timestamptz,bigint,bigint,text,date,uuid)',
+        'EXECUTE') as service_execute`)).rows[0];
+    assert.deepEqual(bankSettlementPermissions,{anon_read:false,member_read:false,service_read:true,
+      service_insert:false,member_execute:false,service_execute:true});
+    await assert.rejects(() => db.exec(`delete from public.learning_company_paystack_bank_settlement_evidence
+      where settlement_id='9001'`));
     let oldSeatRegrantRejected = false;
     try { await db.exec('select * from public.grant_paid_learning_company_purchase_access(103)'); }
     catch { oldSeatRegrantRejected = true; }
@@ -984,7 +1016,7 @@ async function main() {
       where purchase_id=107`));
     await assert.rejects(() => db.exec(`delete from public.learning_company_seller_recovery_receipt_ledger_entries
       where receipt_id=${firstRecoveryReceipt}`));
-    console.log('PASS company seller ledgers, verified transfer evidence recording, post-transfer recovery receivables, and admin-confirmed receipts');
+    console.log('PASS company seller ledgers, charge and bank-settlement evidence, verified transfer evidence, recovery receivables and receipts');
   } finally {
     await db.close();
   }

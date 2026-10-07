@@ -58,6 +58,7 @@
     "test:company-learning:ledger-schema": "node scripts/test-phase3c-company-ledger-schema.cjs",
     "test:company-learning:ledger:local": "node scripts/test-phase3c-company-ledger-local.cjs",
     "test:company-learning:settlement-evidence": "node --experimental-strip-types scripts/test-phase3c-company-settlement-evidence.mjs",
+    "test:company-learning:bank-reconciliation": "node --experimental-strip-types scripts/test-phase3c-company-bank-settlement-reconciliation.mjs",
     "test:company-learning:reversal-funding-plan": "node --experimental-strip-types scripts/test-phase3c-company-reversal-funding-plan.mjs",
     "test:company-learning:transfer-verification": "node --experimental-strip-types scripts/test-phase3c-company-transfer-verification.mjs",
     "test:organizations:course-attribution:local": "node scripts/test-phase2a3-organization-course-attribution-local.mjs",
@@ -79,6 +80,7 @@
     "sonner": "^2.0.8"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8",
     "@tailwindcss/postcss": "^4.1.18",
     "@types/node": "^20",
     "@types/react": "^19",
