@@ -44,6 +44,7 @@ const sellerTransferEvidenceMigration = await read("../supabase/migrations/20261
 const transferredRecoveryMigration = await read("../supabase/migrations/20261010000000_post_transferred_company_refunds_to_recovery_receivable.sql");
 const sellerRecoveryReceiptMigration = await read("../supabase/migrations/20261011000000_add_company_seller_recovery_receipts.sql");
 const sellerTransferWriterMigration = await read("../supabase/migrations/20261012000000_record_company_seller_transfer_evidence.sql");
+const availableReversalMigration = await read("../supabase/migrations/20261014000000_account_for_company_reversals_from_available_proceeds.sql");
 const checkout = await read("../app/api/company/workspaces/[workspaceId]/purchases/[purchaseId]/checkout/route.ts");
 const webhook = await read("../app/api/payments/paystack/webhook/route.ts");
 const reconciliation = await read("../app/api/company/payments/paystack/reconcile/route.ts");
@@ -129,6 +130,13 @@ assert.match(sellerTransferWriterMigration, /record_learning_company_seller_tran
 assert.match(sellerTransferWriterMigration, /Active Learning Admin required to record transfer evidence/);
 assert.match(sellerTransferWriterMigration, /boundary_row\.boundary_kind <> 'transferred'/);
 assert.doesNotMatch(sellerTransferWriterMigration, /submitPaystackTransfer|initiatePaystack|release_matured_learning_instructor|learning_instructor_earnings|learning_instructor_payout_items/i);
+assert.match(availableReversalMigration, /liability\.company_seller_earnings_available/);
+assert.match(availableReversalMigration, /available_remaining := released_total - reserved_total - available_reversed/);
+assert.match(availableReversalMigration, /Verified settlement, bank match, and prior active-admin approval are required/);
+assert.match(availableReversalMigration, /mixed, held, reserved, or insufficient funding; manual review required/);
+assert.match(availableReversalMigration, /reserved_total > released_total - available_reversed/);
+assert.match(availableReversalMigration, /balance\.reversed_minor <> balance\.held_reversal_minor[\s\S]*balance\.available_reversal_minor \+ balance\.recovery_reversal_minor/);
+assert.doesNotMatch(availableReversalMigration, /submitPaystackTransfer|initiatePaystack|insert into public\.learning_company_seller_liability_movements/i);
 assert.match(transferEvidenceRecording, /PAYMENTS_LIVE_COMPANY_TRANSFER_EVIDENCE_RECORDING_ENABLED !== "true"/);
 assert.match(transferEvidenceRecording, /isSameOriginRequest\(request\)/);
 assert.match(transferEvidenceRecording, /verifyPaystackCompanyLiveTransfer\(/);

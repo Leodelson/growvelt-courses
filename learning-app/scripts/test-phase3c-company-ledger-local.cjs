@@ -30,6 +30,7 @@ const migration65 = readFileSync(path.resolve(__dirname,'../supabase/migrations/
 const migration66 = readFileSync(path.resolve(__dirname,'../supabase/migrations/20261011000000_add_company_seller_recovery_receipts.sql'), 'utf8');
 const migration67 = readFileSync(path.resolve(__dirname,'../supabase/migrations/20261012000000_record_company_seller_transfer_evidence.sql'), 'utf8');
 const migration68 = readFileSync(path.resolve(__dirname,'../supabase/migrations/20261013000000_reconcile_company_paystack_settlement_to_bank.sql'), 'utf8');
+const migration69 = readFileSync(path.resolve(__dirname,'../supabase/migrations/20261014000000_account_for_company_reversals_from_available_proceeds.sql'), 'utf8');
 const owner = '00000000-0000-4000-8000-000000000001';
 const teacher = '00000000-0000-4000-8000-000000000002';
 const employee1 = '00000000-0000-4000-8000-000000000003';
@@ -168,6 +169,7 @@ async function main() {
     await db.exec(migration66);
     await db.exec(migration67);
     await db.exec(migration68);
+    await db.exec(migration69);
     await db.exec(`
       insert into public.learning_company_workspaces values(1,'active');
       insert into public.learning_company_memberships values
@@ -652,7 +654,7 @@ async function main() {
     let postReleaseReversalRejected = false;
     try { await db.query(`select * from public.commit_learning_company_reversal_after_verification(
       ${finalNoticeId},'45678','processed',null,101,array['${employee3}'::uuid])`); }
-    catch (error) { postReleaseReversalRejected = /manual post-release reversal accounting/i.test(error.message); }
+    catch (error) { postReleaseReversalRejected = error.code === '22023'; }
     assert.equal(postReleaseReversalRejected,true);
     assert.equal((await db.query(`select count(*) as n from public.learning_company_commercial_reversals
       where purchase_id=104`)).rows[0].n,0);
@@ -986,6 +988,112 @@ async function main() {
       service_insert:false,member_execute:false,service_execute:true});
     await assert.rejects(() => db.exec(`delete from public.learning_company_paystack_bank_settlement_evidence
       where settlement_id='9001'`));
+    // A refund after a full held-to-available release must debit only that
+    // purchase's available seller liability; a partial/mixed release remains
+    // manual review, and a reversed available balance cannot be reserved.
+    const availableRef = `CP-${'0'.repeat(32)}`;
+    await db.exec(`
+      insert into public.learning_company_paid_course_purchases
+        (id,workspace_id,course_id,requested_by,course_title_snapshot,provider_name_snapshot,
+         unit_amount_minor,total_amount_minor,currency,seat_count,status)
+      values (108,1,19,'${buyer}','Available reversal fixture','Provider',101,101,'NGN',1,'checkout_pending');
+      insert into public.learning_company_paid_course_purchase_seats values (108,'${employee3}');
+      insert into public.learning_company_paid_course_purchase_attempts
+        (purchase_id,provider,provider_reference,amount_minor,currency,status)
+      values (108,'paystack','${availableRef}',101,'NGN','initialized');
+      select public.set_learning_company_paid_checkout_domain('${availableRef}','live');
+      update public.learning_company_paid_course_purchase_attempts set status='pending' where purchase_id=108;
+      update public.learning_company_paid_course_purchases set status='paid',paid_at=now()-interval '15 days' where id=108;
+      update public.learning_company_paid_course_purchase_attempts
+        set status='succeeded',provider_transaction_id='888' where purchase_id=108;
+      select * from public.grant_paid_learning_company_purchase_access(108);
+      select public.record_learning_company_seller_payout_review(
+        108,'${buyer}','approve_for_future_release','settlement-check-108','settlement-check-review-108');
+      select public.record_learning_company_paystack_settlement_evidence(
+        108,'${buyer}','9001','888','${availableRef}',101,now());
+      insert into public.learning_company_seller_outflow_boundaries
+        (purchase_id,seller_payee_id,boundary_kind,amount_minor,currency,movement_reference)
+      values (108,'${owner}','released',76,'NGN','release-108-1');
+      insert into public.learning_company_seller_liability_movements
+        (boundary_id,purchase_id,seller_payee_id,movement_kind,amount_minor,currency)
+      select id,108,'${owner}','released',76,'NGN'
+      from public.learning_company_seller_outflow_boundaries where movement_reference='release-108-1';
+    `);
+    const availableNotice = (await db.query(receiveSql,[
+      'refund.processed:live-108','a'.repeat(64),'refund.processed',availableRef,
+      '91008','processed',101,'NGN','live'])).rows[0];
+    const availableReversal = (await db.query(`select * from public.commit_learning_company_reversal_after_verification(
+      ${availableNotice.event_id},'888','processed',null,101,array['${employee3}']::uuid[])`)).rows[0];
+    assert.deepEqual((await db.query(`select account_code,amount_minor
+      from public.learning_company_commercial_reversal_ledger_entries
+      where reversal_id=${availableReversal.reversal_id} order by line_number`)).rows,[
+      {account_code:'revenue.platform_commission',amount_minor:25},
+      {account_code:'liability.company_seller_earnings_available',amount_minor:76},
+      {account_code:'asset.paystack_receivable',amount_minor:-101},
+    ]);
+    assert.deepEqual((await db.query(`select * from public.reconcile_learning_company_commercial_reversals()
+      where reversal_id=${availableReversal.reversal_id}`)).rows,[]);
+    assert.deepEqual((await db.query(`select * from public.reconcile_learning_company_seller_held_liabilities()
+      where purchase_id=108`)).rows,[]);
+    assert.deepEqual((await db.query(`select * from public.reconcile_learning_company_seller_liability_movements()
+      where purchase_id=108`)).rows,[]);
+    let reversedBalanceReservationRejected = false;
+    await db.exec('begin');
+    try {
+      await db.exec(`insert into public.learning_company_seller_outflow_boundaries
+        (purchase_id,seller_payee_id,boundary_kind,amount_minor,currency,movement_reference)
+        values (108,'${owner}','reserved',1,'NGN','reserve-108-after-refund');`);
+      await db.exec(`insert into public.learning_company_seller_liability_movements
+        (boundary_id,purchase_id,seller_payee_id,movement_kind,amount_minor,currency)
+        select id,108,'${owner}','reserved',1,'NGN'
+        from public.learning_company_seller_outflow_boundaries
+        where movement_reference='reserve-108-after-refund';`);
+      await db.exec('commit');
+    } catch {
+      reversedBalanceReservationRejected = true;
+      await db.exec('rollback');
+    }
+    assert.equal(reversedBalanceReservationRejected,true);
+    assert.equal((await db.query(`select count(*) as n from public.learning_company_seller_outflow_boundaries
+      where purchase_id=108 and boundary_kind='reserved'`)).rows[0].n,0);
+
+    const mixedRef = `CP-${'1'.repeat(32)}`;
+    await db.exec(`
+      insert into public.learning_company_paid_course_purchases
+        (id,workspace_id,course_id,requested_by,course_title_snapshot,provider_name_snapshot,
+         unit_amount_minor,total_amount_minor,currency,seat_count,status)
+      values (109,1,19,'${buyer}','Mixed reversal fixture','Provider',101,101,'NGN',1,'checkout_pending');
+      insert into public.learning_company_paid_course_purchase_seats values (109,'${employee1}');
+      insert into public.learning_company_paid_course_purchase_attempts
+        (purchase_id,provider,provider_reference,amount_minor,currency,status)
+      values (109,'paystack','${mixedRef}',101,'NGN','initialized');
+      select public.set_learning_company_paid_checkout_domain('${mixedRef}','live');
+      update public.learning_company_paid_course_purchase_attempts set status='pending' where purchase_id=109;
+      update public.learning_company_paid_course_purchases set status='paid',paid_at=now()-interval '15 days' where id=109;
+      update public.learning_company_paid_course_purchase_attempts
+        set status='succeeded',provider_transaction_id='889' where purchase_id=109;
+      select * from public.grant_paid_learning_company_purchase_access(109);
+      select public.record_learning_company_seller_payout_review(
+        109,'${buyer}','approve_for_future_release','settlement-check-109','settlement-check-review-109');
+      select public.record_learning_company_paystack_settlement_evidence(
+        109,'${buyer}','9002','889','${mixedRef}',101,now());
+      select public.record_learning_company_paystack_bank_settlement_evidence(
+        '9002',109,now(),100,100,'BANK-STATEMENT-9002',current_date,'${buyer}');
+      insert into public.learning_company_seller_outflow_boundaries
+        (purchase_id,seller_payee_id,boundary_kind,amount_minor,currency,movement_reference)
+      values (109,'${owner}','released',38,'NGN','release-109-partial');
+      insert into public.learning_company_seller_liability_movements
+        (boundary_id,purchase_id,seller_payee_id,movement_kind,amount_minor,currency)
+      select id,109,'${owner}','released',38,'NGN'
+      from public.learning_company_seller_outflow_boundaries where movement_reference='release-109-partial';
+    `);
+    const mixedNotice = (await db.query(receiveSql,[
+      'refund.processed:live-109','b'.repeat(64),'refund.processed',mixedRef,
+      '91009','processed',101,'NGN','live'])).rows[0];
+    await assert.rejects(() => db.query(`select * from public.commit_learning_company_reversal_after_verification(
+      ${mixedNotice.event_id},'889','processed',null,101,array['${employee1}']::uuid[])`));
+    assert.equal((await db.query(`select count(*) as n from public.learning_company_commercial_reversals
+      where purchase_id=109`)).rows[0].n,0);
     let oldSeatRegrantRejected = false;
     try { await db.exec('select * from public.grant_paid_learning_company_purchase_access(103)'); }
     catch { oldSeatRegrantRejected = true; }
@@ -1016,7 +1124,22 @@ async function main() {
       where purchase_id=107`));
     await assert.rejects(() => db.exec(`delete from public.learning_company_seller_recovery_receipt_ledger_entries
       where receipt_id=${firstRecoveryReceipt}`));
-    console.log('PASS company seller ledgers, charge and bank-settlement evidence, verified transfer evidence, recovery receivables and receipts');
+    const reversalFundingPermissions = (await db.query(`select
+      has_function_privilege('anon',
+        'public.resolve_learning_company_reversal_seller_funding(bigint,bigint,bigint,bigint)','EXECUTE') as anon_resolve,
+      has_function_privilege('authenticated',
+        'public.resolve_learning_company_reversal_seller_funding(bigint,bigint,bigint,bigint)','EXECUTE') as member_resolve,
+      has_function_privilege('service_role',
+        'public.resolve_learning_company_reversal_seller_funding(bigint,bigint,bigint,bigint)','EXECUTE') as service_resolve,
+      has_function_privilege('anon',
+        'public.route_learning_company_reversal_seller_funding()','EXECUTE') as anon_route,
+      has_function_privilege('authenticated',
+        'public.route_learning_company_reversal_seller_funding()','EXECUTE') as member_route,
+      has_function_privilege('service_role',
+        'public.route_learning_company_reversal_seller_funding()','EXECUTE') as service_route`)).rows[0];
+    assert.deepEqual(reversalFundingPermissions,{anon_resolve:false,member_resolve:false,
+      service_resolve:false,anon_route:false,member_route:false,service_route:false});
+    console.log('PASS company seller ledgers, verified settlement and transfer evidence, available-balance reversals, and recovery receipts');
   } finally {
     await db.close();
   }

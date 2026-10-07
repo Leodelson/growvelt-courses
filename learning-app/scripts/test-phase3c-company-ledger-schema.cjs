@@ -18,18 +18,20 @@ const migrationNames = readdirSync(migrationsDir)
       '20261010000000_post_transferred_company_refunds_to_recovery_receivable.sql',
       '20261011000000_add_company_seller_recovery_receipts.sql',
       '20261012000000_record_company_seller_transfer_evidence.sql',
-      '20261013000000_reconcile_company_paystack_settlement_to_bank.sql'].includes(name)
+      '20261013000000_reconcile_company_paystack_settlement_to_bank.sql',
+      '20261014000000_account_for_company_reversals_from_available_proceeds.sql'].includes(name)
     : /^202609(4[3-9]|5[0-9]|6[0-2])000000_.*\.sql$/.test(name)
       || ['20261008000000_assess_company_seller_release_settlement_evidence.sql',
         '20261009000000_add_company_seller_transfer_evidence.sql',
         '20261010000000_post_transferred_company_refunds_to_recovery_receivable.sql',
         '20261011000000_add_company_seller_recovery_receipts.sql',
         '20261012000000_record_company_seller_transfer_evidence.sql',
-        '20261013000000_reconcile_company_paystack_settlement_to_bank.sql'].includes(name))
+        '20261013000000_reconcile_company_paystack_settlement_to_bank.sql',
+        '20261014000000_account_for_company_reversals_from_available_proceeds.sql'].includes(name))
   .sort();
-const expectedMigrationCount = applyAfterMigration62Only ? 6 : 26;
+const expectedMigrationCount = applyAfterMigration62Only ? 7 : 27;
 if (migrationNames.length !== expectedMigrationCount) {
-  const expectedRange = applyAfterMigration62Only ? 'migrations 63–68' : 'migrations 43–68';
+  const expectedRange = applyAfterMigration62Only ? 'migrations 63–69' : 'migrations 43–69';
   throw new Error(`Expected ${expectedRange}; found ${migrationNames.length}`);
 }
 
@@ -197,6 +199,8 @@ async function main() {
       ['reconcile_learning_company_seller_recovery_receipts()', true],
       ['record_learning_company_seller_transfer_evidence(bigint,bigint,text,text,text,bigint,uuid)', true],
       ['record_learning_company_paystack_bank_settlement_evidence(text,bigint,timestamptz,bigint,bigint,text,date,uuid)', true],
+      ['resolve_learning_company_reversal_seller_funding(bigint,bigint,bigint,bigint)', false],
+      ['route_learning_company_reversal_seller_funding()', false],
     ];
     for (const [signature, serviceExecute] of privateFunctions) {
       const { rows } = await db.query(`select
@@ -217,9 +221,19 @@ async function main() {
       'Unreconciled Paystack batches must remain blocked');
     assert.ok(releaseGateDefinition[0].definition.includes('bank_settlement_reconciled_release_writer_not_enabled'),
       'Bank reconciliation must not imply release capability');
+    stage = 'available-reversal source isolation';
+    const availableReversalMigration = readFileSync(path.join(migrationsDir,
+      '20261014000000_account_for_company_reversals_from_available_proceeds.sql'), 'utf8');
+    assert.ok(availableReversalMigration.includes("'liability.company_seller_earnings_available'"));
+    assert.ok(availableReversalMigration.includes('available_remaining := released_total - reserved_total - available_reversed'));
+    assert.ok(availableReversalMigration.includes('Company seller reversal has mixed, held, reserved, or insufficient funding; manual review required'));
+    assert.ok(availableReversalMigration.includes('Verified settlement, bank match, and prior active-admin approval are required'));
+    assert.ok(availableReversalMigration.includes('reserved_total > released_total - available_reversed'));
+    assert.ok(!/submitPaystackTransfer|initiatePaystack|insert into public\.learning_company_seller_liability_movements/i
+      .test(availableReversalMigration), 'Available reversals must not release, reserve, or transfer funds');
     console.log(applyAfterMigration62Only
-      ? 'Migrations 63–68 apply cleanly to the supplied post-migration-62 public schema.'
-      : 'Company migrations 43–68 apply to the supplied pre-migration public schema.');
+      ? 'Migrations 63–69 apply cleanly to the supplied post-migration-62 public schema.'
+      : 'Company migrations 43–69 apply to the supplied pre-migration public schema.');
     console.log('Company proceeds remain isolated from personal payouts; private financial role grants match the reviewed matrix.');
   } catch (error) {
     console.error(`Failed at ${stage}: ${error.message}`);
