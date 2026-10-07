@@ -48,7 +48,9 @@ export async function getCompanyManagement(workspace: CompanyWorkspace) {
   ]);
   const billingSchemaPending = [paidCourses.error, paidPurchases.error].some((error) => error?.code === "PGRST202" || error?.code === "42883" || /Could not find the function|does not exist/i.test(error?.message ?? ""));
   if (members.error || invitations.error || courses.error || assignments.error || (!billingSchemaPending && (paidCourses.error || paidPurchases.error))) throw new Error("Unable to load company workspace details.");
-  return { members: (members.data ?? []) as CompanyMember[], invitations: (invitations.data ?? []) as CompanyManagerInvitation[], courses: (courses.data ?? []) as CompanyAssignableCourse[], assignments: (assignments.data ?? []) as CompanyCourseAssignment[], paidCourses: (paidCourses.data ?? []) as CompanyPaidCourse[], paidPurchases: (paidPurchases.data ?? []) as CompanyPaidCoursePurchase[], paidBillingAvailable: !billingSchemaPending };
+  // The paid-sale snapshot requires an instructor-owned course; hide legacy seed rows that have no instructor profile.
+  const eligiblePaidCourses = ((paidCourses.data ?? []) as CompanyPaidCourse[]).filter((course) => Boolean(course.instructor_name?.trim()));
+  return { members: (members.data ?? []) as CompanyMember[], invitations: (invitations.data ?? []) as CompanyManagerInvitation[], courses: (courses.data ?? []) as CompanyAssignableCourse[], assignments: (assignments.data ?? []) as CompanyCourseAssignment[], paidCourses: eligiblePaidCourses, paidPurchases: (paidPurchases.data ?? []) as CompanyPaidCoursePurchase[], paidBillingAvailable: !billingSchemaPending };
 }
 
 export async function getOwnCompanyAssignedCourses() {
