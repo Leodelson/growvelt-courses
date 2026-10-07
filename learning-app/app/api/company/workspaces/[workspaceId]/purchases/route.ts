@@ -16,7 +16,15 @@ export async function POST(request: Request, { params }: { params: Promise<{ wor
   const { data, error } = await supabase.rpc("prepare_learning_company_paid_course_purchase", { p_workspace_id: workspaceId, p_course_id: courseId, p_assigned_user_ids: assignedUserIds });
   if (error) {
     const code = error.code === "42501" ? "company_access_denied" : error.code === "23505" ? "purchase_exists" : error.code === "22023" ? "purchase_invalid" : "purchase_unavailable";
-    return NextResponse.json({ code }, { status: code === "company_access_denied" ? 403 : 400 });
+    const reason = error.code === "22023"
+      ? error.message === "Invalid company purchase" ? "invalid_purchase"
+        : error.message === "Choose at least one employee" ? "employee_required"
+          : error.message === "Each employee can be selected once" ? "duplicate_employee_selection"
+            : error.message === "Selected employees exceed the company seat limit" ? "seat_limit_exceeded"
+              : error.message === "Choose an eligible published paid course" ? "course_not_eligible"
+                : "validation_failed"
+      : undefined;
+    return NextResponse.json({ code, ...(reason ? { reason } : {}) }, { status: code === "company_access_denied" ? 403 : 400 });
   }
   return NextResponse.json({ purchase: (data ?? [])[0] ?? null, checkout: "unavailable_pending_live_approval" }, { status: 201 });
 }
