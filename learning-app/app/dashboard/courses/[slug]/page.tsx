@@ -71,7 +71,7 @@ export default async function PublishedCourseDetailPage({ params }: { params: Pr
         <p className="eyebrow">Course access</p>
         <h2>{enrollment.isEnrolled ? "You’re enrolled" : course.isFree ? "Start learning for free" : paidCheckoutEnabled ? "Purchase this course securely" : "Paid access is coming later"}</h2>
         <p>{enrollment.isEnrolled ? "Open My Learning to continue lessons, complete quizzes, and follow your saved course progress." : course.isFree ? "Enroll to access the lesson player, complete text and video lessons, take quizzes, and track your progress." : paidCheckoutEnabled ? checkoutMode === "live" ? "Complete a real Paystack payment. Access is granted only after Growvelt verifies the payment event." : "Complete a Paystack test-mode checkout. Access is granted only after Growvelt verifies the payment event." : "Growvelt has not enabled paid enrollment or checkout yet."}</p>
-        <EnrollmentButton courseId={course.id} slug={course.slug} isFree={course.isFree} isEnrolled={enrollment.isEnrolled} paidCheckoutEnabled={paidCheckoutEnabled} checkoutMode={checkoutMode ?? "test"} displayedPrice={pricing} />
+        <EnrollmentButton courseId={course.id} slug={course.slug} isFree={course.isFree} isEnrolled={enrollment.isEnrolled} paidCheckoutEnabled={paidCheckoutEnabled} checkoutMode={checkoutMode ?? "test"} displayedPrice={pricing} testCouponCheckoutEnabled={checkoutMode === "test" && process.env.PAYMENTS_TEST_COUPONS_ENABLED === "true"} />
         <Link className="text-link" href="/dashboard/explore">Browse more courses</Link>
       </aside>
     </div>

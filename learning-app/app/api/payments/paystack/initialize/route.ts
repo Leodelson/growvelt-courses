@@ -20,9 +20,22 @@ export async function POST(request: Request) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user?.id || !user.email) return NextResponse.json({ code: "not_signed_in", message: "Sign in before purchasing this course." }, { status: 401 });
-  const body = await request.json().catch(() => null) as { courseId?: unknown } | null;
+  const body = await request.json().catch(() => null) as { courseId?: unknown; couponCode?: unknown; checkoutKey?: unknown } | null;
   if (!Number.isSafeInteger(body?.courseId) || Number(body?.courseId) <= 0) return NextResponse.json({ code: "invalid_course", message: "Choose a valid course." }, { status: 400 });
   const courseId = Number(body?.courseId);
+  const couponCode = typeof body?.couponCode === "string" ? body.couponCode.trim() : "";
+  if (body?.couponCode !== undefined && typeof body.couponCode !== "string") {
+    return NextResponse.json({ code: "invalid_checkout", message: "Checkout details are invalid." }, { status: 400 });
+  }
+  if (couponCode && !/^[A-Za-z0-9][A-Za-z0-9_-]{3,23}$/.test(couponCode)) {
+    return NextResponse.json({ code: "invalid_checkout", message: "Enter a valid coupon code." }, { status: 400 });
+  }
+  if (couponCode && (configuration.mode !== "test" || process.env.PAYMENTS_TEST_COUPONS_ENABLED !== "true")) {
+    return NextResponse.json({ code: "coupon_checkout_disabled", message: "Test-mode coupons are not available right now." }, { status: 503 });
+  }
+  if (couponCode && (typeof body?.checkoutKey !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(body.checkoutKey))) {
+    return NextResponse.json({ code: "invalid_checkout", message: "Refresh the page and try checkout again." }, { status: 400 });
+  }
   if (configuration.mode === "test") {
     const { data: eligibilityData, error: eligibilityError } = await supabase.rpc("get_own_paystack_test_fixture_eligibility", { p_course_id: courseId });
     const eligible = (eligibilityData as { eligible?: unknown }[] | null)?.[0]?.eligible === true;
@@ -31,10 +44,15 @@ export async function POST(request: Request) {
     }
   }
   const admin = createAdminClient();
-  const initializeFunction = configuration.mode === "live"
-    ? "initialize_paystack_live_learning_order"
-    : "initialize_paystack_test_learning_order";
-  const { data, error } = await admin.rpc(initializeFunction, { p_learner_id: user.id, p_course_id: courseId });
+  const initializeFunction = couponCode
+    ? "initialize_paystack_test_learning_order_with_coupon"
+    : configuration.mode === "live"
+      ? "initialize_paystack_live_learning_order"
+      : "initialize_paystack_test_learning_order";
+  const initializeArgs = couponCode
+    ? { p_learner_id: user.id, p_course_id: courseId, p_coupon_code: couponCode, p_reservation_key: body?.checkoutKey as string }
+    : { p_learner_id: user.id, p_course_id: courseId };
+  const { data, error } = await admin.rpc(initializeFunction, initializeArgs);
   const order = (data as OrderRow[] | null)?.[0];
   if (error || !order) {
     const duplicate = error?.code === "23505";
