@@ -38,6 +38,7 @@ const migrationFiles = [
   "20261015000000_allow_company_test_mode_courses.sql",
   "20261016000000_add_private_learning_coupon_foundation.sql",
   "20261017000000_integrate_test_coupon_checkout.sql",
+  "20261018000000_require_instructor_owned_coupon_courses.sql",
 ];
 const migrations = await Promise.all(migrationFiles.map((file) => readFile(path.join(root, "supabase", "migrations", file), "utf8")));
 const transactionalSql = migrations
@@ -46,6 +47,7 @@ const transactionalSql = migrations
 const sql = `begin;\n${transactionalSql}\nselect 'phase4_coupon_schema_ok|' || (
   to_regclass('public.learning_promotion_coupons') is not null
   and to_regclass('public.learning_promotion_redemptions') is not null
+  and to_regprocedure('public.is_learning_promotion_course_eligible(bigint)') is not null
   and to_regprocedure('public.initialize_paystack_test_learning_order_with_coupon(uuid,bigint,text,uuid)') is not null
   and to_regprocedure('public.allocate_learning_order_commercial_terms(bigint,uuid)') is not null
 )::text;\nrollback;\n`;
