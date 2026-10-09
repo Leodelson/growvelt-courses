@@ -40,7 +40,7 @@ export default function Footer() {
               </div>
             </div>
             <div className="growvelt-footer-about">
-              <div className="growvelt-footer-logo-tile"><Image src="/logo/Growvelt New Logo.png" alt="Growvelt" width={400} height={400} priority={false} /></div>
+              <div className="growvelt-footer-logo-tile"><Image src="/logo/Growvelt New Latest.png" alt="Growvelt" width={400} height={400} priority={false} /></div>
               <p>{t("footer.about")}</p>
               <Link href="/about">{t("footer.learnMore")} <span aria-hidden="true">→</span></Link>
             </div>

@@ -3,6 +3,6 @@ import Image from "next/image";
 
 export function LearningMark({ compact = false, href = "/" }: { compact?: boolean; href?: string }) {
   return <Link className={`learning-mark${compact ? " is-compact" : ""}`} href={href} aria-label="Growvelt Learning home">
-    <Image src="/logo/growvelt-white-text-new.png" alt="Growvelt" width={500} height={500} priority />
+    <Image src="/logo/growvelt-white-text-latest.png" alt="Growvelt" width={500} height={500} priority />
   </Link>;
 }

@@ -22,7 +22,7 @@ function actionHtml(action: EmailAction, primary = false) {
 }
 
 export function renderGrowveltEmail(input: GrowveltEmail) {
-  const logoUrl = new URL("/logo/growvelt-white-text-new.png", input.baseUrl).href;
+  const logoUrl = new URL("/logo/growvelt-white-text-latest.png", input.baseUrl).href;
   const paragraphHtml = input.paragraphs.map((paragraph) => `<p style="margin:0 0 16px;font-size:16px;line-height:1.62;color:#ece8f0">${escapeEmailHtml(paragraph)}</p>`).join("");
   const highlightsHtml = input.highlights?.length ? `<p style="margin:25px 0 10px;font-size:15px;font-weight:700;color:#ffffff">What happens next</p><ul style="margin:0;padding-left:20px;color:#ded8e4;font-size:14px;line-height:1.75">${input.highlights.map((item) => `<li>${escapeEmailHtml(item)}</li>`).join("")}</ul>` : "";
   const year = new Date().getFullYear();

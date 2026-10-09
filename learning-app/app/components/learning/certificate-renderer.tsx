@@ -48,7 +48,7 @@ export function CertificateRenderer({ certificate }: CertificateRendererProps) {
         <div className="certificate-corner certificate-corner-top" aria-hidden="true" />
 
         <header className="certificate-brand">
-          <img src="/logo/growvelt-white-text-new.png" alt="Growvelt" />
+          <img src="/logo/growvelt-white-text-latest.png" alt="Growvelt" />
           <p>GROWVELT LEARNING &amp; CAREER DEVELOPMENT SERVICES</p>
         </header>
 
