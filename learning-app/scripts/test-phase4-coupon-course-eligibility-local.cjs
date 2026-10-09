@@ -5,7 +5,7 @@ const path = require('node:path');
 const { PGlite } = require(process.env.PGLITE_PACKAGE_PATH || '@electric-sql/pglite');
 
 const migration = readFileSync(path.resolve(__dirname,
-  '../supabase/migrations/20261018000000_require_instructor_owned_coupon_courses.sql'), 'utf8');
+  '../supabase/migrations/20261019000000_limit_test_coupons_to_active_fixture_course.sql'), 'utf8');
 const namedInstructor = '00000000-0000-4000-8000-000000000001';
 const blankInstructor = '00000000-0000-4000-8000-000000000002';
 
@@ -40,19 +40,19 @@ async function main() {
       'select id, public.is_learning_promotion_course_eligible(id) as eligible ' +
       'from public.learning_courses order by id');
     assert.deepEqual(result.rows.map((row) => [row.id, row.eligible]), [
-      [1, true],       // Named instructor-owned public paid course.
+      [1, false],      // Named instructor course without the active Test Mode fixture.
       [2, false],      // Legacy/unowned seed course.
       [3, false],      // Instructor profile without a real display name.
       [4, false],      // Company-only course.
       [5, false],      // Organization-attributed course.
       [6, false],      // Free course.
-      [99, true],      // Test fixture remains eligible only while active.
+      [99, true],      // Only the active Test Mode fixture is coupon-eligible.
     ]);
     await db.exec("update public.learning_paystack_test_fixtures set expires_at=now()-interval '1 second' where course_id=99;");
     assert.equal((await db.query('select public.is_learning_promotion_course_eligible(99) as eligible')).rows[0].eligible, false);
     assert.match(migration, /security definer set search_path to ''/i);
     assert.match(migration, /grant execute[\s\S]*to postgres, service_role/i);
-    console.log('PASS coupon eligibility excludes unowned/sample courses while preserving named instructor and active fixture rules');
+    console.log('PASS coupon eligibility is limited to the active Test Mode fixture course');
   } finally {
     await db.close();
   }

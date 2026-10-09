@@ -39,6 +39,7 @@ const migrationFiles = [
   "20261016000000_add_private_learning_coupon_foundation.sql",
   "20261017000000_integrate_test_coupon_checkout.sql",
   "20261018000000_require_instructor_owned_coupon_courses.sql",
+  "20261019000000_limit_test_coupons_to_active_fixture_course.sql",
 ];
 const migrations = await Promise.all(migrationFiles.map((file) => readFile(path.join(root, "supabase", "migrations", file), "utf8")));
 const transactionalSql = migrations
