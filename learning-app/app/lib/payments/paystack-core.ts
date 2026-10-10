@@ -20,6 +20,36 @@ export function digestPaystackPayload(rawBody: string) {
   return createHash("sha256").update(rawBody).digest("hex");
 }
 
+export type PaystackVerifiedAmounts = {
+  amountMinor: number;
+  requestedAmountMinor: number;
+  feesMinor: number | null;
+};
+
+/**
+ * Paystack can include a fee in the customer's charged total. Keep the
+ * requested course price separate from the total, and only accept the
+ * difference when Paystack's verified fee explains it exactly.
+ */
+export function parsePaystackVerifiedAmounts(data: Record<string, unknown>): PaystackVerifiedAmounts | null {
+  const parseMinor = (value: unknown): number | null => {
+    const parsed = typeof value === "number" ? value
+      : typeof value === "string" && /^\d+$/.test(value) ? Number(value) : NaN;
+    return Number.isSafeInteger(parsed) && parsed >= 0 ? parsed : null;
+  };
+
+  const amountMinor = parseMinor(data.amount);
+  const requestedAmountMinor = data.requested_amount === undefined || data.requested_amount === null
+    ? amountMinor
+    : parseMinor(data.requested_amount);
+  const feesMinor = data.fees === undefined || data.fees === null ? null : parseMinor(data.fees);
+  if (amountMinor === null || amountMinor <= 0 || requestedAmountMinor === null || requestedAmountMinor <= 0
+    || requestedAmountMinor > amountMinor || (data.fees !== undefined && data.fees !== null && feesMinor === null)) return null;
+  if (amountMinor > requestedAmountMinor && (feesMinor === null || amountMinor - requestedAmountMinor !== feesMinor)) return null;
+
+  return { amountMinor, requestedAmountMinor, feesMinor };
+}
+
 export type PaystackDomain = "test" | "live";
 
 type ChargeSuccess = {

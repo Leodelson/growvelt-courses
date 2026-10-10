@@ -1,5 +1,5 @@
 import "server-only";
-import { isTrustedPaystackAuthorizationUrl, parseVerifiedPaystackCompanyDispute, parseVerifiedPaystackCompanyRefund } from "@/app/lib/payments/paystack-core";
+import { isTrustedPaystackAuthorizationUrl, parsePaystackVerifiedAmounts, parseVerifiedPaystackCompanyDispute, parseVerifiedPaystackCompanyRefund } from "@/app/lib/payments/paystack-core";
 import { resolvePaystackConfiguration } from "@/app/lib/payments/paystack-config";
 import { verifyCompanySettlementEvidence } from "@/app/lib/payments/company-settlement-core";
 import { verifyCompanyLiveTransferEvidence } from "@/app/lib/payments/company-transfer-core";
@@ -88,6 +88,8 @@ export type VerifiedPaystackTestTransaction = {
   reference: string;
   transactionId: string;
   amountMinor: number;
+  requestedAmountMinor: number;
+  feesMinor: number | null;
   currency: "NGN";
   domain: "test";
   status: string;
@@ -103,10 +105,11 @@ export async function verifyPaystackTestTransaction(reference: string): Promise<
   const result = await response.json().catch(() => null) as { status?: unknown; message?: unknown; data?: Record<string, unknown> } | null;
   const data = result?.data;
   const transactionId = typeof data?.id === "number" && Number.isSafeInteger(data.id) ? String(data.id) : typeof data?.id === "string" && /^\d+$/.test(data.id) ? data.id : "";
-  if (!response.ok || result?.status !== true || !data || data.reference !== reference || !transactionId || !Number.isSafeInteger(data.amount) || data.currency !== "NGN" || data.domain !== "test" || typeof data.status !== "string") {
+  const amounts = data ? parsePaystackVerifiedAmounts(data) : null;
+  if (!response.ok || result?.status !== true || !data || data.reference !== reference || !transactionId || !amounts || data.currency !== "NGN" || data.domain !== "test" || typeof data.status !== "string") {
     throw new Error(typeof result?.message === "string" ? result.message : "Paystack verification failed.");
   }
-  return { reference, transactionId, amountMinor: Number(data.amount), currency: "NGN", domain: "test", status: data.status, paidAt: typeof data.paid_at === "string" ? data.paid_at : null };
+  return { reference, transactionId, ...amounts, currency: "NGN", domain: "test", status: data.status, paidAt: typeof data.paid_at === "string" ? data.paid_at : null };
 }
 
 export async function verifyPaystackCompanyTransaction(reference: string, expectedDomain: PaystackDomain) {
@@ -209,8 +212,9 @@ export async function verifyPaystackTransaction(reference: string, expectedDomai
   const result = await response.json().catch(() => null) as { status?: unknown; message?: unknown; data?: Record<string, unknown> } | null;
   const data = result?.data;
   const transactionId = typeof data?.id === "number" && Number.isSafeInteger(data.id) ? String(data.id) : typeof data?.id === "string" && /^\d+$/.test(data.id) ? data.id : "";
-  if (!response.ok || result?.status !== true || !data || data.reference !== reference || !transactionId || !Number.isSafeInteger(data.amount) || data.currency !== "NGN" || data.domain !== expectedDomain || typeof data.status !== "string") throw new Error(typeof result?.message === "string" ? result.message : "Paystack verification failed.");
-  return { reference, transactionId, amountMinor: Number(data.amount), currency: "NGN" as const, domain: expectedDomain, status: data.status, paidAt: typeof data.paid_at === "string" ? data.paid_at : null };
+  const amounts = data ? parsePaystackVerifiedAmounts(data) : null;
+  if (!response.ok || result?.status !== true || !data || data.reference !== reference || !transactionId || !amounts || data.currency !== "NGN" || data.domain !== expectedDomain || typeof data.status !== "string") throw new Error(typeof result?.message === "string" ? result.message : "Paystack verification failed.");
+  return { reference, transactionId, ...amounts, currency: "NGN" as const, domain: expectedDomain, status: data.status, paidAt: typeof data.paid_at === "string" ? data.paid_at : null };
 }
 
 export type PaystackRefund = {

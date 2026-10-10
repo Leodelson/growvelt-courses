@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/app/lib/supabase/admin";
-import { digestPaystackPayload, getPaystackConfig, isPaystackCompanyReversalEvent, parsePaystackChargeSuccess, parsePaystackCompanyChargeSuccess, parsePaystackCompanyReversalNotice, parsePaystackDisputeEvent, parsePaystackRefundEvent, parsePaystackTestTransferEvent, verifyPaystackCompanyTransaction, verifyPaystackSignature } from "@/app/lib/payments/paystack";
+import { digestPaystackPayload, getPaystackConfig, isPaystackCompanyReversalEvent, parsePaystackChargeSuccess, parsePaystackCompanyChargeSuccess, parsePaystackCompanyReversalNotice, parsePaystackDisputeEvent, parsePaystackRefundEvent, parsePaystackTestTransferEvent, verifyPaystackCompanyTransaction, verifyPaystackSignature, verifyPaystackTransaction } from "@/app/lib/payments/paystack";
 import { getOrderNotificationContext, paymentOperationsRecipient, sendPaymentNotification } from "@/app/lib/email/payment-notifications";
 import { recordCompanyPaymentManualReview } from "@/app/lib/company/payment-exceptions";
 
@@ -149,12 +149,29 @@ export async function POST(request: Request) {
   }
   const parsed = parsePaystackChargeSuccess(payload, config.mode);
   if (!parsed) return new NextResponse(null, { status: 204 });
+  let verified;
+  try {
+    verified = await verifyPaystackTransaction(parsed.reference, config.mode);
+    if (verified.status !== "success" || verified.transactionId !== parsed.transactionId || verified.amountMinor !== parsed.amountMinor) {
+      throw new Error("Paystack verification did not match the signed charge event.");
+    }
+  } catch (error) {
+    console.error("payment.webhook_verification_deferred", { provider: "paystack", reference: parsed.reference, message: error instanceof Error ? error.message : "Verification failed" });
+    return NextResponse.json({ code: "verification_deferred" }, { status: 500 });
+  }
+  const verifiedPayload = {
+    ...parsed.payload,
+    amount: verified.requestedAmountMinor,
+    requested_amount: verified.requestedAmountMinor,
+    charged_amount: verified.amountMinor,
+    fees: verified.feesMinor,
+  };
   const admin = createAdminClient();
   const receiveFunction = config.mode === "live" ? "receive_paystack_live_charge_event" : "receive_paystack_test_charge_event";
   const processFunction = config.mode === "live" ? "process_paystack_live_charge_event" : "process_paystack_test_charge_event";
   const { data: received, error: receiveError } = await admin.rpc(receiveFunction, {
     p_provider_event_id: parsed.eventId, p_payload_digest: digestPaystackPayload(rawBody), p_reference: parsed.reference,
-    p_provider_transaction_id: parsed.transactionId, p_amount_minor: parsed.amountMinor, p_currency: parsed.currency, p_domain: parsed.domain, p_payload: parsed.payload,
+    p_provider_transaction_id: parsed.transactionId, p_amount_minor: verified.requestedAmountMinor, p_currency: parsed.currency, p_domain: parsed.domain, p_payload: verifiedPayload,
   });
   if (receiveError) { console.error("payment.webhook_receive_failed", { provider: "paystack", reference: parsed.reference, code: receiveError.code }); return NextResponse.json({ code: "receipt_failed" }, { status: 500 }); }
   const receipt = (received as Array<{ outcome?: string; event_id?: number }> | null)?.[0];

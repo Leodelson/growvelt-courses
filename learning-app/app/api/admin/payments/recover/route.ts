@@ -22,10 +22,10 @@ export async function POST(request: Request) {
       ? await verifyPaystackTransaction(reference, "live")
       : await verifyPaystackTestTransaction(reference);
     if (verified.status === "success") {
-      const payload = { transaction_id: verified.transactionId, reference: verified.reference, amount: verified.amountMinor, currency: verified.currency, domain: verified.domain, status: verified.status, channel: null, paid_at: verified.paidAt };
+      const payload = { transaction_id: verified.transactionId, reference: verified.reference, amount: verified.requestedAmountMinor, requested_amount: verified.requestedAmountMinor, charged_amount: verified.amountMinor, fees: verified.feesMinor, currency: verified.currency, domain: verified.domain, status: verified.status, channel: null, paid_at: verified.paidAt };
       const receiveFunction = configuration.mode === "live" ? "receive_paystack_live_verified_transaction" : "receive_paystack_test_verified_transaction";
       const recoverFunction = configuration.mode === "live" ? "recover_paystack_live_charge_event" : "recover_paystack_test_charge_event";
-      const { data: receivedId, error: receiveError } = await admin.rpc(receiveFunction, { p_reference: reference, p_provider_transaction_id: verified.transactionId, p_amount_minor: verified.amountMinor, p_currency: verified.currency, p_domain: verified.domain, p_payload: payload, p_operator_id: user.id });
+      const { data: receivedId, error: receiveError } = await admin.rpc(receiveFunction, { p_reference: reference, p_provider_transaction_id: verified.transactionId, p_amount_minor: verified.requestedAmountMinor, p_currency: verified.currency, p_domain: verified.domain, p_payload: payload, p_operator_id: user.id });
       if (receiveError) throw receiveError;
       const eventId = Number(receivedId);
       const { data, error } = await admin.rpc(recoverFunction, { p_event_id: eventId, p_operator_id: user.id });
