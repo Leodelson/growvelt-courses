@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 const CHECK_INTERVAL_MS = 3_000;
 const MAX_AUTOMATIC_CHECKS = 30;
@@ -49,9 +50,12 @@ export function LearnerPaymentReturnCheck({ complete }: { complete: boolean }) {
             ? "Checking for Paystack’s verified confirmation…"
             : "Checking for Paystack’s verified confirmation. Please don’t pay again."}
       </p>
-      <button className="button button-primary" type="button" onClick={checkNow}>
-        {manualCheck ? "Checking…" : "Check again"}
-      </button>
+      <div className="payment-callback-actions">
+        <button className="button button-primary" type="button" onClick={checkNow}>
+          {manualCheck ? "Checking…" : "Check again"}
+        </button>
+        <Link className="button button-secondary" href="/dashboard/my-learning">My Learning</Link>
+      </div>
     </div>
   );
 }
