@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { CompanyPaymentReturnCheck } from "@/app/components/company/payment-return-check";
+import { LearnerPaymentReturnCheck } from "@/app/components/payments/learner-payment-return-check";
 import { getCompanyPaymentForManager } from "@/app/lib/company/payment-status";
 import { resolvePaystackCallbackReference, type PaystackCallbackSearchParams } from "@/app/lib/payments/paystack-callback";
 import { createClient } from "@/app/lib/supabase/server";
@@ -31,9 +32,10 @@ export default async function PaystackCallbackPage({ searchParams }: { searchPar
   const complete = status?.order_status === "paid" && status.entitlement_active;
   return <main className="payment-callback-page"><section className="auth-card payment-callback-card">
     <p className="eyebrow">PAYMENT STATUS</p><h1>{complete ? "Course access is ready." : "We’re confirming your payment."}</h1>
-    <p>{!user ? "Sign in to view this payment status." : complete ? "Growvelt verified the payment and added the course to My Learning." : status ? "The browser return does not prove payment. Access appears only after the verified Paystack webhook is processed." : "We couldn’t find this payment for the signed-in account."}</p>
+    <p>{!user ? "Sign in to view this payment status." : complete ? "Growvelt verified the payment and added the course to My Learning." : status ? "We’ll keep checking for Paystack’s verified confirmation. Your course will appear in My Learning once it’s confirmed." : "We couldn’t find this payment for the signed-in account."}</p>
+    {user && status && !complete ? <LearnerPaymentReturnCheck key={reference} complete={complete} /> : null}
     <div className="auth-actions">
-      {!user ? <Link className="button button-primary" href={`/sign-in?next=${encodeURIComponent(reference ? `/payments/paystack/callback?reference=${reference}` : "/payments/paystack/callback")}`}>Sign in</Link> : complete && status?.course_slug ? <Link className="button button-primary" href={`/dashboard/my-learning/${encodeURIComponent(status.course_slug)}`}>Open course</Link> : reference ? <Link className="button button-primary" href={`/payments/paystack/callback?reference=${encodeURIComponent(reference)}`}>Check again</Link> : null}
+      {!user ? <Link className="button button-primary" href={`/sign-in?next=${encodeURIComponent(reference ? `/payments/paystack/callback?reference=${reference}` : "/payments/paystack/callback")}`}>Sign in</Link> : complete && status?.course_slug ? <Link className="button button-primary" href={`/dashboard/my-learning/${encodeURIComponent(status.course_slug)}`}>Open course</Link> : null}
       <Link className="button button-secondary" href="/dashboard/my-learning">My Learning</Link>
     </div>
   </section></main>;
