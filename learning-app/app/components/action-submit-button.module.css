@@ -1,0 +1,5 @@
+.button { display: inline-flex; align-items: center; justify-content: center; gap: 9px; }
+.button:disabled { cursor: progress; opacity: .82; }
+.spinner { width: 16px; height: 16px; flex: 0 0 auto; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: action-submit-spin .72s linear infinite; }
+@keyframes action-submit-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 1.5s; } }

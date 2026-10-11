@@ -15,7 +15,9 @@ export function FeaturedLearningCampaign({
 }) {
   const courseHref = (slug: string) => `${dashboard ? "/dashboard/courses" : "/courses"}/${encodeURIComponent(slug)}`;
 
-  return <section className={styles.campaign} aria-labelledby="featured-campaign-title">
+  const singleCourse = campaign.courses.length === 1;
+
+  return <section className={`${styles.campaign} ${singleCourse ? styles.singleCourse : ""}`} aria-labelledby="featured-campaign-title">
     <div className={styles.heading}>
       <div>
         <p className="eyebrow">Featured learning</p>
@@ -24,7 +26,7 @@ export function FeaturedLearningCampaign({
       </div>
       <span className={styles.editorial}>Curated by Growvelt</span>
     </div>
-    <div className="course-grid published-course-grid public-published-course-grid">
+    <div className={`course-grid published-course-grid public-published-course-grid ${styles.courseGrid} ${singleCourse ? styles.singleCourseGrid : ""}`}>
       {campaign.courses.map((course, index) => <PublishedCourseCard
         course={course}
         index={index}

@@ -1,11 +1,20 @@
 .campaign {
+  width: 100%;
+  min-width: 0;
   display: grid;
-  gap: 22px;
-  margin-block: 0 34px;
-  padding: clamp(18px, 3vw, 30px);
+  gap: 20px;
+  margin-block: 0 30px;
+  padding: clamp(16px, 2.3vw, 26px);
   border: 1px solid color-mix(in srgb, var(--purple) 30%, var(--line));
   border-radius: 20px;
   background: linear-gradient(135deg, color-mix(in srgb, var(--purple) 8%, var(--surface)), var(--surface));
+}
+
+.singleCourse {
+  max-width: 980px;
+  grid-template-columns: minmax(0, .95fr) minmax(0, 1.05fr);
+  align-items: center;
+  margin-inline: auto;
 }
 
 .heading {
@@ -30,6 +39,17 @@
   font-weight: 750;
 }
 
+/* Keep the featured shelf's card count independent from the full catalog grid. */
+.campaign .courseGrid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 16px; }
+.campaign .singleCourseGrid { grid-template-columns: minmax(0, 1fr); }
+
+@media (max-width: 1024px) {
+  .singleCourse { max-width: 560px; grid-template-columns: minmax(0, 1fr); }
+  .singleCourse .heading { align-items: flex-start; flex-direction: row; }
+}
+
 @media (max-width: 720px) {
   .heading { align-items: flex-start; flex-direction: column; }
+  .singleCourse .heading { flex-direction: column; }
+  .campaign .courseGrid { grid-template-columns: minmax(0, 1fr); }
 }

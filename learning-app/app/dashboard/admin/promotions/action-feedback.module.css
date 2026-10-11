@@ -1,0 +1,3 @@
+.notice { margin: 0; padding: 13px 15px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); outline-offset: 4px; }
+.success { border-color: color-mix(in srgb, #2ba36b 40%, var(--line)); color: #18744a; }
+.error { border-color: color-mix(in srgb, #bd4a4a 40%, var(--line)); color: #a83939; }

@@ -1,5 +1,7 @@
 import { createClient } from "@/app/lib/supabase/server";
+import { ActionSubmitButton } from "@/app/components/action-submit-button";
 import { createLearningCampaignAction, createLearningCouponAction, disableLearningCampaignAction, disableLearningCouponAction } from "./actions";
+import { ActionFeedback } from "./action-feedback";
 import styles from "./promotions.module.css";
 
 export const metadata = { title: "Promotions and coupons" };
@@ -56,6 +58,18 @@ export default async function AdminPromotionsPage({
     && process.env.PAYMENTS_TEST_COUPONS_ENABLED === "true";
   const queryValue = (key: string) => Array.isArray(query[key]) ? query[key]?.[0] : query[key];
   const error = queryValue("error");
+  const successMessage = queryValue("created") ? "Coupon created. It can only be redeemed when the Test Mode fixture and coupon feature gates are satisfied."
+    : queryValue("disabled") ? "Coupon disabled. Existing payment behavior is unchanged."
+    : queryValue("campaignCreated") ? "Featured campaign scheduled. It will appear on Explore during its selected dates."
+    : queryValue("campaignDisabled") ? "Featured campaign disabled. Its record is retained for the admin history."
+    : null;
+  const errorMessage = error === "duplicate" ? "That code already exists. Choose a different code."
+    : error === "invalid" ? "Some coupon settings are invalid. Check the dates, amounts and selected courses."
+    : error === "campaign-invalid" ? "Campaign details are invalid. Check the title, dates, and choose one to six eligible courses."
+    : error === "campaign-overlap" ? "Another enabled campaign overlaps those dates. Choose a different schedule."
+    : error === "campaign-unavailable" ? "The campaign could not be saved. No course, payment, or access data was changed."
+    : error ? "The coupon could not be saved. No payment or course access was changed."
+    : null;
 
   return <section className={styles.page + " admin-page section-shell"}>
     <header className="admin-page-header admin-review-hero">
@@ -69,11 +83,7 @@ export default async function AdminPromotionsPage({
       <p>{testCouponCheckoutActive ? "Only the assigned tester can redeem a code on its active fixture course. No Live or company purchase uses coupons." : "Checkout needs Test Mode, learner checkout, and the explicit coupon feature flag. Company purchases, organization courses, private company test courses, subscriptions, and Live payments remain excluded."} Coupon terms cannot be edited after creation; disable a code and issue a new one instead.</p>
     </aside>
 
-    {queryValue("created") && <p className={styles.success} role="status">Coupon created. It can only be redeemed when the Test Mode fixture and coupon feature gates are satisfied.</p>}
-    {queryValue("disabled") && <p className={styles.success} role="status">Coupon disabled. Existing payment behavior is unchanged.</p>}
-    {queryValue("campaignCreated") && <p className={styles.success} role="status">Featured campaign scheduled. It will appear on Explore during its selected dates.</p>}
-    {queryValue("campaignDisabled") && <p className={styles.success} role="status">Featured campaign disabled. Its record is retained for the admin history.</p>}
-    {error && <p className={styles.error} role="alert">{error === "duplicate" ? "That code already exists. Choose a different code." : error === "invalid" ? "Some coupon settings are invalid. Check the dates, amounts and selected courses." : error === "campaign-invalid" ? "Campaign details are invalid. Check the title, dates, and choose one to six eligible courses." : error === "campaign-overlap" ? "Another enabled campaign overlaps those dates. Choose a different schedule." : error === "campaign-unavailable" ? "The campaign could not be saved. No course, payment, or access data was changed." : "The coupon could not be saved. No payment or course access was changed."}</p>}
+    <ActionFeedback message={errorMessage ?? successMessage} kind={errorMessage ? "error" : "success"} />
 
     <section className={styles.panel}>
       <header><p className="eyebrow">Editorial merchandising · No placement fee</p><h2>Schedule a featured campaign</h2><p>Choose up to six published courses with an instructor or provider organization and a display window. The campaign appears on public and dashboard Explore pages only during that window. Company-only courses and Paystack test fixtures are excluded.</p></header>
@@ -83,7 +93,7 @@ export default async function AdminPromotionsPage({
         <label>Starts (Africa/Lagos time)<input name="campaignStartsAt" type="datetime-local" required /></label>
         <label>Ends (Africa/Lagos time)<input name="campaignEndsAt" type="datetime-local" required /></label>
         <label className={styles.courseField}>Featured courses<select name="campaignCourseIds" required multiple size={Math.min(Math.max(editorialCourses.length, 3), 8)}>{editorialCourses.map((course) => <option value={course.course_id} key={course.course_id}>{course.title} · {course.is_free ? "Free" : `${course.price_currency || "NGN"} ${Number(course.price_amount ?? 0).toLocaleString("en-NG")}`}</option>)}</select><small>Choose one to six courses. Hold Ctrl (Windows) or Command (Mac) to choose more than one. A course must still be published and publicly eligible when the campaign is displayed.</small></label>
-        <button className="button button-primary" type="submit">Schedule featured campaign</button>
+        <ActionSubmitButton label="Schedule featured campaign" pendingLabel="Scheduling campaign…" />
       </form>}
     </section>
 
@@ -94,7 +104,7 @@ export default async function AdminPromotionsPage({
         return <article key={campaign.campaign_id}>
           <div className={styles.heading}><div><strong>{campaign.campaign_title}</strong><span>{campaign.campaign_message}</span></div><span className={campaign.enabled ? styles.active : styles.disabled}>{state}</span></div>
           <dl><div><dt>Featured courses</dt><dd>{campaign.course_titles || campaign.course_ids.map((id) => `Course #${id}`).join(", ")}</dd></div><div><dt>Window</dt><dd>{new Date(campaign.starts_at).toLocaleString("en-NG")} – {new Date(campaign.ends_at).toLocaleString("en-NG")}</dd></div></dl>
-          {campaign.enabled && <form action={disableLearningCampaignAction}><input type="hidden" name="campaignId" value={campaign.campaign_id} /><button className="button button-secondary" type="submit">Disable campaign</button></form>}
+          {campaign.enabled && <form action={disableLearningCampaignAction}><input type="hidden" name="campaignId" value={campaign.campaign_id} /><ActionSubmitButton label="Disable campaign" pendingLabel="Disabling campaign…" tone="secondary" /></form>}
         </article>;
       })}</div>}
     </section>
@@ -111,7 +121,7 @@ export default async function AdminPromotionsPage({
         <label>Ends (Africa/Lagos time)<input name="endsAt" type="datetime-local" required /></label>
         <label>Global redemption limit<input name="maxRedemptions" type="number" min="1" max="999999" step="1" placeholder="No fixed cap" /></label>
         <label className={styles.courseField}>Eligible courses<select name="courseIds" required multiple size={Math.min(Math.max(courses.length, 3), 8)}>{courses.map((course) => <option value={course.course_id} key={course.course_id}>{course.title} · {money(Math.round(Number(course.price_amount) * 100))}</option>)}</select><small>Use Ctrl (Windows) or Command (Mac) to select multiple courses. Company-only courses and inactive fixtures are not shown.</small></label>
-        <button className="button button-primary" type="submit">Create coupon</button>
+        <ActionSubmitButton label="Create coupon" pendingLabel="Creating coupon…" />
       </form>}
     </section>
 
@@ -120,7 +130,7 @@ export default async function AdminPromotionsPage({
       {couponsError ? <p className={styles.error}>Coupon records could not be loaded safely. The list is not being treated as empty.</p> : coupons.length === 0 ? <p className={styles.muted}>No coupon codes have been created.</p> : <div className={styles.list}>{coupons.map((coupon) => <article key={coupon.coupon_id}>
         <div className={styles.heading}><div><strong><code>{coupon.code}</code></strong><span>{coupon.discount_kind === "fixed" ? money(coupon.discount_value) : (coupon.discount_value / 100).toFixed(2) + "%"} · max {money(coupon.max_discount_minor)}</span></div><span className={coupon.active ? styles.active : styles.disabled}>{coupon.active ? "Active" : "Disabled"}</span></div>
         <dl><div><dt>Eligible courses</dt><dd>{coupon.course_ids.map((id) => courseTitles.get(id) ?? "Course #" + id).join(", ")}</dd></div><div><dt>Redemptions</dt><dd>{coupon.redeemed_count}{coupon.max_redemptions === null ? "" : " / " + coupon.max_redemptions}</dd></div><div><dt>Window</dt><dd>{new Date(coupon.starts_at).toLocaleString("en-NG")} – {new Date(coupon.ends_at).toLocaleString("en-NG")}</dd></div><div><dt>Minimum charge</dt><dd>{money(coupon.minimum_charge_minor)}</dd></div></dl>
-        {coupon.active && <form action={disableLearningCouponAction}><input type="hidden" name="couponId" value={coupon.coupon_id} /><button className="button button-secondary" type="submit">Disable coupon</button></form>}
+        {coupon.active && <form action={disableLearningCouponAction}><input type="hidden" name="couponId" value={coupon.coupon_id} /><ActionSubmitButton label="Disable coupon" pendingLabel="Disabling coupon…" tone="secondary" /></form>}
       </article>)}</div>}
     </section>
   </section>;

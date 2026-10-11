@@ -30,8 +30,7 @@
 .list dt { color: var(--muted); font-size: .76rem; }
 .list dd { margin: 0; overflow-wrap: anywhere; }
 .list article form { justify-self: start; }
-.success, .error { padding: 13px 15px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
-.success { color: #18744a; }
+.error { padding: 13px 15px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
 .error { margin: 0; color: #a83939; }
 @media (max-width: 720px) {
   .form { grid-template-columns: 1fr; }
