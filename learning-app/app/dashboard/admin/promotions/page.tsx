@@ -1,5 +1,5 @@
 import { createClient } from "@/app/lib/supabase/server";
-import { createLearningCouponAction, disableLearningCouponAction } from "./actions";
+import { createLearningCampaignAction, createLearningCouponAction, disableLearningCampaignAction, disableLearningCouponAction } from "./actions";
 import styles from "./promotions.module.css";
 
 export const metadata = { title: "Promotions and coupons" };
@@ -12,6 +12,16 @@ type Coupon = {
   starts_at: string; ends_at: string; max_redemptions: number | null;
   active: boolean; redeemed_count: number; course_ids: number[];
 };
+type EditorialCourseOption = {
+  course_id: number; title: string; summary: string | null; category: string | null;
+  is_free: boolean; price_amount: number | null; price_currency: string | null;
+};
+type EditorialCampaign = {
+  campaign_id: number; campaign_title: string; campaign_message: string;
+  starts_at: string; ends_at: string; enabled: boolean; created_at: string;
+  campaign_state: "disabled" | "ended" | "scheduled" | "live";
+  course_ids: number[]; course_titles: string;
+};
 
 const money = (minor: number) => new Intl.NumberFormat("en-NG", {
   style: "currency", currency: "NGN", maximumFractionDigits: 2,
@@ -23,13 +33,23 @@ export default async function AdminPromotionsPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const supabase = await createClient();
-  const [{ data: couponsData, error: couponsError }, { data: coursesData, error: coursesError }, query] = await Promise.all([
+  const [
+    { data: couponsData, error: couponsError },
+    { data: coursesData, error: coursesError },
+    { data: editorialCoursesData, error: editorialCoursesError },
+    { data: campaignData, error: campaignError },
+    query,
+  ] = await Promise.all([
     supabase.rpc("list_learning_promotion_coupons_for_admin"),
     supabase.rpc("list_learning_promotion_course_options_for_admin"),
+    supabase.rpc("list_learning_editorial_courses_for_admin"),
+    supabase.rpc("list_learning_editorial_campaigns_for_admin"),
     searchParams,
   ]);
   const coupons = (Array.isArray(couponsData) ? couponsData : []) as Coupon[];
   const courses = (Array.isArray(coursesData) ? coursesData : []) as CourseOption[];
+  const editorialCourses = (Array.isArray(editorialCoursesData) ? editorialCoursesData : []) as EditorialCourseOption[];
+  const campaigns = (Array.isArray(campaignData) ? campaignData : []) as EditorialCampaign[];
   const courseTitles = new Map(courses.map((course) => [course.course_id, course.title]));
   const testCouponCheckoutActive = process.env.PAYSTACK_MODE === "test"
     && process.env.PAYMENTS_CHECKOUT_ENABLED === "true"
@@ -41,7 +61,7 @@ export default async function AdminPromotionsPage({
     <header className="admin-page-header admin-review-hero">
       <p className="eyebrow">Phase 4 · Learning Admin</p>
       <h1>Promotions and coupons</h1>
-      <p>Create a code for eligible NGN paid courses. Discounts come only from Growvelt’s platform share, preserving the instructor’s seller share. Coupon redemption is restricted to the assigned tester’s active Test Mode fixture and requires the separate feature flag.</p>
+      <p>Curate scheduled featured-course campaigns and manage controlled coupon codes. Featured placement is editorial-only: no placement fee, checkout change, seller-share adjustment, or automatic transfer.</p>
     </header>
 
     <aside className={styles.safety}>
@@ -51,7 +71,33 @@ export default async function AdminPromotionsPage({
 
     {queryValue("created") && <p className={styles.success} role="status">Coupon created. It can only be redeemed when the Test Mode fixture and coupon feature gates are satisfied.</p>}
     {queryValue("disabled") && <p className={styles.success} role="status">Coupon disabled. Existing payment behavior is unchanged.</p>}
-    {error && <p className={styles.error} role="alert">{error === "duplicate" ? "That code already exists. Choose a different code." : error === "invalid" ? "Some coupon settings are invalid. Check the dates, amounts and selected courses." : "The coupon could not be saved. No payment or course access was changed."}</p>}
+    {queryValue("campaignCreated") && <p className={styles.success} role="status">Featured campaign scheduled. It will appear on Explore during its selected dates.</p>}
+    {queryValue("campaignDisabled") && <p className={styles.success} role="status">Featured campaign disabled. Its record is retained for the admin history.</p>}
+    {error && <p className={styles.error} role="alert">{error === "duplicate" ? "That code already exists. Choose a different code." : error === "invalid" ? "Some coupon settings are invalid. Check the dates, amounts and selected courses." : error === "campaign-invalid" ? "Campaign details are invalid. Check the title, dates, and choose one to six eligible courses." : error === "campaign-overlap" ? "Another enabled campaign overlaps those dates. Choose a different schedule." : error === "campaign-unavailable" ? "The campaign could not be saved. No course, payment, or access data was changed." : "The coupon could not be saved. No payment or course access was changed."}</p>}
+
+    <section className={styles.panel}>
+      <header><p className="eyebrow">Editorial merchandising · No placement fee</p><h2>Schedule a featured campaign</h2><p>Choose up to six published courses with an instructor or provider organization and a display window. The campaign appears on public and dashboard Explore pages only during that window. Company-only courses and Paystack test fixtures are excluded.</p></header>
+      {editorialCoursesError ? <p className={styles.error}>Eligible published courses could not be loaded. Try again later.</p> : editorialCourses.length === 0 ? <p className={styles.muted}>There are no eligible published courses with an instructor or provider organization to feature yet.</p> : <form action={createLearningCampaignAction} className={styles.form}>
+        <label>Campaign title<input name="campaignTitle" required minLength={3} maxLength={80} placeholder="Featured learning" /></label>
+        <label className={styles.courseField}>Short message<textarea name="campaignMessage" required minLength={3} maxLength={240} rows={3} placeholder="A short introduction to this collection of courses." /></label>
+        <label>Starts (Africa/Lagos time)<input name="campaignStartsAt" type="datetime-local" required /></label>
+        <label>Ends (Africa/Lagos time)<input name="campaignEndsAt" type="datetime-local" required /></label>
+        <label className={styles.courseField}>Featured courses<select name="campaignCourseIds" required multiple size={Math.min(Math.max(editorialCourses.length, 3), 8)}>{editorialCourses.map((course) => <option value={course.course_id} key={course.course_id}>{course.title} · {course.is_free ? "Free" : `${course.price_currency || "NGN"} ${Number(course.price_amount ?? 0).toLocaleString("en-NG")}`}</option>)}</select><small>Choose one to six courses. Hold Ctrl (Windows) or Command (Mac) to choose more than one. A course must still be published and publicly eligible when the campaign is displayed.</small></label>
+        <button className="button button-primary" type="submit">Schedule featured campaign</button>
+      </form>}
+    </section>
+
+    <section className={styles.panel}>
+      <header><p className="eyebrow">Editorial schedule</p><h2>Featured campaigns</h2><p>Only one enabled campaign may occupy a time window. Disabling a campaign is immediate and keeps its history.</p></header>
+      {campaignError ? <p className={styles.error}>Campaign records could not be loaded safely. The list is not being treated as empty.</p> : campaigns.length === 0 ? <p className={styles.muted}>No featured campaigns have been scheduled.</p> : <div className={styles.list}>{campaigns.map((campaign) => {
+        const state = campaign.campaign_state.charAt(0).toUpperCase() + campaign.campaign_state.slice(1);
+        return <article key={campaign.campaign_id}>
+          <div className={styles.heading}><div><strong>{campaign.campaign_title}</strong><span>{campaign.campaign_message}</span></div><span className={campaign.enabled ? styles.active : styles.disabled}>{state}</span></div>
+          <dl><div><dt>Featured courses</dt><dd>{campaign.course_titles || campaign.course_ids.map((id) => `Course #${id}`).join(", ")}</dd></div><div><dt>Window</dt><dd>{new Date(campaign.starts_at).toLocaleString("en-NG")} – {new Date(campaign.ends_at).toLocaleString("en-NG")}</dd></div></dl>
+          {campaign.enabled && <form action={disableLearningCampaignAction}><input type="hidden" name="campaignId" value={campaign.campaign_id} /><button className="button button-secondary" type="submit">Disable campaign</button></form>}
+        </article>;
+      })}</div>}
+    </section>
 
     <section className={styles.panel}>
       <header><p className="eyebrow">Administrator-issued</p><h2>Create coupon</h2><p>Choose one or more eligible courses. Learner use is limited to one redemption per account.</p></header>

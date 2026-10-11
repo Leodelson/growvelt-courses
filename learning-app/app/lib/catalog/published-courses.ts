@@ -26,6 +26,13 @@ export type PublicCatalogResult = {
   pageSize: number;
 };
 
+export type ActiveLearningCampaign = {
+  id: number;
+  title: string;
+  message: string;
+  courses: PublishedCourse[];
+};
+
 type PublishedCourseRow = {
   course_id: number;
   slug: string;
@@ -44,6 +51,12 @@ type PublishedCourseRow = {
 
 type PublicCatalogCourseRow = PublishedCourseRow & {
   total_courses: number;
+};
+
+type ActiveLearningCampaignCourseRow = PublishedCourseRow & {
+  campaign_id: number;
+  campaign_title: string;
+  campaign_message: string;
 };
 
 const publicCatalogPageSize = 12;
@@ -149,6 +162,22 @@ export async function searchPublicPublishedLearningCourses(query: PublicCatalogQ
     courses: rows.map(mapPublishedCourse),
     total: rows[0]?.total_courses ?? 0,
     pageSize: publicCatalogPageSize,
+  };
+}
+
+export async function getActiveLearningEditorialCampaign(): Promise<ActiveLearningCampaign | null> {
+  const { data, error } = await (await createClient()).rpc("list_active_learning_editorial_campaign");
+  // The featured shelf is optional. If the application is deployed before its
+  // additive campaign migration, keep the existing catalog usable and fail closed.
+  if (error) return null;
+  const rows = (data ?? []) as ActiveLearningCampaignCourseRow[];
+  const first = rows[0];
+  if (!first) return null;
+  return {
+    id: first.campaign_id,
+    title: first.campaign_title,
+    message: first.campaign_message,
+    courses: rows.map(mapPublishedCourse),
   };
 }
 

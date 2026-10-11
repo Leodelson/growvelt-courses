@@ -10,7 +10,8 @@
 .panel > header > p:last-child { color: var(--muted); }
 .form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
 .form label { display: grid; min-width: 0; align-content: start; gap: 7px; font-weight: 700; }
-.form input, .form select { width: 100%; min-width: 0; padding: 11px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--canvas); color: var(--ink); }
+.form input, .form select, .form textarea { width: 100%; min-width: 0; padding: 11px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--canvas); color: var(--ink); font: inherit; }
+.form textarea { resize: vertical; }
 .form small { color: var(--muted); font-weight: 400; line-height: 1.45; }
 .courseField { grid-column: 1 / -1; }
 .courseField select { min-height: 120px; }

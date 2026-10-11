@@ -4,8 +4,9 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { PublishedCourseCard } from "@/app/components/published-course-card";
+import { FeaturedLearningCampaign } from "@/app/components/featured-learning-campaign";
 import { createClient } from "@/app/lib/supabase/browser";
-import type { PublicCatalogResult, PublishedCourse } from "@/app/lib/catalog/published-courses";
+import type { ActiveLearningCampaign, PublicCatalogResult, PublishedCourse } from "@/app/lib/catalog/published-courses";
 import { PublicCatalogQuery, publicCatalogHref } from "@/app/lib/catalog/public-catalog-query";
 import { useLanguage } from "@/app/components/language-provider";
 
@@ -33,7 +34,7 @@ function toCourse(row: PublicCatalogCourseRow): PublishedCourse {
   return { id: row.course_id, slug: row.slug, title: row.title, summary: row.summary, category: row.category, level: row.level, isFree: row.is_free, priceAmount: row.price_amount, priceCurrency: row.price_currency, instructorName: row.instructor_name, providerName: row.provider_name, providerSlug: row.provider_slug, providerVerified: row.provider_verified };
 }
 
-export function PublicCatalog({ catalog, query, authenticated, savedCourseIds = [], basePath = "/learn", dashboard = false }: { catalog: PublicCatalogResult; query: PublicCatalogQuery; authenticated: boolean; savedCourseIds?: number[]; basePath?: string; dashboard?: boolean }) {
+export function PublicCatalog({ catalog, query, authenticated, savedCourseIds = [], basePath = "/learn", dashboard = false, campaign = null }: { catalog: PublicCatalogResult; query: PublicCatalogQuery; authenticated: boolean; savedCourseIds?: number[]; basePath?: string; dashboard?: boolean; campaign?: ActiveLearningCampaign | null }) {
   const { t } = useLanguage();
   const router = useRouter();
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -87,6 +88,8 @@ export function PublicCatalog({ catalog, query, authenticated, savedCourseIds = 
 
   return <section className="catalog-page section-shell">
     <header className={dashboard ? "catalog-hero dashboard-catalog-hero" : "catalog-hero"}><p className="eyebrow">{t("catalog.eyebrow")}</p><h1>{t("catalog.title")}</h1><p>{dashboard ? t("catalog.dashboardCopy") : t("catalog.publicCopy")}</p></header>
+
+    {campaign && query.page === 1 && !hasActiveFilters ? <FeaturedLearningCampaign campaign={campaign} authenticated={authenticated} savedCourseIds={savedCourseIds} dashboard={dashboard} /> : null}
 
     <div className="public-catalog-controls" aria-label={t("catalog.filters")}>
       <label className="public-catalog-search">{t("catalog.search")}<input name="q" type="search" value={typedQuery} placeholder={t("catalog.searchPlaceholder")} maxLength={120} onChange={(event) => setTypedQuery(event.target.value)} /></label>

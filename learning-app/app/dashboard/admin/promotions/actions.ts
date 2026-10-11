@@ -6,6 +6,7 @@ import { isLearningAdmin } from "@/app/lib/admin/authorization";
 import { createClient } from "@/app/lib/supabase/server";
 
 const pagePath = "/dashboard/admin/promotions";
+const campaignRefreshPaths = [pagePath, "/learn", "/dashboard/explore"];
 
 function amountToMinor(value: FormDataEntryValue | null): number | null {
   if (typeof value !== "string" || !/^\d{1,8}(?:\.\d{1,2})?$/.test(value.trim())) return null;
@@ -86,4 +87,57 @@ export async function disableLearningCouponAction(formData: FormData) {
   if (error) errorRedirect("unavailable");
   revalidatePath(pagePath);
   redirect(pagePath + "?disabled=1");
+}
+
+export async function createLearningCampaignAction(formData: FormData) {
+  if (!await isLearningAdmin()) redirect("/dashboard");
+
+  const title = String(formData.get("campaignTitle") ?? "").trim();
+  const message = String(formData.get("campaignMessage") ?? "").trim();
+  const startsAt = dateValue(formData.get("campaignStartsAt"));
+  const endsAt = dateValue(formData.get("campaignEndsAt"));
+  const courseIds = formData.getAll("campaignCourseIds").map((item) => typeof item === "string" ? Number(item) : Number.NaN);
+
+  if (title.length < 3 || title.length > 80 || message.length < 3 || message.length > 240
+      || !startsAt || !endsAt || new Date(startsAt) >= new Date(endsAt)
+      || new Date(endsAt) <= new Date()
+      || courseIds.length < 1 || courseIds.length > 6
+      || courseIds.some((id) => !Number.isSafeInteger(id) || id <= 0)
+      || new Set(courseIds).size !== courseIds.length) {
+    errorRedirect("campaign-invalid");
+  }
+
+  const { error } = await (await createClient()).rpc("create_learning_editorial_campaign_for_admin", {
+    p_title: title,
+    p_message: message,
+    p_starts_at: startsAt,
+    p_ends_at: endsAt,
+    p_course_ids: courseIds,
+  });
+
+  if (error) {
+    if (error.code === "42501") redirect("/dashboard");
+    if (error.code === "23P01") errorRedirect("campaign-overlap");
+    errorRedirect(error.code === "22023" ? "campaign-invalid" : "campaign-unavailable");
+  }
+
+  for (const path of campaignRefreshPaths) revalidatePath(path);
+  redirect(pagePath + "?campaignCreated=1");
+}
+
+export async function disableLearningCampaignAction(formData: FormData) {
+  if (!await isLearningAdmin()) redirect("/dashboard");
+  const campaignId = Number(formData.get("campaignId"));
+  if (!Number.isSafeInteger(campaignId) || campaignId <= 0) errorRedirect("campaign-unavailable");
+
+  const { error } = await (await createClient()).rpc("disable_learning_editorial_campaign_for_admin", {
+    p_campaign_id: campaignId,
+  });
+  if (error) {
+    if (error.code === "42501") redirect("/dashboard");
+    errorRedirect("campaign-unavailable");
+  }
+
+  for (const path of campaignRefreshPaths) revalidatePath(path);
+  redirect(pagePath + "?campaignDisabled=1");
 }
