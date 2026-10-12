@@ -7,6 +7,7 @@ import { SignOutButton } from "@/app/components/auth/sign-out-button";
 import { WelcomeEmailTrigger } from "@/app/components/auth/welcome-email-trigger";
 import { LearningIcon } from "@/app/components/learning-icon";
 import { LearningMark } from "@/app/components/learning-mark";
+import { SidebarBrandControls } from "@/app/components/sidebar-brand-controls";
 import { ThemeControl } from "@/app/components/theme-control";
 import { useLanguage } from "@/app/components/language-provider";
 import { languageOptions } from "@/app/lib/i18n";
@@ -109,7 +110,7 @@ export function LearningShellNavigation({ children, initialSidebarCollapsed, isI
     <WelcomeEmailTrigger />
     <SkipLink />
     <aside className="learning-sidebar">
-      <button className="sidebar-collapse-button" type="button" aria-label={collapsed ? "Expand dashboard navigation" : "Collapse dashboard navigation"} aria-expanded={!collapsed} onClick={() => setCollapsed((current) => { const next = !current; document.cookie = `${sidebarPreferenceKey}=${next}; path=/; max-age=31536000; samesite=lax`; return next; })}><LearningIcon name="collapse" /></button>
+      <SidebarBrandControls collapsed={collapsed} onToggle={() => setCollapsed((current) => { const next = !current; document.cookie = `${sidebarPreferenceKey}=${next}; path=/; max-age=31536000; samesite=lax`; return next; })} />
       <LanguageMenu open={openPanel === "language"} onToggle={() => togglePanel("language")} menuRef={languageRef} />
       <nav aria-label="Learning navigation">{navigation.map((item) => { const active = !item.external && isActive(item.href); const label = t(item.labelKey); return item.external ? <a data-tooltip={label} href={item.href} target="_blank" rel="noreferrer" key={item.labelKey}><LearningIcon name={item.icon} /><span>{label}</span><span className="sr-only"> (opens Growvelt Jobs in a new tab)</span></a> : <Link className={active ? "active" : ""} data-tooltip={label} aria-current={active ? "page" : undefined} href={item.href} key={item.labelKey}><LearningIcon name={item.icon} /><span>{label}</span></Link>; })}</nav>
       <WorkspaceLinks isInstructor={isInstructor} isAdmin={isAdmin} isCompany={isCompany} pathname={pathname} />
