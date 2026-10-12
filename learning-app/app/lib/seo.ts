@@ -11,6 +11,6 @@ export const growveltOrganizationJsonLd = {
   "@type": "Organization",
   name: "Growvelt Technologies Limited",
   url: absoluteLearningUrl(),
-  logo: absoluteLearningUrl("/logo/Growvelt_Newest_Latest_Logo-removebg.png"),
+  logo: absoluteLearningUrl("/logo/growvelt-magenta-email.png"),
   description: "Growvelt connects practical learning, career development, and opportunity.",
 };

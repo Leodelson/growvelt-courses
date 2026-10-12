@@ -1,8 +1,8 @@
 import Link from "next/link";
-import Image from "next/image";
+import { GrowveltLogo } from "@/app/components/growvelt-logo";
 
 export function LearningMark({ compact = false, href = "/" }: { compact?: boolean; href?: string }) {
   return <Link className={`learning-mark${compact ? " is-compact" : ""}`} href={href} aria-label="Growvelt Learning home">
-    <Image src="/logo/Growvelt_Newest_Latest_Logo-removebg.png" alt="Growvelt" width={500} height={500} priority />
+    <GrowveltLogo priority />
   </Link>;
 }
