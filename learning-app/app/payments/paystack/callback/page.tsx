@@ -26,7 +26,7 @@ export default async function PaystackCallbackPage({ searchParams }: { searchPar
       {user && status && !complete ? <SubscriptionPaymentReturnCheck key={reference} complete={complete} reference={reference} /> : null}
       <div className="auth-actions">
         {!user ? <Link className="button button-primary" href={`/sign-in?next=${encodeURIComponent(`/payments/paystack/callback?reference=${reference}`)}`}>Sign in</Link> : null}
-        {user ? <Link className="button button-secondary" href="/dashboard/my-learning">My Learning</Link> : null}
+        {user && (!status || complete) ? <Link className="button button-secondary" href="/dashboard/my-learning">My Learning</Link> : null}
       </div>
     </section></main>;
   }
