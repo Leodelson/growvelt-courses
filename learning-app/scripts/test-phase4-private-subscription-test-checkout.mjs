@@ -38,4 +38,21 @@ const privatePage = await readFile(
 assert.match(privatePage, /canUsePrivateTestSubscriptionCheckout\(user\.email\)/);
 assert.match(privatePage, /get_company_test_learning_subscription_plan_for_checkout/);
 
+const subscriptionStatusRoute = await readFile(
+  new URL("../app/api/payments/paystack/subscriptions/status/route.ts", import.meta.url),
+  "utf8",
+);
+assert.match(subscriptionStatusRoute, /verifyPaystackTestSubscriptionTransaction\(reference\)/);
+assert.match(subscriptionStatusRoute, /reconcile_own_learning_test_subscription_payment/);
+assert.match(subscriptionStatusRoute, /verified\.subscriptionId/);
+assert.match(subscriptionStatusRoute, /verified\.invoiceId/);
+
+const subscriptionCallback = await readFile(
+  new URL("../app/components/learning/subscription-payment-return-check.tsx", import.meta.url),
+  "utf8",
+);
+assert.match(subscriptionCallback, /MAX_AUTOMATIC_CHECK_MS = 5 \* 60_000/);
+assert.match(subscriptionCallback, /use Check again to recheck this same payment/);
+assert.match(subscriptionCallback, /checking && <span className="payment-return-spinner"/);
+
 console.log("Private subscription Test Mode checkout safeguards passed.");

@@ -14,6 +14,7 @@ const migrationPaths = [
   '../supabase/migrations/20261027000000_add_test_subscription_checkout.sql',
   '../supabase/migrations/20261028000000_allow_company_test_courses_for_test_subscription_setup.sql',
   '../supabase/migrations/20261029000000_allow_allowlisted_private_test_subscription_checkout.sql',
+  '../supabase/migrations/20261030000000_reconcile_subscription_test_payment_from_provider_api.sql',
 ];
 const migrations = migrationPaths.map((file) => readFileSync(path.resolve(__dirname, file), 'utf8'));
 
@@ -254,21 +255,41 @@ async function main() {
     assert.equal((await beginCheckout(checkoutLearnerId, checkoutPlanId, '40000000-0000-4000-8000-000000000002')).authorization_url,
       'https://checkout.paystack.com/test-session_123', 'a fresh browser request should resume the same safe hosted session');
 
-    await inspect(`update public.learning_subscription_invoices
-      set status='paid', provider_transaction_id='90006', provider_transaction_reference='initial-subscription-reference',
-        paid_at='2031-01-31T12:30:00Z'
-      where id=$1`, [checkoutReservation.invoice_id]);
-    await inspect(`update public.learning_subscriptions subscription
-      set status='active', current_period_starts_at=invoice.billing_period_starts_at, paid_through=invoice.paid_through
-      from public.learning_subscription_invoices invoice
-      where subscription.id=$1 and invoice.id=$2`, [checkoutReservation.subscription_id, checkoutReservation.invoice_id]);
-    const finalizedPeriod = (await db.query(`select * from public.finalize_learning_test_subscription_initial_period(
-      $1,$2,'90006','2031-01-31T12:30:00Z'::timestamptz)`,
-    [checkoutReservation.subscription_id, checkoutReservation.invoice_id])).rows[0];
-    assert.equal(finalizedPeriod.outcome, 'finalized');
-    assert.equal(finalizedPeriod.billing_period_starts_at.toISOString(), '2031-01-31T12:30:00.000Z');
-    assert.equal(finalizedPeriod.paid_through.toISOString(), '2031-02-28T12:30:00.000Z',
-      'a late first payment must start its period at verified payment time and clamp monthly renewal to Paystack’s day-28 rule');
+    const apiPaidAt = new Date().toISOString();
+    const apiVerifiedPayload = {
+      status: 'success', reference: checkoutReservation.reference, transaction_id: '90006',
+      amount_minor: 5000, requested_amount_minor: 5000, charged_amount_minor: 5000, fees_minor: null,
+      currency: 'NGN', domain: 'test', paid_at: apiPaidAt,
+      metadata: { subscription_id: checkoutReservation.subscription_id, invoice_id: checkoutReservation.invoice_id },
+    };
+    const apiReconciliation = (await db.query(`select * from public.reconcile_own_learning_test_subscription_payment(
+      $1,$2,$3,$4,'90006',5000,5000,null,$5,$6::jsonb)`, [
+      checkoutLearnerId, checkoutReservation.reference, checkoutReservation.subscription_id,
+      checkoutReservation.invoice_id, payloadDigest(apiVerifiedPayload), JSON.stringify(apiVerifiedPayload),
+    ])).rows[0];
+    assert.equal(apiReconciliation.outcome, 'processed',
+      'a server-verified Paystack Test Mode transaction should reconcile when the signed webhook is unavailable');
+    const apiEvent = (await inspect(`select signature_valid,verification_source,processing_status
+      from public.learning_subscription_provider_events where id=$1`, [apiReconciliation.event_id])).rows[0];
+    assert.deepEqual(apiEvent, { signature_valid: false, verification_source: 'provider_api', processing_status: 'processed' },
+      'API verification must be audited separately and must never be mislabeled as a signed webhook');
+    const repeatedApiReconciliation = (await db.query(`select * from public.reconcile_own_learning_test_subscription_payment(
+      $1,$2,$3,$4,'90006',5000,5000,null,$5,$6::jsonb)`, [
+      checkoutLearnerId, checkoutReservation.reference, checkoutReservation.subscription_id,
+      checkoutReservation.invoice_id, payloadDigest(apiVerifiedPayload), JSON.stringify(apiVerifiedPayload),
+    ])).rows[0];
+    assert.equal(repeatedApiReconciliation.outcome, 'already_paid',
+      'rechecking the same transaction must be idempotent and must not create another invoice or grant');
+    assert.equal((await inspect('select status from public.learning_subscription_invoices where id=$1',
+      [checkoutReservation.invoice_id])).rows[0].status, 'paid');
+    assert.equal((await inspect('select public.has_own_learning_course_access($1,1) as allowed',
+      [checkoutLearnerId])).rows[0].allowed, true,
+    'a verified provider API reconciliation should grant the paid subscription access');
+    const finalizedPeriod = (await inspect(`select billing_period_starts_at,paid_through
+      from public.learning_subscription_invoices where id=$1`, [checkoutReservation.invoice_id])).rows[0];
+    assert.equal(finalizedPeriod.billing_period_starts_at.toISOString(), new Date(apiPaidAt).toISOString());
+    assert.ok(finalizedPeriod.paid_through > finalizedPeriod.billing_period_starts_at,
+      'the initial billing period should begin at the verified provider payment time');
 
     const rejectedRequestId = '40000000-0000-4000-8000-000000000003';
     const rejectedCheckout = await beginCheckout(retryLearnerId, checkoutPlanId, rejectedRequestId);
@@ -284,6 +305,24 @@ async function main() {
       [retryRequestId])).rows[0].outcome, 'needs_reconciliation');
     assert.equal((await beginCheckout(retryLearnerId, checkoutPlanId, '40000000-0000-4000-8000-000000000005')).outcome, 'needs_reconciliation',
       'an uncertain provider result must stop another charge attempt');
+    const mismatchedVerifiedPayload = {
+      status: 'success', reference: rejectedCheckout.reference, transaction_id: '90007',
+      amount_minor: 4999, requested_amount_minor: 4999, charged_amount_minor: 4999, fees_minor: null,
+      currency: 'NGN', domain: 'test', paid_at: new Date().toISOString(),
+      metadata: { subscription_id: rejectedCheckout.subscription_id, invoice_id: rejectedCheckout.invoice_id },
+    };
+    const mismatchedReconciliation = (await db.query(`select * from public.reconcile_own_learning_test_subscription_payment(
+      $1,$2,$3,$4,'90007',4999,4999,null,$5,$6::jsonb)`, [
+      retryLearnerId, rejectedCheckout.reference, rejectedCheckout.subscription_id,
+      rejectedCheckout.invoice_id, payloadDigest(mismatchedVerifiedPayload), JSON.stringify(mismatchedVerifiedPayload),
+    ])).rows[0];
+    assert.equal(mismatchedReconciliation.outcome, 'amount_mismatch',
+      'a provider API success for a different amount must not mark the invoice paid');
+    assert.equal((await inspect('select status from public.learning_subscription_invoices where id=$1',
+      [rejectedCheckout.invoice_id])).rows[0].status, 'created');
+    assert.equal((await inspect(`select count(*)::int as count from public.learning_subscription_provider_events
+      where provider_event_id='transaction.verify:subscription:test:90007'`, [])).rows[0].count, 0,
+    'an amount-mismatched provider transaction must not enter the event ledger');
 
     await db.exec('reset role');
     await db.query("select set_config('request.jwt.claim.sub',$1,false)", [checkoutLearnerId]);
@@ -292,8 +331,8 @@ async function main() {
     assert.ok(publicPlans.rows.some((row) => row.plan_id === checkoutPlanId), 'eligible active plans should be discoverable only through the safe projection');
     const statusView = await db.query('select * from public.get_own_learning_subscription_payment_status($1)', [checkoutReservation.reference]);
     assert.equal(statusView.rows[0].invoice_status, 'paid');
-    assert.equal(statusView.rows[0].access_active, false,
-      'a synthetic future-dated verification fixture must not be treated as currently active access');
+    assert.equal(statusView.rows[0].access_active, true,
+      'provider-API verified payment should appear as active in the learner callback status');
     await db.exec('reset role');
     await db.exec('set role service_role');
 
@@ -304,6 +343,10 @@ async function main() {
     };
     const initialReceipt = await receive('charge.success:transaction:90001', 'charge.success', initialPayload);
     assert.equal(initialReceipt.outcome, 'received');
+    const signedEventProvenance = (await inspect(`select signature_valid,verification_source
+      from public.learning_subscription_provider_events where id=$1`, [initialReceipt.event_id])).rows[0];
+    assert.deepEqual(signedEventProvenance, { signature_valid: true, verification_source: 'webhook' },
+      'HMAC-verified webhook provenance must remain distinct from the API reconciliation path');
     assert.equal(await process(initialReceipt.event_id, {
       reference: initialReference, transaction_id: '90001', requested_amount_minor: 5000,
       currency: 'NGN', domain: 'test', status: 'success',
@@ -481,18 +524,20 @@ async function main() {
     const processExecute = `public.process_learning_subscription_provider_event(bigint,jsonb)`;
     const privatePlanExecute = `public.get_company_test_learning_subscription_plan_for_checkout(uuid)`;
     const beginCheckoutExecute = `public.begin_own_learning_test_subscription_checkout(uuid,uuid,uuid)`;
+    const reconcileExecute = `public.reconcile_own_learning_test_subscription_payment(uuid,text,uuid,uuid,text,bigint,bigint,bigint,text,jsonb)`;
     for (const role of ['anon', 'authenticated']) {
       const grants = await db.query(`select has_function_privilege($1,$2,'execute') as receive,
         has_function_privilege($1,$3,'execute') as process,
         has_function_privilege($1,$4,'execute') as private_plan,
-        has_function_privilege($1,$5,'execute') as begin_checkout`,
-      [role, receiveExecute, processExecute, privatePlanExecute, beginCheckoutExecute]);
-      assert.deepEqual(grants.rows[0], { receive: false, process: false, private_plan: false, begin_checkout: false },
+        has_function_privilege($1,$5,'execute') as begin_checkout,
+        has_function_privilege($1,$6,'execute') as reconcile`,
+      [role, receiveExecute, processExecute, privatePlanExecute, beginCheckoutExecute, reconcileExecute]);
+      assert.deepEqual(grants.rows[0], { receive: false, process: false, private_plan: false, begin_checkout: false, reconcile: false },
         `${role} must not execute subscription provider, private plan, or checkout RPCs`);
     }
     await db.exec('reset role');
 
-    console.log('PASS isolated subscription DB lifecycle: idempotent Test Mode checkout reservation, safe resume, definitive-rejection retry, ambiguous-result reconciliation hold, no access before payment, verified initial-period timing, out-of-order prerequisite retry, webhook dedupe/conflict, verified renewal, failure recovery, cancellation, stale events, no paid-through regression, enrollment provenance, access expiry, and one-time coexistence');
+    console.log('PASS isolated subscription DB lifecycle: idempotent Test Mode checkout reservation, safe resume, definitive-rejection retry, ambiguous-result reconciliation hold, no access before payment, signed-webhook and provider-API verified initial charges, verified initial-period timing, out-of-order prerequisite retry, webhook dedupe/conflict, verified renewal, failure recovery, cancellation, stale events, no paid-through regression, enrollment provenance, access expiry, and one-time coexistence');
   } finally {
     await db.close();
   }
