@@ -3,6 +3,7 @@ import {
   buildPaystackTestSubscriptionCheckoutRequest,
   parsePaystackTestSubscriptionCheckoutResponse,
   parsePaystackTestSubscriptionWebhook,
+  sanitizePaystackProviderMessage,
 } from "../app/lib/payments/paystack-subscription-core.ts";
 
 const subscriptionId = "20000000-0000-4000-8000-000000000001";
@@ -71,6 +72,13 @@ assert.equal(parsePaystackTestSubscriptionCheckoutResponse({
   status: true,
   data: { authorization_url: "https://attacker.example/pay", access_code: "secure_code_123", reference },
 }, reference), null);
+
+assert.equal(sanitizePaystackProviderMessage("Invalid plan for learner@example.com"),
+  "Invalid plan for [redacted-email]");
+assert.equal(sanitizePaystackProviderMessage("Bearer secret-value sk_test_abc123\naccount 1234567890123456"),
+  "Bearer [redacted] [redacted-key] account [redacted-number]");
+assert.equal(sanitizePaystackProviderMessage({ message: "not a string" }), null);
+assert.equal(sanitizePaystackProviderMessage("\n  \t "), null);
 assert.equal(parsePaystackTestSubscriptionCheckoutResponse({
   status: true,
   data: { authorization_url: "https://checkout.paystack.com/pay", access_code: "secure_code_123", reference: "GS-" + "B".repeat(32) },

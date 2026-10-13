@@ -54,6 +54,27 @@ function isTrustedPaystackCheckoutUrl(value: string) {
 }
 
 /**
+ * Keeps provider rejection diagnostics useful without copying arbitrary
+ * response content into application logs. The provider message is bounded,
+ * flattened, and stripped of common credential, email, and long-number forms.
+ */
+export function sanitizePaystackProviderMessage(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+
+  const message = value
+    .replace(/[\u0000-\u001f\u007f]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\bBearer\s+\S+/gi, "Bearer [redacted]")
+    .replace(/\bsk_(?:test|live)_[A-Za-z0-9_-]+\b/gi, "[redacted-key]")
+    .replace(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi, "[redacted-email]")
+    .replace(/\b(?:\d[ -]?){7,19}\b/g, "[redacted-number]")
+    .slice(0, 240);
+
+  return message || null;
+}
+
+/**
  * Builds only the initial, Test Mode subscription transaction request.
  * Paystack's `plan` field is authoritative for the recurring amount; the
  * locally supplied amount is included for an explicit matching request and

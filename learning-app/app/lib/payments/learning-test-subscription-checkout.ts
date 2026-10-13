@@ -125,6 +125,10 @@ export async function handleLearningTestSubscriptionCheckout(
       reference: reservation.reference,
       disposition: outcome,
       cleanupFailed: Boolean(finishError),
+      ...(error instanceof PaystackTestSubscriptionCheckoutError && outcome === "rejected" ? {
+        providerHttpStatus: error.providerHttpStatus ?? null,
+        providerMessage: error.providerMessage ?? null,
+      } : {}),
     });
     return NextResponse.json({
       code: outcome === "rejected" ? "provider_rejected" : "provider_outcome_uncertain",

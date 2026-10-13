@@ -1,6 +1,6 @@
 import "server-only";
 import { getPaystackTestConfig } from "@/app/lib/payments/paystack";
-import { buildPaystackTestPlanRequest, buildPaystackTestSubscriptionCheckoutRequest, parsePaystackCreatedTestPlan, parsePaystackTestSubscriptionCheckoutResponse } from "@/app/lib/payments/paystack-subscription-core";
+import { buildPaystackTestPlanRequest, buildPaystackTestSubscriptionCheckoutRequest, parsePaystackCreatedTestPlan, parsePaystackTestSubscriptionCheckoutResponse, sanitizePaystackProviderMessage } from "@/app/lib/payments/paystack-subscription-core";
 
 export class PaystackTestPlanCreateError extends Error {
   constructor(readonly disposition: "rejected" | "ambiguous") {
@@ -12,7 +12,11 @@ export class PaystackTestPlanCreateError extends Error {
 }
 
 export class PaystackTestSubscriptionCheckoutError extends Error {
-  constructor(readonly disposition: "rejected" | "ambiguous") {
+  constructor(
+    readonly disposition: "rejected" | "ambiguous",
+    readonly providerHttpStatus?: number,
+    readonly providerMessage?: string | null,
+  ) {
     super(disposition === "rejected"
       ? "Paystack rejected the Test Mode subscription checkout."
       : "Paystack subscription checkout could not be confirmed.");
@@ -51,7 +55,8 @@ export async function initializePaystackTestSubscriptionCheckout(input: {
   const result: unknown = await response.json().catch(() => null);
   if (!response.ok && result && typeof result === "object"
     && (result as Record<string, unknown>).status === false) {
-    throw new PaystackTestSubscriptionCheckoutError("rejected");
+    const providerMessage = sanitizePaystackProviderMessage((result as Record<string, unknown>).message);
+    throw new PaystackTestSubscriptionCheckoutError("rejected", response.status, providerMessage);
   }
   const checkout = parsePaystackTestSubscriptionCheckoutResponse(result, input.reference);
   if (!response.ok || !checkout) throw new PaystackTestSubscriptionCheckoutError("ambiguous");
