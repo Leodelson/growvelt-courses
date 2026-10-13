@@ -26,6 +26,7 @@ export type InstructorSubscriptionPlanCourse = {
   price_amount: number;
   currency: "NGN";
   commercial_terms_version: string;
+  company_test_mode_only: boolean;
 };
 
 export async function getOwnInstructorSubscriptionPlanData() {

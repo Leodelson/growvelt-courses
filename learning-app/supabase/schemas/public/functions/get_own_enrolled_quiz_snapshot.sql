@@ -55,6 +55,7 @@ begin
     join public.quiz_lessons as quiz_row on quiz_row.lesson_id = lesson_row.id
     where enrollment_row.learner_id = auth.uid()
       and enrollment_row.status in ('active', 'completed')
+      and public.has_own_learning_course_access(auth.uid(), enrollment_row.course_id)
       and course_row.slug = normalized_slug
   ), attempt_summary as (
     select attempt_row.submitted_at,

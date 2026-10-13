@@ -21,9 +21,15 @@ export function SubscriptionPlanForm({ courses }: { courses: InstructorSubscript
 
   function changeCourseSelection(courseId: number, checked: boolean) {
     const nextIds = checked ? [...selectedIds, courseId] : selectedIds.filter((id) => id !== courseId);
-    const termVersions = new Set(nextIds.map((id) => courses.find((course) => course.course_id === id)?.commercial_terms_version));
+    const selectedCourses = nextIds.map((id) => courses.find((course) => course.course_id === id)).filter(Boolean);
+    const termVersions = new Set(selectedCourses.map((course) => course?.commercial_terms_version));
     if (termVersions.size > 1) {
       setSelectionMessage("Courses with different commercial terms need separate plans.");
+      return;
+    }
+    const courseTypes = new Set(selectedCourses.map((course) => course?.company_test_mode_only));
+    if (courseTypes.size > 1) {
+      setSelectionMessage("Keep Company Test Mode-only courses in a separate Test Mode plan.");
       return;
     }
     setSelectionMessage("");
@@ -43,11 +49,11 @@ export function SubscriptionPlanForm({ courses }: { courses: InstructorSubscript
 
       <fieldset className={styles.coursePicker}>
         <legend>Courses included</legend>
-        <p>Select between 1 and 50 of your eligible courses. A plan can include courses with the same commercial terms.</p>
+        <p>Select 1–50 of your published paid NGN courses with the same commercial terms. Company Test Mode-only courses can be used to prepare a Test Mode plan, but are never offered through public subscription checkout; keep them separate from public courses. Paystack coupon test fixtures are excluded.</p>
         {courses.length ? <div className={styles.courseList}>{courses.map((course) => <label className={styles.courseOption} key={course.course_id}>
           <input type="checkbox" name="course_ids" value={course.course_id} checked={selectedIds.includes(course.course_id)} onChange={(event) => changeCourseSelection(course.course_id, event.target.checked)} />
-          <span><strong>{course.title}</strong><small>{new Intl.NumberFormat("en-NG", { style: "currency", currency: course.currency, minimumFractionDigits: 2 }).format(course.price_amount)}</small></span>
-        </label>)}</div> : <p className={styles.emptyCourses}>No eligible published paid courses yet. Courses must be public, NGN-priced, and published under your instructor account.</p>}
+          <span><strong>{course.title}</strong><small>{new Intl.NumberFormat("en-NG", { style: "currency", currency: course.currency, minimumFractionDigits: 2 }).format(course.price_amount)}{course.company_test_mode_only ? " · Company Test Mode only" : ""}</small></span>
+        </label>)}</div> : <p className={styles.emptyCourses}>No eligible published paid courses yet. Courses must be owned by your instructor account, published, and priced above zero in NGN. Coupon test fixtures are excluded; a Company Test Mode-only course can be used only for Test Mode plan preparation.</p>}
         {selectionMessage && <p className={styles.selectionNotice} role="status">{selectionMessage}</p>}
       </fieldset>
 

@@ -41,6 +41,8 @@ export default async function InstructorSubscriptionPlansPage() {
         </header>
         {plans.length ? <div className={styles.planList}>{plans.map((plan) => {
           const provision = provisionByPlanId.get(plan.plan_id);
+          const isCompanyTestModePlan = plan.course_ids.some((courseId) =>
+            courses.find((course) => course.course_id === courseId)?.company_test_mode_only === true);
           const provisionState = provision?.provisioning_state ?? "not_started";
           const statusLabel = provisionState === "recorded" ? "Test plan ready"
             : provisionState === "needs_reconciliation" ? "Review required"
@@ -51,6 +53,10 @@ export default async function InstructorSubscriptionPlansPage() {
           <div className={styles.planHeading}><div><span className={styles.status}>{statusLabel}</span><h3>{plan.name}</h3></div><strong>{formatPrice(plan.amount_minor)}<small> / month</small></strong></div>
           {plan.description && <p>{plan.description}</p>}
           <ul aria-label="Included courses">{plan.course_titles.map((title, index) => <li key={`${plan.plan_id}-${plan.course_ids[index]}`}>{title}</li>)}</ul>
+          {isCompanyTestModePlan && <p className={styles.notice} role="note">This plan contains a Company Test Mode-only course. It stays out of public catalog and subscription listings.</p>}
+          {isCompanyTestModePlan && provisionState === "recorded" && plan.status === "active" && <p className={styles.notice} role="note">
+            Private learner Test Mode link (share it with the configured test learner): <code>/dashboard/test-subscriptions/{plan.plan_id}</code>
+          </p>}
           {canCreateTestPlans && plan.status === "draft" && ["not_started", "failed"].includes(provisionState)
             && <ProvisionSubscriptionTestPlanButton planId={plan.plan_id} label={provisionState === "failed" ? "Retry Test Mode plan setup" : "Create Test Mode plan"} />}
           {provisionState === "needs_reconciliation" && <p className={styles.notice} role="status">Do not retry this plan. Paystack may have created it; admin reconciliation is required before another attempt.</p>}

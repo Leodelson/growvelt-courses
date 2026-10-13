@@ -16,7 +16,7 @@ export type PublicTestSubscriptionPlan = {
   course_titles: string[];
 };
 
-export function SubscriptionPlanPurchase({ plan }: { plan: PublicTestSubscriptionPlan }) {
+export function SubscriptionPlanPurchase({ plan, privateTestCheckout = false }: { plan: PublicTestSubscriptionPlan; privateTestCheckout?: boolean }) {
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   async function startCheckout() {
@@ -24,7 +24,10 @@ export function SubscriptionPlanPurchase({ plan }: { plan: PublicTestSubscriptio
     setPending(true);
     setMessage(null);
     const requestId = crypto.randomUUID();
-    const response = await fetch("/api/payments/paystack/subscriptions/initialize", {
+    const endpoint = privateTestCheckout
+      ? "/api/payments/paystack/subscriptions/test-only/initialize"
+      : "/api/payments/paystack/subscriptions/initialize";
+    const response = await fetch(endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ planId: plan.plan_id, requestId }),
@@ -43,7 +46,7 @@ export function SubscriptionPlanPurchase({ plan }: { plan: PublicTestSubscriptio
   }
 
   return <article className="subscription-plan-offer">
-    <p className="eyebrow">Optional monthly subscription · Test Mode</p>
+    <p className="eyebrow">{privateTestCheckout ? "Private learner test · Test Mode" : "Optional monthly subscription · Test Mode"}</p>
     <h3>{plan.name}</h3>
     {plan.description ? <p>{plan.description}</p> : null}
     <p className="subscription-plan-price">{new Intl.NumberFormat("en-NG", { style: "currency", currency: plan.currency }).format(plan.amount_minor / 100)} <span>/ month</span></p>

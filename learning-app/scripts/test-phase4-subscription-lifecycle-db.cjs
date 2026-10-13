@@ -12,6 +12,8 @@ const migrationPaths = [
   '../supabase/migrations/20261025000000_process_learning_subscription_provider_events.sql',
   '../supabase/migrations/20261026000000_integrate_subscription_course_access.sql',
   '../supabase/migrations/20261027000000_add_test_subscription_checkout.sql',
+  '../supabase/migrations/20261028000000_allow_company_test_courses_for_test_subscription_setup.sql',
+  '../supabase/migrations/20261029000000_allow_allowlisted_private_test_subscription_checkout.sql',
 ];
 const migrations = migrationPaths.map((file) => readFileSync(path.resolve(__dirname, file), 'utf8'));
 
@@ -28,6 +30,7 @@ const checkoutPlanId = '10000000-0000-4000-8000-000000000002';
 const checkoutLearnerId = '00000000-0000-4000-8000-000000000005';
 const checkoutRequestId = '40000000-0000-4000-8000-000000000001';
 const retryLearnerId = '00000000-0000-4000-8000-000000000006';
+const privateCheckoutLearnerId = '00000000-0000-4000-8000-000000000007';
 
 function payloadDigest(payload) {
   return createHash('sha256').update(JSON.stringify(payload)).digest('hex');
@@ -100,14 +103,17 @@ async function main() {
         returns text language sql stable as $$ select 'growvelt-commercial-v1'::text $$;
       insert into public.profiles values
         ('${instructorId}','Instructor'),('${learnerId}','Learner'),('${checkoutLearnerId}','Checkout Learner'),
-        ('${retryLearnerId}','Retry Learner');
+        ('${retryLearnerId}','Retry Learner'),('${privateCheckoutLearnerId}','Private Checkout Learner');
+      insert into public.account_capabilities values ('${instructorId}','instructor','active');
+      insert into public.instructor_profiles values ('${instructorId}','approved');
       insert into public.learning_commercial_terms(
         version,scope_type,commission_basis_points,instructor_share_basis_points,
         active,effective_at,retired_at
       ) values ('growvelt-commercial-v1','platform',2500,7500,true,now()-interval '1 day',null);
       insert into public.learning_courses(id,instructor_id,title,status,organization_id,is_free,
         is_limited_time_free,price_currency,price_amount,company_test_mode_only) values
-        (1,'${instructorId}','Tested paid course','published',null,false,false,'NGN',1000,false);
+        (1,'${instructorId}','Tested paid course','published',null,false,false,'NGN',1000,false),
+        (2,'${instructorId}','Private Company Test Course','published',null,false,false,'NGN',1000,true);
     `);
     const learnerAccessFunctions = [
       ['get_own_learning_enrollment_state', 'bigint'],
@@ -133,6 +139,42 @@ async function main() {
       )).rows[0].definition;
       assert.match(definition, /has_own_learning_course_access/, `${name} must enforce shared subscription-aware access`);
     }
+
+    await db.exec('set role authenticated');
+    await db.query("select set_config('request.jwt.claim.sub',$1,false)", [instructorId]);
+    const privatePlan = (await db.query(`select public.create_own_learning_subscription_plan(
+      'Private test setup', null, 5000, array[2]::bigint[]) as plan_id`)).rows[0].plan_id;
+    assert.equal((await db.query('select * from public.claim_own_learning_subscription_plan_provisioning($1)', [privatePlan])).rows[0].provisioning_state,
+      'claimed', 'a Company Test Mode-only course can prepare a private provider Test Mode plan');
+    await db.exec('reset role');
+    await db.exec('set role service_role');
+    assert.equal((await db.query(`select public.record_own_learning_subscription_plan_provisioning($1,$2,'PLN_gx2wn530m0i3w4p') as state`,
+      [privatePlan, instructorId])).rows[0].state, 'recorded');
+    await db.exec('reset role');
+    const privateCoursePlans = await db.query('select * from public.list_public_test_learning_subscription_plans_for_course(2)');
+    assert.equal(privateCoursePlans.rows.length, 0,
+      'Company Test Mode-only courses and their plans must stay out of public subscription offers');
+    await db.exec('set role service_role');
+    const privateCheckoutPlan = await db.query(
+      'select * from public.get_company_test_learning_subscription_plan_for_checkout($1)', [privatePlan],
+    );
+    assert.equal(privateCheckoutPlan.rows.length, 1,
+      'the private server-only projection should expose the eligible Company Test Mode plan');
+    assert.deepEqual(privateCheckoutPlan.rows[0].course_ids, [2]);
+    const privateCheckout = (await db.query(`select * from public.begin_own_learning_test_subscription_checkout(
+      $1,$2,'40000000-0000-4000-8000-000000000099')`, [privateCheckoutLearnerId, privatePlan])).rows[0];
+    assert.equal(privateCheckout.outcome, 'initialize',
+      'the private server-only checkout RPC should reserve a Company Test Mode plan');
+    assert.equal(Number(privateCheckout.amount_minor), 5000);
+    assert.match(privateCheckout.reference, /^GS-[A-F0-9]{32}$/);
+    await db.exec('reset role');
+    assert.equal((await db.query(
+      'select count(*)::int as count from public.learning_subscription_invoice_courses where invoice_id=$1',
+      [privateCheckout.invoice_id],
+    )).rows[0].count, 1, 'private checkout must snapshot its course before provider initialization');
+    assert.equal((await db.query(
+      'select public.has_own_learning_course_access($1,2) as allowed', [privateCheckoutLearnerId],
+    )).rows[0].allowed, false, 'reserving private Test Mode checkout must not grant course access before verified payment');
 
     await db.query(`insert into public.learning_subscription_plans(
       id,instructor_id,name,amount_minor,commercial_terms_version,paystack_plan_code,status
@@ -437,10 +479,16 @@ async function main() {
 
     const receiveExecute = `public.receive_learning_subscription_provider_event(text,text,text,jsonb,uuid,uuid,text)`;
     const processExecute = `public.process_learning_subscription_provider_event(bigint,jsonb)`;
+    const privatePlanExecute = `public.get_company_test_learning_subscription_plan_for_checkout(uuid)`;
+    const beginCheckoutExecute = `public.begin_own_learning_test_subscription_checkout(uuid,uuid,uuid)`;
     for (const role of ['anon', 'authenticated']) {
       const grants = await db.query(`select has_function_privilege($1,$2,'execute') as receive,
-        has_function_privilege($1,$3,'execute') as process`, [role, receiveExecute, processExecute]);
-      assert.deepEqual(grants.rows[0], { receive: false, process: false }, `${role} must not execute subscription event RPCs`);
+        has_function_privilege($1,$3,'execute') as process,
+        has_function_privilege($1,$4,'execute') as private_plan,
+        has_function_privilege($1,$5,'execute') as begin_checkout`,
+      [role, receiveExecute, processExecute, privatePlanExecute, beginCheckoutExecute]);
+      assert.deepEqual(grants.rows[0], { receive: false, process: false, private_plan: false, begin_checkout: false },
+        `${role} must not execute subscription provider, private plan, or checkout RPCs`);
     }
     await db.exec('reset role');
 

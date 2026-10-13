@@ -66,6 +66,7 @@ begin
     left join public.profiles as profile_row on profile_row.id = course_row.instructor_id
     where enrollment_row.learner_id = auth.uid()
       and enrollment_row.status in ('active', 'completed')
+      and public.has_own_learning_course_access(auth.uid(), enrollment_row.course_id)
       and course_row.slug = normalized_slug
   ), course_rows as (
     select

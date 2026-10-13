@@ -16,7 +16,8 @@ begin
   return query select true, enrollment_row.status, enrollment_row.enrolled_at
   from public.enrollments as enrollment_row
   join public.learning_courses as course_row on course_row.id = enrollment_row.course_id and course_row.status = 'published'
-  where enrollment_row.learner_id = auth.uid() and enrollment_row.course_id = p_course_id and enrollment_row.status in ('active', 'completed');
+  where enrollment_row.learner_id = auth.uid() and enrollment_row.course_id = p_course_id and enrollment_row.status in ('active', 'completed')
+    and public.has_own_learning_course_access(auth.uid(), enrollment_row.course_id);
   if not found then return query select false, null::text, null::timestamptz; end if;
 end;
 $function$;

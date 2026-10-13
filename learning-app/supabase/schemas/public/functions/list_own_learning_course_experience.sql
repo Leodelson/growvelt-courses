@@ -42,6 +42,7 @@ begin
     from public.enrollments as enrollment_row
     where enrollment_row.learner_id = auth.uid()
       and enrollment_row.status in ('active', 'completed')
+      and public.has_own_learning_course_access(auth.uid(), enrollment_row.course_id)
   ), activities as (
     select
       enrollment_row.source_enrollment_id,

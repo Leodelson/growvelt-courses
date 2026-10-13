@@ -18,7 +18,8 @@ begin
   from public.enrollments as enrollment_row
   join public.learning_courses as course_row on course_row.id = enrollment_row.course_id and course_row.status = 'published'
   join public.lessons as lesson_row on lesson_row.id = p_lesson_id and lesson_row.course_id = course_row.id and lesson_row.lesson_type in ('text', 'video')
-  where enrollment_row.learner_id = auth.uid() and enrollment_row.status in ('active', 'completed') and course_row.id = p_course_id
+  where enrollment_row.learner_id = auth.uid() and enrollment_row.status in ('active', 'completed')
+    and public.has_own_learning_course_access(auth.uid(), enrollment_row.course_id) and course_row.id = p_course_id
   for update of enrollment_row, course_row, lesson_row;
   if own_enrollment_id is null then raise exception 'This lesson is not available to this account' using errcode = '42501';end if;
   insert into public.lesson_progress as progress_row (enrollment_id, lesson_id, completed_at, progress_percent)

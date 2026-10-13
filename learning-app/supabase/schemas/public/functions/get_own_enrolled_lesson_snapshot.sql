@@ -48,6 +48,7 @@ begin
       on course_row.id = enrollment_row.course_id and course_row.status = 'published'
     where enrollment_row.learner_id = auth.uid()
       and enrollment_row.status in ('active', 'completed')
+      and public.has_own_learning_course_access(auth.uid(), enrollment_row.course_id)
       and course_row.slug = normalized_slug
   ), ordered_lessons as (
     select enrolled_course.id as source_course_id, enrolled_course.slug as source_course_slug, enrolled_course.title as source_course_title, enrolled_course.own_enrollment_id as source_enrollment_id,

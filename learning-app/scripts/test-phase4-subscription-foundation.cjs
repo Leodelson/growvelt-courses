@@ -10,6 +10,8 @@ const planManagementMigration = readFileSync(path.resolve(__dirname,
   '../supabase/migrations/20261023000000_add_learning_subscription_plan_management.sql'), 'utf8');
 const provisioningMigration = readFileSync(path.resolve(__dirname,
   '../supabase/migrations/20261024000000_add_idempotent_subscription_test_plan_provisioning.sql'), 'utf8');
+const testCourseSetupMigration = readFileSync(path.resolve(__dirname,
+  '../supabase/migrations/20261028000000_allow_company_test_courses_for_test_subscription_setup.sql'), 'utf8');
 const instructorId = '00000000-0000-4000-8000-000000000002';
 const learnerId = '00000000-0000-4000-8000-000000000003';
 const secondInstructorId = '00000000-0000-4000-8000-000000000004';
@@ -85,6 +87,7 @@ async function main() {
     await db.exec(migration);
     await db.exec(planManagementMigration);
     await db.exec(provisioningMigration);
+    await db.exec(testCourseSetupMigration);
 
     await db.query(`insert into public.learning_subscription_plans
       (id,instructor_id,name,amount_minor,commercial_terms_version)
@@ -96,9 +99,10 @@ async function main() {
     await db.query(`insert into public.learning_subscription_plans
       (id,instructor_id,name,amount_minor,commercial_terms_version)
       values ($1,$2,'Draft validation plan',5000,'growvelt-commercial-v1')`, [draftPlanId, instructorId]);
-    for (const courseId of [2,3,4,5,90]) {
+    for (const courseId of [2,3,4,90]) {
       await assert.rejects(db.query(`insert into public.learning_subscription_plan_courses(plan_id,instructor_id,course_id)
-        values ($1,$2,$3)`, [draftPlanId, instructorId, courseId]), /Only the instructor’s published public paid NGN courses/);
+        values ($1,$2,$3)`, [draftPlanId, instructorId, courseId]), /Only your published paid NGN courses/,
+      `ineligible course ${courseId} must be rejected`);
     }
     await assert.rejects(db.query("update public.learning_subscription_plans set status='draft' where id=$1", [planId]),
       /Subscription plan cannot be reactivated or returned to draft/);
@@ -148,7 +152,11 @@ async function main() {
     await db.exec('set role authenticated');
     await db.query(`select set_config('request.jwt.claim.sub',$1,false)`, [instructorId]);
     const planCourses = await db.query('select * from public.list_own_learning_subscription_plan_courses()');
-    assert.deepEqual(planCourses.rows.map((course) => course.course_id), [7, 1]);
+    assert.deepEqual(planCourses.rows.map((course) => course.course_id), [5, 7, 1]);
+    assert.equal(planCourses.rows.find((course) => course.course_id === 5).company_test_mode_only, true,
+      'Company Test Mode-only courses should be clearly identified for Test Mode setup');
+    assert.equal(planCourses.rows.some((course) => course.course_id === 90), false,
+      'Paystack coupon fixture courses must remain excluded from subscription plans');
     assert.equal(planCourses.rows.find((course) => course.course_id === 1).commercial_terms_version, 'growvelt-commercial-v1');
     const createdPlan = await db.query(`select public.create_own_learning_subscription_plan(
       $1,$2,$3,$4::bigint[]) as plan_id`,
@@ -178,6 +186,21 @@ async function main() {
     assert.equal(recordedPlan.rows[0].provisioning_state, 'recorded');
     assert.equal(recordedPlan.rows[0].existing_plan_code, 'PLN_gx2wn530m0i3w3m');
 
+    const companyTestPlan = await db.query(`select public.create_own_learning_subscription_plan(
+      'Private company test plan', 'Test Mode provider setup only', 5000, array[5]::bigint[]) as plan_id`);
+    const companyTestPlanId = companyTestPlan.rows[0].plan_id;
+    await assert.rejects(db.query(`select public.create_own_learning_subscription_plan(
+      'Mixed course types', null, 5000, array[1,5]::bigint[])`), /Keep Company Test Mode-only courses in a separate Test Mode plan/);
+    assert.equal((await db.query('select * from public.claim_own_learning_subscription_plan_provisioning($1)', [companyTestPlanId])).rows[0].provisioning_state,
+      'claimed', 'an owned Company Test Mode-only course may be used for gated Test Mode plan setup');
+    await db.exec('set role service_role');
+    assert.equal((await db.query(`select public.record_own_learning_subscription_plan_provisioning($1,$2,'PLN_gx2wn530m0i3w3n') as state`,
+      [companyTestPlanId, instructorId])).rows[0].state, 'recorded',
+    'the isolated provider-plan test path should accept a Company Test Mode-only course');
+    await db.exec('set role authenticated');
+    assert.equal((await db.query('select * from public.claim_own_learning_subscription_plan_provisioning($1)', [companyTestPlanId])).rows[0].provisioning_state,
+      'recorded', 'Test Mode provider plan setup should finish under the plan invariants');
+
     const retryDraft = await db.query(`select public.create_own_learning_subscription_plan('Retry monthly', null, 2500, array[1]::bigint[]) as plan_id`);
     await db.query('select * from public.claim_own_learning_subscription_plan_provisioning($1)', [retryDraft.rows[0].plan_id]);
     await db.exec('set role service_role');
@@ -203,7 +226,7 @@ async function main() {
       'needs_reconciliation', 'a stale claim must be parked, not automatically retried');
 
     await assert.rejects(db.query(`select public.create_own_learning_subscription_plan(
-      'Invalid owner course', null, 1000, array[6]::bigint[])`), /Every selected course must be your published public paid NGN course/);
+      'Invalid owner course', null, 1000, array[6]::bigint[])`), /Every selected course must be your published paid NGN course/);
     await assert.rejects(db.query(`select public.create_own_learning_subscription_plan(
       'Mixed terms plan', null, 1000, array[1,7]::bigint[])`), /All courses in one plan must use the same active commercial terms/);
     await assert.rejects(db.query(`select public.create_own_learning_subscription_plan(

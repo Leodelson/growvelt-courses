@@ -1,5 +1,13 @@
 import "server-only";
 import { resolvePaystackConfiguration } from "@/app/lib/payments/paystack-config";
+import { isLearningSubscriptionTestLearnerAllowed } from "@/app/lib/subscriptions/test-learner-allowlist";
+
+export function canUsePrivateTestSubscriptionCheckout(email: string | null | undefined) {
+  return isLearningSubscriptionTestLearnerAllowed(
+    email,
+    process.env.GROWVELT_LEARNING_SUBSCRIPTION_TEST_LEARNER_EMAILS,
+  );
+}
 
 export function areLearningSubscriptionPlansEnabled() {
   return process.env.GROWVELT_LEARNING_SUBSCRIPTIONS_ENABLED === "true";
