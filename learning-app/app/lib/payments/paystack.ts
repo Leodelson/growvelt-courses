@@ -112,6 +112,43 @@ export async function verifyPaystackTestTransaction(reference: string): Promise<
   return { reference, transactionId, ...amounts, currency: "NGN", domain: "test", status: data.status, paidAt: typeof data.paid_at === "string" ? data.paid_at : null };
 }
 
+export type VerifiedPaystackTestSubscriptionTransaction = VerifiedPaystackTestTransaction & {
+  subscriptionId: string | null;
+  invoiceId: string | null;
+};
+
+/**
+ * Verifies only Test Mode subscription charge references. Unlike learner
+ * course purchases, renewal references are provider-generated and do not use
+ * the GL- prefix. This adapter never selects Live credentials.
+ */
+export async function verifyPaystackTestSubscriptionTransaction(reference: string): Promise<VerifiedPaystackTestSubscriptionTransaction> {
+  if (!/^[A-Za-z0-9][A-Za-z0-9_-]{0,99}$/.test(reference)) throw new Error("Invalid Test subscription payment reference.");
+  const { secretKey } = getPaystackTestConfig(false);
+  const response = await fetch(`https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`, {
+    headers: { Authorization: `Bearer ${secretKey}` }, cache: "no-store", signal: AbortSignal.timeout(15000),
+  });
+  const result = await response.json().catch(() => null) as { status?: unknown; message?: unknown; data?: Record<string, unknown> } | null;
+  const data = result?.data;
+  const transactionId = typeof data?.id === "number" && Number.isSafeInteger(data.id) ? String(data.id)
+    : typeof data?.id === "string" && /^\d+$/.test(data.id) ? data.id : "";
+  const amounts = data ? parsePaystackVerifiedAmounts(data) : null;
+  const metadata = data?.metadata && typeof data.metadata === "object" && !Array.isArray(data.metadata)
+    ? data.metadata as Record<string, unknown>
+    : null;
+  const subscriptionId = typeof metadata?.subscription_id === "string" ? metadata.subscription_id : null;
+  const invoiceId = typeof metadata?.invoice_id === "string" ? metadata.invoice_id : null;
+  if (!response.ok || result?.status !== true || !data || data.reference !== reference || !transactionId || !amounts
+    || data.currency !== "NGN" || data.domain !== "test" || typeof data.status !== "string") {
+    throw new Error(typeof result?.message === "string" ? result.message : "Paystack Test subscription verification failed.");
+  }
+  return {
+    reference, transactionId, ...amounts, currency: "NGN", domain: "test", status: data.status,
+    paidAt: typeof data.paid_at === "string" ? data.paid_at : null,
+    subscriptionId, invoiceId,
+  };
+}
+
 export async function verifyPaystackCompanyTransaction(reference: string, expectedDomain: PaystackDomain) {
   if (!/^CP-[A-F0-9]{32}$/.test(reference)) throw new Error("Invalid company payment reference.");
   const config = getPaystackConfig(false);

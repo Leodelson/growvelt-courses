@@ -1,8 +1,257 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/app/lib/supabase/admin";
-import { digestPaystackPayload, getPaystackConfig, isPaystackCompanyReversalEvent, parsePaystackChargeSuccess, parsePaystackCompanyChargeSuccess, parsePaystackCompanyReversalNotice, parsePaystackDisputeEvent, parsePaystackRefundEvent, parsePaystackTestTransferEvent, verifyPaystackCompanyTransaction, verifyPaystackSignature, verifyPaystackTransaction } from "@/app/lib/payments/paystack";
+import { digestPaystackPayload, getPaystackConfig, isPaystackCompanyReversalEvent, parsePaystackChargeSuccess, parsePaystackCompanyChargeSuccess, parsePaystackCompanyReversalNotice, parsePaystackDisputeEvent, parsePaystackRefundEvent, parsePaystackTestTransferEvent, verifyPaystackCompanyTransaction, verifyPaystackSignature, verifyPaystackTestSubscriptionTransaction, verifyPaystackTransaction } from "@/app/lib/payments/paystack";
 import { getOrderNotificationContext, paymentOperationsRecipient, sendPaymentNotification } from "@/app/lib/email/payment-notifications";
 import { recordCompanyPaymentManualReview } from "@/app/lib/company/payment-exceptions";
+import { parsePaystackTestSubscriptionWebhook, type PaystackTestSubscriptionWebhookEvent } from "@/app/lib/payments/paystack-subscription-core";
+import { canProcessTestSubscriptionEvents } from "@/app/lib/subscriptions/feature";
+
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function record(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : null;
+}
+
+function subscriptionCheckoutMetadata(payload: unknown) {
+  const data = record(record(payload)?.data);
+  const metadata = record(data?.metadata);
+  if (metadata?.product !== "growvelt_learning_subscription" || metadata.environment !== "test") return null;
+  const subscriptionId = typeof metadata.subscription_id === "string" && UUID_PATTERN.test(metadata.subscription_id)
+    ? metadata.subscription_id : null;
+  const invoiceId = typeof metadata.invoice_id === "string" && UUID_PATTERN.test(metadata.invoice_id)
+    ? metadata.invoice_id : null;
+  return { subscriptionId, invoiceId };
+}
+
+function subscriptionEventPayload(event: PaystackTestSubscriptionWebhookEvent, verified: Awaited<ReturnType<typeof verifyPaystackTestSubscriptionTransaction>> | null) {
+  switch (event.kind) {
+    case "initial_charge_success":
+      return {
+        status: "success", reference: event.reference, transaction_id: event.transactionId,
+        subscription_code: event.subscriptionCode, amount_minor: verified?.requestedAmountMinor ?? event.amountMinor,
+        currency: "NGN", paid_at: verified?.paidAt ?? null,
+      };
+    case "invoice_create":
+    case "invoice_payment_failed":
+    case "invoice_update":
+      return {
+        invoice_code: event.invoiceCode, subscription_code: event.subscriptionCode, amount_minor: event.amountMinor,
+        currency: event.currency, status: event.status, period_starts_at: event.periodStartsAt,
+        paid_through: event.paidThrough, transaction_reference: event.transactionReference,
+        ...(verified ? { paid_at: verified.paidAt, transaction_id: verified.transactionId } : {}),
+      };
+    case "subscription_create":
+    case "subscription_not_renew":
+    case "subscription_disable":
+      return {
+        subscription_code: event.subscriptionCode, status: event.status,
+        plan_code: event.planCode, customer_code: event.customerCode,
+      };
+    case "renewal_charge_success":
+      return null;
+  }
+}
+
+async function handleTestSubscriptionWebhook(event: PaystackTestSubscriptionWebhookEvent, payload: unknown, rawBody: string) {
+  // Renewal invoice events carry the invoice code and are the authoritative
+  // join for recurring payments. A bare charge event is not enough to choose
+  // a local billing period, so acknowledge it without mutating state.
+  if (event.kind === "renewal_charge_success") return NextResponse.json({ received: true, processing: "awaiting_invoice_event" });
+
+  const admin = createAdminClient();
+  let subscriptionId: string | null = null;
+  let invoiceId: string | null = null;
+  let subscriptionCode: string | null = null;
+  const checkoutMetadata = subscriptionCheckoutMetadata(payload);
+
+  if (event.kind === "initial_charge_success") {
+    if (!checkoutMetadata?.subscriptionId || !checkoutMetadata.invoiceId) {
+      return NextResponse.json({ code: "subscription_checkout_correlation_missing" }, { status: 503 });
+    }
+    subscriptionId = checkoutMetadata.subscriptionId;
+    invoiceId = checkoutMetadata.invoiceId;
+    subscriptionCode = event.subscriptionCode;
+  } else if (event.kind === "subscription_create" && checkoutMetadata?.subscriptionId) {
+    subscriptionId = checkoutMetadata.subscriptionId;
+    subscriptionCode = event.subscriptionCode;
+  } else {
+    subscriptionCode = event.subscriptionCode;
+  }
+
+  let subscriptionQuery = admin.from("learning_subscriptions")
+    .select("id,paystack_subscription_code,payment_domain");
+  subscriptionQuery = subscriptionId
+    ? subscriptionQuery.eq("id", subscriptionId)
+    : subscriptionQuery.eq("paystack_subscription_code", subscriptionCode ?? "");
+  const { data: matchedSubscription, error: subscriptionError } = await subscriptionQuery.maybeSingle();
+  if (subscriptionError) {
+    console.error("subscription.webhook_correlation_lookup_failed", { eventType: event.kind, code: subscriptionError.code });
+    return NextResponse.json({ code: "subscription_correlation_deferred" }, { status: 500 });
+  }
+  let subscription = matchedSubscription;
+  if (!subscription && event.kind === "subscription_create" && !checkoutMetadata?.subscriptionId
+    && event.planCode && event.customerEmail) {
+    const { data: plan, error: planError } = await admin.from("learning_subscription_plans")
+      .select("id").eq("paystack_plan_code", event.planCode).maybeSingle();
+    if (planError) {
+      console.error("subscription.webhook_plan_correlation_failed", { code: planError.code });
+      return NextResponse.json({ code: "subscription_correlation_deferred" }, { status: 500 });
+    }
+    if (plan) {
+      const { data: profiles, error: profileError } = await admin.from("profiles")
+        .select("id").eq("email", event.customerEmail).limit(2);
+      if (profileError) {
+        console.error("subscription.webhook_customer_correlation_failed", { code: profileError.code });
+        return NextResponse.json({ code: "subscription_correlation_deferred" }, { status: 500 });
+      }
+      if (profiles?.length === 1) {
+        const { data: candidates, error: candidateError } = await admin.from("learning_subscriptions")
+          .select("id,paystack_subscription_code,payment_domain")
+          .eq("plan_id", plan.id).eq("learner_id", profiles[0].id).eq("payment_domain", "test")
+          .is("paystack_subscription_code", null).limit(2);
+        if (candidateError) {
+          console.error("subscription.webhook_customer_correlation_failed", { code: candidateError.code });
+          return NextResponse.json({ code: "subscription_correlation_deferred" }, { status: 500 });
+        }
+        if (candidates?.length === 1) subscription = candidates[0];
+      }
+    }
+  }
+  if (!subscription || subscription.payment_domain !== "test") {
+    return NextResponse.json({ code: "subscription_correlation_deferred" }, { status: 503 });
+  }
+  subscriptionId = subscription.id as string;
+  if (subscriptionCode && subscription.paystack_subscription_code
+    && subscription.paystack_subscription_code !== subscriptionCode) {
+    return NextResponse.json({ code: "subscription_correlation_conflict" }, { status: 409 });
+  }
+
+  if (invoiceId) {
+    const { data: invoice, error: invoiceError } = await admin.from("learning_subscription_invoices")
+      .select("id,subscription_id,provider_reference")
+      .eq("id", invoiceId).eq("subscription_id", subscriptionId).maybeSingle();
+    if (invoiceError || !invoice || invoice.provider_reference !== (event.kind === "initial_charge_success" ? event.reference : null)) {
+      console.error("subscription.webhook_invoice_correlation_failed", { eventType: event.kind, code: invoiceError?.code });
+      return NextResponse.json({ code: "subscription_invoice_correlation_deferred" }, { status: 503 });
+    }
+  }
+
+  if (event.kind === "subscription_create" && !event.planCode) {
+    return NextResponse.json({ code: "subscription_plan_correlation_missing" }, { status: 503 });
+  }
+  if (event.kind === "invoice_create" && !["success", "pending", "attention", "failed"].includes(event.status)) {
+    return NextResponse.json({ received: true, processing: "unsupported_invoice_status" });
+  }
+
+  let verified: Awaited<ReturnType<typeof verifyPaystackTestSubscriptionTransaction>> | null = null;
+  let verifiedReference: string | null = null;
+  if (event.kind === "initial_charge_success") verifiedReference = event.reference;
+  if (event.kind === "invoice_update" && ["success", "paid"].includes(event.status)) {
+    verifiedReference = event.transactionReference;
+    if (!verifiedReference) return NextResponse.json({ code: "subscription_payment_reference_missing" }, { status: 503 });
+  }
+  if (verifiedReference) {
+    try {
+      verified = await verifyPaystackTestSubscriptionTransaction(verifiedReference);
+      const expectedAmount = event.kind === "initial_charge_success" ? event.amountMinor : event.kind === "invoice_update" ? event.amountMinor : null;
+      if (verified.status !== "success" || verified.reference !== verifiedReference
+        || (event.kind === "initial_charge_success" && verified.transactionId !== event.transactionId)
+        || (expectedAmount !== null && verified.requestedAmountMinor !== expectedAmount)
+        || (event.kind === "initial_charge_success" && verified.amountMinor !== event.amountMinor)
+        || (event.kind === "initial_charge_success" && verified.subscriptionId && verified.subscriptionId !== subscriptionId)
+        || (event.kind === "initial_charge_success" && verified.invoiceId && verified.invoiceId !== invoiceId)) {
+        throw new Error("Paystack transaction did not match the signed subscription event and local invoice.");
+      }
+    } catch (error) {
+      console.error("subscription.webhook_verification_deferred", { eventType: event.kind, message: error instanceof Error ? error.message : "Verification failed" });
+      return NextResponse.json({ code: "subscription_verification_deferred" }, { status: 500 });
+    }
+  }
+
+  // Pending invoice updates are not final payment evidence and the lifecycle
+  // database processor treats only success/paid as a payment confirmation.
+  if (event.kind === "invoice_update" && !["success", "paid", "failed", "attention"].includes(event.status)) {
+    return NextResponse.json({ received: true, processing: "non_terminal_invoice_update" });
+  }
+
+  const eventType = event.kind === "initial_charge_success" ? "charge.success"
+    : event.kind === "invoice_create" ? "invoice.create"
+      : event.kind === "invoice_payment_failed" ? "invoice.payment_failed"
+        : event.kind === "invoice_update" ? "invoice.update"
+          : event.kind === "subscription_create" ? "subscription.create"
+            : event.kind === "subscription_not_renew" ? "subscription.not_renew"
+              : "subscription.disable";
+  const sanitizedPayload = subscriptionEventPayload(event, verified);
+  if (!sanitizedPayload) return NextResponse.json({ received: true, processing: "ignored" });
+
+  const { data: received, error: receiveError } = await admin.rpc("receive_learning_subscription_provider_event", {
+    p_provider_event_id: event.eventId,
+    p_event_type: eventType,
+    p_payload_digest: digestPaystackPayload(rawBody),
+    p_sanitized_payload: sanitizedPayload,
+    p_subscription_id: subscriptionId,
+    p_invoice_id: invoiceId,
+    p_payment_domain: "test",
+  });
+  const receipt = (received as Array<{ event_id?: number; outcome?: string }> | null)?.[0];
+  if (receiveError || !receipt?.event_id) {
+    console.error("subscription.webhook_receive_failed", { eventType, code: receiveError?.code });
+    return NextResponse.json({ code: "subscription_receipt_deferred" }, { status: 500 });
+  }
+  if (receipt.outcome === "duplicate_conflict") {
+    return NextResponse.json({ code: "subscription_receipt_conflict" }, { status: 409 });
+  }
+  const verifiedTransaction = verified ? {
+    reference: verified.reference, transaction_id: verified.transactionId,
+    requested_amount_minor: verified.requestedAmountMinor, status: verified.status,
+    domain: verified.domain, currency: verified.currency, paid_at: verified.paidAt,
+  } : null;
+  const { data: processed, error: processError } = await admin.rpc("process_learning_subscription_provider_event", {
+    p_event_id: receipt.event_id, p_verified_transaction: verifiedTransaction,
+  });
+  if (processError) {
+    console.error("subscription.webhook_processing_deferred", { eventType, eventId: receipt.event_id, code: processError.code });
+    return NextResponse.json({ received: true, processing: "deferred" }, { status: 500 });
+  }
+
+  // A verified initial charge may already disclose the provider subscription
+  // code. Save that mapping so later renewal and cancellation events can be
+  // correlated. A retry safely retries this idempotent null-to-value update.
+  if (event.kind === "initial_charge_success" && event.subscriptionCode
+    && subscription.paystack_subscription_code !== event.subscriptionCode) {
+    const { data: linked, error: linkError } = await admin.from("learning_subscriptions")
+      .update({ paystack_subscription_code: event.subscriptionCode })
+      .eq("id", subscriptionId).is("paystack_subscription_code", null)
+      .select("id").maybeSingle();
+    if (linkError) {
+      console.error("subscription.webhook_provider_mapping_deferred", { eventId: receipt.event_id, code: linkError.code });
+      return NextResponse.json({ received: true, processing: "mapping_deferred" }, { status: 500 });
+    }
+    if (!linked) {
+      const { data: current, error: currentError } = await admin.from("learning_subscriptions")
+        .select("paystack_subscription_code").eq("id", subscriptionId).maybeSingle();
+      if (currentError || current?.paystack_subscription_code !== event.subscriptionCode) {
+        return NextResponse.json({ code: "subscription_provider_mapping_conflict" }, { status: 409 });
+      }
+    }
+  }
+
+  if (event.kind === "initial_charge_success" && verified && invoiceId) {
+    const { error: periodError } = await admin.rpc("finalize_learning_test_subscription_initial_period", {
+      p_subscription_id: subscriptionId,
+      p_invoice_id: invoiceId,
+      p_provider_transaction_id: verified.transactionId,
+      p_paid_at: verified.paidAt,
+    });
+    if (periodError) {
+      console.error("subscription.initial_period_finalization_deferred", { reference: event.reference, code: periodError.code });
+      return NextResponse.json({ code: "subscription_period_finalization_deferred" }, { status: 500 });
+    }
+  }
+
+  const outcome = (processed as Array<{ outcome?: string }> | null)?.[0]?.outcome ?? "processed";
+  return NextResponse.json({ received: true, processing: outcome });
+}
 
 export async function POST(request: Request) {
   let config; try { config = getPaystackConfig(false); } catch { return NextResponse.json({ code: "not_configured" }, { status: 503 }); }
@@ -14,6 +263,10 @@ export async function POST(request: Request) {
     payload = JSON.parse(rawBody) as unknown;
   } catch {
     return NextResponse.json({ code: "invalid_payload" }, { status: 400 });
+  }
+  if (config.mode === "test" && canProcessTestSubscriptionEvents()) {
+    const subscriptionEvent = parsePaystackTestSubscriptionWebhook(payload);
+    if (subscriptionEvent) return handleTestSubscriptionWebhook(subscriptionEvent, payload, rawBody);
   }
   const transfer = config.mode === "test" ? parsePaystackTestTransferEvent(payload) : null;
   if (transfer) {

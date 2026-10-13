@@ -5,6 +5,7 @@ import { isApprovedInstructor } from "@/app/lib/instructor/authorization";
 import { createClient } from "@/app/lib/supabase/server";
 import { getOwnLearningProfile } from "@/app/lib/learning-profile";
 import { getOwnCompanyWorkspaces } from "@/app/lib/company/workspaces";
+import { areLearningSubscriptionPlansEnabled } from "@/app/lib/subscriptions/feature";
 
 export async function LearningShell({ children }: { children: React.ReactNode }) {
   const cookieStore = await cookies();
@@ -14,5 +15,5 @@ export async function LearningShell({ children }: { children: React.ReactNode })
   const displayName = profile?.fullName ?? (typeof user?.user_metadata?.full_name === "string" ? user.user_metadata.full_name : null);
   const initialSidebarCollapsed = cookieStore.get("growvelt-learning-sidebar-collapsed")?.value === "true";
   const isCompany = companyWorkspaces.some((workspace) => workspace.membership_status === "active" && workspace.workspace_status === "active");
-  return <LearningShellNavigation initialSidebarCollapsed={initialSidebarCollapsed} isInstructor={isInstructor} isAdmin={isAdmin} isCompany={isCompany} userEmail={email} displayName={displayName} avatarUrl={profile?.avatarUrl ?? null}>{children}</LearningShellNavigation>;
+  return <LearningShellNavigation initialSidebarCollapsed={initialSidebarCollapsed} isInstructor={isInstructor} isAdmin={isAdmin} isCompany={isCompany} showSubscriptionPlans={areLearningSubscriptionPlansEnabled()} userEmail={email} displayName={displayName} avatarUrl={profile?.avatarUrl ?? null}>{children}</LearningShellNavigation>;
 }

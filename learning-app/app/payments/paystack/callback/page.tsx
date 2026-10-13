@@ -4,8 +4,10 @@ import { LearnerPaymentReturnCheck } from "@/app/components/payments/learner-pay
 import { getCompanyPaymentForManager } from "@/app/lib/company/payment-status";
 import { resolvePaystackCallbackReference, type PaystackCallbackSearchParams } from "@/app/lib/payments/paystack-callback";
 import { createClient } from "@/app/lib/supabase/server";
+import { SubscriptionPaymentReturnCheck } from "@/app/components/learning/subscription-payment-return-check";
 
 type PaymentStatus = { order_status: string; payment_status: string; course_slug: string | null; entitlement_active: boolean };
+type SubscriptionPaymentStatus = { invoice_status: string; plan_name: string; paid_through: string; subscription_status: string; access_active: boolean; course_titles: string[] };
 export const metadata = { title: "Payment status" };
 export const dynamic = "force-dynamic";
 
@@ -13,6 +15,21 @@ export default async function PaystackCallbackPage({ searchParams }: { searchPar
   const reference = resolvePaystackCallbackReference(await searchParams);
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
+  if (reference?.startsWith("GS-")) {
+    const { data } = user ? await supabase.rpc("get_own_learning_subscription_payment_status", { p_reference: reference }) : { data: null };
+    const status = (data as SubscriptionPaymentStatus[] | null)?.[0];
+    const complete = status?.access_active === true;
+    return <main className="payment-callback-page"><section className="auth-card payment-callback-card">
+      <p className="eyebrow">SUBSCRIPTION PAYMENT STATUS</p>
+      <h1>{complete ? "Your subscription access is ready." : "We’re confirming your subscription payment."}</h1>
+      <p>{!user ? "Sign in to view this subscription payment." : complete ? `${status?.plan_name} is active through ${new Date(status.paid_through).toLocaleDateString("en-NG")}. Included courses are available in My Learning.` : status ? "We’ll keep checking for Paystack’s signed, independently verified confirmation. Please don’t pay again." : "We couldn’t find this subscription payment for the signed-in account."}</p>
+      {user && status && !complete ? <SubscriptionPaymentReturnCheck key={reference} complete={complete} reference={reference} /> : null}
+      <div className="auth-actions">
+        {!user ? <Link className="button button-primary" href={`/sign-in?next=${encodeURIComponent(`/payments/paystack/callback?reference=${reference}`)}`}>Sign in</Link> : null}
+        {user ? <Link className="button button-secondary" href="/dashboard/my-learning">My Learning</Link> : null}
+      </div>
+    </section></main>;
+  }
   if (reference?.startsWith("CP-")) {
     const purchase = user ? await getCompanyPaymentForManager(reference, user.id) : null;
     const complete = purchase?.status === "paid";
