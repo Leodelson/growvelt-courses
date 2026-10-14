@@ -28,40 +28,40 @@ export async function GET(request: Request) {
   try { admin = createAdminClient(); } catch {
     return unavailable(request);
   }
-  const { data: subscription, error } = await admin.from("learning_subscriptions")
-    .select("id,plan_id,paystack_subscription_code,payment_domain,status")
-    .eq("id", subscriptionId)
-    .eq("learner_id", user.id)
-    .maybeSingle();
+  const { data: managementRows, error } = await admin.rpc("get_own_learning_subscription_management_details", {
+    p_learner_id: user.id,
+    p_subscription_id: subscriptionId,
+  });
   if (error) {
     console.error("subscription.management_lookup_failed", { code: error.code });
     return unavailable(request);
   }
+  const subscription = Array.isArray(managementRows) ? managementRows[0] as {
+    subscription_code: string | null;
+    payment_domain: string;
+    subscription_status: string;
+    plan_code: string | null;
+    amount_minor: number | string;
+    currency: string;
+    billing_interval: string;
+  } | undefined : undefined;
   if (!subscription) return NextResponse.json({ code: "not_found" }, { status: 404 });
   if (subscription.payment_domain !== "test"
-    || !["active", "attention"].includes(subscription.status)) {
+    || !["active", "attention"].includes(subscription.subscription_status)) {
     return unavailable(request);
   }
 
   try {
-    let subscriptionCode = typeof subscription.paystack_subscription_code === "string"
-      ? subscription.paystack_subscription_code.trim()
+    let subscriptionCode = typeof subscription.subscription_code === "string"
+      ? subscription.subscription_code.trim()
       : "";
     if (!subscriptionCode) {
-      if (!user.email) return unavailable(request);
-      const { data: plan, error: planError } = await admin.from("learning_subscription_plans")
-        .select("paystack_plan_code,amount_minor,currency,billing_interval")
-        .eq("id", subscription.plan_id)
-        .maybeSingle();
-      if (planError || plan?.currency !== "NGN" || plan.billing_interval !== "monthly"
-        || typeof plan.paystack_plan_code !== "string") {
-        if (planError) console.error("subscription.management_plan_lookup_failed", { code: planError.code });
-        return unavailable(request);
-      }
+      if (!user.email || subscription.currency !== "NGN" || subscription.billing_interval !== "monthly"
+        || typeof subscription.plan_code !== "string") return unavailable(request);
       subscriptionCode = await findPaystackTestSubscriptionCode({
         email: user.email,
-        planCode: plan.paystack_plan_code,
-        amountMinor: plan.amount_minor,
+        planCode: subscription.plan_code,
+        amountMinor: Number(subscription.amount_minor),
       });
     }
     const managementUrl = await getPaystackTestSubscriptionManagementLink(subscriptionCode);

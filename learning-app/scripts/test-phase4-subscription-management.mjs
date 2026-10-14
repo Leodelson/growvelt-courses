@@ -50,7 +50,11 @@ assert.equal(parsePaystackTestSubscriptionListPage({ ...subscriptionPage, status
 
 const route = await readFile(new URL("../app/api/payments/paystack/subscriptions/manage/route.ts", import.meta.url), "utf8");
 assert.match(route, /supabase\.auth\.getUser\(\)/);
-assert.match(route, /\.eq\("learner_id", user\.id\)/);
+assert.match(route, /admin\.rpc\("get_own_learning_subscription_management_details"/);
+assert.match(route, /p_learner_id:\s*user\.id/);
+assert.match(route, /p_subscription_id:\s*subscriptionId/);
+assert.doesNotMatch(route, /admin\.from\("learning_subscriptions"\)|admin\.from\("learning_subscription_plans"\)/,
+  "management must use the narrow service-only RPC because direct ledger-table access is revoked");
 assert.match(route, /subscription\.payment_domain !== "test"/);
 assert.match(route, /\["active", "attention"\]/);
 assert.match(route, /getPaystackTestSubscriptionManagementLink/);
@@ -97,5 +101,16 @@ assert.match(migration, /revoke all on function public\.list_own_learning_subscr
 assert.match(migration, /grant execute on function public\.list_own_learning_subscriptions\(\)[\s\S]*to authenticated/i);
 assert.doesNotMatch(migration, /returns table\([^)]*paystack_subscription_code/i,
   "the learner-facing projection must not expose provider subscription identifiers");
+
+const managementMigration = await readFile(
+  new URL("../supabase/migrations/20261032000000_add_service_only_subscription_management_lookup.sql", import.meta.url),
+  "utf8",
+);
+assert.match(managementMigration, /security definer/i);
+assert.match(managementMigration, /set search_path to ''/i);
+assert.match(managementMigration, /subscription\.id = p_subscription_id/i);
+assert.match(managementMigration, /subscription\.learner_id = p_learner_id/i);
+assert.match(managementMigration, /revoke all on function public\.get_own_learning_subscription_management_details\(uuid, uuid\)[\s\S]*from public, anon, authenticated, service_role/i);
+assert.match(managementMigration, /grant execute on function public\.get_own_learning_subscription_management_details\(uuid, uuid\)[\s\S]*to service_role, postgres/i);
 
 console.log("PASS learner subscription ownership, exact Test Mode provider matching, safe Paystack management links, and responsive page/navigation layout");
