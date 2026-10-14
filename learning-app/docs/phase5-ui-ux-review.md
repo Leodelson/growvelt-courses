@@ -2,7 +2,7 @@
 
 ## First review: empty and sparse cards
 
-Status: the owner has viewed the first slice and explicitly authorized pushing the six dashboard empty-state integrations on 14 October 2026. These integrations are being released separately from the public redesign; production readiness is tracked separately. This does not complete platform-wide modernization.
+Status: the owner viewed the first slice and explicitly authorized pushing the six dashboard empty-state integrations on 14 October 2026. They are pushed to `main` in `ef2d176`, separately from the public redesign; Vercel readiness and final live review remain to be confirmed. This does not complete platform-wide modernization.
 
 ## Dashboard checkpoint — resume here
 
@@ -35,3 +35,7 @@ The existing data queries, empty/data conditions, error states, authorization, f
 - The owner has viewed these examples and authorized their isolated push. The next public-page group starts with Frequently Asked Questions, then About, Contact/support and partnerships, followed by authentication presentation. Preserve working forms and policies. Broader dashboard shell/populated cards and role-specific groups remain pending; resume from the explicit six-route checkpoint above.
 
 Phase 6 launch hardening and the earlier live-commerce operational gates remain separately recorded in the roadmap checkpoint.
+
+## Next public page — FAQ
+
+The owner approved the Frequently Asked Questions refresh and requested its separate push on 14 October. See [the public support-page checkpoint](phase5-public-support-pages.md) for its exact scope, tests and remaining visual checks. About, Contact/support and partnerships follow; notifications are explicitly excluded. Authentication presentation and broader dashboard work remain later work. The FAQ work is not part of dashboard commit `ef2d176`.
