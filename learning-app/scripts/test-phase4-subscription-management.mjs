@@ -66,6 +66,8 @@ assert.doesNotMatch(route, /\.update\(|\.insert\(|\.delete\(/,
 const page = await readFile(new URL("../app/dashboard/subscriptions/page.tsx", import.meta.url), "utf8");
 assert.match(page, /className=\{`back-link \$\{styles\.back\}`\}[\s\S]*?href="\/dashboard\/my-learning"[\s\S]*?<header/,
   "the Back to My Learning link belongs above the subscription page header");
+assert.match(page, /SubscriptionManagementNotice/,
+  "the transient management error should be handled by the URL-cleaning notice");
 assert.match(page, /<div className=\{styles\.footer\}>\{text\.end\}<\/div>/);
 assert.doesNotMatch(page, /styles\.footer[\s\S]{0,160}href="\/dashboard\/my-learning"/,
   "the footer should not contain the Back to My Learning link");
@@ -112,5 +114,10 @@ assert.match(managementMigration, /subscription\.id = p_subscription_id/i);
 assert.match(managementMigration, /subscription\.learner_id = p_learner_id/i);
 assert.match(managementMigration, /revoke all on function public\.get_own_learning_subscription_management_details\(uuid, uuid\)[\s\S]*from public, anon, authenticated, service_role/i);
 assert.match(managementMigration, /grant execute on function public\.get_own_learning_subscription_management_details\(uuid, uuid\)[\s\S]*to service_role, postgres/i);
+
+const notice = await readFile(new URL("../app/components/learning/subscription-management-notice.tsx", import.meta.url), "utf8");
+assert.match(notice, /searchParams\.delete\("management"\)/);
+assert.match(notice, /router\.replace\(/);
+assert.match(notice, /setTimeout\(\(\) => setVisible\(false\), 8000\)/);
 
 console.log("PASS learner subscription ownership, exact Test Mode provider matching, safe Paystack management links, and responsive page/navigation layout");

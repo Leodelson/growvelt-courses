@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getRequestLocale } from "@/app/lib/i18n-server";
 import { listOwnLearningSubscriptions } from "@/app/lib/learning/subscriptions";
 import { LearningIcon } from "@/app/components/learning-icon";
+import { SubscriptionManagementNotice } from "@/app/components/learning/subscription-management-notice";
 import styles from "@/app/components/learning/subscriptions.module.css";
 
 export const metadata = { title: "My subscriptions" };
@@ -54,7 +55,11 @@ export default async function LearnerSubscriptionsPage({ searchParams }: { searc
       <h1 id="learner-subscriptions-title">{text.title}</h1>
       <p>{text.intro}</p>
     </header>
-    {params.management === "unavailable" && <p className={styles.error} role="status">{text.error}</p>}
+    <SubscriptionManagementNotice
+      message={text.error}
+      className={styles.error}
+      show={params.management === "unavailable"}
+    />
     {subscriptions.length ? <div className={styles.list}>{subscriptions.map((subscription) => {
       const status = text[subscription.subscription_status];
       const paidThrough = formatDate(subscription.paid_through);
