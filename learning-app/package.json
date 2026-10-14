@@ -72,6 +72,8 @@
     "test:phase4:coupon-migrations:full-schema:local": "node scripts/test-phase4-coupon-migrations-full-schema-local.mjs",
     "test:phase4:coupon-concurrency:local": "node scripts/test-phase4-coupon-concurrency-local.mjs",
     "test:phase4:coupon-commercial-regression:local": "node scripts/test-phase4-coupon-commercial-regression-local.mjs",
+    "test:phase4:enterprise-contract-register": "node scripts/test-phase4-enterprise-contract-register.mjs",
+    "test:phase4:enterprise-contract-register:db": "node scripts/test-phase4-enterprise-contract-register-db.cjs",
     "test:company-learning:ledger-schema": "node scripts/test-phase3c-company-ledger-schema.cjs",
     "test:company-learning:ledger:local": "node scripts/test-phase3c-company-ledger-local.cjs",
     "test:company-learning:settlement-evidence": "node --experimental-strip-types scripts/test-phase3c-company-settlement-evidence.mjs",

@@ -13,6 +13,9 @@
 .form input, .form select, .form textarea { width: 100%; min-width: 0; padding: 11px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--canvas); color: var(--ink); font: inherit; }
 .form textarea { resize: vertical; }
 .form small { color: var(--muted); font-weight: 400; line-height: 1.45; }
+.attestation { grid-column: 1 / -1; display: flex !important; grid-template-columns: auto 1fr; align-items: start; gap: 10px !important; font-weight: 500 !important; line-height: 1.45; }
+.attestation input { width: 18px; min-width: 18px; height: 18px; margin: 2px 0 0; accent-color: var(--purple); }
+.attestation span { color: var(--ink); }
 .courseField { grid-column: 1 / -1; }
 .courseField select { min-height: 120px; }
 .form button { justify-self: start; }
