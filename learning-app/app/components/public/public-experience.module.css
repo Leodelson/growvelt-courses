@@ -1,0 +1,112 @@
+.publicPage { overflow: clip; background: var(--canvas); }
+.publicPage section[id] { scroll-margin-top: 150px; }
+.wrap { width: min(1240px, calc(100% - 64px)); margin-inline: auto; }
+.section { padding-block: clamp(48px, 6vw, 88px); }
+.eyebrow { display: flex; align-items: center; gap: 9px; margin: 0 0 18px; color: var(--purple); font-size: 10px; font-weight: 800; letter-spacing: .14em; line-height: 1.6; text-transform: uppercase; }
+.eyebrow > span { width: 7px; height: 7px; flex: 0 0 7px; border-radius: 50%; background: var(--orange); box-shadow: 0 0 0 4px color-mix(in srgb, var(--orange) 12%, transparent); }
+.hero { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); align-items: center; gap: clamp(32px, 5vw, 80px); padding-block: clamp(44px, 6vw, 84px); }
+.heroCopy { min-width: 0; }
+.heroCopy h1 { max-width: 640px; margin: 0 0 24px; color: var(--ink); font-size: clamp(40px, 4.7vw, 66px); font-weight: 700; letter-spacing: -.06em; line-height: 1.06; text-wrap: balance; }
+.heroCopy h1 > span { display: block; margin-top: 6px; color: var(--purple); }
+.lede { max-width: 520px; margin: 0; color: var(--muted); font-size: 17px; line-height: 1.75; }
+.heroActions { display: flex; align-items: center; flex-wrap: wrap; gap: 24px; margin-top: 30px; }
+.primary, .quiet { display: inline-flex; align-items: center; justify-content: center; gap: 12px; max-width: 100%; text-decoration: none; font-size: 14px; font-weight: 750; line-height: 1.45; }
+.primary { min-height: 50px; padding: 14px 22px; border: 1px solid transparent; border-radius: 12px; background: var(--purple); color: var(--surface); box-shadow: 0 7px 20px color-mix(in srgb, var(--purple) 18%, transparent); transition: transform .2s ease, background .2s ease; }
+.primary:hover { background: var(--purple-deep); transform: translateY(-2px); }
+.primary svg, .quiet svg { flex: 0 0 auto; }
+.quiet { justify-content: flex-start; min-height: 44px; color: var(--ink); }
+.quiet:hover { color: var(--purple); }
+.promises { display: flex; flex-wrap: wrap; gap: 12px 18px; margin: 30px 0 0; padding: 0; list-style: none; }
+.promises li { display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: 11px; }
+.promises svg { flex: 0 0 auto; color: var(--purple); }
+.heroVisual { position: relative; isolation: isolate; min-width: 0; margin: 0 0 0 14px; padding-bottom: 20px; }
+.heroPhoto { position: relative; min-height: clamp(380px, 39vw, 510px); overflow: hidden; border-radius: 100px 26px 100px 26px; background: var(--surface-muted); }
+.heroPhoto img { object-fit: cover; object-position: 44% center; }
+.heroPhoto::after { position: absolute; inset: 45% 0 0; background: linear-gradient(transparent, rgba(17, 7, 30, .75)); content: ""; }
+.photoAccent { position: absolute; z-index: -1; top: 24px; right: -14px; bottom: 6px; left: 14px; border: 1px solid color-mix(in srgb, var(--purple) 35%, var(--line)); border-radius: 100px 26px 100px 26px; }
+.heroVisual figcaption { position: absolute; right: 34px; bottom: 55px; left: 34px; display: grid; gap: 10px; color: #fff; }
+.heroVisual figcaption > span { color: rgba(255,255,255,.84); font-size: 10px; font-weight: 750; letter-spacing: .13em; line-height: 1.6; }
+.heroVisual figcaption strong { max-width: 340px; font-size: clamp(22px, 2.2vw, 30px); letter-spacing: -.035em; line-height: 1.2; text-wrap: balance; }
+.heroStamp { position: absolute; top: 30px; left: -28px; display: flex; align-items: center; gap: 10px; padding: 15px 18px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); color: var(--purple); box-shadow: var(--shadow); }
+.heroStamp span { color: var(--ink); font-size: 12px; font-weight: 750; line-height: 1.35; }
+.sectionHeading { display: flex; align-items: end; justify-content: space-between; gap: 30px; margin-bottom: 30px; }
+.sectionHeading > div { max-width: 780px; }
+.sectionHeading h2, .journey h2, .faq h2, .teachProcess h2, .teachBenefits h2 { margin: 0 0 14px; font-size: clamp(30px, 3.2vw, 44px); font-weight: 650; letter-spacing: -.05em; line-height: 1.15; text-wrap: balance; }
+.sectionHeading p:last-child { max-width: 670px; margin: 0; font-size: 15px; }
+.sectionHeading > a { flex: 0 0 auto; }
+.subjectGrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.subject { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 16px; min-height: 124px; padding: 25px 22px; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease; }
+.subject:hover { border-color: color-mix(in srgb, var(--purple) 40%, var(--line)); box-shadow: var(--shadow-sm); transform: translateY(-3px); }
+.subjectIcon { display: grid; width: 48px; height: 48px; place-items: center; border-radius: 14px; background: var(--purple-soft); color: var(--purple); }
+.subject:nth-child(3n + 2) .subjectIcon { color: var(--orange); background: color-mix(in srgb, var(--orange) 9%, var(--surface)); }
+.subject h3 { margin: 0 0 6px; font-size: 16px; font-weight: 750; letter-spacing: -.02em; line-height: 1.3; }
+.subject p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
+.subject > svg { color: var(--muted); }
+.journey { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: center; gap: clamp(30px, 6vw, 90px); margin-block: 22px; padding: clamp(30px, 5vw, 64px); border-radius: 32px; background: #231136; color: #fff; }
+.journey .eyebrow { color: #deb1fa; }
+.journey h2 { color: #fff; }
+.journey > div > p:last-child { max-width: 500px; margin: 0; color: #cfc4d9; font-size: 15px; line-height: 1.75; }
+.journey ol { display: grid; gap: 24px; margin: 0; padding: 0; list-style: none; }
+.journey li { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 18px; padding-bottom: 24px; border-bottom: 1px solid rgba(255,255,255,.14); }
+.journey li:last-child { padding-bottom: 0; border: 0; }
+.journey li > span { padding-top: 2px; color: #ffb545; font-size: 12px; font-weight: 750; }
+.journey h3 { margin: 0 0 8px; color: #fff; font-size: 19px; letter-spacing: -.02em; line-height: 1.25; }
+.journey li p { margin: 0; color: #cfc4d9; font-size: 13px; line-height: 1.7; }
+.pathGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+.path { display: flex; flex-direction: column; min-width: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 24px; background: var(--surface); }
+.pathPhoto { position: relative; height: 250px; background: var(--surface-muted); }
+.pathPhoto img { object-fit: cover; }
+.pathCopy { display: flex; flex: 1; flex-direction: column; align-items: start; padding: clamp(24px, 3vw, 34px); }
+.path h3 { margin: 0 0 14px; font-size: clamp(23px, 2.3vw, 30px); font-weight: 650; letter-spacing: -.035em; line-height: 1.25; text-wrap: balance; }
+.pathCopy > p:not(.eyebrow) { max-width: 500px; margin: 0 0 20px; font-size: 14px; line-height: 1.75; }
+.pathCopy > a { margin-top: auto; }
+.connections { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; margin-top: 28px; padding-top: 24px; border-top: 1px solid var(--line); }
+.connections p { margin: 0 0 4px; font-size: 13px; }
+.connections a { font-size: 13px; }
+.guides { padding-block: 14px; }
+.guides > details { padding: 20px 24px; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); }
+.guides summary { display: flex; align-items: center; gap: 12px; min-height: 32px; color: var(--ink); font-size: 16px; font-weight: 650; cursor: pointer; list-style: none; }
+.guides summary > span { margin-left: auto; color: var(--purple); font-size: 24px; }
+.guideGrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; margin-top: 24px; }
+.guideGrid a { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px; min-height: 70px; padding: 14px; border: 1px solid var(--line); border-radius: 12px; color: var(--ink); font-size: 13px; }
+.guideGrid a:hover { color: var(--purple); border-color: var(--purple); }
+.faq { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); align-items: start; gap: clamp(30px, 6vw, 100px); padding-bottom: 88px; }
+.faq > header > a { margin-top: 12px; font-size: 13px; }
+.faq details { border-bottom: 1px solid var(--line); }
+.faq summary { display: flex; align-items: center; justify-content: space-between; gap: 20px; min-height: 68px; padding-block: 20px; color: var(--ink); font-size: 16px; font-weight: 650; line-height: 1.5; list-style: none; cursor: pointer; }
+.faq summary > span { flex: 0 0 auto; color: var(--purple); font-size: 24px; font-weight: 400; }
+.faq summary::-webkit-details-marker, .guides summary::-webkit-details-marker { display: none; }
+.faq details[open] summary > span, .guides details[open] summary > span { transform: rotate(45deg); }
+.faq details p { margin: 0 0 22px; color: var(--muted); font-size: 14px; line-height: 1.8; }
+.courseShelf :global(.public-published-course-grid) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.courseShelf :global(.published-course-card) { display: flex; flex-direction: column; border-radius: 20px; }
+.courseShelf :global(.course-card-body) { display: flex; flex: 1; flex-direction: column; padding: 22px; }
+.courseShelf :global(.published-course-card h2) { margin-bottom: 12px; font-size: 24px; letter-spacing: -.035em; line-height: 1.25; }
+.courseShelf :global(.course-card-body > p) { display: -webkit-box; min-height: 0; overflow: hidden; -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
+.courseShelf :global(.course-meta) { flex-wrap: wrap; align-items: center; font-size: 10px; line-height: 1.5; }
+.courseShelf :global(.course-details) { margin-top: auto; padding-bottom: 16px; }
+.courseShelf :global(.course-details > span:last-child) { display: none; }
+.courseShelf :global(.course-card-footer) { margin-top: 10px; }
+.teachHero .heroPhoto { border-radius: 28px 100px 28px 100px; }
+.teachHero .heroPhoto img { object-position: center; }
+.teachBenefits { display: grid; gap: 28px; padding-block: 36px 70px; }
+.benefitGrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 26px; }
+.benefitGrid article { padding-top: 24px; border-top: 1px solid var(--line-strong); }
+.benefitGrid svg { margin-bottom: 18px; color: var(--purple); }
+.benefitGrid h3 { margin: 0 0 10px; font-size: 21px; letter-spacing: -.025em; line-height: 1.3; }
+.benefitGrid p { max-width: 350px; margin: 0; font-size: 14px; }
+.teachProcess { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: clamp(30px, 6vw, 90px); padding: clamp(28px, 5vw, 60px); border: 1px solid var(--line); border-radius: 28px; background: var(--surface); }
+.teachProcess ol { display: grid; gap: 22px; margin: 0; padding: 0; list-style: none; }
+.teachProcess li { display: grid; grid-template-columns: 42px minmax(0, 1fr); gap: 18px; padding-bottom: 22px; border-bottom: 1px solid var(--line); }
+.teachProcess li:last-child { padding-bottom: 0; border: 0; }
+.teachProcess li > span { display: grid; width: 38px; height: 38px; place-items: center; border-radius: 50%; background: var(--purple-soft); color: var(--purple); font-size: 12px; font-weight: 750; }
+.teachProcess h3 { margin: 0 0 10px; font-size: 20px; letter-spacing: -.03em; line-height: 1.3; }
+.teachProcess p { margin: 0; font-size: 14px; line-height: 1.75; }
+.rights { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 20px; align-items: start; margin-top: 34px; padding: 30px; border-radius: 22px; background: var(--purple-soft); }
+.rights > svg { margin-top: 2px; color: var(--purple); }
+.rights h2 { margin: 0 0 10px; font-size: 25px; letter-spacing: -.035em; line-height: 1.25; }
+.rights p:last-child { max-width: 920px; margin: 0; font-size: 14px; }
+@media (max-width: 1000px) { .subjectGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }.courseShelf :global(.public-published-course-grid) { grid-template-columns: repeat(2, minmax(0, 1fr)); }.heroCopy h1 { font-size: clamp(38px, 5vw, 56px); }.heroStamp { left: -14px; padding: 12px; }.promises { gap: 10px; }.heroActions { gap: 16px; } }
+@media (max-width: 780px) { .hero { grid-template-columns: 1fr; gap: 38px; }.heroCopy h1 { max-width: 680px; font-size: clamp(40px, 7vw, 58px); }.heroVisual { width: 100%; max-width: 620px; margin-inline: auto; }.heroPhoto { min-height: 380px; }.heroActions { gap: 22px; }.journey, .teachProcess, .faq { grid-template-columns: 1fr; }.sectionHeading { align-items: start; flex-direction: column; gap: 16px; }.benefitGrid { grid-template-columns: 1fr; gap: 22px; }.benefitGrid p { max-width: none; }.guideGrid { grid-template-columns: 1fr; } }
+@media (max-width: 620px) { .wrap { width: calc(100% - 32px); }.section { padding-block: 48px; }.hero { padding-block: 36px 28px; }.heroCopy h1 { font-size: clamp(36px, 9vw, 48px); }.eyebrow { font-size: 9px; letter-spacing: .1em; margin-bottom: 14px; }.lede { font-size: 15px; }.heroActions { align-items: start; gap: 10px 18px; }.primary { width: 100%; text-align: center; }.quiet { font-size: 13px; }.promises { margin-top: 22px; gap: 10px 16px; }.promises li { font-size: 10px; }.heroVisual { margin: 0; padding-bottom: 12px; }.heroPhoto, .teachHero .heroPhoto { min-height: 340px; border-radius: 60px 20px 60px 20px; }.photoAccent { display: none; }.heroVisual figcaption { right: 24px; bottom: 38px; left: 24px; }.heroVisual figcaption > span { font-size: 8px; }.heroStamp { top: 22px; left: 16px; padding: 10px 12px; border-radius: 12px; }.heroStamp svg { width: 20px; }.heroStamp span { font-size: 10px; }.subjectGrid { grid-template-columns: 1fr; gap: 10px; }.subject { min-height: 102px; padding: 20px; gap: 14px; }.subject h3 { font-size: 16px; }.sectionHeading h2, .journey h2, .faq h2, .teachProcess h2, .teachBenefits h2 { font-size: clamp(29px, 7vw, 36px); }.journey { width: calc(100% - 32px); padding: 28px 24px; border-radius: 24px; }.journey li { gap: 12px; }.pathGrid, .connections { grid-template-columns: 1fr; gap: 20px; }.pathPhoto { height: 220px; }.pathCopy { padding: 24px; }.guides > details { padding: 18px; }.guides summary { font-size: 14px; }.faq { gap: 28px; padding-bottom: 56px; }.faq summary { font-size: 15px; }.courseShelf :global(.public-published-course-grid) { grid-template-columns: 1fr; }.teachBenefits { padding-block: 24px 48px; }.teachProcess { padding: 26px 22px; border-radius: 22px; }.teachProcess li { gap: 12px; grid-template-columns: 38px minmax(0, 1fr); }.rights { margin-top: 24px; padding: 24px; gap: 14px; }.rights h2 { font-size: 23px; } }
+@media (prefers-reduced-motion: reduce) { .primary, .subject { transition: none; }.primary:hover, .subject:hover { transform: none; } }

@@ -8,12 +8,10 @@ import { LearningIcon } from "@/app/components/learning-icon";
 import { LearningMark } from "@/app/components/learning-mark";
 import { useLanguage } from "@/app/components/language-provider";
 import { languageOptions } from "@/app/lib/i18n";
+import { publicExperienceCopy } from "@/app/lib/public-experience-copy";
+import styles from "./public-header.module.css";
 
 const jobsHref = "https://www.growvelt.com";
-
-function AccountIcon() {
-  return <svg aria-hidden="true" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="3.5" /><path d="M4.5 20a7.5 7.5 0 0 1 15 0" /></svg>;
-}
 
 function useClientReady() {
   return useSyncExternalStore(() => () => undefined, () => true, () => false);
@@ -47,56 +45,79 @@ function PublicLanguageControl({ mobile = false }: { mobile?: boolean }) {
   </div>;
 }
 
-export function PublicHeader() {
-  const { t } = useLanguage();
+export function PublicHeader({ initialQuery = "" }: { initialQuery?: string }) {
+  const { t, locale } = useLanguage();
+  const copy = publicExperienceCopy[locale].nav;
   const [isOpen, setIsOpen] = useState(false);
   const clientReady = useClientReady();
+  const drawerRef = useRef<HTMLElement>(null);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
   const closeMenu = () => setIsOpen(false);
 
   useEffect(() => {
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") closeMenu();
+    if (!isOpen) return;
+    const menuButton = menuButtonRef.current;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    drawerRef.current?.querySelector<HTMLButtonElement>("button")?.focus();
+    const handleKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setIsOpen(false);
+      if (event.key !== "Tab") return;
+      const controls = Array.from(drawerRef.current?.querySelectorAll<HTMLElement>('a[href], button:not([disabled]), select, input') ?? []).filter((element) => element.getClientRects().length > 0);
+      const first = controls[0];
+      const last = controls.at(-1);
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
     };
-    window.addEventListener("keydown", closeOnEscape);
-    return () => window.removeEventListener("keydown", closeOnEscape);
-  }, []);
+    window.addEventListener("keydown", handleKey);
+    return () => { document.body.style.overflow = previousOverflow; window.removeEventListener("keydown", handleKey); menuButton?.focus(); };
+  }, [isOpen]);
 
   const navigation = <>
-    <Link href="/" onClick={closeMenu}>{t("public.home")}</Link>
-    <Link href="/learn" onClick={closeMenu}>{t("public.explore")}</Link>
-    <Link href="/teach" onClick={closeMenu}>{t("public.teach")}</Link>
-    <Link href="/company-learning" onClick={closeMenu}>Company learning</Link>
-    <a href={jobsHref} target="_blank" rel="noreferrer" onClick={closeMenu}>{t("public.hire")}<span className="sr-only"> in a new tab</span></a>
-    <div className="public-careers-menu"><strong>{t("public.careers")}</strong><a href={jobsHref} target="_blank" rel="noreferrer" onClick={closeMenu}>{t("public.applyJobs")}<span className="sr-only"> in a new tab</span></a></div>
+    <Link href="/learn" onClick={closeMenu}>{copy.explore}</Link>
+    <Link href="/teach" onClick={closeMenu}>{copy.teach}</Link>
+    <Link href="/company-learning" onClick={closeMenu}>{copy.teams}</Link>
+    <a href={jobsHref} target="_blank" rel="noreferrer" onClick={closeMenu}>{copy.careers}<span aria-hidden="true">↗</span><span className="sr-only"> in a new tab</span></a>
   </>;
 
-  const mobileNavigation = <>
-    <button type="button" className={`mobile-public-nav-backdrop${isOpen ? " is-open" : ""}`} aria-label={t("public.closeMenu")} tabIndex={isOpen ? 0 : -1} onClick={closeMenu} />
-    <aside id="mobile-public-navigation" className={`mobile-public-nav${isOpen ? " is-open" : ""}`} aria-hidden={!isOpen}>
-      <div className="mobile-public-nav-heading"><LearningMark /><button type="button" aria-label={t("public.closeMenu")} onClick={closeMenu}><LearningIcon name="close" /></button></div>
-      <div className="mobile-public-language">
-        <PublicLanguageControl mobile />
-      </div>
-      <nav aria-label="Mobile primary navigation">{navigation}</nav>
-      <div className="mobile-public-nav-account"><Link className="button button-outline" href="/sign-up" onClick={closeMenu}>{t("public.signUp")}</Link><Link className="button button-login" href="/sign-in" onClick={closeMenu}>{t("public.logIn")} <span aria-hidden="true">→</span></Link></div>
+  const mobileNavigation = <div className={styles.mobileOverlay}>
+    <button type="button" className={styles.backdrop} aria-label={t("public.closeMenu")} tabIndex={-1} onClick={closeMenu} />
+    <aside ref={drawerRef} id="mobile-public-navigation" className={styles.drawer} role="dialog" aria-modal="true" aria-labelledby="public-menu-title">
+      <div className={styles.drawerHeading}><LearningMark /><button type="button" aria-label={t("public.closeMenu")} onClick={closeMenu}><LearningIcon name="close" /></button></div>
+      <p className={styles.menuTitle} id="public-menu-title">{copy.menu}</p>
+      <nav aria-label={copy.menu}><Link href="/" onClick={closeMenu}>{t("public.home")}</Link>{navigation}</nav>
+      <div className={styles.drawerLanguage}><PublicLanguageControl mobile /></div>
+      <div className={styles.drawerActions}><Link className={styles.join} href="/sign-up" onClick={closeMenu}>{t("public.signUp")}</Link><Link className={styles.login} href="/sign-in" onClick={closeMenu}>{t("public.logIn")}</Link></div>
     </aside>
-  </>;
+  </div>;
 
   return <>
-    <header className="public-header">
-      <div className="section-shell header-inner">
-        <LearningMark />
-        <nav className="desktop-public-nav" aria-label="Primary navigation">{navigation}</nav>
-        <div className="desktop-auth-actions">
-          <PublicLanguageControl />
-          <Link className="button button-outline" href="/sign-up">{t("public.signUp")}</Link><Link className="button button-login" href="/sign-in">{t("public.logIn")} <span aria-hidden="true"></span></Link>
+    <a className={styles.skip} href="#public-main" onClick={(event) => {
+      const main = document.querySelector("main");
+      if (!main) return;
+      event.preventDefault();
+      if (!main.id) main.id = "public-main";
+      main.tabIndex = -1;
+      main.focus();
+      main.scrollIntoView({ block: "start" });
+    }}>{copy.skip}</a>
+    <header className={styles.header}>
+      <div className={styles.inner}>
+        <div className={styles.brand}><LearningMark /></div>
+        <form className={styles.search} action="/learn" method="get" role="search" aria-label={copy.search}>
+          <label className="sr-only" htmlFor="public-course-search">{copy.search}</label>
+          <input key={initialQuery} id="public-course-search" type="search" name="q" defaultValue={initialQuery} placeholder={copy.placeholder} maxLength={120} />
+          <button type="submit" aria-label={copy.search}><LearningIcon name="explore" size={21} /></button>
+        </form>
+        <nav className={styles.navigation} aria-label={copy.menu}>{navigation}</nav>
+        <div className={styles.account}>
+          <div className={styles.language}><PublicLanguageControl /></div>
+          <Link className={styles.login} href="/sign-in">{t("public.logIn")}</Link>
+          <Link className={styles.join} href="/sign-up">{t("public.signUp")}</Link>
         </div>
-        <div className="mobile-header-controls">
-          <button type="button" className="mobile-menu-button" aria-label={isOpen ? t("public.closeMenu") : t("public.openMenu")} aria-expanded={isOpen} aria-controls="mobile-public-navigation" onClick={() => setIsOpen((open) => !open)}><LearningIcon name={isOpen ? "close" : "menu"} /></button>
-          <button type="button" className="mobile-account-button" aria-label={isOpen ? t("public.closeMenu") : t("public.openMenu")} aria-expanded={isOpen} aria-controls="mobile-public-navigation" onClick={() => setIsOpen((open) => !open)}><AccountIcon /></button>
-        </div>
+        <button ref={menuButtonRef} type="button" className={styles.menuButton} aria-label={isOpen ? t("public.closeMenu") : t("public.openMenu")} aria-expanded={isOpen} aria-controls="mobile-public-navigation" onClick={() => setIsOpen((open) => !open)}><LearningIcon name={isOpen ? "close" : "menu"} /></button>
       </div>
     </header>
-    {clientReady ? createPortal(mobileNavigation, document.body) : null}
+    {clientReady && isOpen ? createPortal(mobileNavigation, document.body) : null}
   </>;
 }

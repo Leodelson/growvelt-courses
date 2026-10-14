@@ -5,6 +5,8 @@ import { getActiveLearningEditorialCampaign, searchPublicPublishedLearningCourse
 import { normalizePublicCatalogQuery } from "@/app/lib/catalog/public-catalog-query";
 import { createClient } from "@/app/lib/supabase/server";
 import { getOwnSavedLearningCourseIds } from "@/app/lib/learning/saved-courses";
+import FooterWrapper from "@/app/components/FooterWrapper";
+import styles from "@/app/components/public/public-experience.module.css";
 
 export const metadata: Metadata = {
   title: "Explore practical courses",
@@ -23,5 +25,5 @@ export default async function LearnPage({ searchParams }: { searchParams: Promis
 
   const savedCourseIds = auth.data.user ? await getOwnSavedLearningCourseIds() : [];
   const catalogKey = `${query.query}|${query.category}|${query.level}|${query.access}|${query.sort}`;
-  return <div className="public-page"><PublicHeader /><main><PublicCatalog key={catalogKey} catalog={catalog} query={query} authenticated={Boolean(auth.data.user)} savedCourseIds={savedCourseIds} campaign={campaign} /></main></div>;
+  return <div className={styles.publicPage}><PublicHeader initialQuery={query.query} /><main id="public-main"><PublicCatalog key={catalogKey} catalog={catalog} query={query} authenticated={Boolean(auth.data.user)} savedCourseIds={savedCourseIds} campaign={campaign} /></main><FooterWrapper /></div>;
 }
