@@ -36,6 +36,6 @@ The existing data queries, empty/data conditions, error states, authorization, f
 
 Phase 6 launch hardening and the earlier live-commerce operational gates remain separately recorded in the roadmap checkpoint.
 
-## Next public page — FAQ
+## Public support-page checkpoint
 
-The owner approved the Frequently Asked Questions refresh and requested its separate push on 14 October. See [the public support-page checkpoint](phase5-public-support-pages.md) for its exact scope, tests and remaining visual checks. About, Contact/support and partnerships follow; notifications are explicitly excluded. Authentication presentation and broader dashboard work remain later work. The FAQ work is not part of dashboard commit `ef2d176`.
+The FAQ was pushed separately in `2e4b537` on 14 October. About, Contact/support and Partnerships are implemented as the next isolated release with scoped responsive styles, preserved content/forms and the owner's wording corrections. See [the public support-page checkpoint](phase5-public-support-pages.md) for scope, passing checks, image provenance and the outstanding automated visual QA limitation. Notifications are explicitly excluded. Authentication presentation and broader dashboard work remain later work. These public pages are not part of dashboard commit `ef2d176` and do not complete Phase 5.

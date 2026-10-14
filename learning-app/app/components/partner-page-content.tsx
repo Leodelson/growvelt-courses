@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Building2, GraduationCap, Handshake, HeartHandshake } from "lucide-react";
+import { ArrowUpRight, BookOpen, BriefcaseBusiness, Building2, GraduationCap, Handshake, HeartHandshake } from "lucide-react";
 import { useLanguage } from "@/app/components/language-provider";
 import { PublicInquiryForm } from "@/app/components/public-inquiry-form";
+import styles from "./public-support-pages.module.css";
 
 const copy = {
   en: { eyebrow: "Partner with Growvelt", title: "Build practical digital-skills opportunities with us.", intro: "Growvelt brings learning, career development, and opportunity closer together. We welcome partnerships that make useful skills and meaningful next steps more accessible.", start: "Start a partnership conversation", about: "About Growvelt", collaboration: "A practical collaboration", collaborationTitle: "Skills development that connects to what people can do next.", learning: "Learning", readiness: "Career readiness", opportunity: "Opportunity", why: "Why collaborate", whyTitle: "A shared route from learning to confidence and opportunity.", whyCopy: "Partnerships work best when they have a clear audience, an honest learning need, and a useful outcome. Growvelt can explore ideas for training, practical workshops, learner support, and career-focused programmes with your team.", ways: "Ways to work together", waysTitle: "Partnerships shaped around useful outcomes.", begin: "How we begin", beginTitle: "A clear conversation before a commitment.", types: [{ title: "Corporate partners", description: "Build practical training, workforce development, employer access, or capacity-building programmes with Growvelt." }, { title: "Academic institutions", description: "Explore learner support, practical workshops, curriculum collaboration, and career-readiness initiatives." }, { title: "Nonprofits and NGOs", description: "Work together on inclusive digital-skills programmes and community-focused learning opportunities." }, { title: "Community partners", description: "Connect learners, job seekers, mentors, and opportunities through thoughtful referral or collaboration models." }], steps: [{ title: "Share the opportunity", description: "Tell us who you want to support and the outcome you want to create." }, { title: "Explore the fit", description: "We review the idea, available learning paths, and practical delivery needs together." }, { title: "Design the next step", description: "Agree a focused way to move forward, with clear responsibilities and learner value." }] },
@@ -16,11 +17,19 @@ const typeIcons = [Building2, GraduationCap, HeartHandshake, Handshake];
 export function PartnerPageContent() {
   const { locale } = useLanguage();
   const text = copy[locale];
-  return <main>
-    <section className="partner-hero section-shell" aria-labelledby="partner-title"><div><p className="eyebrow">{text.eyebrow}</p><h1 id="partner-title">{text.title}</h1><p>{text.intro}</p><div className="hero-actions"><a className="button button-primary" href="#partner-form">{text.start}</a><Link className="button button-secondary" href="/about">{text.about}</Link></div></div><aside className="partner-hero-card"><p className="eyebrow">{text.collaboration}</p><strong>{text.collaborationTitle}</strong><div><span>{text.learning}</span><ArrowRight aria-hidden="true" /><span>{text.readiness}</span><ArrowRight aria-hidden="true" /><span>{text.opportunity}</span></div></aside></section>
+  return <main id="public-main" className={`${styles.page} ${styles.partner}`}>
+    <div className={styles.heroBand}>
+      <section className={styles.partnerHero} aria-labelledby="partner-title">
+        <div className={styles.heroCopy}><p className={styles.eyebrow}><Handshake size={17} aria-hidden="true" />{text.eyebrow}</p><h1 id="partner-title">{text.title}</h1><p className={styles.lede}>{text.intro}</p><div className={styles.heroActions}><a className="button button-primary" href="#partner-form">{text.start}<ArrowUpRight size={18} aria-hidden="true" /></a><Link className={styles.helpLink} href="/about">{text.about}</Link></div></div>
+        <aside className={styles.pathway} aria-label={text.collaboration}>
+          <p className={styles.eyebrow}>{text.collaboration}</p><h2>{text.collaborationTitle}</h2>
+          <ol>{[text.learning, text.readiness, text.opportunity].map((label, index) => { const Icon = [BookOpen, GraduationCap, BriefcaseBusiness][index]; return <li key={label}><span><Icon size={21} aria-hidden="true" /></span><strong>{label}</strong><small aria-hidden="true">0{index + 1}</small></li>; })}</ol>
+        </aside>
+      </section>
+    </div>
     <section className="section-shell partner-introduction" aria-labelledby="partner-why-title"><div><p className="eyebrow">{text.why}</p><h2 id="partner-why-title">{text.whyTitle}</h2></div><p>{text.whyCopy}</p></section>
     <section className="section-shell partner-type-grid" aria-labelledby="partner-types-title"><div className="partner-section-heading"><p className="eyebrow">{text.ways}</p><h2 id="partner-types-title">{text.waysTitle}</h2></div><div>{text.types.map(({ title, description }, index) => { const Icon = typeIcons[index]; return <article key={title}><Icon aria-hidden="true" /><h3>{title}</h3><p>{description}</p></article>; })}</div></section>
     <section className="section-shell partner-process" aria-labelledby="partner-process-title"><div><p className="eyebrow">{text.begin}</p><h2 id="partner-process-title">{text.beginTitle}</h2></div><ol>{text.steps.map(({ title, description }, index) => <li key={title}><span>{String(index + 1).padStart(2, "0")}</span><div><strong>{title}</strong><p>{description}</p></div></li>)}</ol></section>
-    <div id="partner-form" className="section-shell"><PublicInquiryForm kind="partnership" /></div>
+    <div id="partner-form" className={styles.formShell}><PublicInquiryForm kind="partnership" /></div>
   </main>;
 }

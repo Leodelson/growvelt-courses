@@ -6,7 +6,7 @@ export type MockProgressCourse = { title: string; category: string; progress: nu
 export const mockSkillAreas = [
   { name: "Data & Analytics", shortLabel: "DA", description: "Turn information into useful decisions." },
   { name: "AI for Work", shortLabel: "AI", description: "Use modern tools with sound judgement." },
-  { name: "Digital Product", shortLabel: "DP", description: "Design clearer digital experiences." },
+  { name: "Digital Product", shortLabel: "DP", description: "Design intuitive digital experiences." },
   { name: "Growth & Marketing", shortLabel: "GM", description: "Build practical communication skills." },
 ];
 
@@ -18,9 +18,9 @@ export const mockLearningPaths: MockLearningPath[] = [
 
 export const mockCourses: MockCourse[] = [
   { slug: "data-analytics-foundations", title: "Data Analytics Foundations", category: "Data & Analytics", level: "Beginner", outcome: "Build a practical reporting workflow from question to insight.", duration: "6 guided lessons", proof: "Practice project", price: "Free preview", visual: "data", visualLabel: "DATA" },
-  { slug: "sql-for-clearer-questions", title: "SQL for Clearer Questions", category: "Data & Analytics", level: "Beginner", outcome: "Learn to explore structured data with confidence and care.", duration: "8 guided lessons", proof: "Skill exercise", price: "Planned paid course", visual: "sql", visualLabel: "SQL" },
+  { slug: "sql-for-clearer-questions", title: "SQL for Business Analysis", category: "Data & Analytics", level: "Beginner", outcome: "Learn to explore structured data with confidence and care.", duration: "8 guided lessons", proof: "Skill exercise", price: "Planned paid course", visual: "sql", visualLabel: "SQL" },
   { slug: "ai-workflows-that-help", title: "AI Workflows That Help", category: "AI for Work", level: "Intermediate", outcome: "Build useful, responsible AI-assisted work habits.", duration: "5 guided lessons", proof: "Practical workflow", price: "Free preview", visual: "ai", visualLabel: "AI" },
-  { slug: "product-thinking-for-teams", title: "Product Thinking for Teams", category: "Digital Product", level: "Beginner", outcome: "Frame user problems and turn them into clearer product choices.", duration: "7 guided lessons", proof: "Project brief", price: "Planned paid course", visual: "product", visualLabel: "PRODUCT" },
+  { slug: "product-thinking-for-teams", title: "Product Thinking for Teams", category: "Digital Product", level: "Beginner", outcome: "Identify user needs and make informed product decisions.", duration: "7 guided lessons", proof: "Project brief", price: "Planned paid course", visual: "product", visualLabel: "PRODUCT" },
 ];
 
 export const mockDashboardLearning = {

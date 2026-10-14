@@ -28,7 +28,7 @@ const en = {
   ],
   teach: {
     eyebrow: "TEACH ON GROWVELT", title: "What you know could", accent: "change someone’s next step.", intro: "Bring your practical experience to people ready to learn. Create a focused course, build a clear curriculum, and submit it for Growvelt review.",
-    action: "Apply to teach", imageAlt: "An instructor planning a practical learning experience", caption: "REAL EXPERIENCE. A CLEARER WAY TO LEARN.",
+    action: "Apply to teach", imageAlt: "An instructor planning a practical learning experience", caption: "YOUR EXPERIENCE. SOMEONE’S NEXT SKILL.",
     benefitsTitle: "Make your experience useful to others.", benefits: [{ title: "Start with what you know", copy: "Teach a practical subject you understand and can explain with confidence." }, { title: "Build a focused course", copy: "Organize your expertise into modules, lessons, and meaningful assessments." }, { title: "Create with a clear process", copy: "Prepare a private draft and submit it for review when your course is ready." }],
     processEyebrow: "FROM EXPERIENCE TO A COURSE", processTitle: "A thoughtful course starts with a clear process.", processCopy: "Instructor approval and course review help keep the learning experience focused and credible.",
     process: [{ title: "Tell us about your experience", copy: "Submit an instructor application with your background and the expertise you want to share." }, { title: "Create your curriculum", copy: "After approval, build your course details, modules, lessons, and assessments in your instructor workspace." }, { title: "Submit for review", copy: "Complete your course and curriculum, then submit it for Growvelt review before publication." }],
