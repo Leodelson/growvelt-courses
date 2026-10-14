@@ -15,6 +15,7 @@ const migrationPaths = [
   '../supabase/migrations/20261028000000_allow_company_test_courses_for_test_subscription_setup.sql',
   '../supabase/migrations/20261029000000_allow_allowlisted_private_test_subscription_checkout.sql',
   '../supabase/migrations/20261030000000_reconcile_subscription_test_payment_from_provider_api.sql',
+  '../supabase/migrations/20261031000000_list_own_learning_subscriptions.sql',
 ];
 const migrations = migrationPaths.map((file) => readFileSync(path.resolve(__dirname, file), 'utf8'));
 
@@ -422,6 +423,27 @@ async function main() {
     await db.exec('set role authenticated');
     const paidRenewalStatus = await db.query('select * from public.get_own_learning_subscription_payment_status($1)', [paidRenewalReference]);
     assert.equal(paidRenewalStatus.rows[0].access_active, true, 'the callback status RPC should report access for a current verified paid period');
+    const learnerSubscriptions = await db.query('select * from public.list_own_learning_subscriptions()');
+    assert.equal(learnerSubscriptions.rows.length, 1, 'a learner should see only their own subscription records');
+    assert.deepEqual({
+      subscription_id: learnerSubscriptions.rows[0].subscription_id,
+      plan_name: learnerSubscriptions.rows[0].plan_name,
+      subscription_status: learnerSubscriptions.rows[0].subscription_status,
+      provider_management_available: learnerSubscriptions.rows[0].provider_management_available,
+      course_titles: learnerSubscriptions.rows[0].course_titles,
+    }, {
+      subscription_id: subscriptionId,
+      plan_name: 'Monthly learning catalog',
+      subscription_status: 'active',
+      provider_management_available: true,
+      course_titles: ['Tested paid course'],
+    }, 'the learner projection should expose status and included courses, but only a boolean for provider management');
+    await db.query("select set_config('request.jwt.claim.sub',$1,false)", [instructorId]);
+    assert.equal((await db.query('select * from public.list_own_learning_subscriptions()')).rows.length, 0,
+      'another learner must not discover a subscription they do not own');
+    await db.query("select set_config('request.jwt.claim.sub','',false)");
+    assert.equal((await db.query('select * from public.list_own_learning_subscriptions()')).rows.length, 0,
+      'an unauthenticated context must not enumerate subscriptions');
     await db.exec('reset role');
     await db.exec('set role service_role');
 
@@ -525,6 +547,7 @@ async function main() {
     const privatePlanExecute = `public.get_company_test_learning_subscription_plan_for_checkout(uuid)`;
     const beginCheckoutExecute = `public.begin_own_learning_test_subscription_checkout(uuid,uuid,uuid)`;
     const reconcileExecute = `public.reconcile_own_learning_test_subscription_payment(uuid,text,uuid,uuid,text,bigint,bigint,bigint,text,jsonb)`;
+    const listSubscriptionsExecute = `public.list_own_learning_subscriptions()`;
     for (const role of ['anon', 'authenticated']) {
       const grants = await db.query(`select has_function_privilege($1,$2,'execute') as receive,
         has_function_privilege($1,$3,'execute') as process,
@@ -535,6 +558,10 @@ async function main() {
       assert.deepEqual(grants.rows[0], { receive: false, process: false, private_plan: false, begin_checkout: false, reconcile: false },
         `${role} must not execute subscription provider, private plan, or checkout RPCs`);
     }
+    assert.equal((await db.query(`select has_function_privilege('authenticated',$1,'execute') as allowed`, [listSubscriptionsExecute])).rows[0].allowed, true,
+      'authenticated learners may call the ownership-filtered subscription status projection');
+    assert.equal((await db.query(`select has_function_privilege('anon',$1,'execute') as allowed`, [listSubscriptionsExecute])).rows[0].allowed, false,
+      'anonymous users may not call the private subscription status projection');
     await db.exec('reset role');
 
     console.log('PASS isolated subscription DB lifecycle: idempotent Test Mode checkout reservation, safe resume, definitive-rejection retry, ambiguous-result reconciliation hold, no access before payment, signed-webhook and provider-API verified initial charges, verified initial-period timing, out-of-order prerequisite retry, webhook dedupe/conflict, verified renewal, failure recovery, cancellation, stale events, no paid-through regression, enrollment provenance, access expiry, and one-time coexistence');

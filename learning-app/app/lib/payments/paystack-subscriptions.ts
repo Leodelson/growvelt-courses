@@ -1,6 +1,6 @@
 import "server-only";
 import { getPaystackTestConfig } from "@/app/lib/payments/paystack";
-import { buildPaystackTestPlanRequest, buildPaystackTestSubscriptionCheckoutRequest, parsePaystackCreatedTestPlan, parsePaystackTestSubscriptionCheckoutResponse, sanitizePaystackProviderMessage } from "@/app/lib/payments/paystack-subscription-core";
+import { buildPaystackTestPlanRequest, buildPaystackTestSubscriptionCheckoutRequest, parsePaystackCreatedTestPlan, parsePaystackTestSubscriptionCheckoutResponse, parsePaystackTestSubscriptionManagementLink, sanitizePaystackProviderMessage } from "@/app/lib/payments/paystack-subscription-core";
 
 export class PaystackTestPlanCreateError extends Error {
   constructor(readonly disposition: "rejected" | "ambiguous") {
@@ -100,4 +100,27 @@ export async function createPaystackTestSubscriptionPlan(input: {
   const plan = parsePaystackCreatedTestPlan(result, { name: body.name, amountMinor: body.amount });
   if (!response.ok || !plan) throw new PaystackTestPlanCreateError("ambiguous");
   return plan;
+}
+
+/** Requests a hosted management link for one existing Test Mode subscription. */
+export async function getPaystackTestSubscriptionManagementLink(subscriptionCode: string) {
+  if (!/^SUB_[A-Za-z0-9]{8,100}$/.test(subscriptionCode)) {
+    throw new Error("A valid Test Mode subscription is required.");
+  }
+  const { secretKey } = getPaystackTestConfig(false);
+  let response: Response;
+  try {
+    response = await fetch(`https://api.paystack.co/subscription/${encodeURIComponent(subscriptionCode)}/manage/link`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${secretKey}` },
+      cache: "no-store",
+      signal: AbortSignal.timeout(15000),
+    });
+  } catch {
+    throw new Error("Paystack subscription management is temporarily unavailable.");
+  }
+  const result: unknown = await response.json().catch(() => null);
+  const link = parsePaystackTestSubscriptionManagementLink(result);
+  if (!response.ok || !link) throw new Error("Paystack did not return a valid subscription management link.");
+  return link;
 }

@@ -399,3 +399,25 @@ export function parsePaystackCreatedTestPlan(
     domain: "test",
   };
 }
+
+/** Validates the provider-hosted subscription management link before redirecting a learner. */
+export function parsePaystackTestSubscriptionManagementLink(value: unknown): string | null {
+  if (!value || typeof value !== "object") return null;
+  const response = value as Record<string, unknown>;
+  const data = response.data && typeof response.data === "object"
+    ? response.data as Record<string, unknown>
+    : null;
+  if (response.status !== true || !data || typeof data.link !== "string" || data.link.length > 8192) return null;
+
+  try {
+    const link = new URL(data.link);
+    const token = link.searchParams.get("subscription_token");
+    if (link.protocol !== "https:" || link.hostname !== "paystack.com"
+      || link.username || link.password || link.hash
+      || !/^\/manage\/subscriptions\/[A-Za-z0-9_-]{6,160}\/?$/.test(link.pathname)
+      || !token || token.length > 4096) return null;
+    return link.toString();
+  } catch {
+    return null;
+  }
+}

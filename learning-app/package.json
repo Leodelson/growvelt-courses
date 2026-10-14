@@ -64,6 +64,7 @@
     "test:phase4:subscription-checkout-core": "node --experimental-strip-types scripts/test-phase4-subscription-checkout-core.mjs",
     "test:phase4:private-subscription-test-checkout": "node --experimental-strip-types scripts/test-phase4-private-subscription-test-checkout.mjs",
     "test:phase4:subscription-lifecycle:db": "node scripts/test-phase4-subscription-lifecycle-db.cjs",
+    "test:phase4:subscription-management": "node --experimental-strip-types scripts/test-phase4-subscription-management.mjs",
     "test:phase4:editorial-campaigns": "node scripts/test-phase4-editorial-campaigns.cjs",
     "test:phase4:coupon-course-eligibility:local": "node scripts/test-phase4-coupon-course-eligibility-local.cjs",
     "test:phase4:coupon-foundation:local": "node scripts/test-phase4-coupon-foundation-local.cjs",
