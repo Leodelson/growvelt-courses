@@ -421,3 +421,48 @@ export function parsePaystackTestSubscriptionManagementLink(value: unknown): str
     return null;
   }
 }
+
+/**
+ * Narrows a Paystack Test Mode subscription-list response to entries that
+ * exactly match one authenticated learner's email and local plan terms.
+ * Codes are returned only to server-side callers and never to the browser.
+ */
+export function parsePaystackTestSubscriptionListPage(
+  value: unknown,
+  expected: { email: string; planCode: string; amountMinor: number },
+): { subscriptionCodes: string[]; page: number; pageCount: number } | null {
+  const response = asRecord(value);
+  const meta = asRecord(response?.meta);
+  const data = response?.data;
+  const page = meta?.page;
+  const pageCount = meta?.pageCount;
+  const email = expected.email.trim().toLowerCase();
+  if (response?.status !== true || !Array.isArray(data)
+    || !Number.isSafeInteger(page) || (page as number) < 1
+    || !Number.isSafeInteger(pageCount) || (pageCount as number) < 1
+    || !email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+    || !PLAN_CODE_PATTERN.test(expected.planCode)
+    || !Number.isSafeInteger(expected.amountMinor) || expected.amountMinor <= 0) return null;
+
+  const subscriptionCodes = new Set<string>();
+  for (const value of data) {
+    const subscription = asRecord(value);
+    const customer = asRecord(subscription?.customer);
+    const plan = asRecord(subscription?.plan);
+    if (!subscription || !customer || !plan) continue;
+    const customerEmail = typeof customer.email === "string" ? customer.email.trim().toLowerCase() : "";
+    const amount = positiveMinor(subscription.amount);
+    const planAmount = positiveMinor(plan.amount);
+    const code = providerCode(subscription.subscription_code, SUBSCRIPTION_CODE_PATTERN);
+    const customerDomain = customer.domain;
+    if (subscription.domain !== "test" || plan.domain !== "test"
+      || customerDomain !== undefined && customerDomain !== "test"
+      || customerEmail !== email || plan.plan_code !== expected.planCode
+      || subscription.status !== "active" && subscription.status !== "attention"
+      || plan.currency !== "NGN" || plan.interval !== "monthly"
+      || amount !== expected.amountMinor || planAmount !== expected.amountMinor || !code) continue;
+    subscriptionCodes.add(code);
+  }
+
+  return { subscriptionCodes: [...subscriptionCodes], page: page as number, pageCount: pageCount as number };
+}

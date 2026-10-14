@@ -1,6 +1,6 @@
 import "server-only";
 import { getPaystackTestConfig } from "@/app/lib/payments/paystack";
-import { buildPaystackTestPlanRequest, buildPaystackTestSubscriptionCheckoutRequest, parsePaystackCreatedTestPlan, parsePaystackTestSubscriptionCheckoutResponse, parsePaystackTestSubscriptionManagementLink, sanitizePaystackProviderMessage } from "@/app/lib/payments/paystack-subscription-core";
+import { buildPaystackTestPlanRequest, buildPaystackTestSubscriptionCheckoutRequest, parsePaystackCreatedTestPlan, parsePaystackTestSubscriptionCheckoutResponse, parsePaystackTestSubscriptionListPage, parsePaystackTestSubscriptionManagementLink, sanitizePaystackProviderMessage } from "@/app/lib/payments/paystack-subscription-core";
 
 export class PaystackTestPlanCreateError extends Error {
   constructor(readonly disposition: "rejected" | "ambiguous") {
@@ -123,4 +123,59 @@ export async function getPaystackTestSubscriptionManagementLink(subscriptionCode
   const link = parsePaystackTestSubscriptionManagementLink(result);
   if (!response.ok || !link) throw new Error("Paystack did not return a valid subscription management link.");
   return link;
+}
+
+/**
+ * Recovers a missing Test Mode provider mapping without writing provider data
+ * into Growvelt. Each result is constrained to one learner, plan, amount, and
+ * active provider subscription; ambiguous or oversized inventories fail closed.
+ */
+export async function findPaystackTestSubscriptionCode(input: {
+  email: string;
+  planCode: string;
+  amountMinor: number;
+}) {
+  const email = input.email.trim().toLowerCase();
+  if (!email || !/^PLN_[A-Za-z0-9]{8,100}$/.test(input.planCode)
+    || !Number.isSafeInteger(input.amountMinor) || input.amountMinor <= 0) {
+    throw new Error("A matching Test Mode subscription could not be confirmed.");
+  }
+
+  const { secretKey } = getPaystackTestConfig(false);
+  const pageSize = 100;
+  const maximumPages = 5;
+  const matches = new Set<string>();
+  let pageCount: number | null = null;
+
+  for (let page = 1; page <= (pageCount ?? 1); page += 1) {
+    let response: Response;
+    try {
+      response = await fetch(`https://api.paystack.co/subscription?perPage=${pageSize}&page=${page}`, {
+        method: "GET",
+        headers: { Authorization: `Bearer ${secretKey}` },
+        cache: "no-store",
+        signal: AbortSignal.timeout(15000),
+      });
+    } catch {
+      throw new Error("Paystack subscription lookup is temporarily unavailable.");
+    }
+    const result: unknown = await response.json().catch(() => null);
+    const parsed = parsePaystackTestSubscriptionListPage(result, {
+      email,
+      planCode: input.planCode,
+      amountMinor: input.amountMinor,
+    });
+    if (!response.ok || !parsed || parsed.page !== page
+      || pageCount !== null && parsed.pageCount !== pageCount
+      || parsed.pageCount > maximumPages) {
+      throw new Error("Paystack subscription lookup could not safely identify this subscription.");
+    }
+    pageCount = parsed.pageCount;
+    for (const code of parsed.subscriptionCodes) matches.add(code);
+    if (matches.size > 1) throw new Error("Multiple matching Paystack subscriptions need review.");
+  }
+
+  const [subscriptionCode] = matches;
+  if (!subscriptionCode) throw new Error("Paystack has not provided a matching active subscription.");
+  return subscriptionCode;
 }

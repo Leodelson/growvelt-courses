@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getPaystackTestSubscriptionManagementLink } from "@/app/lib/payments/paystack-subscriptions";
+import { findPaystackTestSubscriptionCode, getPaystackTestSubscriptionManagementLink } from "@/app/lib/payments/paystack-subscriptions";
 import { createAdminClient } from "@/app/lib/supabase/admin";
 import { createClient } from "@/app/lib/supabase/server";
 
@@ -29,7 +29,7 @@ export async function GET(request: Request) {
     return unavailable(request);
   }
   const { data: subscription, error } = await admin.from("learning_subscriptions")
-    .select("id,paystack_subscription_code,payment_domain,status")
+    .select("id,plan_id,paystack_subscription_code,payment_domain,status")
     .eq("id", subscriptionId)
     .eq("learner_id", user.id)
     .maybeSingle();
@@ -39,13 +39,32 @@ export async function GET(request: Request) {
   }
   if (!subscription) return NextResponse.json({ code: "not_found" }, { status: 404 });
   if (subscription.payment_domain !== "test"
-    || !["active", "attention"].includes(subscription.status)
-    || typeof subscription.paystack_subscription_code !== "string") {
+    || !["active", "attention"].includes(subscription.status)) {
     return unavailable(request);
   }
 
   try {
-    const managementUrl = await getPaystackTestSubscriptionManagementLink(subscription.paystack_subscription_code);
+    let subscriptionCode = typeof subscription.paystack_subscription_code === "string"
+      ? subscription.paystack_subscription_code.trim()
+      : "";
+    if (!subscriptionCode) {
+      if (!user.email) return unavailable(request);
+      const { data: plan, error: planError } = await admin.from("learning_subscription_plans")
+        .select("paystack_plan_code,amount_minor,currency,billing_interval")
+        .eq("id", subscription.plan_id)
+        .maybeSingle();
+      if (planError || plan?.currency !== "NGN" || plan.billing_interval !== "monthly"
+        || typeof plan.paystack_plan_code !== "string") {
+        if (planError) console.error("subscription.management_plan_lookup_failed", { code: planError.code });
+        return unavailable(request);
+      }
+      subscriptionCode = await findPaystackTestSubscriptionCode({
+        email: user.email,
+        planCode: plan.paystack_plan_code,
+        amountMinor: plan.amount_minor,
+      });
+    }
+    const managementUrl = await getPaystackTestSubscriptionManagementLink(subscriptionCode);
     const response = NextResponse.redirect(managementUrl, 303);
     response.headers.set("Cache-Control", "no-store");
     response.headers.set("Referrer-Policy", "no-referrer");
