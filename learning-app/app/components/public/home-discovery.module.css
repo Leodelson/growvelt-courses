@@ -1,0 +1,61 @@
+.wrap { width: min(1240px, calc(100% - 64px)); margin-inline: auto; }
+.finder { padding-block: 32px 80px; }
+.heading { max-width: 760px; }
+.eyebrow { display: flex; align-items: center; gap: 9px; margin: 0 0 18px; color: var(--purple); font-size: 10px; font-weight: 800; letter-spacing: .13em; line-height: 1.7; text-transform: uppercase; }
+.heading h2, .editorialCopy h2 { margin: 0 0 20px; color: var(--ink); font-size: clamp(30px, 3.3vw, 44px); font-weight: 650; line-height: 1.15; letter-spacing: -.045em; text-wrap: balance; overflow-wrap: anywhere; }
+.heading > p:not(.eyebrow), .editorialCopy > p:not(.eyebrow):not(.note) { margin: 0; color: var(--muted); font-size: 16px; line-height: 1.85; }
+.finderLayout { display: grid; grid-template-columns: minmax(0, .65fr) minmax(0, 1.35fr); gap: 26px; margin-top: 32px; }
+.goalList { display: flex; flex-direction: column; justify-content: center; gap: 12px; }
+.goalList button { display: flex; align-items: center; gap: 16px; min-height: 68px; padding: 18px 22px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); color: var(--ink-soft); font-size: 15px; font-weight: 650; line-height: 1.5; text-align: left; cursor: pointer; transition: border-color .2s, background .2s; }
+.goalList button > svg { flex: 0 0 auto; color: var(--purple); }
+.goalList button > svg:last-child { margin-left: auto; }
+.goalList button:hover, .goalList button[aria-pressed="true"] { border-color: var(--purple); background: var(--purple-soft); color: var(--ink); }
+.goalList button[aria-pressed="true"] { box-shadow: inset 3px 0 0 var(--purple); }
+.goalResult { min-width: 0; padding: clamp(28px, 4vw, 44px); border: 1px solid var(--line); border-radius: 24px; background: var(--surface); }
+.goalIcon { display: grid; width: 60px; height: 60px; place-items: center; margin-bottom: 24px; border-radius: 18px; color: var(--purple); background: var(--purple-soft); }
+.goalResult h3 { margin: 0 0 12px; color: var(--ink); font-size: clamp(25px, 2.4vw, 32px); font-weight: 650; line-height: 1.25; letter-spacing: -.035em; }
+.goalResult > p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.8; }
+.goalResult .toolLabel { margin: 28px 0 12px; color: var(--ink-soft); font-size: 12px; font-weight: 650; }
+.tools { display: flex; flex-wrap: wrap; gap: 10px; }
+.tools a { display: inline-flex; align-items: center; gap: 9px; min-height: 44px; max-width: 100%; padding: 10px 15px; border: 1px solid var(--line-strong); border-radius: 999px; color: var(--ink); font-size: 13px; font-weight: 600; line-height: 1.5; overflow-wrap: anywhere; transition: border-color .2s, color .2s; }
+.tools a svg { flex: 0 0 auto; }
+.tools a:hover { color: var(--purple); border-color: var(--purple); }
+.note, .goalResult .note { margin: 20px 0 0; color: var(--muted); font-size: 11px; line-height: 1.8; }
+.routineBand { margin-block: 64px 0; border-block: 1px solid var(--line); background: linear-gradient(120deg, var(--purple-soft), var(--surface) 70%); }
+.routine { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, .9fr); align-items: center; gap: clamp(32px, 6vw, 90px); padding-block: 64px; }
+.sessionPicker { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; max-width: 320px; margin-top: 26px; }
+.sessionPicker button { min-width: 0; min-height: 48px; padding: 11px 12px; border: 1px solid var(--line-strong); border-radius: 12px; background: var(--surface); color: var(--ink); font-size: 19px; font-weight: 650; cursor: pointer; }
+.sessionPicker button span { font-size: 12px; font-weight: 500; }
+.sessionPicker button[aria-pressed="true"] { border-color: var(--purple); background: var(--purple); color: var(--surface); }
+.features { display: grid; gap: 14px; margin: 26px 0 0; padding: 0; list-style: none; }
+.features li { display: flex; align-items: flex-start; gap: 10px; color: var(--muted); font-size: 12px; line-height: 1.8; }
+.features svg { flex: 0 0 auto; margin-top: 3px; color: var(--purple); }
+.routinePreview { min-width: 0; padding: 32px; border: 1px solid var(--line); border-radius: 24px; background: var(--surface); box-shadow: var(--shadow-sm); }
+.routineTotal { padding-bottom: 24px; border-bottom: 1px solid var(--line); }
+.routineTotal > span { color: var(--muted); font-size: 12px; line-height: 1.7; }
+.routineTotal > strong { display: flex; align-items: baseline; flex-wrap: wrap; gap: 12px; margin-top: 12px; color: var(--purple); font-size: 64px; font-weight: 650; line-height: 1; letter-spacing: -.05em; }
+.routineTotal small { color: var(--ink-soft); font-size: 14px; font-weight: 500; letter-spacing: 0; line-height: 1.6; }
+.sessionLabel { margin: 24px 0 4px; color: var(--ink-soft); font-size: 12px; font-weight: 650; }
+.routinePreview ol { margin: 0; padding: 0; list-style: none; }
+.routinePreview li { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; align-items: start; gap: 12px; padding-block: 18px; border-bottom: 1px solid var(--line); }
+.routinePreview li > span { color: var(--purple); font-size: 10px; font-weight: 700; line-height: 2.1; }
+.routinePreview li p { margin: 0; color: var(--ink); font-size: 13px; line-height: 1.7; }
+.routinePreview li strong { color: var(--ink); font-size: 14px; line-height: 1.7; white-space: nowrap; }
+.routinePreview li small { color: var(--muted); font-size: 11px; font-weight: 500; }
+.hiring, .partner { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: center; gap: clamp(32px, 6vw, 90px); padding-block: 72px; }
+.hiring { border-top: 1px solid var(--line); }
+.editorialPhoto { min-width: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 24px 64px 24px 24px; aspect-ratio: 1.25; background: var(--surface-muted); }
+.editorialPhoto img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.editorialCopy { min-width: 0; }
+.action { display: inline-flex; align-items: center; justify-content: center; gap: 12px; min-height: 50px; max-width: 100%; margin-top: 28px; padding: 14px 22px; border: 1px solid transparent; border-radius: 12px; background: var(--purple); color: var(--surface); font-size: 14px; font-weight: 700; line-height: 1.5; text-align: center; }
+.action svg { flex: 0 0 auto; }
+.action:hover { background: var(--purple-deep); }
+.partnerBand { margin-bottom: 52px; border-block: 1px solid var(--line); background: var(--purple-soft); }
+.partner .editorialPhoto { border-radius: 64px 24px 24px 24px; }
+.partnerTopics { display: flex; flex-wrap: wrap; gap: 12px 18px; margin: 24px 0 0; padding: 0; list-style: none; }
+.partnerTopics li { display: flex; align-items: flex-start; gap: 8px; color: var(--ink-soft); font-size: 11px; line-height: 1.7; }
+.partnerTopics svg { flex: 0 0 auto; margin-top: 2px; color: var(--purple); }
+@media (max-width: 1000px) { .finderLayout { grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: 18px; }.goalList button { padding-inline: 18px; font-size: 14px; }.routine, .hiring, .partner { gap: 32px; }.routinePreview { padding: 26px; } }
+@media (max-width: 760px) { .wrap { width: calc(100% - 40px); }.finder { padding-block: 24px 48px; }.finderLayout { grid-template-columns: minmax(0, 1fr); gap: 20px; margin-top: 26px; }.goalList { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }.goalList button { min-width: 0; min-height: 64px; gap: 10px; padding: 14px; font-size: 12px; }.goalList button > svg:last-child { display: none; }.goalList button > svg { width: 18px; }.goalResult { padding: 26px; }.routine, .hiring, .partner { grid-template-columns: minmax(0, 1fr); padding-block: 44px; gap: 30px; }.routineBand { margin-top: 40px; }.routineTotal > strong { font-size: 56px; }.hiring .editorialPhoto { order: 1; }.editorialPhoto { aspect-ratio: 1.5; border-radius: 22px 48px 22px 22px; }.partner .editorialPhoto { border-radius: 48px 22px 22px 22px; }.partnerBand { margin-bottom: 32px; } }
+@media (max-width: 380px) { .goalResult, .routinePreview { padding: 22px; }.goalList button { gap: 8px; padding: 12px; }.goalList button > svg { display: none; }.action { width: 100%; padding-inline: 16px; }.routinePreview li { gap: 8px; grid-template-columns: 20px minmax(0, 1fr) auto; } }
+@media (prefers-reduced-motion: reduce) { .goalList button, .tools a { transition: none; } }

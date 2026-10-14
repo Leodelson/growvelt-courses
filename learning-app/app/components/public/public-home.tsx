@@ -10,6 +10,7 @@ import { useLanguage } from "@/app/components/language-provider";
 import { publicExperienceCopy } from "@/app/lib/public-experience-copy";
 import { growveltOrganizationJsonLd } from "@/app/lib/seo";
 import type { PublishedCourse } from "@/app/lib/catalog/published-courses";
+import { HomeHiring, HomePartnership, HomeSkillFinder, HomeStudyRoutine } from "./home-discovery-sections";
 import styles from "./public-experience.module.css";
 
 const subjectIcons = [BarChart3, Code2, Megaphone, BriefcaseBusiness, Palette, Clock3];
@@ -56,10 +57,14 @@ export function PublicHome({ courses }: { courses: PublishedCourse[] }) {
         <div className="course-grid public-published-course-grid">{courses.map((course, index) => <PublishedCourseCard course={course} index={index} key={course.id} />)}</div>
       </section>}
 
+      <HomeSkillFinder />
+
       <section id="how-it-works" className={`${styles.wrap} ${styles.journey}`} aria-labelledby="journey-title">
         <div><p className={styles.eyebrow}><ShieldCheck aria-hidden="true" size={17} />{home.journeyEyebrow}</p><h2 id="journey-title">{home.journeyTitle}</h2><p>{home.journeyCopy}</p></div>
         <ol>{home.journey.map((step, index) => <li key={step.title}><span>0{index + 1}</span><div><h3>{step.title}</h3><p>{step.copy}</p></div></li>)}</ol>
       </section>
+
+      <HomeStudyRoutine />
 
       <section className={`${styles.wrap} ${styles.section}`} aria-labelledby="paths-title">
         <header className={styles.sectionHeading}><div><p className={styles.eyebrow}>{home.pathsEyebrow}</p><h2 id="paths-title">{home.pathsTitle}</h2></div></header>
@@ -67,8 +72,10 @@ export function PublicHome({ courses }: { courses: PublishedCourse[] }) {
           <article className={styles.path}><div className={styles.pathPhoto}><Image src="/images/teaching-practical-expertise.jpg" alt="" fill sizes="(max-width: 700px) 100vw, 45vw" /></div><div className={styles.pathCopy}><p className={styles.eyebrow}>{copy.nav.teach}</p><h3>{home.teacherTitle}</h3><p>{home.teacherCopy}</p><Link className={styles.quiet} href="/teach">{home.teacherAction}<ArrowUpRight aria-hidden="true" size={18} /></Link></div></article>
           <article className={styles.path}><div className={styles.pathPhoto}><Image src="/images/pexels-alexander-suhorucov-6457554.jpg" alt="" fill sizes="(max-width: 700px) 100vw, 45vw" /></div><div className={styles.pathCopy}><p className={styles.eyebrow}>{copy.nav.teams}</p><h3>{home.teamsTitle}</h3><p>{home.teamsCopy}</p><Link className={styles.quiet} href="/company-learning">{home.teamsAction}<ArrowUpRight aria-hidden="true" size={18} /></Link></div></article>
         </div>
-        <div className={styles.connections}><div><p>{home.careersTitle}</p><a className={styles.quiet} href="https://growvelt.com" target="_blank" rel="noreferrer">{home.careersAction}<ArrowUpRight aria-hidden="true" size={16} /><span className="sr-only"> in a new tab</span></a></div><div><p>{home.partnerTitle}</p><Link className={styles.quiet} href="/partner-with-growvelt">{home.partnerAction}<ArrowUpRight aria-hidden="true" size={16} /></Link></div></div>
       </section>
+
+      <HomeHiring />
+      <HomePartnership />
 
       <section className={`${styles.wrap} ${styles.guides}`} aria-labelledby="guides-title"><details><summary id="guides-title"><Play aria-hidden="true" size={20} />{home.guidesTitle}<span aria-hidden="true">+</span></summary><div className={styles.guideGrid}>{home.guides.map((title, index) => <a href={`https://www.youtube.com/watch?v=${videoIds[index]}`} key={title} target="_blank" rel="noreferrer"><Play aria-hidden="true" size={18} /><span>{title}</span><ArrowUpRight aria-hidden="true" size={16} /><span className="sr-only"> on YouTube in a new tab</span></a>)}</div></details></section>
 
