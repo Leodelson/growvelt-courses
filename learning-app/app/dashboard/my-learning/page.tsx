@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { EmptyState } from "@/app/components/ui/empty-state";
 import { getRequestLocale } from "@/app/lib/i18n-server";
 import { listOwnLearningEnrollments } from "@/app/lib/learning/enrollments";
 
@@ -14,7 +15,13 @@ export default async function MyLearningPage() {
   const [courses, locale] = await Promise.all([listOwnLearningEnrollments(), getRequestLocale()]);
   const text = copy[locale];
   const dateFormatter = new Intl.DateTimeFormat(locale === "fr" ? "fr-FR" : locale === "es" ? "es-ES" : "en-NG", { dateStyle: "medium" });
-  if (!courses.length) return <section className="certificate-space learner-empty-space" aria-labelledby="my-learning-title"><div><p className="eyebrow">{text.title}</p><h1 id="my-learning-title">{text.emptyTitle}</h1><p>{text.emptyCopy}</p></div><div className="learner-empty-highlight"><span aria-hidden="true">↗</span><div><strong>{text.pace}</strong><p>{text.paceCopy}</p></div></div><div className="certificate-space-actions"><Link className="button button-primary" href="/dashboard/explore">{text.explore}</Link><Link className="text-link" href="/dashboard">{text.dashboard} <span aria-hidden="true">→</span></Link></div></section>;
+  if (!courses.length) return <EmptyState
+    titleId="my-learning-title" headingLevel={1} size="page" icon="learning"
+    eyebrow={text.title} title={text.emptyTitle} description={text.emptyCopy}
+    note={{ title: text.pace, description: text.paceCopy }}
+    primaryAction={{ href: "/dashboard/explore", label: text.explore }}
+    secondaryAction={{ href: "/dashboard", label: text.dashboard }}
+  />;
   const completedCourses = courses.filter((course) => course.enrollmentStatus === "completed").length;
   const completedActivities = courses.reduce((total, course) => total + course.completedLessons, 0);
   const totalActivities = courses.reduce((total, course) => total + course.totalLessons, 0);

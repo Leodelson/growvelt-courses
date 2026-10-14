@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
+import { EmptyState } from "@/app/components/ui/empty-state";
 import { PublishedCourseCard } from "@/app/components/published-course-card";
 import { useLanguage } from "@/app/components/language-provider";
 import type { PublishedCourse } from "@/app/lib/catalog/published-courses";
@@ -12,7 +12,10 @@ export function SavedCoursesList({ courses: initialCourses }: { courses: Publish
   const [courses, setCourses] = useState(initialCourses);
 
   if (!courses.length) {
-    return <section className="course-empty-state saved-courses-empty"><p className="eyebrow">{text.eyebrow}</p><h2>{text.title}</h2><p>{text.copy}</p><Link className="button button-primary" href="/dashboard/explore">{text.explore}</Link></section>;
+    return <EmptyState titleId="saved-courses-empty-title" icon="heart"
+      eyebrow={text.eyebrow} title={text.title} description={text.copy}
+      primaryAction={{ href: "/dashboard/explore", label: text.explore }}
+    />;
   }
 
   return <><div className="course-grid published-course-grid public-published-course-grid">{courses.map((course, index) => <PublishedCourseCard course={course} index={index} authenticated isSaved href={`/dashboard/courses/${encodeURIComponent(course.slug)}`} key={course.id} onSavedChange={(isSaved) => { if (!isSaved) setCourses((currentCourses) => currentCourses.filter((currentCourse) => currentCourse.id !== course.id)); }} />)}</div><p className="results-end-marker saved-courses-end-marker">{text.end}</p></>;

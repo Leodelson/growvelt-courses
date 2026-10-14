@@ -1,5 +1,6 @@
 import { createClient } from "@/app/lib/supabase/server";
 import { ActionSubmitButton } from "@/app/components/action-submit-button";
+import { EmptyState } from "@/app/components/ui/empty-state";
 import { ActionFeedback } from "../promotions/action-feedback";
 import { recordLearningEnterpriseContractAction } from "./actions";
 import styles from "../promotions/promotions.module.css";
@@ -74,7 +75,10 @@ export default async function AdminEnterpriseContractsPage({
     <section className={styles.panel}>
       <header><p className="eyebrow">Private register</p><h2>Recorded agreements</h2><p>Visible only to Learning Admin. The term state is derived from the recorded dates and does not affect workspace access.</p></header>
       {contractError ? <p className={styles.error}>Contract records could not be loaded safely. The list is not being treated as empty. Confirm the enterprise-contract migration is applied before retrying.</p>
-        : contracts.length === 0 ? <p className={styles.muted}>No enterprise contract references have been recorded.</p>
+        : contracts.length === 0 ? <EmptyState titleId="enterprise-contracts-empty-title" headingLevel={3}
+          icon="company" title="Your agreement register is ready"
+          description="No enterprise contract references have been recorded. Use the form above to record an agreement already executed outside Growvelt."
+        />
         : <div className={styles.list}>{contracts.map((contract) => <article key={contract.contract_id}>
           <div className={styles.heading}><div><strong><code>{contract.contract_reference}</code></strong><span>{contract.workspace_name}</span></div><span className={contract.contract_state === "in_term" ? styles.active : styles.disabled}>{contract.contract_state === "in_term" ? "In term" : contract.contract_state === "scheduled" ? "Scheduled" : "Ended"}</span></div>
           <dl><div><dt>Agreement term</dt><dd>{dateLabel(contract.starts_on)} – {dateLabel(contract.ends_on)}</dd></div><div><dt>Reference-only seat cap</dt><dd>{contract.seat_cap.toLocaleString("en-NG")}</dd></div><div><dt>Recorded</dt><dd>{new Date(contract.recorded_at).toLocaleString("en-NG")}</dd></div><div><dt>Scope</dt><dd>{contract.scope_summary}</dd></div></dl>

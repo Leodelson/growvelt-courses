@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { EmptyState } from "@/app/components/ui/empty-state";
 import { getRequestLocale } from "@/app/lib/i18n-server";
 import { listOwnCertificates } from "@/app/lib/learning/certificates";
 
@@ -14,6 +15,12 @@ export default async function LearnerCertificatesPage() {
   const [certificates, locale] = await Promise.all([listOwnCertificates(), getRequestLocale()]);
   const text = copy[locale];
   const dateFormatter = new Intl.DateTimeFormat(locale === "fr" ? "fr-FR" : locale === "es" ? "es-ES" : "en-NG", { dateStyle: "medium" });
-  if (!certificates.length) return <section className="certificate-space learner-empty-space" aria-labelledby="certificate-space-title"><div><p className="eyebrow">{text.eyebrow}</p><h1 id="certificate-space-title">{text.emptyTitle}</h1><p>{text.emptyCopy}</p></div><div className="learner-empty-highlight"><span aria-hidden="true">◇</span><div><strong>{text.proof}</strong><p>{text.proofCopy}</p></div></div><div className="certificate-space-actions"><Link className="button button-primary" href="/dashboard/my-learning">{text.learning}</Link><Link className="text-link" href="/dashboard/explore">{text.explore} <span aria-hidden="true">→</span></Link></div></section>;
+  if (!certificates.length) return <EmptyState
+    titleId="certificate-space-title" headingLevel={1} size="page" icon="certificate"
+    eyebrow={text.eyebrow} title={text.emptyTitle} description={text.emptyCopy}
+    note={{ title: text.proof, description: text.proofCopy }}
+    primaryAction={{ href: "/dashboard/my-learning", label: text.learning }}
+    secondaryAction={{ href: "/dashboard/explore", label: text.explore }}
+  />;
   return <section className="certificate-list section-shell" aria-labelledby="certificate-space-title"><header className="catalog-hero"><p className="eyebrow">{text.eyebrow}</p><h1 id="certificate-space-title">{text.title}</h1><p>{text.listCopy}</p></header><div className="my-learning-list">{certificates.map((certificate) => <article className="my-learning-card" key={certificate.code}><div><p className="eyebrow">{certificate.status === "issued" ? text.issued : text.revoked}</p><h2>{certificate.courseTitle}</h2><p>{text.completed} {dateFormatter.format(new Date(certificate.completedAt))}</p><small>{text.reference}: {certificate.code}</small></div><Link className="button button-primary" href={`/dashboard/certificates/${encodeURIComponent(certificate.code)}`}>{text.view}</Link></article>)}</div></section>;
 }

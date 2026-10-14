@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { EmptyState } from "@/app/components/ui/empty-state";
 import { getRequestLocale } from "@/app/lib/i18n-server";
 import { listOwnLearningSubscriptions } from "@/app/lib/learning/subscriptions";
 import { LearningIcon } from "@/app/components/learning-icon";
@@ -75,7 +76,10 @@ export default async function LearnerSubscriptionsPage({ searchParams }: { searc
           ? <div className={styles.manage}><Link prefetch={false} className="button button-primary" href={`/api/payments/paystack/subscriptions/manage?subscriptionId=${encodeURIComponent(subscription.subscription_id)}`}>{text.manage}</Link><p>{text.manageCopy}</p></div>
           : null}
       </article>;
-    })}</div> : <section className={styles.empty}><h2>{text.emptyTitle}</h2><p>{text.emptyCopy}</p><Link className="button button-primary" href="/dashboard/explore">{text.explore}</Link></section>}
+    })}</div> : <EmptyState titleId="subscriptions-empty-title" icon="courses"
+      title={text.emptyTitle} description={text.emptyCopy}
+      primaryAction={{ href: "/dashboard/explore", label: text.explore }}
+    />}
     <div className={styles.footer}>{text.end}</div>
   </section>;
 }

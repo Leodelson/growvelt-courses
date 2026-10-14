@@ -4,6 +4,7 @@ import { getOwnInstructorSubscriptionPlanData } from "@/app/lib/instructor/subsc
 import { areLearningSubscriptionPlansEnabled, canProvisionTestSubscriptionPlans } from "@/app/lib/subscriptions/feature";
 import { SubscriptionPlanForm } from "@/app/components/instructor/subscription-plan-form";
 import { ProvisionSubscriptionTestPlanButton } from "@/app/components/instructor/provision-subscription-test-plan-button";
+import { EmptyState } from "@/app/components/ui/empty-state";
 import styles from "@/app/components/instructor/subscription-plans.module.css";
 
 export const metadata = { title: "Instructor subscriptions" };
@@ -64,7 +65,10 @@ export default async function InstructorSubscriptionPlansPage() {
             <p className={styles.notice} role="status">Setup is already in progress. Do not submit it again while the request is being processed.</p>
             {canCreateTestPlans && <ProvisionSubscriptionTestPlanButton planId={plan.plan_id} label="Check setup status" />}
           </>}
-        </article>})}</div> : <div className={styles.emptyPlans}><h3>No subscription plans yet</h3><p>Create a draft above when your eligible course list is ready.</p></div>}
+        </article>})}</div> : <EmptyState titleId="subscription-plans-empty-title" headingLevel={3}
+          icon="courses" title="No subscription plans yet"
+          description="Create a draft above when your eligible course list is ready."
+        />}
       </section>
     </>}
   </section>;
