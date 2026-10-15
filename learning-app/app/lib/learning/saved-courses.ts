@@ -1,5 +1,6 @@
 import type { PublishedCourse } from "@/app/lib/catalog/published-courses";
 import { createClient } from "@/app/lib/supabase/server";
+import { withCourseRatings } from "@/app/lib/catalog/course-ratings";
 
 type SavedCourseRow = {
   course_id: number;
@@ -42,5 +43,5 @@ export async function getOwnSavedLearningCourseIds(): Promise<number[]> {
 export async function listOwnSavedLearningCourses(): Promise<PublishedCourse[]> {
   const { data, error } = await (await createClient()).rpc("list_own_saved_learning_courses", { p_limit: 48, p_offset: 0 });
   if (error) throw new Error("Unable to load saved courses.");
-  return ((data ?? []) as SavedCourseRow[]).map(mapSavedCourse);
+  return withCourseRatings(await createClient(), ((data ?? []) as SavedCourseRow[]).map(mapSavedCourse));
 }

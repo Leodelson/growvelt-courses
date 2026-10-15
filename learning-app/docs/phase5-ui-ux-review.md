@@ -6,7 +6,13 @@ Status: the owner viewed the first slice and explicitly authorized pushing the s
 
 ## Dashboard checkpoint — resume here
 
-Only empty-state presentation was upgraded on the following routes. Populated content, forms, authorization, and payment behavior were not redesigned.
+### 15 October — learner workspace group
+
+The populated My Learning, Saved Courses and Certificates pages have now been upgraded beyond the original empty-state slice. See [the learner workspace checkpoint](phase5-learner-workspaces.md) for exact functionality and tests. Public/dashboard Explore and course details were completed in `3514bb7`, including learner ratings; see the separate catalog-detail checkpoint.
+
+Next dashboard group: learner Subscriptions, Profile and Settings. After that, instructor workspace/course management, then company and admin groups. Dashboard Home and the shared shell still need their own review; notifications remain explicitly excluded. Preserve the unrelated earnings/PWA/media work and do not treat Phase 5 as complete.
+
+At the original 14 October checkpoint, only empty-state presentation had been upgraded on the following routes. The newer learner workspace checkpoint above supersedes those three library entries; the other three entries remain empty-state-only work. Forms, authorization and payment behavior remain unchanged.
 
 | Route | Integration file | Completed scope |
 | --- | --- | --- |

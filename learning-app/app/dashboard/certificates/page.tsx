@@ -1,26 +1,10 @@
-import Link from "next/link";
-import { EmptyState } from "@/app/components/ui/empty-state";
-import { getRequestLocale } from "@/app/lib/i18n-server";
+import { CertificateLibrary } from "@/app/components/learning/certificate-library";
 import { listOwnCertificates } from "@/app/lib/learning/certificates";
+import { listOwnLearningEnrollments } from "@/app/lib/learning/enrollments";
 
-export const metadata = { title: "Certificate space" };
-
-const copy = {
-  en: { eyebrow: "Certificates", emptyTitle: "Your issued certificates will appear here.", emptyCopy: "Complete an eligible Growvelt Learning course, then issue your certificate from the completed course page.", proof: "Earn trusted proof", proofCopy: "Complete all required text, video, and quiz activities to unlock an eligible certificate.", learning: "Go to My Learning", explore: "Explore courses", title: "Your earned proof", listCopy: "Issued records are available to view and verify.", issued: "Issued certificate", revoked: "Revoked certificate", completed: "Completed", reference: "Reference", view: "View certificate" },
-  fr: { eyebrow: "Certificats", emptyTitle: "Vos certificats délivrés apparaîtront ici.", emptyCopy: "Terminez un cours Growvelt Learning éligible, puis délivrez votre certificat depuis la page du cours terminé.", proof: "Gagnez une preuve fiable", proofCopy: "Terminez toutes les activités requises de texte, vidéo et quiz pour débloquer un certificat éligible.", learning: "Aller à Mon apprentissage", explore: "Explorer les cours", title: "Vos preuves obtenues", listCopy: "Les dossiers délivrés sont disponibles pour consultation et vérification.", issued: "Certificat délivré", revoked: "Certificat révoqué", completed: "Terminé", reference: "Référence", view: "Voir le certificat" },
-  es: { eyebrow: "Certificados", emptyTitle: "Tus certificados emitidos aparecerán aquí.", emptyCopy: "Completa un curso elegible de Growvelt Learning y, a continuación, emite tu certificado desde la página del curso completado.", proof: "Obtén una prueba fiable", proofCopy: "Completa todas las actividades obligatorias de texto, vídeo y cuestionarios para desbloquear un certificado elegible.", learning: "Ir a Mi aprendizaje", explore: "Explorar cursos", title: "Tus pruebas obtenidas", listCopy: "Los registros emitidos están disponibles para ver y verificar.", issued: "Certificado emitido", revoked: "Certificado revocado", completed: "Completado", reference: "Referencia", view: "Ver certificado" },
-} as const;
+export const metadata = { title: "Certificates" };
 
 export default async function LearnerCertificatesPage() {
-  const [certificates, locale] = await Promise.all([listOwnCertificates(), getRequestLocale()]);
-  const text = copy[locale];
-  const dateFormatter = new Intl.DateTimeFormat(locale === "fr" ? "fr-FR" : locale === "es" ? "es-ES" : "en-NG", { dateStyle: "medium" });
-  if (!certificates.length) return <EmptyState
-    titleId="certificate-space-title" headingLevel={1} size="page" icon="certificate"
-    eyebrow={text.eyebrow} title={text.emptyTitle} description={text.emptyCopy}
-    note={{ title: text.proof, description: text.proofCopy }}
-    primaryAction={{ href: "/dashboard/my-learning", label: text.learning }}
-    secondaryAction={{ href: "/dashboard/explore", label: text.explore }}
-  />;
-  return <section className="certificate-list section-shell" aria-labelledby="certificate-space-title"><header className="catalog-hero"><p className="eyebrow">{text.eyebrow}</p><h1 id="certificate-space-title">{text.title}</h1><p>{text.listCopy}</p></header><div className="my-learning-list">{certificates.map((certificate) => <article className="my-learning-card" key={certificate.code}><div><p className="eyebrow">{certificate.status === "issued" ? text.issued : text.revoked}</p><h2>{certificate.courseTitle}</h2><p>{text.completed} {dateFormatter.format(new Date(certificate.completedAt))}</p><small>{text.reference}: {certificate.code}</small></div><Link className="button button-primary" href={`/dashboard/certificates/${encodeURIComponent(certificate.code)}`}>{text.view}</Link></article>)}</div></section>;
+  const [certificates, courses] = await Promise.all([listOwnCertificates(), listOwnLearningEnrollments()]);
+  return <CertificateLibrary certificates={certificates} completedCourses={courses.filter((course) => course.enrollmentStatus === "completed").map(({ id, title, slug }) => ({ id, title, slug }))} />;
 }
