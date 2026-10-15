@@ -1,6 +1,6 @@
 # Phase 5 — homepage motion reel
 
-Added below the existing public homepage hero, before Subjects. Existing hero, navigation, search, images, sections, links, catalog eligibility, authentication and payment behavior are preserved. No database migration, hosted data changes, Docker changes or Careers changes.
+Initially added below the existing hero. The October 15 follow-up moves the reel directly below navigation and above the retained hero, at full width, with lower-left overlay copy. See `phase5-public-opening-update.md`. Existing hero, navigation, search, images, sections, links, catalog eligibility, authentication and payment behavior are preserved. No database migration, hosted data changes, Docker changes or Careers changes.
 
 ## Source and edit record
 

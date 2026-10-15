@@ -32,6 +32,8 @@ export function PublicHome({ courses }: { courses: PublishedCourse[] }) {
   return <div className={styles.publicPage}>
     <PublicHeader />
     <main id="public-main">
+      <HomeMotionReel />
+
       <section className={`${styles.wrap} ${styles.hero}`} aria-labelledby="home-title">
         <div className={styles.heroCopy}>
           <p className={styles.eyebrow}><span />{home.eyebrow}</p>
@@ -47,8 +49,6 @@ export function PublicHome({ courses }: { courses: PublishedCourse[] }) {
           <div className={styles.heroStamp} aria-hidden="true"><BookOpen size={26} /><span>Growvelt<br />Learning</span></div>
         </figure>
       </section>
-
-      <HomeMotionReel />
 
       <section id="subjects" className={`${styles.wrap} ${styles.section}`} aria-labelledby="subjects-title">
         <header className={styles.sectionHeading}><div><p className={styles.eyebrow}>{home.subjectsEyebrow}</p><h2 id="subjects-title">{home.subjectsTitle}</h2><p>{home.subjectsCopy}</p></div><Link className={styles.quiet} href="/learn">{home.allCourses}<ArrowUpRight aria-hidden="true" size={18} /></Link></header>

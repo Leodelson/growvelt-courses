@@ -93,7 +93,7 @@ for (locale of ["en", "fr", "es"]) {
   assert.equal((home.match(/href="\/partner-with-growvelt"/g) || []).length, 1, "Old partnership link removed");
   assert.doesNotMatch(home, /data-course=|Ready to put your skills to work|\bclearer\b|Add to cart/i);
   assert.match(home, /id="how-it-works"/);
-  assert.ok(home.indexOf('data-motion-reel="true"') > home.indexOf('id="home-title"'));
+  assert.ok(home.indexOf('data-motion-reel="true"') < home.indexOf('id="home-title"'));
   assert.ok(home.indexOf('data-motion-reel="true"') < home.indexOf('id="subjects"'));
   assert.equal((home.match(/<details\b/g) || []).length, 6, "Existing guides and FAQ remain");
 }

@@ -6,9 +6,9 @@ import styles from "./home-motion-reel.module.css";
 
 const film = "/videos/growvelt-learning-reel-v1.mp4";
 const copy = {
-  en: { kicker: "A world of possibility", title: "Learn. Share. Build what’s next.", description: "A silent montage of teaching, remote learning, career preparation and professional collaboration." },
-  fr: { kicker: "Un monde de possibilités", title: "Apprendre. Partager. Construire l’avenir.", description: "Un montage muet d’enseignement, d’apprentissage à distance, de préparation professionnelle et de collaboration." },
-  es: { kicker: "Un mundo de posibilidades", title: "Aprende. Comparte. Construye el futuro.", description: "Un montaje sin sonido de enseñanza, aprendizaje remoto, preparación profesional y colaboración." },
+  en: { kicker: "Growvelt Learning", title: "Where learning", accent: "meets opportunity.", intro: "Build practical skills for the next chapter of your life.", description: "A silent montage of teaching, remote learning, career preparation and professional collaboration." },
+  fr: { kicker: "Growvelt Learning", title: "L’apprentissage ouvre", accent: "de nouvelles perspectives.", intro: "Développez des compétences pratiques pour votre prochain chapitre.", description: "Un montage muet d’enseignement, d’apprentissage à distance, de préparation professionnelle et de collaboration." },
+  es: { kicker: "Growvelt Learning", title: "Donde aprender", accent: "abre oportunidades.", intro: "Desarrolla habilidades prácticas para el próximo capítulo de tu vida.", description: "Un montaje sin sonido de enseñanza, aprendizaje remoto, preparación profesional y colaboración." },
 };
 
 export function HomeMotionReel() {
@@ -52,7 +52,7 @@ export function HomeMotionReel() {
     <div className={styles.frame}>
       <video id="home-motion-video" ref={videoRef} className={styles.video} muted playsInline loop preload="none" poster="/videos/growvelt-learning-reel-v1.webp" aria-label={text.description} />
       <div className={styles.shade} aria-hidden="true" />
-      <div className={styles.caption}><p>{text.kicker}</p><h2 id="home-motion-title">{text.title}</h2></div>
+      <div className={styles.caption}><p className={styles.kicker}>{text.kicker}</p><h2 id="home-motion-title">{text.title}<span>{text.accent}</span></h2><p className={styles.intro}>{text.intro}</p></div>
     </div>
   </section>;
 }

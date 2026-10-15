@@ -1,9 +1,11 @@
-.reel { width: min(1240px, calc(100% - 64px)); margin: 12px auto 24px; }
-.frame { position: relative; isolation: isolate; overflow: hidden; border-radius: 28px; aspect-ratio: 2.3; background: #25222b url('/videos/growvelt-learning-reel-v1.webp') center / cover no-repeat; }
-.video { display: block; width: 100%; height: 100%; object-fit: cover; }
-.shade { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(0deg, rgb(17 13 27 / 80%), transparent 70%); }
-.caption { position: absolute; bottom: 38px; left: 38px; right: 38px; color: #fff; }
-.caption p { margin: 0 0 12px; color: #fff; font-size: .75rem; font-weight: 750; letter-spacing: .13em; text-transform: uppercase; }
-.caption h2 { margin: 0; max-width: 680px; font-size: clamp(1.6rem, 3.1vw, 2.75rem); line-height: 1.13; letter-spacing: -.035em; text-wrap: balance; }
-@media (max-width: 780px) { .frame { aspect-ratio: 16 / 9; border-radius: 22px; } .caption { left: 24px; bottom: 24px; right: 24px; } }
-@media (max-width: 620px) { .reel { width: calc(100% - 32px); margin-bottom: 16px; } .frame { aspect-ratio: 4 / 3; } .caption { left: 20px; right: 20px; } .caption p { font-size: .65rem; margin-bottom: 8px; } .caption h2 { font-size: clamp(1.45rem, 6vw, 2rem); } }
+.reel { width: 100%; margin: 0; }
+.frame { position: relative; isolation: isolate; overflow: hidden; height: clamp(620px, calc(100svh - 88px), 900px); background: #25222b url('/videos/growvelt-learning-reel-v1.webp') center / cover no-repeat; }
+.video { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center 42%; }
+.shade { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(90deg, rgb(12 9 18 / 57%), rgb(12 9 18 / 10%) 80%), linear-gradient(0deg, rgb(12 9 18 / 72%), transparent 85%); }
+.caption { position: absolute; bottom: clamp(54px, 7vw, 100px); left: max(5vw, calc((100% - 1240px) / 2)); right: 5vw; max-width: 780px; color: #fff; }
+.caption .kicker { margin: 0 0 22px; color: #f4edf9; font-size: 11px; font-weight: 700; letter-spacing: .17em; text-transform: uppercase; }
+.caption h2 { margin: 0; color: #fff; font-family: Georgia, 'Times New Roman', serif; font-size: clamp(48px, 5.7vw, 86px); line-height: 1.06; font-weight: 400; letter-spacing: -.035em; text-wrap: balance; }
+.caption h2 span { display: block; }
+.caption .intro { max-width: 480px; margin: 26px 0 0; color: #f3edf7; font-size: 17px; line-height: 1.65; }
+@media (max-width: 780px) { .frame { height: clamp(600px, calc(100svh - 126px), 780px); } .caption { left: 26px; right: 26px; bottom: 56px; } .caption h2 { font-size: clamp(42px, 7.5vw, 62px); } .caption .intro { max-width: 390px; font-size: 15px; } }
+@media (max-width: 400px) { .caption { left: 22px; right: 22px; bottom: 44px; } .caption h2 { font-size: clamp(36px, 10vw, 42px); } .caption .kicker { font-size: 10px; margin-bottom: 18px; } .caption .intro { margin-top: 20px; } }

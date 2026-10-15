@@ -1,0 +1,17 @@
+.opening { position: relative; isolation: isolate; width: 100%; min-height: clamp(740px, calc(100svh - 88px), 980px); display: flex; align-items: center; overflow: hidden; background: #f5f1e9; color: #19131f; }
+.photo { position: absolute; inset: 0; z-index: -2; display: block; }
+.photo img { object-fit: cover; object-position: 70% 32%; }
+.wash { position: absolute; inset: 0; z-index: -1; pointer-events: none; background: linear-gradient(90deg, #f5f1e9 0%, rgb(245 241 233 / 93%) 26%, rgb(245 241 233 / 25%) 52%, transparent 65%); }
+.content { width: min(650px, 51%); margin-left: max(5vw, calc((100% - 1240px) / 2)); padding-block: 54px; }
+.content .eyebrow { margin: 0 0 22px; color: #7900bc; font-size: 11px; font-weight: 750; letter-spacing: .15em; text-transform: uppercase; }
+.content h2 { margin: 0; color: #19131f; font-size: clamp(52px, 5.5vw, 86px); line-height: 1.01; font-weight: 650; letter-spacing: -.055em; }
+.content h2 span { display: block; }
+.content h2 em { display: block; margin-top: 9px; font-family: Georgia, 'Times New Roman', serif; font-weight: 400; letter-spacing: -.045em; }
+.content .intro { max-width: 430px; margin: 28px 0 0; color: #4f4756; font-size: 16px; line-height: 1.7; }
+.action { display: inline-flex; align-items: center; justify-content: center; gap: 28px; min-height: 54px; max-width: 100%; margin-top: 28px; padding: 16px 25px; border-radius: 999px; background: #9500ed; color: #fff; font-size: 14px; font-weight: 700; line-height: 1.4; text-decoration: none; }
+.action svg { flex-shrink: 0; }
+.action:hover { background: #7600ba; color: #fff; }
+.action:focus-visible { outline: 3px solid #7900bc; outline-offset: 5px; }
+@media (max-width: 1050px) and (min-width: 781px) { .content { width: 54%; } .content h2 { font-size: clamp(48px, 5.5vw, 58px); } .content .intro { max-width: 360px; font-size: 15px; } }
+@media (max-width: 780px) { .opening { min-height: 980px; align-items: stretch; } .photo img { object-position: 70% top; } .wash { background: linear-gradient(0deg, rgb(245 241 233 / 96%) 0%, rgb(245 241 233 / 92%) 32%, rgb(245 241 233 / 40%) 55%, transparent 70%); } .content { width: auto; max-width: 620px; margin: 0; padding: 450px 28px 44px; } .content h2 { font-size: clamp(40px, 6.4vw, 54px); } .content .intro { max-width: 500px; font-size: 15px; margin-top: 24px; } .content .eyebrow { margin-bottom: 18px; } .action { margin-top: 24px; } }
+@media (max-width: 400px) { .content { padding: 390px 22px 36px; } .opening { min-height: 900px; } .content h2 { font-size: clamp(34px, 9.8vw, 39px); } .content .eyebrow { font-size: 10px; } .content .intro { font-size: 14px; } .action { min-height: 50px; padding: 14px 22px; gap: 24px; font-size: 13px; } }

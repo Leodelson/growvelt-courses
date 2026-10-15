@@ -8,6 +8,7 @@ import FooterWrapper from "@/app/components/FooterWrapper";
 import { useLanguage } from "@/app/components/language-provider";
 import { publicExperienceCopy } from "@/app/lib/public-experience-copy";
 import styles from "./public-experience.module.css";
+import { TeachOpening } from "./teach-opening";
 
 const benefitIcons = [Lightbulb, BookOpen, Layers3];
 
@@ -18,7 +19,8 @@ export function PublicTeach() {
   return <div className={styles.publicPage}>
     <PublicHeader />
     <main id="public-main">
-      <section className={`${styles.wrap} ${styles.hero} ${styles.teachHero}`} aria-labelledby="teach-title">
+      <TeachOpening />
+      <section id="teach-introduction" className={`${styles.wrap} ${styles.hero} ${styles.teachHero}`} aria-labelledby="teach-title">
         <div className={styles.heroCopy}><p className={styles.eyebrow}><span />{copy.eyebrow}</p><h1 id="teach-title">{copy.title}<span>{copy.accent}</span></h1><p className={styles.lede}>{copy.intro}</p><div className={styles.heroActions}><Link className={styles.primary} href="/teach/apply">{copy.action}<ArrowUpRight aria-hidden="true" size={19} /></Link></div></div>
         <figure className={styles.heroVisual}><div className={styles.heroPhoto}><Image src="/images/black-american-lady.png" alt={copy.imageAlt} fill priority sizes="(max-width: 780px) 100vw, 45vw" /></div><figcaption><span>{copy.caption}</span><strong>{t("teach.imageTitle")}</strong></figcaption></figure>
       </section>
