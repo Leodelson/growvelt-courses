@@ -28,27 +28,25 @@ async function scenario({ reduced = false, saveData = false, reject = false, loc
     },
   });
   const tree = mod.exports.HomeMotionReel();
-  const nodes = flatten(tree), element = nodes.find((node) => node.type === "video"), button = nodes.find((node) => node.type === "button");
+  const nodes = flatten(tree), element = nodes.find((node) => node.type === "video");
   assert.equal(element.props.muted, true); assert.equal(element.props.loop, true); assert.equal(element.props.playsInline, true);
   assert.equal(element.props.preload, "none"); assert.equal(element.props.src, undefined); assert.equal(element.props.autoPlay, undefined);
-  assert.equal(button.props["aria-controls"], element.props.id);
+  assert.equal(nodes.some((node) => node.type === "button"), false);
+  assert.equal(element.props.controls, undefined);
   const html = renderToStaticMarkup(tree);
   assert.match(html, /poster="\/videos\/growvelt-learning-reel-v1.webp"/);
-  assert.doesNotMatch(html, /<a |<h1/);
+  assert.doesNotMatch(html, /<a |<h1|Illustrative AI|générées par IA|generadas con IA|Play video|Pause video/);
   refs[0].current = video; refs[1].current = {};
   const cleanup = effects[0]();
   assert.equal(attempts, 0, "No video requested before intersection");
   intersection([{ isIntersecting: true }]); await Promise.resolve();
   assert.equal(attempts, reduced || saveData ? 0 : 1);
-  button.props.onClick(); await Promise.resolve();
-  if (reduced || saveData || reject) assert.equal(attempts, reduced || saveData ? 1 : 2, "Manual play can retry or opt into motion");
-  else {
-    assert.equal(video.paused, true);
+  if (!reduced && !saveData && !reject) {
+    assert.equal(video.paused, false);
     intersection([{ isIntersecting: false }]); intersection([{ isIntersecting: true }]);
     document.hidden = true; listeners.get("visibility")(); document.hidden = false; listeners.get("visibility")();
     motion.matches = true; listeners.get("motion")(); motion.matches = false; listeners.get("motion")();
-    assert.equal(attempts, 1, "Explicit pause survives scrolling, tab visibility and preference changes");
-    button.props.onClick(); await Promise.resolve(); assert.equal(video.paused, false);
+    await Promise.resolve(); assert.equal(video.paused, false, "Autoplay resumes in view after visibility/preference changes");
     document.hidden = true; listeners.get("visibility")(); assert.equal(video.paused, true);
   }
   cleanup(); assert.equal(disconnected, true); assert.equal(listeners.size, 0); assert.equal(video.paused, true);
@@ -56,4 +54,4 @@ async function scenario({ reduced = false, saveData = false, reject = false, loc
 await scenario(); await scenario({ reduced: true }); await scenario({ saveData: true }); await scenario({ reject: true });
 await scenario({ locale: "fr" }); await scenario({ locale: "es" });
 for (const name of ["growvelt-learning-reel-v1.mp4", "growvelt-learning-reel-v1.webp"]) assert.ok(fs.statSync(new URL(`../public/videos/${name}`, import.meta.url)).size < 1_000_000);
-console.log("PASS: lazy muted loop, poster, three locales, manual pause persistence, reduced-motion/data-saver opt-in, blocked-autoplay retry, hidden-tab pause, cleanup and sub-1MB assets.");
+console.log("PASS: automatic muted loop without buttons or AI label, poster, three locales, reduced-motion/data-saver protection, blocked-autoplay fallback, hidden-tab pause/resume, cleanup and sub-1MB assets.");

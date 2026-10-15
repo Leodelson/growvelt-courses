@@ -4,7 +4,7 @@ Added below the existing public homepage hero, before Subjects. Existing hero, n
 
 ## Source and edit record
 
-User-approved AI footage from their signed-in Canva account, generated with included allowance; no subscription, trial or purchase made. Thread: https://www.canva.com/ai/thread/e9076a15-535b-4e08-8055-c372a2a5e1f0 . Canva's applicable usage conditions still apply; AI generation is not a guarantee against third-party claims. Scenes are labeled illustrative, not presented as actual learners, staff or testimonials.
+User-approved AI footage from their signed-in Canva account, generated with included allowance; no subscription, trial or purchase made. Thread: https://www.canva.com/ai/thread/e9076a15-535b-4e08-8055-c372a2a5e1f0 . Canva's applicable usage conditions still apply; AI generation is not a guarantee against third-party claims. Scenes are not presented as actual learners, staff or testimonials. At the user's request, the visible AI-scene label and play/pause controls were removed on October 15, 2026.
 
 Four source clips, approximately six seconds each:
 
@@ -21,14 +21,14 @@ Each excerpt starts at 0.4s and lasts 2.4s; 0.4s cross-dissolves between scenes.
 
 - Local versioned assets only; no Canva player, tracking embed or expiring signed URL in the app.
 - Poster displayed before playback; media source assigned only when in view and motion is allowed.
-- Muted inline looping video, keyboard-operable play/pause, preserved user pause across scroll/tab changes.
-- Reduced-motion and data-saver preferences suppress automatic loading/playback; explicit Play opts in.
-- Offscreen and hidden tabs pause; blocked autoplay leaves manual Play available; media errors retain the poster and expose a status message.
+- Muted inline looping video starts automatically in view, without visible controls or a label below the reel. Caption spacing no longer reserves room for the removed control.
+- Reduced-motion and data-saver preferences suppress automatic loading/playback.
+- Offscreen and hidden tabs pause; playback resumes automatically when visible and permitted. Blocked autoplay retains the poster.
 - English, French and Spanish presentation copy.
 
 ## Verification
 
-`scripts/test-phase5-home-motion.mjs`: in-memory lifecycle tests cover lazy loading, muted/inline/loop, poster, locale rendering, pause persistence, reduced-motion, data-saver, autoplay rejection, tab visibility and cleanup. `scripts/test-phase5-home-expansion.mjs`: existing homepage regression checks, plus placement after hero/before Subjects. No test writes to Auth, Storage or the database.
+`scripts/test-phase5-home-motion.mjs`: in-memory lifecycle tests cover lazy loading, muted/inline/loop, poster, locale rendering, absence of controls/AI label, reduced-motion, data-saver, autoplay rejection, automatic pause/resume on tab visibility and cleanup. `scripts/test-phase5-home-expansion.mjs`: existing homepage regression checks, plus placement after hero/before Subjects. No test writes to Auth, Storage or the database.
 
 Production build passed (Next.js 16.3.0); focused ESLint passed without warnings. Existing homepage expansion, FAQ and public support-page tests passed. Browser playback and manual pause passed with no browser console errors. Layout checked at 1440, 768, 375 and 320px; reel controls and title do not overlap. The 320px whole-page measurement has a pre-existing 1px overflow associated with footer/screen-reader elements, not the new reel; unrelated footer code was not changed. Final caption contrast and spacing rechecked after the final build. Desktop proof is kept in the task visualization directory, not shipped as an app asset.
 
