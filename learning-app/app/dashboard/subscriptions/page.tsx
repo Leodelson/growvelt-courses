@@ -4,6 +4,8 @@ import { getRequestLocale } from "@/app/lib/i18n-server";
 import { listOwnLearningSubscriptions } from "@/app/lib/learning/subscriptions";
 import { LearningIcon } from "@/app/components/learning-icon";
 import { SubscriptionManagementNotice } from "@/app/components/learning/subscription-management-notice";
+import { SubscriptionWorkspace } from "@/app/components/learning/subscription-workspace";
+import { accountCopy, formatSubscriptionDate } from "@/app/lib/learning/account-workspace";
 import styles from "@/app/components/learning/subscriptions.module.css";
 
 export const metadata = { title: "My subscriptions" };
@@ -45,9 +47,7 @@ export default async function LearnerSubscriptionsPage({ searchParams }: { searc
   ]);
   const text = copy[locale];
   const dateLocale = locale === "fr" ? "fr-FR" : locale === "es" ? "es-ES" : "en-NG";
-  const formatDate = (value: string | null) => value
-    ? new Intl.DateTimeFormat(dateLocale, { dateStyle: "long" }).format(new Date(value))
-    : null;
+  const formatDate = (value: string | null) => formatSubscriptionDate(value, dateLocale);
 
   return <section className={`section-shell ${styles.page}`} aria-labelledby="learner-subscriptions-title">
     <Link className={`back-link ${styles.back}`} href="/dashboard/my-learning"><LearningIcon name="arrow-left" size={17} />{text.back}</Link>
@@ -61,13 +61,13 @@ export default async function LearnerSubscriptionsPage({ searchParams }: { searc
       className={styles.error}
       show={params.management === "unavailable"}
     />
-    {subscriptions.length ? <div className={styles.list}>{subscriptions.map((subscription) => {
+    {subscriptions.length ? <SubscriptionWorkspace statuses={Object.fromEntries(["active", "attention", "non_renewing", "cancelled", "completed", "expired", "pending"].map((status) => [status, text[status as keyof typeof text]]))} items={subscriptions.map((subscription) => {
       const status = text[subscription.subscription_status];
       const paidThrough = formatDate(subscription.paid_through);
-      return <article className={styles.card} key={subscription.subscription_id}>
+      return { id: subscription.subscription_id, title: subscription.plan_name, status: subscription.subscription_status, courses: subscription.course_titles, paidThrough: subscription.paid_through, content: <article className={styles.card}>
         <div className={styles.heading}>
           <div><span className={styles.status}>{status}</span><h2>{subscription.plan_name}</h2></div>
-          <strong>{new Intl.NumberFormat(dateLocale, { style: "currency", currency: subscription.currency, minimumFractionDigits: 2 }).format(subscription.amount_minor / 100)}<small> / month</small></strong>
+          <strong>{new Intl.NumberFormat(dateLocale, { style: "currency", currency: subscription.currency, minimumFractionDigits: 2 }).format(subscription.amount_minor / 100)}<small>{accountCopy[locale].month}</small></strong>
         </div>
         {paidThrough && <p className={styles.period}>{text.paidThrough}: <strong>{paidThrough}</strong></p>}
         {subscription.course_titles.length > 0 && <div className={styles.courses}><h3>{text.included}</h3><ul>{subscription.course_titles.map((title) => <li key={title}>{title}</li>)}</ul></div>}
@@ -75,8 +75,8 @@ export default async function LearnerSubscriptionsPage({ searchParams }: { searc
         {subscription.provider_management_available || ["active", "attention"].includes(subscription.subscription_status)
           ? <div className={styles.manage}><Link prefetch={false} className="button button-primary" href={`/api/payments/paystack/subscriptions/manage?subscriptionId=${encodeURIComponent(subscription.subscription_id)}`}>{text.manage}</Link><p>{text.manageCopy}</p></div>
           : null}
-      </article>;
-    })}</div> : <EmptyState titleId="subscriptions-empty-title" icon="courses"
+      </article> };
+    })} /> : <EmptyState titleId="subscriptions-empty-title" icon="courses"
       title={text.emptyTitle} description={text.emptyCopy}
       primaryAction={{ href: "/dashboard/explore", label: text.explore }}
     />}

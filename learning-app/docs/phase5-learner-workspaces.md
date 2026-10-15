@@ -29,7 +29,7 @@ Consistent responsive page headings, statistics, panels, controls, cards and emp
 
 ## Resume order
 
-1. Learner Subscriptions, Profile and Settings.
+1. Learner Subscriptions, Profile and Settings — completed in the [account workspace checkpoint](phase5-account-workspaces.md).
 2. Dashboard Home/shared shell review (preserve existing functioning navigation).
 3. Instructor workspace/course creation/curriculum and subscriptions; earnings must be reviewed against the owner's existing uncommitted work before touching it.
 4. Company workspace/billing/reports/insights, then admin screens.

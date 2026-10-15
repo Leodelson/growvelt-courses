@@ -12,6 +12,9 @@ import { translate } from "@/app/lib/i18n";
 import { VerifiedProviderBadge } from "@/app/components/verified-provider-badge";
 import { createClient } from "@/app/lib/supabase/server";
 
+import { accountCopy } from "@/app/lib/learning/account-workspace";
+import styles from "@/app/components/learning/account-workspace.module.css";
+
 export const metadata = { title: "Your profile" };
 
 export default async function DashboardProfilePage() {
@@ -28,6 +31,8 @@ export default async function DashboardProfilePage() {
   if (!profile) redirect("/sign-in");
   const t = (key: Parameters<typeof translate>[1]) => translate(locale, key);
 
+  const text = accountCopy[locale];
+  const socialLinkCount = [profile.linkedinUrl, profile.websiteUrl, profile.instagramUrl, profile.facebookUrl, profile.xUrl].filter(Boolean).length;
   const initial = profile.fullName.charAt(0).toUpperCase() || "G";
   const role = isAdmin
     ? t("profile.admin")
@@ -35,9 +40,9 @@ export default async function DashboardProfilePage() {
       ? t("profile.instructor")
       : t("profile.learner");
   const setupSteps = [
-    { label: t("profile.displayName"), complete: profile.fullName !== "Growvelt learner" },
-    { label: t("profile.verifiedEmail"), complete: true },
-    { label: t("profile.image"), complete: Boolean(profile.avatarUrl) },
+    { label: t("profile.displayName"), complete: profile.fullName !== "Growvelt learner", href: "#profile-identity" },
+    { label: text.email, complete: Boolean(profile.email), href: "#profile-identity" },
+    { label: t("profile.image"), complete: Boolean(profile.avatarUrl), href: "#profile-identity" },
   ];
   const completedSteps = setupSteps.filter((step) => step.complete).length;
   const setupPercent = Math.round((completedSteps / setupSteps.length) * 100);
@@ -47,7 +52,9 @@ export default async function DashboardProfilePage() {
   const providerLogos = await Promise.all(providerBrandings.map(async ({ organizationId, profile }) => ({ organizationId, url: profile?.logo_storage_path ? (await supabase.storage.from("learning-provider-media").createSignedUrl(profile.logo_storage_path, 60 * 60)).data?.signedUrl ?? null : null })));
 
   return (
-    <section className="profile-page section-shell">
+    <section className={`profile-page section-shell ${styles.page} ${styles.profile}`} aria-labelledby="account-profile-title">
+      <div className={styles.header}><div><p className="eyebrow">{t("profile.member")}</p><h1 id="account-profile-title">{text.profile}</h1><p>{text.profileIntro}</p></div><Link href="/dashboard/settings" className="button button-secondary">{text.settings}</Link></div>
+      <nav className={styles.profileNav} aria-label={text.profile}><a href="#profile-identity">{text.identity}</a><a href="#profile-setup-title">{text.profileChecklist}</a><a href="#profile-links">{text.links}</a></nav>
       <header
         className="profile-cover"
       >
@@ -64,8 +71,8 @@ export default async function DashboardProfilePage() {
         />
       </header>
 
-      <section className="profile-identity-card" aria-labelledby="profile-name">
-        <div className="profile-avatar-preview" aria-hidden="true">
+      <section id="profile-identity" className="profile-identity-card" aria-labelledby="profile-name">
+        <div className="profile-avatar-preview">
           {profile.avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={profile.avatarUrl} alt="" />
@@ -124,12 +131,15 @@ export default async function DashboardProfilePage() {
         </div>
         <div className="profile-setup-steps">
           {setupSteps.map((step) => (
-            <span className={step.complete ? "is-complete" : ""} key={step.label}>
+            <a href={step.href} className={step.complete ? "is-complete" : ""} key={step.label}>
               {step.complete ? "✓" : "○"} {step.label}
-            </span>
+            </a>
           ))}
         </div>
+        <p className={styles.hint}>{text.profileHint}</p>
       </section>
+
+      <div className={styles.stats}><div className={styles.stat}><div><strong>{Number(Boolean(profile.avatarUrl)) + Number(Boolean(profile.coverUrl))} / 2</strong><span>{text.photos}</span></div></div><div className={styles.stat}><div><strong>{socialLinkCount} / 5</strong><span>{text.linksCount}</span></div></div></div>
 
       <section className="profile-details-grid" aria-label="Learning profile details">
         <article>
@@ -144,7 +154,7 @@ export default async function DashboardProfilePage() {
         </article>
       </section>
 
-      <ProfileSocialLinksForm userId={profile.id} links={{ linkedinUrl: profile.linkedinUrl, websiteUrl: profile.websiteUrl, instagramUrl: profile.instagramUrl, facebookUrl: profile.facebookUrl, xUrl: profile.xUrl }} />
+      <div id="profile-links"><ProfileSocialLinksForm userId={profile.id} links={{ linkedinUrl: profile.linkedinUrl, websiteUrl: profile.websiteUrl, instagramUrl: profile.instagramUrl, facebookUrl: profile.facebookUrl, xUrl: profile.xUrl }} /></div>
 
     </section>
   );
