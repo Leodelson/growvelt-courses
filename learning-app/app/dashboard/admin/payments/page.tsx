@@ -26,7 +26,7 @@ export default async function PaymentOperationsPage({ searchParams }: { searchPa
     </header>
     <form className="operations-search-form" action="/dashboard/admin/payments">
       <label htmlFor="payment-query">Order, learner, or course</label>
-      <div className="operations-search-row"><input id="payment-query" name="q" defaultValue={q} placeholder="GL-… or learner email" /><button className="button button-primary" type="submit">Search</button>{q ? <Link className="button button-secondary" href="/dashboard/admin/payments">Clear</Link> : null}</div>
+      <div className="operations-search-row"><input id="payment-query" name="q" defaultValue={q} placeholder="GL-… or learner email" /><button className="button button-primary" type="submit">Search</button>{q ? <Link className="button button-secondary" href="/dashboard/admin/payments">Reset</Link> : null}</div>
     </form>
     {operations.length ? <div className="admin-application-list">{operations.map((item) =>
       <article className="admin-application-row" key={item.order_id}>

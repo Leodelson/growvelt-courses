@@ -50,7 +50,7 @@ export function HomeMotionReel() {
 
   return <section className={styles.reel} ref={frameRef} aria-labelledby="home-motion-title">
     <div className={styles.frame}>
-      <video id="home-motion-video" ref={videoRef} className={styles.video} muted playsInline loop preload="none" poster="/videos/growvelt-learning-reel-v1.webp" aria-label={text.description} />
+      <video id="home-motion-video" ref={videoRef} className={styles.video} muted playsInline loop disablePictureInPicture disableRemotePlayback controlsList="nodownload nofullscreen noremoteplayback" preload="none" poster="/videos/growvelt-learning-reel-v1.webp" aria-label={text.description} />
       <div className={styles.shade} aria-hidden="true" />
       <div className={styles.caption}><p className={styles.kicker}>{text.kicker}</p><h2 id="home-motion-title">{text.title}<span>{text.accent}</span></h2><p className={styles.intro}>{text.intro}</p></div>
     </div>

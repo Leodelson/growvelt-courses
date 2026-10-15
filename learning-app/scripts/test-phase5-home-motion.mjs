@@ -33,6 +33,9 @@ async function scenario({ reduced = false, saveData = false, reject = false, loc
   assert.equal(element.props.preload, "none"); assert.equal(element.props.src, undefined); assert.equal(element.props.autoPlay, undefined);
   assert.equal(nodes.some((node) => node.type === "button"), false);
   assert.equal(element.props.controls, undefined);
+  assert.equal(element.props.disablePictureInPicture, true);
+  assert.equal(element.props.disableRemotePlayback, true);
+  assert.match(element.props.controlsList, /noremoteplayback/);
   const html = renderToStaticMarkup(tree);
   assert.match(html, /poster="\/videos\/growvelt-learning-reel-v1.webp"/);
   assert.doesNotMatch(html, /<a |<h1|Illustrative AI|générées par IA|generadas con IA|Play video|Pause video/);

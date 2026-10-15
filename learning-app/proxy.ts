@@ -20,7 +20,7 @@ export async function proxy(request: NextRequest) {
   // protected routes can become usable.
   if (!url || !publishableKey) {
     if (protectedPrefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`))) {
-      const destination = new URL("/sign-in", request.url);
+      const destination = new URL(pathname === "/teach/apply" ? "/sign-up" : "/sign-in", request.url);
       destination.searchParams.set("next", getSafeNextPath(`${pathname}${request.nextUrl.search}`));
       return NextResponse.redirect(destination);
     }
@@ -46,7 +46,7 @@ export async function proxy(request: NextRequest) {
   const isProtectedPath = protectedPrefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
 
   if (isProtectedPath && !isAuthenticated) {
-    const destination = new URL("/sign-in", request.url);
+    const destination = new URL(pathname === "/teach/apply" ? "/sign-up" : "/sign-in", request.url);
     destination.searchParams.set("next", getSafeNextPath(`${pathname}${request.nextUrl.search}`));
     return copySessionCookies(response, NextResponse.redirect(destination));
   }

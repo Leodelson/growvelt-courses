@@ -25,15 +25,17 @@ export function AuthForm({ mode, next }: { mode: AuthMode; next?: string | null 
   const [showPassword, setShowPassword] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [turnstileResetKey, setTurnstileResetKey] = useState(0);
-  const [intent, setIntent] = useState<OnboardingIntent>("learn");
-  const intentRef = useRef<OnboardingIntent>("learn");
+  const initialIntent: OnboardingIntent = getExplicitSafeNextPath(next) === "/teach/apply" ? "teach" : "learn";
+  const [intent, setIntent] = useState<OnboardingIntent>(initialIntent);
+  const intentRef = useRef<OnboardingIntent>(initialIntent);
   const pendingRef = useRef(false);
   const isSignUp = mode === "sign-up";
   const explicitSafeNext = getExplicitSafeNextPath(next);
   const safeNext = getSafeNextPath(next);
-  const authModeHref = (path: "/sign-in" | "/sign-up") => `${path}?next=${encodeURIComponent(intent === "teach" ? "/teach/apply" : safeNext)}`;
+  const authModeHref = (path: "/sign-in" | "/sign-up") => `${path}?next=${encodeURIComponent(intent === "teach" ? "/teach/apply" : explicitSafeNext === "/teach/apply" ? "/dashboard" : safeNext)}`;
 
   function getPostAuthDestination() {
+    if (explicitSafeNext === "/teach/apply") return intentRef.current === "teach" ? "/teach/apply" : "/dashboard";
     return explicitSafeNext ?? (intentRef.current === "teach" ? "/teach/apply" : safeNext);
   }
 

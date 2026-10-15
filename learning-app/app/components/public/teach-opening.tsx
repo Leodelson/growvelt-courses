@@ -22,7 +22,6 @@ export function TeachOpening() {
     </picture>
     <div className={styles.wash} aria-hidden="true" />
     <div className={styles.content}>
-      <p className={styles.eyebrow}>{text.eyebrow}</p>
       <h2 id="teach-opening-title">{text.title}<span>{text.line}</span><em>{text.accent}<span>{text.close}</span></em></h2>
       <p className={styles.intro}>{text.intro}</p>
       <Link className={styles.action} href="#teach-introduction">{text.action}<ArrowUpRight size={20} aria-hidden="true" /></Link>

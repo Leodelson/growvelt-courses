@@ -1,0 +1,5 @@
+.summary { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 6px; color: var(--muted); font-size: 12px; line-height: 1.5; }
+.summary strong { color: var(--ink); }.gold { color: #ae6700; font-size: 18px; }
+.sr { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.form { padding-top: 28px; border-top: 1px solid var(--line); }.form h2 { margin-top: 8px; }.form p { color: var(--muted); font-size: 15px; }.form fieldset { border: 0; margin: 20px 0; padding: 0; }.form legend { font-size: 13px; font-weight: 650; }
+.stars { display: flex; gap: 4px; margin-top: 8px; }.stars label { position: relative; cursor: pointer; width: 44px; height: 48px; display: grid; place-items: center; }.stars input { position: absolute; opacity: 0; width: 100%; height: 100%; cursor: pointer; }.stars span[aria-hidden] { font-size: 36px; color: var(--muted); }.stars span[data-filled="true"] { color: #b57100; }.stars label:has(input:focus-visible) { outline: 2px solid var(--purple); border-radius: 8px; }

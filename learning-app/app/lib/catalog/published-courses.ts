@@ -1,10 +1,11 @@
 import { createClient } from "@/app/lib/supabase/server";
+import { withCourseRatings, type CourseRating } from "./course-ratings";
 import { PublicCatalogQuery, normalizePublicCatalogQuery, publicCatalogHref } from "@/app/lib/catalog/public-catalog-query";
 
 export { normalizePublicCatalogQuery, publicCatalogHref };
 export type { PublicCatalogQuery };
 
-export type PublishedCourse = {
+export type PublishedCourse = CourseRating & {
   id: number;
   slug: string;
   title: string;
@@ -137,13 +138,13 @@ export async function listPublishedLearningCourses(): Promise<PublishedCourse[]>
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("list_published_learning_courses", { p_limit: 24, p_offset: 0 });
   if (error) throw new Error("Unable to load published courses.");
-  return ((data ?? []) as PublishedCourseRow[]).map(mapPublishedCourse);
+  return withCourseRatings(supabase, ((data ?? []) as PublishedCourseRow[]).map(mapPublishedCourse));
 }
 
 export async function listPublicVerifiedProviderCourses(providerSlug: string): Promise<PublishedCourse[]> {
   const { data, error } = await (await createClient()).rpc("list_public_learning_provider_courses", { p_provider_slug: providerSlug, p_limit: 12 });
   if (error) throw new Error("Unable to load this provider's courses.");
-  return ((data ?? []) as PublishedCourseRow[]).map((course) => ({ ...mapPublishedCourse(course), providerName: null, providerSlug: null, providerVerified: false }));
+  return withCourseRatings(await createClient(), ((data ?? []) as PublishedCourseRow[]).map((course) => ({ ...mapPublishedCourse(course), providerName: null, providerSlug: null, providerVerified: false })));
 }
 
 export async function searchPublicPublishedLearningCourses(query: PublicCatalogQuery): Promise<PublicCatalogResult> {
@@ -159,7 +160,7 @@ export async function searchPublicPublishedLearningCourses(query: PublicCatalogQ
   if (error) throw new Error("Unable to load published courses.");
   const rows = (data ?? []) as PublicCatalogCourseRow[];
   return {
-    courses: rows.map(mapPublishedCourse),
+    courses: await withCourseRatings(await createClient(), rows.map(mapPublishedCourse)),
     total: rows[0]?.total_courses ?? 0,
     pageSize: publicCatalogPageSize,
   };
@@ -177,7 +178,7 @@ export async function getActiveLearningEditorialCampaign(): Promise<ActiveLearni
     id: first.campaign_id,
     title: first.campaign_title,
     message: first.campaign_message,
-    courses: rows.map(mapPublishedCourse),
+    courses: await withCourseRatings(await createClient(), rows.map(mapPublishedCourse)),
   };
 }
 
@@ -211,6 +212,7 @@ export async function getPublishedLearningCourse(slug: string): Promise<Publishe
     modules.set(row.module_id, courseModule);
   }
 
+  const [rating] = await withCourseRatings(supabase, [{ id: first.course_id }]);
   return {
     id: first.course_id,
     slug: first.slug,
@@ -228,5 +230,18 @@ export async function getPublishedLearningCourse(slug: string): Promise<Publishe
     providerVerified: first.provider_verified,
     publishedAt: first.published_at,
     modules: [...modules.values()],
+    averageRating: rating?.averageRating,
+    ratingCount: rating?.ratingCount,
   };
+}
+
+export async function getRelatedLearningCourses(course: PublishedCourse): Promise<PublishedCourse[]> {
+  // Use the same public RPC boundary as Explore: private/test courses never become recommendations.
+  const query = normalizePublicCatalogQuery({ category: course.category ?? "" });
+  const matching = await searchPublicPublishedLearningCourses(query);
+  const choices = matching.courses.filter((item) => item.id !== course.id);
+  if (choices.length >= 4) return choices.slice(0, 4);
+  const recent = await listPublishedLearningCourses();
+  const seen = new Set([course.id, ...choices.map((item) => item.id)]);
+  return [...choices, ...recent.filter((item) => !seen.has(item.id))].slice(0, 4);
 }

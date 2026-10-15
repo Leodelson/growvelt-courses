@@ -2,8 +2,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { EnrollmentButton } from "@/app/components/learning/enrollment-button";
 import { SaveCourseButton } from "@/app/components/learning/save-course-button";
-import { CourseVideoCover } from "@/app/components/course-video-cover";
-import { getPublishedLearningCourse } from "@/app/lib/catalog/published-courses";
+import { getPublishedLearningCourse, getRelatedLearningCourses } from "@/app/lib/catalog/published-courses";
+import { CourseDetailHeader } from "@/app/components/course-detail-header";
+import { CourseShelf } from "@/app/components/course-shelf";
+import styles from "@/app/components/course-detail.module.css";
+import { getRequestLocale } from "@/app/lib/i18n-server";
+import { coursePresentationCopy } from "@/app/lib/catalog/course-presentation-copy";
 import { getEnrollmentState } from "@/app/lib/learning/enrollments";
 import { getOwnSavedLearningCourseIds } from "@/app/lib/learning/saved-courses";
 import { getOwnPaystackTestFixtureEligibility } from "@/app/lib/payments/test-fixture";
@@ -29,15 +33,17 @@ export default async function PublishedCourseDetailPage({ params }: { params: Pr
   if (!slug || slug.length > 220) notFound();
   const course = await getPublishedLearningCourse(slug);
   if (!course) notFound();
+  const copy = coursePresentationCopy[await getRequestLocale()];
   const paystackMode = process.env.PAYSTACK_MODE === "live" ? "live" : "test";
   const subscriptionsAvailable = canStartTestSubscriptionCheckout() && !course.isFree;
-  const [enrollment, savedCourseIds, fixtureEligibility, subscriptionPlanResult] = await Promise.all([
+  const [enrollment, savedCourseIds, fixtureEligibility, subscriptionPlanResult, related] = await Promise.all([
     getEnrollmentState(course.id),
     getOwnSavedLearningCourseIds(),
     course.isFree || paystackMode === "live" ? Promise.resolve({ eligible: false }) : getOwnPaystackTestFixtureEligibility(course.id),
     subscriptionsAvailable
       ? createClient().then((client) => client.rpc("list_public_test_learning_subscription_plans_for_course", { p_course_id: course.id }))
       : Promise.resolve({ data: null, error: null }),
+    getRelatedLearningCourses(course),
   ]);
   const subscriptionPlans = (subscriptionPlanResult.data ?? []) as PublicTestSubscriptionPlan[];
   const pricing = course.isFree ? "Free" : `${course.priceCurrency || "NGN"} ${Number(course.priceAmount ?? 0).toLocaleString("en-NG")}`;
@@ -51,22 +57,12 @@ export default async function PublishedCourseDetailPage({ params }: { params: Pr
       : null;
   const paidCheckoutEnabled = checkoutMode !== null;
 
-  return <section className="published-course-page section-shell">
-    <header className="published-course-hero">
-      <Link className="back-link" href="/dashboard/explore">Explore catalog</Link>
-      <p className="eyebrow">{course.category || "Growvelt Learning"}</p>
-      <h1>{course.title}</h1>
-      <p className="published-course-summary">{course.summary || "A practical Growvelt Learning course."}</p>
-      <div className="published-course-meta"><span>{course.level || "All levels"}</span><span>{pricing}</span><span>{course.instructorName ? `By ${course.instructorName}` : "Growvelt Instructor"}</span></div>
-      <div className="published-course-video-cover">
-        <div className="published-course-video-cover-fallback" aria-hidden="true"><span>Growvelt Learning</span><strong>{course.category || "Practical learning"}</strong></div>
-        <CourseVideoCover courseId={course.id} alt="" loading="eager" />
-      </div>
-    </header>
+  return <section className={`published-course-page section-shell ${styles.page}`}>
+    <CourseDetailHeader course={course} dashboard />
     <div className="published-course-layout">
       <article className="published-course-content">
-        <section><p className="eyebrow">Course overview</p><h2>About this course</h2><p className="published-course-description">{course.description || "A focused learning experience designed to help you build practical skills."}</p></section>
-        <section>
+        <section id="course-about"><p className="eyebrow">Course overview</p><h2>About this course</h2><p className="published-course-description">{course.description || "A focused learning experience designed to help you build practical skills."}</p></section>
+        <section id="course-outline">
           <div className="published-outline-heading"><div><p className="eyebrow">Course outline</p><h2>What you’ll explore</h2></div><p>{activityCount} {activityCount === 1 ? "learning activity" : "learning activities"}</p></div>
           {course.modules.length === 0 ? <p className="published-outline-empty">The course outline is being prepared.</p> : <ol className="published-outline">{course.modules.map((module, moduleIndex) => <li key={module.id}>
             <h3>{String(moduleIndex + 1).padStart(2, "0")} · {module.title}</h3>
@@ -74,9 +70,10 @@ export default async function PublishedCourseDetailPage({ params }: { params: Pr
           </li>)}</ol>}
         </section>
       </article>
-      <aside className="published-course-aside">
+      <aside id="course-access" className="published-course-aside">
         <div className="published-course-save"><SaveCourseButton courseId={course.id} authenticated isSaved={savedCourseIds.includes(course.id)} /><span>Save course</span></div>
         <p className="eyebrow">Course access</p>
+        <strong>{pricing}</strong>
         <h2>{enrollment.isEnrolled ? "You’re enrolled" : course.isFree ? "Start learning for free" : paidCheckoutEnabled ? "Purchase this course securely" : "Paid access is coming later"}</h2>
         <p>{enrollment.isEnrolled ? "Open My Learning to continue lessons, complete quizzes, and follow your saved course progress." : course.isFree ? "Enroll to access the lesson player, complete text and video lessons, take quizzes, and track your progress." : paidCheckoutEnabled ? checkoutMode === "live" ? "Complete a real Paystack payment. Access is granted only after Growvelt verifies the payment event." : "Complete a Paystack test-mode checkout. Access is granted only after Growvelt verifies the payment event." : "Growvelt has not enabled paid enrollment or checkout yet."}</p>
         <EnrollmentButton courseId={course.id} slug={course.slug} isFree={course.isFree} isEnrolled={enrollment.isEnrolled} paidCheckoutEnabled={paidCheckoutEnabled} checkoutMode={checkoutMode ?? "test"} displayedPrice={pricing} testCouponCheckoutEnabled={checkoutMode === "test" && process.env.PAYMENTS_TEST_COUPONS_ENABLED === "true"} />
@@ -87,5 +84,6 @@ export default async function PublishedCourseDetailPage({ params }: { params: Pr
         <Link className="text-link" href="/dashboard/explore">Browse more courses</Link>
       </aside>
     </div>
+    <div className={styles.recommendations} id="course-recommendations">{related.length ? <CourseShelf title={copy.recommendations} description={copy.related} courses={related} dashboard authenticated savedCourseIds={savedCourseIds} /> : <Link className="text-link" href="/dashboard/explore">{copy.back} →</Link>}</div>
   </section>;
 }
