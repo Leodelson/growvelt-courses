@@ -1,0 +1,14 @@
+.reel { width: min(1240px, calc(100% - 64px)); margin: 12px auto 24px; }
+.frame { position: relative; isolation: isolate; overflow: hidden; border-radius: 28px; aspect-ratio: 2.3; background: #25222b url('/videos/growvelt-learning-reel-v1.webp') center / cover no-repeat; }
+.video { display: block; width: 100%; height: 100%; object-fit: cover; }
+.shade { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(0deg, rgb(17 13 27 / 80%), transparent 70%); }
+.caption { position: absolute; bottom: 38px; left: 38px; right: 230px; color: #fff; }
+.caption p { margin: 0 0 12px; color: #fff; font-size: .75rem; font-weight: 750; letter-spacing: .13em; text-transform: uppercase; }
+.caption h2 { margin: 0; max-width: 680px; font-size: clamp(1.6rem, 3.1vw, 2.75rem); line-height: 1.13; letter-spacing: -.035em; text-wrap: balance; }
+.control { position: absolute; bottom: 38px; right: 38px; display: inline-flex; align-items: center; justify-content: center; gap: 9px; min-height: 44px; padding: 10px 16px; border: 1px solid rgb(255 255 255 / 65%); border-radius: 999px; background: rgb(20 16 30 / 75%); color: white; font: inherit; font-size: .8rem; font-weight: 650; cursor: pointer; }
+.control:hover { background: #241833; }
+.control:focus-visible { outline: 3px solid white; outline-offset: 4px; }
+.control span { display: inline-flex; }
+.footnote { display: flex; flex-wrap: wrap; gap: 8px 24px; justify-content: space-between; padding: 12px 4px 0; color: var(--muted, #716a7e); font-size: .7rem; }
+@media (max-width: 780px) { .frame { aspect-ratio: 16 / 9; border-radius: 22px; } .caption { left: 24px; bottom: 84px; right: 24px; } .control { bottom: 22px; left: 24px; right: auto; } }
+@media (max-width: 620px) { .reel { width: calc(100% - 32px); margin-bottom: 16px; } .frame { aspect-ratio: 4 / 3; } .caption { left: 20px; right: 20px; } .caption p { font-size: .65rem; margin-bottom: 8px; } .caption h2 { font-size: clamp(1.45rem, 6vw, 2rem); } .control { left: 20px; font-size: .75rem; } }

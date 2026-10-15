@@ -12,6 +12,7 @@ import { growveltOrganizationJsonLd } from "@/app/lib/seo";
 import type { PublishedCourse } from "@/app/lib/catalog/published-courses";
 import { HomeHiring, HomePartnership, HomeSkillFinder, HomeStudyRoutine } from "./home-discovery-sections";
 import styles from "./public-experience.module.css";
+import { HomeMotionReel } from "./home-motion-reel";
 
 const subjectIcons = [BarChart3, Code2, Megaphone, BriefcaseBusiness, Palette, Clock3];
 const videoIds = ["b_hmIZRnD1Q", "cFJt2gytwjY", "Xac1qNAcKHc"];
@@ -46,6 +47,8 @@ export function PublicHome({ courses }: { courses: PublishedCourse[] }) {
           <div className={styles.heroStamp} aria-hidden="true"><BookOpen size={26} /><span>Growvelt<br />Learning</span></div>
         </figure>
       </section>
+
+      <HomeMotionReel />
 
       <section id="subjects" className={`${styles.wrap} ${styles.section}`} aria-labelledby="subjects-title">
         <header className={styles.sectionHeading}><div><p className={styles.eyebrow}>{home.subjectsEyebrow}</p><h2 id="subjects-title">{home.subjectsTitle}</h2><p>{home.subjectsCopy}</p></div><Link className={styles.quiet} href="/learn">{home.allCourses}<ArrowUpRight aria-hidden="true" size={18} /></Link></header>

@@ -30,6 +30,7 @@ function load(file) {
       if (id === "@/app/lib/home-discovery-copy") return load("app/lib/home-discovery-copy.ts");
       if (id === "@/app/lib/public-experience-copy") return load("app/lib/public-experience-copy.ts");
       if (id === "./home-discovery-sections") return load("app/components/public/home-discovery-sections.tsx");
+      if (id === "./home-motion-reel") return { HomeMotionReel: () => React.createElement("section", { "data-motion-reel": true }) };
       if (id.endsWith(".module.css")) return { __esModule: true, default: styles };
       if (id === "next/link") return function MockLink({ children, ...props }) { return React.createElement("a", props, children); };
       if (id === "next/image") return function MockImage({ fill, priority, ...props }) { return React.createElement("img", { ...props, "data-fill": fill, "data-priority": priority }); };
@@ -92,6 +93,8 @@ for (locale of ["en", "fr", "es"]) {
   assert.equal((home.match(/href="\/partner-with-growvelt"/g) || []).length, 1, "Old partnership link removed");
   assert.doesNotMatch(home, /data-course=|Ready to put your skills to work|\bclearer\b|Add to cart/i);
   assert.match(home, /id="how-it-works"/);
+  assert.ok(home.indexOf('data-motion-reel="true"') > home.indexOf('id="home-title"'));
+  assert.ok(home.indexOf('data-motion-reel="true"') < home.indexOf('id="subjects"'));
   assert.equal((home.match(/<details\b/g) || []).length, 6, "Existing guides and FAQ remain");
 }
 locale = "en";
