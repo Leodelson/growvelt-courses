@@ -26,4 +26,4 @@ Provider approval/rejection now opens the shared confirmation dialog and shows p
 
 ## Resume here
 
-Next: remaining financial/operations admin pages — payments, commercial operations, company commercial operations, promotions/coupons and enterprise contracts. This review group does not complete all admin pages or Phase 5. Instructor Earnings still needs review of the owner's separate uncommitted changes. Notifications and Live payment activation remain excluded and require separate authorization/readiness work.
+The remaining financial/operations admin group is completed in the [admin operations checkpoint](phase5-admin-operations.md). Next: Phase 5 coverage audit, including the owner's separate uncommitted Instructor Earnings work and remaining authentication/shared-state presentation. This does not complete Phase 5. Notifications and Live payment activation remain excluded and require separate authorization/readiness work.

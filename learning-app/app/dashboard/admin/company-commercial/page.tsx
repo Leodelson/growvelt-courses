@@ -1,3 +1,6 @@
+import { OperationsNavigation } from "@/app/components/admin/operations-workspace";
+import { reviewDate } from "@/app/lib/admin/review-presentation";
+import ops from "@/app/components/admin/operations.module.css";
 import { CompanyBankSettlementEvidenceControl, CompanyRecoveryReceiptControl, CompanyTransferEvidenceControl } from "@/app/components/admin/company-seller-evidence-controls";
 import { createAdminClient } from "@/app/lib/supabase/admin";
 import styles from "./company-commercial.module.css";
@@ -28,9 +31,7 @@ type CompanyBankSettlementRow = { settlement_id: string; anchor_purchase_id: num
 const money = (amountMinor: number, currency: string) => new Intl.NumberFormat("en-NG", {
   style: "currency", currency, minimumFractionDigits: 2,
 }).format(amountMinor / 100);
-const date = (value: string | null) => value
-  ? new Intl.DateTimeFormat("en-NG", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value))
-  : "—";
+const date = (value: string | null) => reviewDate(value,"en",undefined,true);
 
 export default async function CompanySellerEvidencePage() {
   const transferRecordingEnabled = process.env.PAYMENTS_LIVE_COMPANY_TRANSFER_EVIDENCE_RECORDING_ENABLED === "true";
@@ -96,7 +97,8 @@ export default async function CompanySellerEvidencePage() {
 
   const evidenceByBoundary = new Map(evidence.map((item) => [item.boundary_id, item]));
   const pendingTransferCount = boundaries.filter((item) => !evidenceByBoundary.has(item.id)).length;
-  return <section className={`${styles.page} admin-page section-shell`}>
+  return <section className={`${styles.page} ${ops.page} admin-page section-shell`}>
+    <OperationsNavigation sections={[{id:"company-transfers",label:"Transfer evidence"},{id:"company-settlements",label:"Bank credits"},{id:"company-repayments",label:"Seller repayments"}]} />
     <header className="admin-page-header admin-review-hero">
       <p className="eyebrow">Private finance operations · Learning Admin</p>
       <h1>Company seller evidence</h1>
@@ -115,7 +117,7 @@ export default async function CompanySellerEvidencePage() {
         <p>This can mean the prepared Supabase migrations have not been applied, or that a read failed. It is not treated as an empty ledger. Keep the recording flags off until the schema and reconciliation checks are confirmed.</p>
       </aside>}
 
-    <section className={styles.section}>
+    <section id="company-transfers" className={styles.section}>
       <header><p className="eyebrow">Live seller outflows</p><h2>Transfer evidence</h2><p>Only records an already-completed Paystack Live transfer after server-side verification of its recipient and exact amount.</p></header>
       {boundaryReadFailed ? <p className="admin-empty-copy">Transferred boundaries could not be loaded safely.</p>
         : boundaries.length === 0 ? <p className="admin-empty-copy">No transferred company seller boundaries are recorded.</p>
@@ -134,7 +136,7 @@ export default async function CompanySellerEvidencePage() {
           })}</div>}
     </section>
 
-    <section className={styles.section}>
+    <section id="company-settlements" className={styles.section}>
       <header><p className="eyebrow">Paystack payout-to-bank reconciliation</p><h2>Settlement batch bank credits</h2><p>One Paystack settlement can contain several charges. Review the batch payout and the matching bank statement line once per settlement, not once per purchase. A recorded match still does not release seller funds.</p></header>
       {!settlementSchemaReady ? <p className="admin-empty-copy">Paystack settlement evidence is unavailable until its schema is applied and verified.</p>
         : settlementRows.length === 0 ? <p className="admin-empty-copy">No verified Live company charges are linked to a Paystack settlement yet.</p>
@@ -152,7 +154,7 @@ export default async function CompanySellerEvidencePage() {
             })}</div>}
     </section>
 
-    <section className={styles.section}>
+    <section id="company-repayments" className={styles.section}>
       <header><p className="eyebrow">Post-transfer recovery</p><h2>Confirmed seller repayments</h2><p>Record a repayment only after independently confirming it in the bank/provider statement. No automatic collection or future-earnings deduction is permitted.</p></header>
       {!recoverySchemaReady ? <p className="admin-empty-copy">Recovery balances are unavailable until the prepared receipt migration is applied and verified.</p>
         : recoveries.filter((item) => item.outstanding_minor > 0).length === 0 ? <p className="admin-empty-copy">No outstanding company seller recovery balances.</p>

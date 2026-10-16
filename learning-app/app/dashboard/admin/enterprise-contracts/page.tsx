@@ -1,3 +1,6 @@
+import { OperationsNavigation, OperationsSummary, OperationRecords } from "@/app/components/admin/operations-workspace";
+import { reviewDate } from "@/app/lib/admin/review-presentation";
+import ops from "@/app/components/admin/operations.module.css";
 import { createClient } from "@/app/lib/supabase/server";
 import { ActionSubmitButton } from "@/app/components/action-submit-button";
 import { EmptyState } from "@/app/components/ui/empty-state";
@@ -15,9 +18,7 @@ type EnterpriseContract = {
   recorded_at: string; contract_state: "scheduled" | "in_term" | "ended";
 };
 
-const dateLabel = (value: string | null) => value
-  ? new Date(`${value}T12:00:00.000Z`).toLocaleDateString("en-NG", { dateStyle: "medium", timeZone: "UTC" })
-  : "No end date";
+const dateLabel = (value: string | null) => value ? reviewDate(value+"T12:00:00.000Z","en") : "No end date";
 
 export default async function AdminEnterpriseContractsPage({
   searchParams,
@@ -42,13 +43,15 @@ export default async function AdminEnterpriseContractsPage({
   const workspaceError = Boolean(workspacesResult.error);
   const contractError = Boolean(contractsResult.error);
 
-  return <section className={styles.page + " admin-page section-shell"}>
+  return <section className={styles.page + " "+ops.page+" admin-page section-shell"}>
+    <OperationsNavigation sections={[{id:"contract-create",label:"Record agreement"},{id:"contract-register",label:"Agreement register"}]} />
     <header className="admin-page-header admin-review-hero">
       <p className="eyebrow">Phase 4 · Learning Admin</p>
       <h1>Enterprise contracts</h1>
       <p>Keep a private register of enterprise agreements already executed outside Growvelt, linked to an existing company workspace.</p>
     </header>
 
+    <OperationsSummary items={[{label:"Recorded agreements",value:contractError?"—":contracts.length,detail:"Private reference records"},{label:"Agreements in term",value:contractError?"—":contracts.filter(item=>item.contract_state==="in_term").length,detail:"Date-derived state only"},{label:"Available workspaces",value:workspaceError?"—":workspaces.length,detail:"Active workspaces eligible for linking"}]} note="The contract register does not grant course access, change workspace seats or collect payments. Counts cover the records returned for this workspace." />
     <ActionFeedback message={errorMessage ?? successMessage} kind={errorMessage ? "error" : "success"} />
 
     <aside className={styles.safety}>
@@ -56,7 +59,7 @@ export default async function AdminEnterpriseContractsPage({
       <p>This page stores a reference, term, reference-only seat cap, and a short internal scope summary. It does not create legal documents, collect payment, change the workspace seat limit, grant course access, or initiate seller payouts. Do not enter personal, bank, card, or secret information.</p>
     </aside>
 
-    <section className={styles.panel}>
+    <section id="contract-create" className={styles.panel}>
       <header><p className="eyebrow">Private administration</p><h2>Record an executed agreement</h2><p>Only record an agreement that has already been signed or otherwise executed outside Growvelt. Records are append-only; correct mistakes by contacting the appropriate administrator, not by editing or deleting history.</p></header>
       {workspaceError ? <p className={styles.error}>Active company workspaces could not be loaded. The list is not being treated as empty. Confirm the enterprise-contract migration is applied before retrying.</p>
         : workspaces.length === 0 ? <p className={styles.muted}>There are no active company workspaces available to link yet.</p>
@@ -72,17 +75,17 @@ export default async function AdminEnterpriseContractsPage({
         </form>}
     </section>
 
-    <section className={styles.panel}>
+    <section id="contract-register" className={styles.panel}>
       <header><p className="eyebrow">Private register</p><h2>Recorded agreements</h2><p>Visible only to Learning Admin. The term state is derived from the recorded dates and does not affect workspace access.</p></header>
       {contractError ? <p className={styles.error}>Contract records could not be loaded safely. The list is not being treated as empty. Confirm the enterprise-contract migration is applied before retrying.</p>
         : contracts.length === 0 ? <EmptyState titleId="enterprise-contracts-empty-title" headingLevel={3}
           icon="company" title="Your agreement register is ready"
           description="No enterprise contract references have been recorded. Use the form above to record an agreement already executed outside Growvelt."
         />
-        : <div className={styles.list}>{contracts.map((contract) => <article key={contract.contract_id}>
+        : <div className={styles.list}><OperationRecords searchLabel="Find agreements by reference, company or scope" items={contracts.map((contract) => ({id:String(contract.contract_id),title:contract.contract_reference,group:contract.contract_state,keywords:contract.workspace_name+" "+contract.scope_summary,content:<article>
           <div className={styles.heading}><div><strong><code>{contract.contract_reference}</code></strong><span>{contract.workspace_name}</span></div><span className={contract.contract_state === "in_term" ? styles.active : styles.disabled}>{contract.contract_state === "in_term" ? "In term" : contract.contract_state === "scheduled" ? "Scheduled" : "Ended"}</span></div>
-          <dl><div><dt>Agreement term</dt><dd>{dateLabel(contract.starts_on)} – {dateLabel(contract.ends_on)}</dd></div><div><dt>Reference-only seat cap</dt><dd>{contract.seat_cap.toLocaleString("en-NG")}</dd></div><div><dt>Recorded</dt><dd>{new Date(contract.recorded_at).toLocaleString("en-NG")}</dd></div><div><dt>Scope</dt><dd>{contract.scope_summary}</dd></div></dl>
-        </article>)}</div>}
+          <dl><div><dt>Agreement term</dt><dd>{dateLabel(contract.starts_on)} – {dateLabel(contract.ends_on)}</dd></div><div><dt>Reference-only seat cap</dt><dd>{contract.seat_cap.toLocaleString("en-NG")}</dd></div><div><dt>Recorded</dt><dd>{reviewDate(contract.recorded_at,"en",undefined,true)}</dd></div><div><dt>Scope</dt><dd>{contract.scope_summary}</dd></div></dl>
+        </article>}))} /></div>}
     </section>
   </section>;
 }

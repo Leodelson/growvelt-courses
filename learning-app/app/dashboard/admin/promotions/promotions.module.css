@@ -1,5 +1,5 @@
 .page { display: grid; gap: 22px; }
-.safety, .panel { min-width: 0; padding: clamp(18px, 3vw, 28px); border: 1px solid var(--line); border-radius: 18px; background: var(--surface); box-shadow: var(--shadow); }
+.safety, .panel { min-width: 0; padding: clamp(22px, 3vw, 30px); border: 1px solid var(--line); border-radius: 20px; background: var(--surface); box-shadow: none; }
 .safety { border-color: color-mix(in srgb, var(--purple) 36%, var(--line)); }
 .safety strong { display: block; margin-bottom: 6px; }
 .safety p, .muted { margin: 0; color: var(--muted); line-height: 1.55; }
@@ -17,7 +17,7 @@
 .attestation input { width: 18px; min-width: 18px; height: 18px; margin: 2px 0 0; accent-color: var(--purple); }
 .attestation span { color: var(--ink); }
 .courseField { grid-column: 1 / -1; }
-.courseField select { min-height: 120px; }
+.courseField select[multiple] { min-height: 120px; }
 .form button { justify-self: start; }
 .list { display: grid; gap: 12px; }
 .list article { display: grid; min-width: 0; gap: 14px; padding: 18px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface-muted); }

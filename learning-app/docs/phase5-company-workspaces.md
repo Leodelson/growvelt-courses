@@ -28,4 +28,4 @@ Shared form actions now use the existing pending-spinner button. No new endpoint
 
 ## Resume here
 
-The first admin-review group is completed in the [admin review checkpoint](phase5-admin-reviews.md). Next: remaining financial/operations admin pages (payments, commercial, company commercial, promotions/coupons and enterprise contracts). Instructor Earnings still requires reviewing the owner's separate changes before modifying or releasing it. Notifications and Live payment activation remain separate. Phase 5 is not yet complete.
+The admin-review and financial/operations groups are completed in the [review checkpoint](phase5-admin-reviews.md) and [operations checkpoint](phase5-admin-operations.md). Next: Phase 5 coverage audit, including the owner's separate Earnings changes and remaining authentication/shared-state presentation. Notifications and Live payment activation remain separate. Phase 5 is not yet complete.
