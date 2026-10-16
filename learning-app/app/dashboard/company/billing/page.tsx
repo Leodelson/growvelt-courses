@@ -5,6 +5,11 @@ import { createAdminClient } from "@/app/lib/supabase/admin";
 import { createClient } from "@/app/lib/supabase/server";
 import "./billing.css";
 
+import { WorkbenchList } from "@/app/components/instructor/workbench-list";
+import { billingSnapshot, companyDate, purchaseLabels } from "@/app/lib/company/presentation";
+import base from "@/app/components/instructor/provider-workspaces.module.css";
+import styles from "@/app/components/company/workspaces.module.css";
+
 export const metadata = { title: "Company billing" };
 export const dynamic = "force-dynamic";
 
@@ -50,27 +55,30 @@ export default async function CompanyBillingPage() {
     else if (!referenceByPurchase.has(attempt.purchase_id)) referenceByPurchase.set(attempt.purchase_id, attempt.provider_reference);
   }
 
-  return <section className="instructor-earnings-page section-shell company-billing-page">
+  const totals = billingSnapshot(records.flatMap(record=>record.purchases));
+  return <section className={`instructor-earnings-page section-shell company-billing-page ${base.page} ${styles.page}`}>
+    <Link className={base.back} href="/dashboard/company">← Back to Company learning</Link>
     <header className="instructor-earnings-hero">
-      <Link className="text-button" href="/dashboard/company">← Company learning</Link>
       <p className="eyebrow">Private company billing</p>
       <h1>Paid course purchases</h1>
       <p>Only active company owners and admins can see these company-sponsored purchases. Personal courses and earnings are never included.</p>
     </header>
+    <dl className={styles.summary} aria-label="Company billing overview">{[{label:"Purchase records",value:totals.purchases},{label:"Paid purchases",value:totals.paid},{label:"Seats in paid purchases",value:totals.seats},{label:"Recorded paid course totals",value:formatNaira(totals.paidMinor)}].map(item=><div key={item.label}><dt>{item.label}</dt><dd>{item.value}</dd></div>)}</dl>
+    <p className={styles.notice}>Paid purchase, seat and monetary totals include confirmed paid records only—not pending checkouts. They are purchase snapshots, not refunds-adjusted settlement balances, tax invoices or Paystack receipts.</p>
     {records.length === 0 && <section className="organization-panel"><p>No company billing workspace is available to this account.</p></section>}
     {records.map(({ workspace, purchases }) => <section className="organization-panel" key={workspace.workspace_id}>
       <header><p className="eyebrow">Company billing</p><h2>{workspace.name}</h2><p>One purchase covers the selected employee seats for one course. This summary is not a tax invoice or Paystack receipt.</p></header>
       {purchases.length === 0 ? <p>No paid-course purchases yet.</p> : <div className="company-billing-records">
-        {purchases.map((purchase) => <article className="company-billing-record" key={purchase.purchase_id}>
+        <WorkbenchList metricLabel="Course total, highest first" statuses={purchaseLabels} items={purchases.map((purchase) => ({id:String(purchase.purchase_id),title:purchase.course_title,status:purchase.status,keywords:`${purchase.provider_name} ${referenceByPurchase.get(purchase.purchase_id)??""}`,metric:purchase.total_amount_minor,content:<article className="company-billing-record">
           <div className="company-billing-record-heading"><div><h3>{purchase.course_title}</h3><p>{purchase.provider_name}</p></div><span className="company-assignment-progress">{purchase.status === "checkout_ready" ? "Checkout ready" : purchase.status === "checkout_pending" ? "Awaiting confirmation" : purchase.status}</span></div>
           <dl>
             <div><dt>Employee seats</dt><dd>{purchase.seat_count}</dd></div>
             <div><dt>Course price per seat</dt><dd>{formatNaira(purchase.unit_amount_minor)}</dd></div>
             <div><dt>Course total</dt><dd>{formatNaira(purchase.total_amount_minor)}</dd></div>
-            <div><dt>Created</dt><dd>{new Date(purchase.created_at).toLocaleDateString("en-NG")}</dd></div>
+            <div><dt>Created</dt><dd>{companyDate(purchase.created_at)}</dd></div>
             <div><dt>Paystack reference</dt><dd className="company-billing-reference">{referenceByPurchase.get(purchase.purchase_id) ?? "Not started"}</dd></div>
           </dl>
-        </article>)}
+        </article>}))} />
       </div>}
     </section>)}
   </section>;

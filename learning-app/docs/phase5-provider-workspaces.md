@@ -28,4 +28,4 @@ Existing create, invite, accept, profile-save and verification buttons use the s
 
 ## Resume here
 
-Next: company workspace, billing, reports and insights, then admin-review screens. Instructor Earnings still needs review against the owner's separate changes before editing or releasing that screen. Notifications and Live payment activation remain separate work. Phase 5 is not yet complete.
+Company workspace, billing, reports and insights are completed in the [company checkpoint](phase5-company-workspaces.md). Next: admin-review screens. Instructor Earnings still needs review against the owner's separate changes before editing or releasing that screen. Notifications and Live payment activation remain separate work. Phase 5 is not yet complete.

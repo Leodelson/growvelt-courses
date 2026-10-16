@@ -24,4 +24,4 @@ The checklist checks metadata only; it does not declare publication eligibility.
 
 ## Resume here
 
-Organization, provider-profile, provider insights and payout-profile screens are completed in the [provider checkpoint](phase5-provider-workspaces.md). Next: company workspaces/billing/reports/insights, followed by admin-review screens. Review the owner's unrelated earnings changes before modifying Earnings. This checkpoint does not mark every instructor or Phase 5 page complete. Live subscription activation needs its own readiness review.
+Organization, provider-profile, provider insights and payout-profile screens are completed in the [provider checkpoint](phase5-provider-workspaces.md). Company workspaces/billing/reports/insights are completed in the [company checkpoint](phase5-company-workspaces.md). Next: admin-review screens. Review the owner's unrelated earnings changes before modifying Earnings. This checkpoint does not mark every instructor or Phase 5 page complete. Live subscription activation needs its own readiness review.

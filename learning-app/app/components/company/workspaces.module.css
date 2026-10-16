@@ -1,0 +1,49 @@
+.page { min-width: 0; }
+.summary { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 14px; margin: 0; }
+.summary > div { display: grid; align-content: start; gap: 9px; min-width: 0; padding: 22px; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); }
+.summary dt { color: var(--muted); font-size: 12px; }
+.summary dd { margin: 0; font-size: clamp(23px,2.6vw,32px); line-height: 1.25; font-weight: 750; letter-spacing: -.03em; overflow-wrap: anywhere; }
+.jump { display: flex; gap: 10px; flex-wrap: wrap; }
+.jump a { padding: 11px 16px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--ink); font-size: 13px; }
+.seat { display: grid; gap: 12px; padding: 18px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface-muted); }
+.seat > div:first-child { display: flex; align-items: start; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+.seat p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.7; }
+.progress { min-width: 0; height: 7px; overflow: hidden; border-radius: 999px; background: var(--line); }
+.progress > span { display: block; height: 100%; border-radius: inherit; background: var(--purple); }
+.reportCard { display: grid; gap: 18px; min-width: 0; padding: 24px; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); }
+.reportCard header { display: flex; align-items: start; justify-content: space-between; gap: 18px; }
+.reportCard header > div { min-width: 0; }
+.reportCard h3 { margin: 6px 0; font-size: 20px; letter-spacing: -.02em; }
+.reportCard h4 { margin: 0; padding-block: 16px 0; border-top: 1px solid var(--line); font-size: 18px; font-weight: 650; }
+.reportCard p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.65; }
+.reportCard .kicker { color: var(--purple); font-size: 11px; font-weight: 750; letter-spacing: .07em; }
+.badge { max-width: 100%; flex: 0 0 auto; padding: 7px 11px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface-muted); color: var(--muted); font-size: 11px; }
+.reportCard dl { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; margin: 0; }
+.reportCard dl > div { display: grid; gap: 7px; padding: 14px; border-radius: 11px; background: var(--surface-muted); }
+.reportCard dt { color: var(--muted); font-size: 12px; }
+.reportCard dd { margin: 0; font-size: 16px; font-weight: 700; }
+.reportCard footer { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; font-size: 12px; }
+.reportCard footer > span { color: var(--muted); }
+.reportCard footer a { color: var(--purple); font-weight: 700; }
+.notice { margin: 0; padding: 16px 20px; border: 1px solid var(--line); border-radius: 14px; color: var(--muted); background: var(--surface-muted); font-size: 13px; line-height: 1.8; }
+.facts { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 14px; margin: 20px 0 0; }
+.facts > div { min-width: 0; padding: 16px; border: 1px solid var(--line); border-radius: 12px; }
+.facts dt { color: var(--muted); font-size: 12px; }
+.facts dd { margin: 7px 0 0; color: var(--ink); font-weight: 650; }
+.page :global(.company-progress-summary) { margin-block: 20px; gap: 12px; }
+.page :global(.company-progress-summary) > div { padding: 18px; border: 1px solid var(--line); border-radius: 14px; box-shadow: none; }
+.page :global(.company-progress-summary) strong { font-size: 26px; }
+.page :global(.company-billing-record) { padding: 22px; border-radius: 16px; }
+.page :global(.company-billing-record) dl { gap: 16px; }
+.page :global(.company-billing-record-heading) h3 { line-height: 1.4; }
+.page :global(.company-purchase-form) { grid-template-columns: minmax(0,1fr) minmax(0,1fr); }
+.page :global(.company-purchase-form) :is(aside,fieldset,details) { min-width: 0; }
+.page :global(.company-purchase-summary) { grid-column: 1/-1; }
+.page :global(.company-purchase-course-picker) summary > span,.page :global(.company-purchase-employee-picker) summary > span { min-width: 0; overflow-wrap: anywhere; }
+.page :global(.company-purchase-history) li { text-transform: none; }
+.page :global(.company-purchase-history-status) { justify-items: start; }
+.page :global(.company-assignment-list) li { min-width: 0; }
+.page :global(.company-assignment-list) li > span { min-width: 0; }
+.page :global(.organization-list) article > div:first-child { min-width: 0; }
+@media(max-width:900px) { .summary { grid-template-columns: repeat(2,minmax(0,1fr)); }.page :global(.company-purchase-form) { grid-template-columns: 1fr; }.page :global(.company-assignment-form) { grid-template-columns: 1fr; } }
+@media(max-width:620px) { .summary { gap: 10px; }.summary > div { padding: 17px; }.reportCard { padding: 18px; }.reportCard header { flex-direction: column; gap: 12px; }.badge { flex-shrink: 1; }.reportCard dl,.facts { grid-template-columns: 1fr; }.page :global(.company-progress-summary) { grid-template-columns: repeat(2,minmax(0,1fr)); }.page :global(.company-progress-summary) > div { padding: 14px; }.page :global(.company-progress-summary) strong { font-size: 22px; }.page :global(.company-progress-detail-page) :global(.company-progress-summary) { grid-template-columns: 1fr; }.page :global(.company-billing-record) { padding: 18px; } }
