@@ -2,6 +2,8 @@
 
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import { ActionButton } from "@/app/components/ui/action-button";
+import styles from "./provider-workspaces.module.css";
 
 type Profile = {
   headline: string;
@@ -20,6 +22,8 @@ export function OrganizationProfileForm({ organizationId, profile, isVerified }:
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [headlineLength, setHeadlineLength] = useState(profile?.headline.length ?? 0);
+  const [descriptionLength, setDescriptionLength] = useState(profile?.description.length ?? 0);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -55,16 +59,16 @@ export function OrganizationProfileForm({ organizationId, profile, isVerified }:
   return <form className="organization-profile-form" onSubmit={submit}>
     <p className="organization-profile-note">{isVerified ? "This is the public face of your verified provider." : "This is a private provider-profile draft until Learning Admin approves verification."} Do not include private documents, bank details, or sensitive personal information.</p>
     <div className="course-form-grid">
-      <label className="course-field"><FieldLabel>Provider headline</FieldLabel><input name="headline" defaultValue={profile?.headline} minLength={8} maxLength={160} required placeholder="e.g. Practical technology training for ambitious teams" /></label>
+      <label className="course-field"><FieldLabel>Provider headline</FieldLabel><input name="headline" defaultValue={profile?.headline} onChange={event=>setHeadlineLength(event.target.value.length)} minLength={8} maxLength={160} required placeholder="e.g. Practical technology training for ambitious teams" /><span className={styles.counter}><span>Describe your teaching focus.</span><span>{headlineLength} / 160</span></span></label>
       <label className="course-field"><FieldLabel>Public contact email</FieldLabel><input name="contactEmail" type="email" defaultValue={profile?.contact_email} minLength={5} maxLength={320} required placeholder="hello@example.com" /></label>
     </div>
-    <label className="course-field"><FieldLabel>About this provider</FieldLabel><textarea name="description" defaultValue={profile?.description} minLength={80} maxLength={2400} rows={6} required placeholder="Describe what your provider teaches, who it serves, and how learners benefit." /><span>80–2,400 characters.</span></label>
+    <label className="course-field"><FieldLabel>About this provider</FieldLabel><textarea name="description" defaultValue={profile?.description} onChange={event=>setDescriptionLength(event.target.value.length)} minLength={80} maxLength={2400} rows={6} required placeholder="Describe what your provider teaches, who it serves, and how learners benefit." /><span className={styles.counter}><span>80–2,400 characters.</span><span>{descriptionLength} / 2400</span></span></label>
     <div className="course-form-grid">
       <label className="course-field"><FieldLabel optional>Website</FieldLabel><input name="websiteUrl" type="url" defaultValue={profile?.website_url ?? ""} maxLength={400} placeholder="https://example.com" /></label>
       <label className="course-field"><FieldLabel optional>LinkedIn</FieldLabel><input name="linkedinUrl" type="url" defaultValue={profile?.linkedin_url ?? ""} maxLength={400} placeholder="https://linkedin.com/company/example" /></label>
       <label className="course-field"><FieldLabel optional>Instagram</FieldLabel><input name="instagramUrl" type="url" defaultValue={profile?.instagram_url ?? ""} maxLength={400} placeholder="https://instagram.com/example" /></label>
     </div>
-    <div className="organization-profile-actions"><button className="button button-primary" type="submit" disabled={pending}>{pending ? "Saving…" : "Save provider profile"}</button></div>
+    <div className="organization-profile-actions"><ActionButton className="button button-primary" type="submit" isPending={pending} pendingLabel="Saving…">Save provider profile</ActionButton></div>
     {message && <p className={message.startsWith("Provider profile saved") ? "payout-profile-feedback" : "payout-profile-feedback is-error"} role="status">{message}</p>}
   </form>;
 }

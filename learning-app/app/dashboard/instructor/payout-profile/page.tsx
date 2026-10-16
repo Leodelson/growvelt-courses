@@ -1,7 +1,11 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { isApprovedInstructor } from "@/app/lib/instructor/authorization";
 import { getOwnInstructorPayoutProfiles } from "@/app/lib/instructor/payout-profile";
 import { PayoutProfileForm } from "@/app/components/instructor/payout-profile-form";
+
+import { providerDate } from "@/app/lib/instructor/provider-workspaces";
+import styles from "@/app/components/instructor/provider-workspaces.module.css";
 
 export const metadata = { title: "Instructor payout profile" };
 
@@ -9,10 +13,13 @@ export default async function InstructorPayoutProfilePage() {
   if (!await isApprovedInstructor()) redirect("/teach/application");
   const profiles = await getOwnInstructorPayoutProfiles();
   const active = profiles.find((profile) => profile.status === "active" && profile.provider_domain === "test");
-  return <section className="instructor-earnings-page section-shell">
+  return <section className={`instructor-earnings-page section-shell ${styles.page}`}>
+    <Link className={styles.back} href="/dashboard/instructor">← Back to instructor workspace</Link>
     <header className="instructor-earnings-hero"><p className="eyebrow">Payout profile</p><h1>Prepare a future payout destination.</h1><p>This page only validates a Paystack Test-mode recipient. It does not reserve earnings, start a transfer, or make funds withdrawable.</p></header>
     {active && <section className="payout-profile-summary"><p className="eyebrow">Active Test recipient</p><h2>{active.account_name}</h2><p>{active.bank_name} · account ending in {active.account_last4}</p><code>{active.recipient_code}</code><span>Test Mode · {active.status}</span></section>}
+    {!active && <section className={styles.guide}><p className="eyebrow">No active Test recipient</p><h2>Your destination setup starts here.</h2><p>Validate a Test Mode recipient below. Saving a destination does not make earnings withdrawable, schedule a payout or authorize a transfer.</p></section>}
     <PayoutProfileForm hasActiveProfile={Boolean(active)} />
-    {profiles.filter((profile) => profile.status === "disabled").length > 0 && <section className="payout-profile-history"><h2>Profile history</h2>{profiles.filter((profile) => profile.status === "disabled").map((profile) => <p key={profile.payout_profile_id}>{profile.bank_name} · account ending in {profile.account_last4} · disabled</p>)}</section>}
+    {profiles.filter((profile) => profile.status === "disabled").length > 0 && <section className="payout-profile-history"><h2>Profile history</h2><ul>{profiles.filter((profile) => profile.status === "disabled").map((profile) => <li key={profile.payout_profile_id}><span><strong>{profile.bank_name}</strong><small>Account ending in {profile.account_last4} · {profile.provider_domain === "test" ? "Test Mode" : "Live Mode"}</small></span><span>Disabled<small>{providerDate(profile.disabled_at)}</small></span></li>)}</ul></section>}
+    <section className={styles.guide} aria-labelledby="payout-guide-title"><h2 id="payout-guide-title">Before you validate a recipient</h2><details><summary>What does this setup do?</summary><p>It validates a Paystack Test Mode recipient for the approved instructor account. This is not a withdrawal request and does not reserve or transfer earnings.</p></details><details><summary>Which bank details are needed?</summary><p>Use the Nigerian bank’s Paystack/NIBSS bank code, not a SWIFT or BIC code, and the 10-digit account number. After validation, Growvelt retains bank metadata, the account name and the last four digits—not the full account number.</p></details><details><summary>What happens when I replace or disable a profile?</summary><p>The current destination changes through the existing recipient setup. Disabled profiles remain in history. Disabling a destination does not delete earnings or create a transfer.</p></details></section>
   </section>;
 }

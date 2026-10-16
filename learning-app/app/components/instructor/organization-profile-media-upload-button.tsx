@@ -46,5 +46,5 @@ export function OrganizationProfileMediaUploadButton({ organizationId, kind, cur
     }
   }
 
-  return <div className={`${className} profile-media-control`}><input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp" tabIndex={-1} aria-hidden="true" onChange={upload} /><button type="button" onClick={() => inputRef.current?.click()} disabled={busy} aria-busy={busy}>{busy ? <span className="profile-upload-spinner" aria-hidden="true" /> : <LearningIcon name={kind === "logo" ? "camera" : "image"} size={16} />}<span className="profile-media-label">{busy ? "Uploading…" : label}</span></button>{message && <span role="status">{message}</span>}</div>;
+  return <div className={`${className} profile-media-control`}><input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp" tabIndex={-1} aria-hidden="true" onChange={upload} /><button type="button" aria-label={busy ? "Uploading…" : label} onClick={() => inputRef.current?.click()} disabled={busy} aria-busy={busy}>{busy ? <span className="profile-upload-spinner" aria-hidden="true" /> : <LearningIcon name={kind === "logo" ? "camera" : "image"} size={16} />}<span className="profile-media-label">{busy ? "Uploading…" : label}</span></button>{message && <span role="status">{message}</span>}</div>;
 }

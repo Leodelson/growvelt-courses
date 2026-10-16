@@ -17,6 +17,6 @@
 
 ## Next checkpoint and exclusions
 
-Instructor workspace, course list, authoring/curriculum and subscriptions are now completed in the [instructor checkpoint](phase5-instructor-workspaces.md). Next: remaining instructor organization/provider-profile/payout-profile screens. Review the owner's unrelated uncommitted earnings work before editing that screen. Then company workspaces/billing/reports/insights and admin-review pages.
+Instructor workspace, course list, authoring/curriculum and subscriptions are completed in the [instructor checkpoint](phase5-instructor-workspaces.md). Organizations, provider profiles/insights and payout profile are completed in the [provider checkpoint](phase5-provider-workspaces.md). Next: company workspaces/billing/reports/insights and admin-review pages. Review the owner's unrelated uncommitted earnings work before editing that screen.
 
 Notifications content/behavior, payment modes, commercial/security gates, migrations, Docker, hosted data and Growvelt Careers remain unchanged. The comprehensive Phase 5 redesign is not complete, and Live subscription activation requires its own readiness review.
