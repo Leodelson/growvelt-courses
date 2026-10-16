@@ -12,6 +12,9 @@
 .courseOption { display: flex; min-width: 0; align-items: flex-start; gap: 11px; padding: 13px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); cursor: pointer; }
 .courseOption input { width: 18px; height: 18px; flex: 0 0 auto; margin: 2px 0 0; accent-color: var(--purple); }
 .courseOption > span { display: grid; min-width: 0; gap: 5px; }
+.courseOption[hidden] { display: none; }
+.courseOption:has(input:checked) { border-color: color-mix(in srgb, var(--purple) 55%, var(--line)); background: color-mix(in srgb, var(--purple) 5%, var(--surface)); }
+.courseOption:has(input:disabled) { opacity: .6; }
 .courseOption strong { overflow-wrap: anywhere; }
 .courseOption small, .emptyCourses { color: var(--muted); }
 .selectionNotice { color: #9c5c00 !important; }
@@ -35,6 +38,8 @@
 .planCard > p { color: var(--muted); line-height: 1.5; }
 .planCard ul { display: flex; flex-wrap: wrap; gap: 7px; padding: 0; list-style: none; }
 .planCard li { padding: 7px 10px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); font-size: .82rem; }
+.planCard li, .notice code { max-width: 100%; overflow-wrap: anywhere; }
+.planCard code { white-space: normal; }
 .emptyPlans { padding: 20px; border: 1px dashed var(--line); border-radius: 14px; }
 .emptyPlans h3, .emptyPlans p { margin: 0; }
 .emptyPlans p { margin-top: 6px; color: var(--muted); }
