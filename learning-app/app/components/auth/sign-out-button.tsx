@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { LogOut } from "lucide-react";
 import { ActionButton } from "@/app/components/ui/action-button";
 import { createClient } from "@/app/lib/supabase/browser";
 
@@ -21,5 +22,5 @@ export function SignOutButton() {
     window.location.assign("/sign-in");
   }
 
-  return <ActionButton className="profile-button profile-sign-out" type="button" onClick={signOut} isPending={isBusy} pendingLabel="Logging Out…">Log Out</ActionButton>;
+  return <ActionButton className="profile-button profile-sign-out" type="button" onClick={signOut} isPending={isBusy} pendingLabel="Logging Out…"><LogOut aria-hidden="true" size={18} strokeWidth={1.8} />Log Out</ActionButton>;
 }

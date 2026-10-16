@@ -1,0 +1,7 @@
+.page { width: 100%; min-width: 0; }
+.page :global(.route-feedback-panel) { display: grid; min-width: 0; gap: 20px; width: 100%; max-width: 760px; margin-inline: auto; min-height: 340px; align-content: center; padding: clamp(28px,5vw,48px); border: 1px solid color-mix(in srgb,var(--purple) 20%,var(--line)); border-radius: 24px; background: radial-gradient(ellipse at 100% 0,color-mix(in srgb,var(--purple) 8%,transparent),transparent 65%),var(--surface); box-shadow: none; }
+.page :is(h1,p,a) { overflow-wrap: anywhere; }.page :global(.route-feedback-panel) h1 { font-size: clamp(28px,3.5vw,42px); line-height: 1.2; letter-spacing: -.035em; }.page :global(.route-feedback-panel) p:not(:global(.eyebrow)) { color: var(--muted); line-height: 1.8; }
+.page :global(.route-feedback-actions) { display: flex; flex-wrap: wrap; gap: 12px; }.page :global(.button) { min-height: 46px; min-width: 0; max-width: 100%; width: fit-content; white-space: normal; }.page :global(.route-feedback-actions) :global(.button) { flex: 0 1 auto; }
+.page :is(a,button):focus-visible { outline: 3px solid color-mix(in srgb,var(--purple) 65%,transparent); outline-offset: 3px; }
+.symbol { display: grid; width: 50px; height: 50px; place-items: center; border: 1px solid var(--line); border-radius: 15px; background: var(--surface-muted); color: var(--purple); }
+@media(max-width:500px) { .page :global(.route-feedback-panel) { min-height: 0; padding: 26px 22px; border-radius: 20px; }.page :global(.route-feedback-actions) :global(.button) { flex: 1 1 140px; } }

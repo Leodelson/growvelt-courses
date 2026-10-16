@@ -30,4 +30,4 @@ The route inventory and Phase 5 checkpoint files were compared; this is a covera
 | Shared recovery/loading/empty states and secondary public pages | Follow authentication: inspect existing RouteError/not-found/loading integration, teaching application/lesson/certificate flows, public company/certificates/provider/trust/legal/blog pages and legacy redirect aliases. Do not invent duplicate pages or alter policies as UI work. |
 | Notifications, PWA/security/Live operational readiness | Not included in this UI slice. Notifications remain owner-excluded; Phase 6 and real-money activation require their own readiness work. |
 
-Resume with the authentication presentation group. Phase 5 remains open; Phase 6 has not started.
+Authentication presentation, the mobile drawer correction and the shared recovery/loading group are completed in the [access/navigation checkpoint](phase5-access-navigation-recovery.md). Next: the secondary public and teaching/lesson/certificate coverage pass listed above. Phase 5 remains open; Phase 6 has not started.

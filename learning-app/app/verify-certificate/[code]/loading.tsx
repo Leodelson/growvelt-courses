@@ -7,7 +7,8 @@ export default async function VerificationLoading() {
   const locale = await getRequestLocale();
 
   return (
-    <main className="certificate-view section-shell" aria-label={loadingLabels[locale]}>
+    <main className="certificate-view section-shell" aria-label={loadingLabels[locale]} role="status" aria-busy="true">
+      <span className="sr-only">{loadingLabels[locale]}</span>
       <Skeleton className="skeleton-block" style={{ minHeight: 260 }} aria-hidden="true" />
     </main>
   );

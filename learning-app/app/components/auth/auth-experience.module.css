@@ -1,0 +1,18 @@
+.frame { min-width: 0; grid-template-columns: minmax(0,.85fr) minmax(0,1.15fr); }
+.frame :is(h1,h2,p,label,span,small,a) { overflow-wrap: anywhere; }
+.frame :is(a,button,input,select):focus-visible { outline: 3px solid color-mix(in srgb,var(--purple) 60%,var(--ink)); outline-offset: 3px; }
+.skip { position: fixed; z-index: 200; top: 12px; left: 16px; transform: translateY(-200%); padding: 12px 18px; background: var(--surface); color: var(--purple); border: 1px solid var(--line); border-radius: 10px; }.skip:focus { transform: none; }
+.frame :global(.auth-story) { min-width: 0; padding: clamp(28px,4vw,56px); background: radial-gradient(ellipse at 0 0,#a619e6,transparent 70%),linear-gradient(150deg,#56118c,#7416ab); }
+.frame :global(.auth-story-copy) { margin-top: clamp(44px,7vh,90px); }.frame :global(.auth-story-copy) h2 { max-width: 500px; margin: 0 0 28px; font-size: clamp(32px,3.2vw,50px); line-height: 1.13; letter-spacing: -.04em; color: #fff; }
+.frame :global(.auth-value-list) p { line-height: 1.6; align-items: start; }.frame :global(.auth-value-list) span { flex: 0 0 29px; }
+.frame :global(.auth-form-area) { min-width: 0; padding: clamp(28px,5vw,64px); align-content: center; }
+.frame > :global(.auth-form-area) > :global(.auth-card) { width: min(100%,570px); min-width: 0; margin: 0; padding: clamp(28px,3.6vw,44px); gap: 20px; border-radius: 24px; box-shadow: 0 14px 42px color-mix(in srgb,var(--ink) 7%,transparent); }
+.frame :global(.auth-card-heading) h1,.frame :global(.auth-notice-card) h1 { margin-block: 8px 12px; font-size: clamp(30px,3.2vw,42px); line-height: 1.15; letter-spacing: -.035em; }
+.frame :global(.auth-card-heading) p,.frame :global(.auth-notice-card) > p { color: var(--muted); line-height: 1.75; }.frame :global(.auth-mode-tabs) a { display: grid; min-height: 44px; place-items: center; }
+.frame :global(.auth-checkbox) { width: 100%; min-width: 0; line-height: 1.6; }.frame :global(.auth-checkbox) input { flex: 0 0 18px; }
+.frame :global(.intent-options) { min-width: 0; }.frame :global(.intent-option) { min-width: 0; white-space: normal; }.frame :global(.intent-option) span { line-height: 1.65; }
+.frame :global(.field-label) > input,.frame :global(.password-field),.frame :global(.password-field) input { min-width: 0; }.frame :global(.password-field) button { min-width: 52px; min-height: 48px; }
+.frame :global(.auth-actions-row) :global(.button) { min-width: 0; max-width: 100%; white-space: normal; }.frame :global(.google-button),.frame :global(.auth-submit) { min-height: 48px; max-width: 100%; white-space: normal; }
+@media(max-width:1000px) { .frame { grid-template-columns: minmax(0,.7fr) minmax(0,1fr); }.frame :global(.auth-form-area) { padding: 28px; } }
+@media(max-width:760px) { .frame { grid-template-columns: 1fr; }.frame :global(.auth-story) { min-height: 0; padding: max(16px,env(safe-area-inset-top)) 20px 16px; }.frame :global(.auth-story-copy),.frame :global(.auth-side-card-image),.frame :global(.auth-story-note) { display: none; }.frame :global(.auth-form-area) { padding: 22px 16px max(32px,env(safe-area-inset-bottom)); }.frame > :global(.auth-form-area) > :global(.auth-card) { margin-inline: auto; padding: clamp(20px,5vw,30px); border-radius: 20px; }.frame :global(.auth-actions-row) :global(.button) { width: 100%; } }
+@media(max-width:360px) { .frame :global(.intent-options) { grid-template-columns: 1fr; } }

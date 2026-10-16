@@ -1,3 +1,4 @@
+import styles from "@/app/components/ui/route-feedback.module.css";
 import Link from "next/link";
 import FooterWrapper from "@/app/components/FooterWrapper";
 import { PublicHeader } from "@/app/components/public-header";
@@ -9,7 +10,7 @@ export default async function PublicCourseNotFound() {
   const t = (key: Parameters<typeof translate>[1]) => translate(locale, key);
   return <div className="public-page">
     <PublicHeader />
-    <main className="route-feedback-page section-shell">
+    <main className={`route-feedback-page section-shell ${styles.page}`}>
       <section className="route-feedback-panel">
         <p className="eyebrow">{t("catalog.unavailable")}</p>
         <h1>{t("catalog.unavailableTitle")}</h1>
