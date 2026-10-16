@@ -32,6 +32,6 @@ Consistent responsive page headings, statistics, panels, controls, cards and emp
 1. Learner Subscriptions, Profile and Settings — completed in the [account workspace checkpoint](phase5-account-workspaces.md).
 2. Dashboard Home/shared shell review — completed in the [Home checkpoint](phase5-dashboard-home.md).
 3. Instructor workspace/course creation/curriculum and subscriptions — completed in the [instructor checkpoint](phase5-instructor-workspaces.md). Organization/provider/insights/payout screens — completed in the [provider checkpoint](phase5-provider-workspaces.md). Earnings must be reviewed against the owner's existing uncommitted work before touching it.
-4. Company workspace/billing/reports/insights — completed in the [company checkpoint](phase5-company-workspaces.md). Next: admin screens.
+4. Company workspace/billing/reports/insights — completed in the [company checkpoint](phase5-company-workspaces.md). First admin-review group — completed in the [admin checkpoint](phase5-admin-reviews.md). Next: remaining financial/operations admin screens.
 
 Notifications, product-wide commerce changes and later roadmap/security gates remain out of scope for this update.

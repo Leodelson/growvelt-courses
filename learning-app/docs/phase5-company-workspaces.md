@@ -28,4 +28,4 @@ Shared form actions now use the existing pending-spinner button. No new endpoint
 
 ## Resume here
 
-Next: admin-review pages. Instructor Earnings still requires reviewing the owner's separate changes before modifying or releasing it. Notifications and Live payment activation remain separate. Phase 5 is not yet complete.
+The first admin-review group is completed in the [admin review checkpoint](phase5-admin-reviews.md). Next: remaining financial/operations admin pages (payments, commercial, company commercial, promotions/coupons and enterprise contracts). Instructor Earnings still requires reviewing the owner's separate changes before modifying or releasing it. Notifications and Live payment activation remain separate. Phase 5 is not yet complete.
