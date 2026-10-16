@@ -1,0 +1,18 @@
+.page { min-width: 0; min-height: 0; gap: 24px; padding-block: 0 40px !important; }
+.page :is(h1,h2,h3,p,small,span,strong,code,dd,time,a) { overflow-wrap: anywhere; }
+.page :is(a,button,input,select,summary):focus-visible { outline: 3px solid color-mix(in srgb,var(--purple) 65%,transparent); outline-offset: 3px; }
+.page [id] { scroll-margin-top: 100px; }
+.back { justify-self: start; color: var(--muted); font-size: 13px; }
+.navigation { display: flex; flex-wrap: wrap; gap: 9px; }.navigation a { max-width: 100%; padding: 11px 14px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--ink); font-size: 12px; }
+.page :global(.instructor-earnings-hero) { padding: clamp(24px,3.5vw,38px); border-radius: 24px; box-shadow: none; }
+.page :global(.instructor-earnings-hero) h1 { font-size: clamp(30px,4vw,48px); line-height: 1.15; letter-spacing: -.04em; }
+.page :global(.instructor-earnings-hero) p:last-child { line-height: 1.75; color: var(--muted); }
+.page :global(.instructor-earnings-summary) { grid-template-columns: repeat(3,minmax(0,1fr)); gap: 16px; }.page :global(.instructor-earnings-summary) article { align-content: start; padding: 24px; box-shadow: none; }.page :global(.instructor-earnings-summary) small { line-height: 1.65; }.page :global(.instructor-earnings-summary) strong { line-height: 1.2; }
+.scope { margin: 0; font-size: 12px; line-height: 1.8; color: var(--muted); }
+.guide { min-width: 0; padding: 24px; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); }.guide summary,.timeline summary { cursor: pointer; font-weight: 700; line-height: 1.6; }.guide > div { display: grid; gap: 12px; margin-top: 18px; }.guide p { margin: 0; color: var(--muted); line-height: 1.8; }
+.page :global(.instructor-earnings-history) { padding: clamp(22px,3vw,30px); border-radius: 20px; box-shadow: none; }.page :global(.instructor-earnings-history) > header { align-items: start; flex-wrap: wrap; gap: 16px; }.page :global(.instructor-earnings-history) > header > div { flex: 1 1 260px; }.page :global(.instructor-earnings-history) > header > p { flex: 1 1 300px; text-align: left; line-height: 1.8; color: var(--muted); }.page :global(.instructor-earnings-history) h2 { font-size: clamp(24px,3vw,30px); }
+.page :global(.instructor-earnings-list) { min-width: 0; }.page :global(.instructor-earnings-list) article { min-width: 0; display: grid; gap: 18px; padding: 24px; border: 1px solid var(--line); border-radius: 18px; background: var(--surface-muted); }.page :global(.instructor-earnings-heading) { flex-wrap: wrap; gap: 16px; }.page :global(.instructor-earnings-heading) > div { min-width: 0; flex: 1 1 240px; }.page :global(.instructor-earnings-heading) > strong { white-space: normal; }.page :global(.instructor-earnings-list) dl { grid-template-columns: repeat(3,minmax(0,1fr)); }.page :global(.instructor-earnings-explanation) { line-height: 1.8; }
+.timeline { min-width: 0; padding-top: 16px; border-top: 1px solid var(--line); }.timeline ol { margin-top: 16px; }.timeline li { min-width: 0; flex-wrap: wrap; gap: 10px; }
+.page :global(.instructor-earnings-empty) { box-shadow: none; padding: 26px; }.page :global(.instructor-earnings-empty) h2 { font-size: 27px; }
+@media(max-width:1000px) { .page :global(.instructor-earnings-summary) { grid-template-columns: repeat(2,minmax(0,1fr)); } }
+@media(max-width:600px) { .page :global(.instructor-earnings-summary),.page :global(.instructor-earnings-list) dl { grid-template-columns: 1fr; }.page :global(.instructor-earnings-list) article { padding: 20px; }.page :global(.instructor-earnings-heading) { flex-direction: column; }.page :global(.instructor-earnings-heading) > div { flex-basis: auto; } }
