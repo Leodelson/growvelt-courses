@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 import vm from "node:vm";
 import { createHash } from "node:crypto";
-import { careersCompatibilityResponse as respond, careersLegacyPages, careersTransitionWorker } from "../app/lib/careers-compatibility.mjs";
+import { careersCompatibilityResponse as respond, careersLegacyPages, careersPrivatePages, careersTransitionWorker } from "../app/lib/careers-compatibility.mjs";
 
 const future = { NEXT_PUBLIC_LEARNING_SITE_URL: "https://www.growvelt.com", NEXT_PUBLIC_CAREERS_SITE_URL: "https://jobs.growvelt.com", NEXT_PUBLIC_LEARNING_DOMAIN_CUTOVER_ENABLED: "true" };
 const origin = "https://www.growvelt.com";
@@ -21,16 +21,32 @@ function isolatedResponse(path, method = "GET") {
   assert.equal(response.headers.get("access-control-allow-origin"), null);
   return response;
 }
-const publicDetails = ["/jobs/123", "/companies/123", "/jobs/01234567-89ab-4cde-8123-0123456789ab", "/companies/employer_1"];
+const publicDetails = ["/jobs/123", "/companies/123", "/jobs/01234567-89ab-4cde-8123-0123456789ab", "/companies/employer_1", ...careersPrivatePages, "/candidates/candidate_1", "/dashboard/my-jobs/jobs/job_1"];
+const applications = ["/jobs/job_1/apply", ...["questions", "preview", "success"].map(step => "/jobs/job_1/apply/" + step)];
+for (const path of applications) {
+  for (const method of ["GET", "HEAD"]) {
+    const response = isolatedResponse(path + "?answers=SECRET&code=SECRET&next=//evil.invalid#access_token=SECRET", method);
+    assert.equal(response.status, 200);
+    assert.equal(response.headers.get("location"), null);
+    const html = await response.text();
+    if (method === "HEAD") { assert.equal(html, ""); continue; }
+    assert.match(html, /Continue your application on Careers/);
+    assert.match(html, /have not been transferred or submitted/);
+    assert.match(html, /already submitted/);
+    assert.ok(html.includes('href="https://jobs.growvelt.com/jobs/job_1#careers-moved"'));
+    assert.doesNotMatch(html, /SECRET|evil\.invalid|\/apply\/questions/);
+    assert.match(response.headers.get("content-security-policy"), /form-action 'none'/);
+  }
+}
 for (const path of [...careersLegacyPages, ...publicDetails]) {
   for (const method of ["GET", "HEAD"]) {
     const response = isolatedResponse(path + "?next=https://evil.invalid&code=SECRET&tab=private", method);
     assert.equal(response.status, 302);
-    assert.equal(response.headers.get("location"), "https://jobs.growvelt.com" + path + "#careers-moved");
+    assert.equal(response.headers.get("location"), "https://jobs.growvelt.com" + (path === "/dashboard/post-job/preview" ? "/dashboard/post-job" : path) + "#careers-moved");
     assert.equal(await response.text(), "");
   }
 }
-for (const path of [...careersLegacyPages, ...publicDetails, "/auth/callback", "/api/auth/welcome", "/api/newsletter/subscribe", "/sw.js"]) {
+for (const path of [...careersLegacyPages, ...publicDetails, ...applications, "/auth/callback", "/api/auth/welcome", "/api/newsletter/subscribe", "/sw.js"]) {
   for (const method of ["POST", "PUT", "DELETE", "OPTIONS"]) {
     const response = isolatedResponse(path, method);
     assert.equal(response.status, 409);
@@ -78,15 +94,16 @@ assert.equal(await worker.text(), careersTransitionWorker());
 // Never apply future-www compatibility on learn, www.learn, jobs, arbitrary
 // hosts or the current configuration, regardless of headers or cookies supplied.
 for (const host of ["learn.growvelt.com", "www.learn.growvelt.com", "jobs.growvelt.com", "evil.invalid"]) {
-  for (const path of [...careersLegacyPages, ...publicDetails, "/auth/callback", "/sw.js", "/pwa/launch.html", "/api/auth/welcome"]) {
+  for (const path of [...careersLegacyPages, ...publicDetails, ...applications, "/auth/callback", "/sw.js", "/pwa/launch.html", "/api/auth/welcome"]) {
     assert.equal(respond(new Request("https://" + host + path), future), null);
   }
 }
 assert.equal(respond(make("/dashboard"), {}), null);
 assert.equal(respond(make("/dashboard"), { ...future, NEXT_PUBLIC_LEARNING_DOMAIN_CUTOVER_ENABLED: "false" }), null);
+for (const path of [...publicDetails, ...applications]) assert.equal(respond(make(path), { ...future, NEXT_PUBLIC_LEARNING_DOMAIN_CUTOVER_ENABLED: "false" }), null);
 for (const path of ["/", "/dashboard/my-learning", "/learning/dashboard", "/auth/learning/callback", "/payments/paystack/callback", "/api/payments/paystack/webhook", "/courses/data",
-  "/jobs/id/apply", "/jobs/id/apply/questions", "/jobs/id/preview", "/jobs/id/success", "/companies/id/private", "/jobs/", "/jobs/%2Fsecret", "/jobs/%5csecret", "/jobs/with.dot", "/jobs/" + "a".repeat(129),
-  "/ref/code", "/unsubscribe?token=SECRET", "/alerts/unsubscribe?token=SECRET", "/api/unsubscribe?token=SECRET", "/api/alerts/unsubscribe?token=SECRET", "/api/paystack/verify", "/candidates/id", "/career-assistant/private",
+  "/jobs/id/apply/unknown", "/jobs/id/apply/questions/nested", "/jobs/%252fsecret/apply", "/jobs/" + "a".repeat(129) + "/apply", "/dashboard/unknown", "/dashboard/admin/unknown", "/candidates/id/private", "/dashboard/my-jobs/jobs/%252fsecret", "/jobs/id/preview", "/jobs/id/success", "/companies/id/private", "/jobs/", "/jobs/%2Fsecret", "/jobs/%5csecret", "/jobs/with.dot", "/jobs/" + "a".repeat(129),
+  "/ref/%252fsecret", "/ref/" + "a".repeat(129), "/career-assistant/private",
 ]) {
   assert.equal(respond(make(path), future), null);
 }

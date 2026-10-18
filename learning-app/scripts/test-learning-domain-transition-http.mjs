@@ -4,6 +4,7 @@ import { readFileSync, existsSync } from "node:fs";
 import net from "node:net";
 import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
+import { careersPrivatePages } from "../app/lib/careers-compatibility.mjs";
 
 const mode = process.argv[2];
 const compatibility = process.argv.includes("--compatibility");
@@ -26,6 +27,7 @@ Object.assign(env, {
   NEXT_PUBLIC_LEARNING_SITE_URL: mode === "future" ? "https://www.growvelt.com" : "https://learn.growvelt.com",
   NEXT_PUBLIC_CAREERS_SITE_URL: mode === "future" ? "https://jobs.growvelt.com" : "https://www.growvelt.com",
   NEXT_PUBLIC_LEARNING_DOMAIN_CUTOVER_ENABLED: mode === "future" ? "true" : "false",
+  LEARNING_WWW_SAFETY_BRIDGE_ENABLED: mode === "future" ? "true" : "false",
   GROWVELT_DOMAIN_TEST_MODE: mode, NODE_ENV: "production", NEXT_TELEMETRY_DISABLED: "1",
 });
 assert.equal(env.NEXT_PUBLIC_SUPABASE_URL, "");
@@ -92,6 +94,64 @@ try {
   const welcome = await request("/api/learning/auth/welcome", { method: "POST", headers: { Origin: "https://evil.invalid" } });
   assert.equal(welcome.status, 403); // Rejected before Auth/email processing.
   if (compatibility) {
+    for (const [path, target] of [
+      ["/ref/Ab_c-01?code=DISCARD", "/ref/Ab_c-01"],
+      ["/unsubscribe?token=SYNTHETIC_TOKEN&code=DISCARD", "/unsubscribe?token=SYNTHETIC_TOKEN"],
+      ["/unsubscribe?email=person%2Btag%40example.invalid&code=DISCARD", "/unsubscribe?email=person%2Btag%40example.invalid"],
+      ["/alerts/unsubscribe?token=SYNTHETIC_TOKEN&next=DISCARD", "/alerts/unsubscribe?token=SYNTHETIC_TOKEN"],
+      ["/unsubscribe-success?token=DISCARD", "/unsubscribe-success"],
+      ["/get-started/results?answers=DISCARD", "/get-started"],
+      ["/post-job/success?reference=DISCARD", "/dashboard/my-jobs"],
+    ]) for (const method of ["GET", "HEAD", "POST"]) {
+      const response = await request(path, { method });
+      assert.equal(response.status, method === "POST" ? 409 : 302, path);
+      assert.equal(response.headers.get("location"), method === "POST" ? null : "https://jobs.growvelt.com" + target + "#careers-moved");
+      assert.match(response.headers.get("cache-control"), /no-store/);
+      assert.equal(response.headers.get("referrer-policy"), "no-referrer");
+    }
+    for (const path of ["/unsubscribe?token=x&token=y", "/unsubscribe?token=x&email=person%40example.invalid", "/alerts/unsubscribe?email=person%40example.invalid"]) {
+      const response = await request(path);
+      assert.equal(response.status, 200);
+      assert.equal(response.headers.get("location"), null);
+      const html = await response.text();
+      assert.match(html, /No unsubscribe request was processed here/);
+      assert.doesNotMatch(html, /example\.invalid/);
+    }
+    for (const path of ["/api/unsubscribe", "/api/alerts/unsubscribe", "/api/paystack/verify"]) for (const method of ["GET", "HEAD", "POST"]) {
+      const response = await request(path + "?token=DISCARD", { method });
+      assert.equal(response.status, method === "POST" ? 409 : 405);
+      assert.equal(response.headers.get("location"), null);
+      const text = await response.text();
+      assert.doesNotMatch(text, /DISCARD/);
+      if (method === "HEAD") assert.equal(text, "");
+      else {
+        const json = JSON.parse(text);
+        assert.equal(json.success, false);
+        assert.equal(json.retryable, false);
+        if (path === "/api/paystack/verify") assert.match(json.message, /Do not pay again/);
+      }
+    }
+    for (const path of [...careersPrivatePages, "/candidates/candidate_1", "/dashboard/my-jobs/jobs/job_1"]) {
+      for (const method of ["GET", "HEAD", "POST"]) {
+        const response = await request(path + "?code=SECRET&answers=SECRET", { method });
+        assert.equal(response.status, method === "POST" ? 409 : 302, path);
+        assert.equal(response.headers.get("location"), method === "POST" ? null : "https://jobs.growvelt.com" + (path === "/dashboard/post-job/preview" ? "/dashboard/post-job" : path) + "#careers-moved");
+        assert.equal(response.headers.get("set-cookie"), null);
+      }
+    }
+    for (const step of ["", "/preview", "/questions", "/success"]) {
+      const path = "/jobs/job_1/apply" + step;
+      for (const method of ["GET", "HEAD", "POST"]) {
+        const response = await request(path + "?code=SECRET&answers=SECRET", { method });
+        assert.equal(response.status, method === "POST" ? 409 : 200, path);
+        assert.equal(response.headers.get("location"), null);
+        assert.match(response.headers.get("cache-control"), /no-store/);
+        const body = await response.text();
+        assert.doesNotMatch(body, /SECRET/);
+        if (method === "GET") assert.ok(body.includes('href="https://jobs.growvelt.com/jobs/job_1#careers-moved"'));
+        if (method === "HEAD") assert.equal(body, "");
+      }
+    }
     for (const path of ["/dashboard", "/dashboard/profile", "/dashboard/settings", "/dashboard/my-jobs", "/dashboard/applications", "/jobs", "/career-assistant", "/employers", "/updates", "/get-started", "/jobs/01234567-89ab-4cde-8123-0123456789ab", "/companies/employer_1"]) {
       for (const method of ["GET", "HEAD"]) {
         const response = await request(path + "?code=SECRET&next=//evil.invalid", { method });
@@ -103,7 +163,7 @@ try {
       assert.equal(blocked.status, 409);
       assert.equal(blocked.headers.get("location"), null);
     }
-    for (const path of ["/jobs/id/apply", "/jobs/id/apply/questions", "/jobs/id/preview", "/jobs/id/success", "/companies/id/private", "/jobs/with.dot", "/jobs/%252fsecret", "/ref/code", "/unsubscribe?token=SECRET", "/alerts/unsubscribe?token=SECRET", "/api/unsubscribe?token=SECRET", "/api/paystack/verify"]) {
+    for (const path of ["/jobs/id/apply/unknown", "/jobs/id/apply/questions/nested", "/jobs/%252fsecret/apply", "/career-assistant/private", "/candidates/id/private", "/jobs/id/preview", "/jobs/id/success", "/companies/id/private", "/jobs/with.dot", "/jobs/%252fsecret", "/ref/%252fsecret"]) {
       const response = await request(path);
       assert.equal(response.status, 404, "Unreviewed legacy route must not be captured or processed: " + path);
       assert.equal(response.headers.get("location"), null);

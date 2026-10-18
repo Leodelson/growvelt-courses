@@ -2,6 +2,7 @@ node_modules/
 .next/
 .next-domain-legacy/
 .next-domain-future/
+.next-domain-bridge/
 .npm-cache/
 .env*
 !.env.example

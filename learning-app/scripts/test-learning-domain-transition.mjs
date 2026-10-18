@@ -9,7 +9,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import ts from "typescript";
 import { NextRequest } from "next/server.js";
 import * as urls from "../app/lib/site-urls.mjs";
-import { careersCompatibilityResponse } from "../app/lib/careers-compatibility.mjs";
+import { careersCompatibilityResponse, learningWwwSafetyBridgeResponse } from "../app/lib/careers-compatibility.mjs";
 
 const require = createRequire(import.meta.url);
 const current = {};
@@ -119,7 +119,7 @@ assert.ok(renderToStaticMarkup(React.createElement(link, { href: "/dashboard/pro
 // Exercise the real proxy with synthetic requests and a fake Auth client; no network.
 let clientCalls = 0;
 const proxyMocks = {
-  "@/app/lib/careers-compatibility.mjs": { careersCompatibilityResponse: request => careersCompatibilityResponse(request, future) },
+  "@/app/lib/careers-compatibility.mjs": { learningWwwSafetyBridgeResponse: request => learningWwwSafetyBridgeResponse(request, future), careersCompatibilityResponse: request => careersCompatibilityResponse(request, future) },
   "@/app/lib/site-urls.mjs": boundUrls,
   "@/app/lib/auth/redirect": redirect,
   "@supabase/ssr": { createServerClient: (_url, _key, options) => {
