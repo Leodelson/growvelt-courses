@@ -1,9 +1,11 @@
-export const growveltLearningUrl = new URL("https://learn.growvelt.com");
+import { getLearningOrigin, learningAbsoluteUrl } from "./site-urls.mjs";
+
+export const growveltLearningUrl = new URL(getLearningOrigin());
 
 export const defaultSocialImage = "/og-image2.png";
 
 export function absoluteLearningUrl(path = "/") {
-  return new URL(path, growveltLearningUrl).toString();
+  return learningAbsoluteUrl(path);
 }
 
 export const growveltOrganizationJsonLd = {

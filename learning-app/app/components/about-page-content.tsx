@@ -1,4 +1,5 @@
 "use client";
+import { careersAbsoluteUrl } from "@/app/lib/site-urls.mjs";
 
 import Image from "next/image";
 import Link from "next/link";
@@ -25,7 +26,7 @@ export function AboutPageContent() {
   const contactLabel = { en: "Talk to the Growvelt team", fr: "Parler à l’équipe Growvelt", es: "Hablar con el equipo Growvelt" }[locale];
   return <main id="public-main" className={`${styles.page} ${styles.about}`}>
     <section className="about-hero section-shell" aria-labelledby="about-title">
-      <div><p className="eyebrow">{text.eyebrow}</p><h1 id="about-title">{text.title}</h1><p className="about-hero-lede">{text.lede}</p><div className={styles.heroActions}><Link href="/learn" className="button button-primary">{text.courses}</Link><a href="https://growvelt.com" target="_blank" rel="noreferrer" className="button button-secondary">{text.careers}<span className="sr-only"> in a new tab</span></a></div></div>
+      <div><p className="eyebrow">{text.eyebrow}</p><h1 id="about-title">{text.title}</h1><p className="about-hero-lede">{text.lede}</p><div className={styles.heroActions}><Link href="/learn" className="button button-primary">{text.courses}</Link><a href={careersAbsoluteUrl("/")} target="_blank" rel="noreferrer" className="button button-secondary">{text.careers}<span className="sr-only"> in a new tab</span></a></div></div>
       <aside className="about-hero-card" aria-label={text.glance}><Compass size={28} aria-hidden="true" /><p className="eyebrow">{text.glance}</p><div className="about-hero-copy"><p>{text.ecosystem}</p><p>{text.together}</p></div><dl><div><dt>{text.founded}</dt><dd>2024</dd></div><div><dt>{text.focus}</dt><dd>{text.focusValue}</dd></div></dl></aside>
     </section>
     <section className="about-split section-shell" aria-labelledby="who-title"><Image src="/images/about/who-we-are.jpg" alt="" width={1280} height={853} sizes="(max-width: 760px) calc(100vw - 40px), 550px" /><div><p className="eyebrow">{text.who}</p><h2 id="who-title">{text.whoTitle}</h2><p>{text.whoCopy}</p></div></section>

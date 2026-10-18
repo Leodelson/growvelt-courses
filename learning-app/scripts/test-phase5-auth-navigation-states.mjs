@@ -2,6 +2,7 @@
 import fs from 'node:fs';import path from 'node:path';import vm from 'node:vm';import assert from 'node:assert/strict';import {createRequire} from 'node:module';import React from 'react';import {renderToStaticMarkup} from 'react-dom/server';import ts from 'typescript';
 const require=createRequire(import.meta.url),cache=new Map();let locale='en',drawerOpen=false;
 function load(file){if(cache.has(file))return cache.get(file);const mod={exports:{}};const js=ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,esModuleInterop:true}}).outputText;vm.runInNewContext(js,{URL,URLSearchParams,process:{env:{}},exports:mod.exports,require(id){
+ if(id.endsWith("site-urls.mjs"))return require("../app/lib/site-urls.mjs");
  if(id==='react')return {...React,useState(initial){return React.useState(drawerOpen&&initial===null?'mobile':initial);}};
  if(id==='next/link')return ({children,...props})=>React.createElement('a',props,children);
  if(id==='next/image')return ({priority,...props})=>React.createElement('img',props);
@@ -25,7 +26,7 @@ for(const role of ['learner','instructor','admin','combined']){
  drawerOpen=true;const html=renderToStaticMarkup(React.createElement(Shell,{isInstructor:role==='instructor'||role==='combined',isAdmin:role==='admin'||role==='combined',isCompany:role==='combined',showSubscriptionPlans:true,initialSidebarCollapsed:false,userEmail:'example@example.invalid',displayName:'Example',avatarUrl:null},React.createElement('h1',null,'Example workspace')));
  assert.match(html,/class="mobile-nav" hidden=""/);assert.match(html,/class="drawerFooter"/);assert.match(html,/lucide-log-out/);
  const body=html.split('class="mobile-dashboard-workspaces"')[1].split('</footer>')[0],hrefs=[...body.matchAll(/href="([^"]+)"/g)].map(m=>m[1]);assert.equal(hrefs.length,new Set(hrefs).size,role+' duplicate drawer destination');
- assert.ok(hrefs.includes('/dashboard'));assert.ok(hrefs.includes('/dashboard/my-learning'));assert.ok(hrefs.includes('/dashboard/explore'));assert.ok(hrefs.includes('https://www.growvelt.com'));
+ assert.ok(hrefs.includes('/dashboard'));assert.ok(hrefs.includes('/dashboard/my-learning'));assert.ok(hrefs.includes('/dashboard/explore'));assert.ok(hrefs.includes('https://www.growvelt.com/'));
  assert.equal(hrefs.includes('/dashboard/admin/payments'),role==='admin'||role==='combined');assert.equal(hrefs.includes('/dashboard/instructor/courses'),role==='instructor'||role==='combined');
  if(role==='instructor'||role==='combined'){assert.ok(hrefs.includes('/dashboard/instructor/courses/new'));assert.ok(hrefs.includes('/dashboard/instructor/earnings'));}
 }

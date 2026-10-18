@@ -1,4 +1,5 @@
 "use server";
+import { learningPath } from "@/app/lib/site-urls.mjs";
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -28,7 +29,7 @@ function errorRedirect(code: string): never {
 }
 
 export async function createLearningCouponAction(formData: FormData) {
-  if (!await isLearningAdmin()) redirect("/dashboard");
+  if (!await isLearningAdmin()) redirect(learningPath("/dashboard"));
 
   const code = String(formData.get("code") ?? "").trim().toUpperCase();
   const kind = String(formData.get("discountKind") ?? "");
@@ -70,7 +71,7 @@ export async function createLearningCouponAction(formData: FormData) {
 
   if (error) {
     if (error.code === "23505") errorRedirect("duplicate");
-    if (error.code === "42501") redirect("/dashboard");
+    if (error.code === "42501") redirect(learningPath("/dashboard"));
     errorRedirect(error.code === "22023" ? "invalid" : "unavailable");
   }
   revalidatePath(pagePath);
@@ -78,7 +79,7 @@ export async function createLearningCouponAction(formData: FormData) {
 }
 
 export async function disableLearningCouponAction(formData: FormData) {
-  if (!await isLearningAdmin()) redirect("/dashboard");
+  if (!await isLearningAdmin()) redirect(learningPath("/dashboard"));
   const couponId = Number(formData.get("couponId"));
   if (!Number.isSafeInteger(couponId) || couponId <= 0) errorRedirect("unavailable");
   const { error } = await (await createClient()).rpc("disable_learning_promotion_coupon_for_admin", {
@@ -90,7 +91,7 @@ export async function disableLearningCouponAction(formData: FormData) {
 }
 
 export async function createLearningCampaignAction(formData: FormData) {
-  if (!await isLearningAdmin()) redirect("/dashboard");
+  if (!await isLearningAdmin()) redirect(learningPath("/dashboard"));
 
   const title = String(formData.get("campaignTitle") ?? "").trim();
   const message = String(formData.get("campaignMessage") ?? "").trim();
@@ -116,7 +117,7 @@ export async function createLearningCampaignAction(formData: FormData) {
   });
 
   if (error) {
-    if (error.code === "42501") redirect("/dashboard");
+    if (error.code === "42501") redirect(learningPath("/dashboard"));
     if (error.code === "23P01") errorRedirect("campaign-overlap");
     errorRedirect(error.code === "22023" ? "campaign-invalid" : "campaign-unavailable");
   }
@@ -126,7 +127,7 @@ export async function createLearningCampaignAction(formData: FormData) {
 }
 
 export async function disableLearningCampaignAction(formData: FormData) {
-  if (!await isLearningAdmin()) redirect("/dashboard");
+  if (!await isLearningAdmin()) redirect(learningPath("/dashboard"));
   const campaignId = Number(formData.get("campaignId"));
   if (!Number.isSafeInteger(campaignId) || campaignId <= 0) errorRedirect("campaign-unavailable");
 
@@ -134,7 +135,7 @@ export async function disableLearningCampaignAction(formData: FormData) {
     p_campaign_id: campaignId,
   });
   if (error) {
-    if (error.code === "42501") redirect("/dashboard");
+    if (error.code === "42501") redirect(learningPath("/dashboard"));
     errorRedirect("campaign-unavailable");
   }
 

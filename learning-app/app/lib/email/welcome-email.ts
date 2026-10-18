@@ -1,3 +1,4 @@
+import { careersAbsoluteUrl } from "@/app/lib/site-urls.mjs";
 import { createClient } from "@supabase/supabase-js";
 import type { User } from "@supabase/supabase-js";
 import { renderGrowveltEmail } from "@/app/lib/email/growvelt-email-template";
@@ -27,7 +28,7 @@ function getAdminClient() {
 
 function welcomeEmailHtml(firstName: string, appBaseUrl: string) {
   const learningUrl = new URL("/dashboard/explore", appBaseUrl).href;
-  const jobsUrl = "https://growvelt.com";
+  const jobsUrl = careersAbsoluteUrl("/");
   return renderGrowveltEmail({
     baseUrl: appBaseUrl,
     greeting: firstName,

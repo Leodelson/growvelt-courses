@@ -1,4 +1,5 @@
 "use client";
+import { careersAbsoluteUrl } from "@/app/lib/site-urls.mjs";
 
 import { useState } from "react";
 import Image from "next/image";
@@ -49,7 +50,7 @@ export function HomeHiring() {
   const copy = homeDiscoveryCopy[locale].hiring;
   return <section className={`${styles.wrap} ${styles.hiring}`} aria-labelledby="home-hiring-title">
     <div className={styles.editorialPhoto}><Image src="/images/home-hiring-corporate-woman.webp" alt="" width={1200} height={800} sizes="(max-width: 760px) calc(100vw - 40px), 550px" /></div>
-    <div className={styles.editorialCopy}><p className={styles.eyebrow}><BriefcaseBusiness size={17} aria-hidden="true" />{copy.eyebrow}</p><h2 id="home-hiring-title">{copy.title}</h2><p>{copy.intro}</p><a className={styles.action} href="https://www.growvelt.com" target="_blank" rel="noreferrer" aria-describedby="hiring-link-note">{copy.action}<ArrowUpRight size={18} aria-hidden="true" /></a><p id="hiring-link-note" className={styles.note}>{copy.note}</p></div>
+    <div className={styles.editorialCopy}><p className={styles.eyebrow}><BriefcaseBusiness size={17} aria-hidden="true" />{copy.eyebrow}</p><h2 id="home-hiring-title">{copy.title}</h2><p>{copy.intro}</p><a className={styles.action} href={careersAbsoluteUrl("/")} target="_blank" rel="noreferrer" aria-describedby="hiring-link-note">{copy.action}<ArrowUpRight size={18} aria-hidden="true" /></a><p id="hiring-link-note" className={styles.note}>{copy.note}</p></div>
   </section>;
 }
 

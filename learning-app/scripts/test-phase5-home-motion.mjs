@@ -21,6 +21,7 @@ async function scenario({ reduced = false, saveData = false, reject = false, loc
   vm.runInNewContext(compiled, { exports: mod.exports, window: { matchMedia: () => motion }, navigator: { connection: { saveData } }, document,
     IntersectionObserver: class { constructor(callback) { intersection = callback; } observe() {} disconnect() { disconnected = true; } },
     require: (id) => {
+ if(id.endsWith("site-urls.mjs"))return require("../app/lib/site-urls.mjs");
       if (id === "react") return { ...React, useRef: (value) => { const ref = { current: value }; refs.push(ref); return ref; }, useState: (value) => [value, () => {}], useEffect: (fn) => effects.push(fn) };
       if (id === "@/app/components/language-provider") return { useLanguage: () => ({ locale }) };
       if (id.endsWith(".css")) return { __esModule: true, default: new Proxy({}, { get: (_, key) => key }) };

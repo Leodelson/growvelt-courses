@@ -1,5 +1,7 @@
 "use client";
 
+import { learningPath } from "./site-urls.mjs";
+
 export type NewsletterStatus = {
   type: "success" | "error";
   message: string;
@@ -27,7 +29,7 @@ export async function subscribeToNewsletter(
   }
 
   try {
-    const res = await fetch("/api/newsletter/subscribe", {
+    const res = await fetch(learningPath("/api/newsletter/subscribe"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email: normalizedEmail }),

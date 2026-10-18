@@ -1,4 +1,5 @@
 "use server";
+import { learningPath } from "@/app/lib/site-urls.mjs";
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -18,7 +19,7 @@ function isCalendarDate(value: string): boolean {
 }
 
 export async function recordLearningEnterpriseContractAction(formData: FormData) {
-  if (!await isLearningAdmin()) redirect("/dashboard");
+  if (!await isLearningAdmin()) redirect(learningPath("/dashboard"));
 
   const workspaceId = Number(String(formData.get("workspaceId") ?? "").trim());
   const reference = String(formData.get("contractReference") ?? "").trim();
@@ -50,7 +51,7 @@ export async function recordLearningEnterpriseContractAction(formData: FormData)
   });
 
   if (error) {
-    if (error.code === "42501") redirect("/dashboard");
+    if (error.code === "42501") redirect(learningPath("/dashboard"));
     if (error.code === "23505") errorRedirect("duplicate");
     errorRedirect(error.code === "22023" ? "invalid" : "unavailable");
   }

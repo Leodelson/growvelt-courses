@@ -9,6 +9,7 @@ import { LearningIcon } from "@/app/components/learning-icon";
 import { getExplicitSafeNextPath, getSafeNextPath } from "@/app/lib/auth/redirect";
 import { verifyTurnstileToken } from "@/app/lib/auth/turnstile";
 import { createClient } from "@/app/lib/supabase/browser";
+import { learningAuthCallbackUrl } from "@/app/lib/site-urls.mjs";
 import { useLanguage } from "@/app/components/language-provider";
 
 type AuthMode = "sign-in" | "sign-up";
@@ -32,10 +33,10 @@ export function AuthForm({ mode, next }: { mode: AuthMode; next?: string | null 
   const isSignUp = mode === "sign-up";
   const explicitSafeNext = getExplicitSafeNextPath(next);
   const safeNext = getSafeNextPath(next);
-  const authModeHref = (path: "/sign-in" | "/sign-up") => `${path}?next=${encodeURIComponent(intent === "teach" ? "/teach/apply" : explicitSafeNext === "/teach/apply" ? "/dashboard" : safeNext)}`;
+  const authModeHref = (path: "/sign-in" | "/sign-up") => `${path}?next=${encodeURIComponent(intent === "teach" ? "/teach/apply" : explicitSafeNext === "/teach/apply" ? getSafeNextPath(null) : safeNext)}`;
 
   function getPostAuthDestination() {
-    if (explicitSafeNext === "/teach/apply") return intentRef.current === "teach" ? "/teach/apply" : "/dashboard";
+    if (explicitSafeNext === "/teach/apply") return intentRef.current === "teach" ? "/teach/apply" : getSafeNextPath(null);
     return explicitSafeNext ?? (intentRef.current === "teach" ? "/teach/apply" : safeNext);
   }
 
@@ -85,7 +86,7 @@ export function AuthForm({ mode, next }: { mode: AuthMode; next?: string | null 
       const supabase = createClient();
       if (isSignUp) {
         const postAuthDestination = getPostAuthDestination();
-        const { error } = await supabase.auth.signUp({ email, password, options: { data: { full_name: fullName, growvelt_learning_welcome_email_pending: true }, emailRedirectTo: new URL(`/auth/callback?next=${encodeURIComponent(postAuthDestination)}`, window.location.origin).href } });
+        const { error } = await supabase.auth.signUp({ email, password, options: { data: { full_name: fullName, growvelt_learning_welcome_email_pending: true }, emailRedirectTo: learningAuthCallbackUrl(window.location.origin, postAuthDestination) } });
         if (error) {
           setMessage(friendlyAuthError);
           setIsBusy(false);
@@ -114,9 +115,8 @@ export function AuthForm({ mode, next }: { mode: AuthMode; next?: string | null 
     setIsGoogleBusy(true);
     const postAuthDestination = getPostAuthDestination();
     try {
-      const callback = new URL("/auth/callback", window.location.origin);
-      callback.searchParams.set("next", postAuthDestination);
-      const { error } = await createClient().auth.signInWithOAuth({ provider: "google", options: { redirectTo: callback.href } });
+      const callback = learningAuthCallbackUrl(window.location.origin, postAuthDestination);
+      const { error } = await createClient().auth.signInWithOAuth({ provider: "google", options: { redirectTo: callback } });
       if (error) {
         setMessage("Google sign-in could not be started. Please try again.");
         setIsGoogleBusy(false);

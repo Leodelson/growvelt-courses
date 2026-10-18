@@ -20,6 +20,7 @@ function load(file) {
   vm.runInNewContext(compiled, {
     exports: moduleValue.exports,
     require: (id) => {
+ if(id.endsWith("site-urls.mjs"))return require("../app/lib/site-urls.mjs");
       if (id === "@/app/components/language-provider") return { useLanguage: () => ({ locale }) };
       if (id.endsWith(".module.css")) return { __esModule: true, default: styles };
       if (id === "next/link") return function MockLink({ children, ...props }) { return React.createElement("a", props, children); };
@@ -58,7 +59,9 @@ for (locale of ["en", "fr", "es"]) {
   assert.equal((partner.match(/<li\b/g) || []).length, 6, "Three pathway stages and three process steps");
 }
 
-// Protect the existing multilingual content and real team data through layout changes.
+// Protect the actual shipped multilingual content and team data through URL changes.
+// The earlier 2e4b537 snapshot predates the owner's already-published copy edits.
+const shippedBaseline = "35021b7";
 function declaration(source, name) {
   const ast = ts.createSourceFile("content.tsx", source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
   let result;
@@ -71,10 +74,10 @@ function declaration(source, name) {
 }
 for (const [file, names] of [["app/components/about-page-content.tsx", ["copy", "team"]], ["app/components/partner-page-content.tsx", ["copy"]]]) {
   const current = fs.readFileSync(new URL(`../${file}`, import.meta.url), "utf8");
-  const previous = execFileSync("git", ["show", `2e4b537:./${file}`], { encoding: "utf8" });
+  const previous = execFileSync("git", ["show", `${shippedBaseline}:./${file}`], { encoding: "utf8" });
   for (const name of names) assert.equal(declaration(current, name), declaration(previous, name), `${file}: ${name} preserved`);
 }
-const formDiff = execFileSync("git", ["diff", "2e4b537", "--", "app/components/public-inquiry-form.tsx"], { encoding: "utf8" });
+const formDiff = execFileSync("git", ["diff", shippedBaseline, "--", "app/components/public-inquiry-form.tsx"], { encoding: "utf8" });
 assert.equal(formDiff, "", "Inquiry validation and submission behavior untouched");
 assert.ok(fs.statSync(new URL("../public/images/contact-support-hero.webp", import.meta.url)).size < 100_000);
 console.log("PASS: About, Contact and Partnerships render in English, French and Spanish; headings, team, support links, form kinds, pathway, original copy, and unchanged inquiry behavior. Hero asset under 100 KB. Browser layout QA remains separate.");

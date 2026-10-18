@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/app/components/learning-link";
 import { redirect } from "next/navigation";
 import { ProfileSettingsForm } from "@/app/components/profile-settings-form";
 import { ProfileMediaUploadButton } from "@/app/components/profile-media-upload-button";

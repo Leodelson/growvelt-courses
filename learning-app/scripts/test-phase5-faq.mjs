@@ -23,6 +23,7 @@ const compiled = ts.transpileModule(source, {
 vm.runInNewContext(compiled, {
   exports: moduleValue.exports,
   require: (id) => {
+ if(id.endsWith("site-urls.mjs"))return require("../app/lib/site-urls.mjs");
     if (id === "react") return { ...React, useState: (initial) => {
       const index = cursor++;
       if (values[index] === undefined) values[index] = initial;

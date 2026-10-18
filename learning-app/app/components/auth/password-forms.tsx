@@ -7,6 +7,7 @@ import { InlineFeedback } from "@/app/components/ui/inline-feedback";
 import { TurnstileWidget } from "@/app/components/auth/turnstile-widget";
 import { verifyTurnstileToken } from "@/app/lib/auth/turnstile";
 import { createClient } from "@/app/lib/supabase/browser";
+import { learningAuthCallbackUrl } from "@/app/lib/site-urls.mjs";
 import { useLanguage } from "@/app/components/language-provider";
 
 export function ForgotPasswordForm() {
@@ -35,7 +36,7 @@ export function ForgotPasswordForm() {
 
     try {
       const supabase = createClient();
-      await supabase.auth.resetPasswordForEmail(email, { redirectTo: new URL("/auth/callback?next=/reset-password", window.location.origin).href });
+      await supabase.auth.resetPasswordForEmail(email, { redirectTo: learningAuthCallbackUrl(window.location.origin, "/reset-password") });
     } catch {
       // Keep the outcome neutral to avoid account enumeration.
     }

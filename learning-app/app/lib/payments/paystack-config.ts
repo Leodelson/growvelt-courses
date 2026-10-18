@@ -1,3 +1,5 @@
+import { getLearningOrigin, legacyLearningOrigin } from "../site-urls.mjs";
+
 export type PaystackMode = "test" | "live";
 export type PaystackEnvironment = Record<string, string | undefined>;
 export type PaystackConfiguration = {
@@ -38,7 +40,9 @@ export function resolvePaystackConfiguration(environment: PaystackEnvironment): 
 
   const parsedCallback = new URL(callbackUrl);
   if (!(parsedCallback.protocol === "http:" || parsedCallback.protocol === "https:")) throw new Error("Paystack callback URL is invalid.");
-  if (mode === "live" && (parsedCallback.protocol !== "https:" || parsedCallback.hostname !== "learn.growvelt.com" || parsedCallback.pathname !== "/payments/paystack/callback")) {
+  const allowedLiveOrigins = new Set([legacyLearningOrigin, getLearningOrigin(environment)]);
+  if (parsedCallback.username || parsedCallback.password || parsedCallback.hash) throw new Error("Paystack callback URL is invalid.");
+  if (mode === "live" && (!allowedLiveOrigins.has(parsedCallback.origin) || parsedCallback.pathname !== "/payments/paystack/callback")) {
     throw new Error("Paystack live callback URL must be the Growvelt Learning HTTPS callback.");
   }
 

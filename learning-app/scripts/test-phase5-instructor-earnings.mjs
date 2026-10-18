@@ -5,6 +5,7 @@ const states=['held','available','reserved','paid','reversed','recoverable'];
 const earnings=states.map((state,index)=>({earning_id:index+1,allocation_id:index+1,order_id:index+1,order_reference:'EXAMPLE-'+state,course_id:7,course_title:'Example course '+state,order_paid_at:null,gross_amount_minor:10000,platform_commission_minor:2000,instructor_gross_minor:8000,currency:'NGN',earning_status:state,available_at:'invalid',released_at:null,reversed_at:null,recoverable_amount_minor:state==='recoverable'?2500:0,hold_reason:state==='held'?'Example protection hold.':null,commercial_terms_version:'example-v1',allocated_at:'2026-10-16'}));
 const events=earnings.map(item=>({event_id:item.earning_id,earning_id:item.earning_id,event_type:'example_recorded',from_status:null,to_status:item.earning_status,occurred_at:'invalid'}));
 function load(file){if(cache.has(file))return cache.get(file);const mod={exports:{}};const js=ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,esModuleInterop:true}}).outputText;vm.runInNewContext(js,{exports:mod.exports,require(id){
+ if(id.endsWith("site-urls.mjs"))return require("../app/lib/site-urls.mjs");
  if(id==='next/link')return ({children,...props})=>React.createElement('a',props,children);
  if(id==='next/navigation')return {redirect(){throw Error('REDIRECT');}};
  if(id.endsWith('.module.css'))return {__esModule:true,default:new Proxy({},{get:(_,key)=>String(key)})};

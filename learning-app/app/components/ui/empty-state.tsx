@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/app/components/learning-link";
 import type { ComponentProps } from "react";
 import { LearningIcon } from "@/app/components/learning-icon";
 import styles from "./empty-state.module.css";

@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/app/components/learning-link";
 import { GrowveltLogo } from "@/app/components/growvelt-logo";
 
 export function LearningMark({ compact = false, href = "/" }: { compact?: boolean; href?: string }) {

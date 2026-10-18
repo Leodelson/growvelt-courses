@@ -1,4 +1,5 @@
 "use client";
+import { careersAbsoluteUrl } from "@/app/lib/site-urls.mjs";
 
 import Link from "next/link";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
@@ -11,7 +12,7 @@ import { languageOptions } from "@/app/lib/i18n";
 import { publicExperienceCopy } from "@/app/lib/public-experience-copy";
 import styles from "./public-header.module.css";
 
-const jobsHref = "https://www.growvelt.com";
+const jobsHref = careersAbsoluteUrl("/");
 
 function useClientReady() {
   return useSyncExternalStore(() => () => undefined, () => true, () => false);

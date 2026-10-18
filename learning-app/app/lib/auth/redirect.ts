@@ -1,4 +1,6 @@
-const defaultDestination = "/dashboard";
+import { internalLearningPath, learningPath } from "../site-urls.mjs";
+
+const defaultDestination = learningPath("/dashboard");
 
 const allowedExactPaths = new Set([
   "/dashboard",
@@ -40,7 +42,7 @@ export function getExplicitSafeNextPath(value: string | null | undefined) {
     const candidate = new URL(decoded, "https://learning.invalid");
     if (candidate.origin !== "https://learning.invalid") return null;
 
-    const { pathname } = candidate;
+    const pathname = internalLearningPath(candidate.pathname);
     const isDashboardPath = pathname === "/dashboard" || pathname.startsWith("/dashboard/");
     const isSettingsPath = pathname === "/settings" || pathname.startsWith("/settings/");
     const isInstructorPath = pathname === "/instructor" || pathname.startsWith("/instructor/");
@@ -50,7 +52,7 @@ export function getExplicitSafeNextPath(value: string | null | undefined) {
       return null;
     }
 
-    return `${pathname}${candidate.search}${candidate.hash}`;
+    return learningPath(`${pathname}${candidate.search}${candidate.hash}`);
   } catch {
     return null;
   }

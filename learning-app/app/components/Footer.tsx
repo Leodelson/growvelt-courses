@@ -1,4 +1,5 @@
 "use client";
+import { careersAbsoluteUrl } from "@/app/lib/site-urls.mjs";
 
 import Image from "next/image";
 import Link from "next/link";
@@ -7,7 +8,7 @@ import { NewsletterForm } from "@/app/components/newsletter-form";
 import { CookieSettingsButton } from "@/app/components/privacy/cookie-settings-button";
 import { useLanguage } from "@/app/components/language-provider";
 
-const jobsHref = "https://growvelt.com";
+const jobsHref = careersAbsoluteUrl("/");
 
 function SocialIcon({ name }: { name: "linkedin" | "instagram" | "facebook" | "tiktok" | "whatsapp" }) {
   if (name === "linkedin") return <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M6.5 8.5v9M6.5 5.8v.1M10.5 17.5v-5.2a3.3 3.3 0 0 1 6.5 0v5.2M10.5 12.3v-3.8" /></svg>;
@@ -53,7 +54,7 @@ export default function Footer() {
             </nav>
             <nav aria-label={t("footer.careers")}>
               <h3>{t("footer.careers")}</h3>
-              <a className="growvelt-career-assistant" href="https://www.growvelt.com/career-assistant" target="_blank" rel="noreferrer">{t("footer.careerAssistant")} <span aria-hidden="true">→</span></a>
+              <a className="growvelt-career-assistant" href={careersAbsoluteUrl("/career-assistant")} target="_blank" rel="noreferrer">{t("footer.careerAssistant")} <span aria-hidden="true">→</span></a>
               <a className="growvelt-footer-install" href={jobsHref} target="_blank" rel="noreferrer"><Download aria-hidden="true" />{t("footer.getApp")}</a>
               <p className="growvelt-footer-group-title">{t("footer.employers")}</p>
               <a href={jobsHref} target="_blank" rel="noreferrer">{t("footer.postJob")}</a>

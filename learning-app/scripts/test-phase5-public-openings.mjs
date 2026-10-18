@@ -15,6 +15,7 @@ function load(file) {
   const mod = { exports: {} };
   const compiled = ts.transpileModule(read(file), { compilerOptions: { jsx: ts.JsxEmit.ReactJSX, module: ts.ModuleKind.CommonJS, esModuleInterop: true } }).outputText;
   vm.runInNewContext(compiled, { exports: mod.exports, require: (id) => {
+ if(id.endsWith("site-urls.mjs"))return require("../app/lib/site-urls.mjs");
     if (id === "@/app/components/language-provider") return { useLanguage: () => ({ locale, t: (key) => key }) };
     if (id === "@/app/lib/public-experience-copy") return load("app/lib/public-experience-copy.ts");
     if (id === "./teach-opening") return load("app/components/public/teach-opening.tsx");

@@ -1,5 +1,5 @@
 import { ThemeControl } from "@/app/components/theme-control";
-import Link from "next/link";
+import Link from "@/app/components/learning-link";
 import { DeleteAccountControl } from "@/app/components/auth/delete-account-control";
 import { LanguageControl } from "@/app/components/language-control";
 import { isLearningAdmin } from "@/app/lib/admin/authorization";

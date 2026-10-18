@@ -1,6 +1,7 @@
 "use client";
+import { careersAbsoluteUrl, internalLearningPath } from "@/app/lib/site-urls.mjs";
 
-import Link from "next/link";
+import Link from "@/app/components/learning-link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { SignOutButton } from "@/app/components/auth/sign-out-button";
@@ -21,7 +22,7 @@ const navigation = [
   { href: "/dashboard/my-learning", labelKey: "nav.learning" as const, icon: "learning" as const },
   { href: "/dashboard/subscriptions", labelKey: "nav.subscriptions" as const, icon: "earnings" as const },
   { href: "/dashboard/explore", labelKey: "nav.explore" as const, mobileLabelKey: "nav.exploreMobile" as const, icon: "explore" as const },
-  { href: "https://www.growvelt.com", labelKey: "nav.jobs" as const, icon: "jobs" as const, external: true },
+  { href: careersAbsoluteUrl("/"), labelKey: "nav.jobs" as const, icon: "jobs" as const, external: true },
   { href: "/dashboard/saved-courses", labelKey: "nav.saved" as const, icon: "heart" as const },
   { href: "/dashboard/certificates", labelKey: "nav.certificates" as const, icon: "certificate" as const },
   { href: "/dashboard/company", labelKey: "nav.company" as const, icon: "company" as const },
@@ -31,7 +32,7 @@ const mobileInstructorNavigation = [
   { href: "/dashboard", labelKey: "nav.home" as const, icon: "home" as const },
   { href: "/dashboard/instructor/courses", label: "My courses", mobileLabel: "My Courses", icon: "courses" as const },
   { href: "/dashboard/instructor/courses/new", label: "Create course", mobileLabel: "Create Course", icon: "add-course" as const },
-  { href: "https://www.growvelt.com", label: "Jobs", mobileLabel: "Jobs", icon: "jobs" as const, external: true },
+  { href: careersAbsoluteUrl("/"), label: "Jobs", mobileLabel: "Jobs", icon: "jobs" as const, external: true },
   { href: "/dashboard/instructor/earnings", label: "Earnings", icon: "earnings" as const },
 ];
 const mobileCompanyNavigation = { href: "/dashboard/company", label: "Company", icon: "company" as const };
@@ -81,7 +82,7 @@ function AccountMenu({ userEmail, displayName, avatarUrl, open, onToggle, onNavi
 
 export function LearningShellNavigation({ children, initialSidebarCollapsed, isInstructor, isAdmin, isCompany, showSubscriptionPlans, userEmail, displayName, avatarUrl }: { children: React.ReactNode; initialSidebarCollapsed: boolean; userEmail: string; displayName: string | null; avatarUrl: string | null } & WorkspaceAccess) {
   const { locale, setLocale, t } = useLanguage();
-  const pathname = usePathname();
+  const pathname = internalLearningPath(usePathname());
   const [collapsed, setCollapsed] = useState(initialSidebarCollapsed);
   const [openPanel, setOpenPanel] = useState<OpenPanel>(null);
   const languageRef = useRef<HTMLDivElement>(null);

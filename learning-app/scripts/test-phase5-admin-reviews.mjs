@@ -20,6 +20,7 @@ function load(file){
  if(cache.has(file))return cache.get(file);const mod={exports:{}};
  const js=ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,esModuleInterop:true}}).outputText;
  vm.runInNewContext(js,{URL,URLSearchParams,exports:mod.exports,require(id){
+ if(id.endsWith("site-urls.mjs"))return require("../app/lib/site-urls.mjs");
   if(id==='next/link')return ({children,...props})=>React.createElement('a',props,children);
   if(id==='next/navigation')return {redirect(){throw Error('REDIRECT');},notFound(){throw Error('NOT_FOUND');},useRouter:()=>({push(){},refresh(){}})};
   if(id.endsWith('.module.css'))return {__esModule:true,default:new Proxy({},{get:(_,key)=>String(key)})};

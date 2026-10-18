@@ -1,3 +1,4 @@
+import { getLearningOrigin } from "@/app/lib/site-urls.mjs";
 import "server-only";
 import { createAdminClient } from "@/app/lib/supabase/admin";
 import { renderGrowveltEmail } from "@/app/lib/email/growvelt-email-template";
@@ -24,7 +25,7 @@ export async function sendPaymentNotification(input: NoticeInput) {
     const response = await fetch("https://api.resend.com/emails", {
       method: "POST", headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json", "Idempotency-Key": input.key },
       body: JSON.stringify({ from: "Growvelt Learning <no-reply@growvelt.com>", to: [input.recipient], reply_to: input.type.startsWith("refund_") ? "refund@growvelt.com" : "support@growvelt.com", subject: input.subject,
-        html: renderGrowveltEmail({ baseUrl: process.env.NEXT_PUBLIC_APP_URL || "https://learn.growvelt.com", greeting: "there", title: input.heading, paragraphs: [input.message], reason: "You received this email because of activity on your Growvelt Learning account." }),
+        html: renderGrowveltEmail({ baseUrl: getLearningOrigin(), greeting: "there", title: input.heading, paragraphs: [input.message], reason: "You received this email because of activity on your Growvelt Learning account." }),
       }), signal: AbortSignal.timeout(15000),
     });
     const body = await response.json().catch(() => null) as { id?: string } | null;

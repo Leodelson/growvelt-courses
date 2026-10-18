@@ -14,6 +14,8 @@ function load(file) {
   const mod={exports:{}};
   const code=ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,esModuleInterop:true}}).outputText;
   vm.runInNewContext(code,{URL,process:{env},exports:mod.exports,require(id) {
+ if(id.endsWith("site-urls.mjs"))return require("../app/lib/site-urls.mjs");
+ if(id.endsWith("careers-compatibility.mjs"))return require("../app/lib/careers-compatibility.mjs");
     if(id==='@supabase/ssr') return {createServerClient:()=>({auth:{getClaims:async()=>({data:{claims:authenticated?{sub:'fixture'}:null},error:null})}})};
     if(id.endsWith('/auth/redirect')) return load('app/lib/auth/redirect.ts');
     if(id==='next/link') return function MockLink({children,...props}) { return React.createElement('a',props,children); };

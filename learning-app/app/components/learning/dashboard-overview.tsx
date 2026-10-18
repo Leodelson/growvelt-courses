@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/app/components/learning-link";
 import { useState, type CSSProperties } from "react";
 import { BookOpen, ArrowUpRight, Award, Bookmark, CircleCheck, Layers3, UserRound, CircleHelp } from "lucide-react";
 import { useLanguage } from "@/app/components/language-provider";

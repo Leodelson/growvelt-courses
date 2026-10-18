@@ -1,5 +1,7 @@
 node_modules/
 .next/
+.next-domain-legacy/
+.next-domain-future/
 .npm-cache/
 .env*
 !.env.example

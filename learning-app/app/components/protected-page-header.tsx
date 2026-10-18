@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/app/components/learning-link";
 import { LearningMark } from "@/app/components/learning-mark";
 import { SkipLink } from "@/app/components/ui/skip-link";
 

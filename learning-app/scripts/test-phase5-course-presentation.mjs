@@ -16,6 +16,7 @@ function load(file) {
   const source = fs.readFileSync(file,'utf8');
   const js = ts.transpileModule(source,{compilerOptions:{target:ts.ScriptTarget.ES2022,jsx:ts.JsxEmit.ReactJSX,module:ts.ModuleKind.CommonJS,esModuleInterop:true}}).outputText;
   vm.runInNewContext(js,{URLSearchParams,exports:mod.exports,require(id) {
+ if(id.endsWith("site-urls.mjs"))return require("../app/lib/site-urls.mjs");
     if (id.endsWith('.module.css')) return {__esModule:true,default:new Proxy({},{get:(_,key)=>String(key)})};
     if (id === 'next/link') return function MockLink({children,...props}) { return React.createElement('a',props,children); };
     if (id === 'next/navigation') return {useRouter:()=>({replace(){}})};

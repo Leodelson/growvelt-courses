@@ -1,6 +1,8 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { defaultAuthenticatedPath, getExplicitSafeNextPath, getSafeNextPath } from "@/app/lib/auth/redirect";
+import { internalLearningPath } from "@/app/lib/site-urls.mjs";
+import { careersCompatibilityResponse } from "@/app/lib/careers-compatibility.mjs";
 
 const protectedPrefixes = ["/dashboard", "/settings", "/teach/apply", "/teach/application", "/instructor", "/admin"];
 const guestOnlyPaths = new Set(["/sign-in", "/sign-up"]);
@@ -13,7 +15,18 @@ function copySessionCookies(from: NextResponse, to: NextResponse) {
 export async function proxy(request: NextRequest) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-  const pathname = request.nextUrl.pathname;
+  const compatibility = careersCompatibilityResponse(request);
+  if (compatibility) return compatibility;
+  const pathname = internalLearningPath(request.nextUrl.pathname);
+  const passThrough = () => {
+    if (pathname === request.nextUrl.pathname) return NextResponse.next({ request });
+    const target = request.nextUrl.clone();
+    target.pathname = pathname;
+    return NextResponse.rewrite(target, { request });
+  };
+  // Callback and legacy API matchers exist only for collision isolation, not session refresh.
+  const isProtectedPath = protectedPrefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
+  if (!isProtectedPath && !guestOnlyPaths.has(pathname)) return passThrough();
 
   // Keep public rendering and local visual QA operational before environment
   // variables are configured. Production configuration is required before
@@ -24,10 +37,10 @@ export async function proxy(request: NextRequest) {
       destination.searchParams.set("next", getSafeNextPath(`${pathname}${request.nextUrl.search}`));
       return NextResponse.redirect(destination);
     }
-    return NextResponse.next({ request });
+    return passThrough();
   }
 
-  let response = NextResponse.next({ request });
+  let response = passThrough();
   const supabase = createServerClient(url, publishableKey, {
     cookies: {
       getAll() {
@@ -35,7 +48,7 @@ export async function proxy(request: NextRequest) {
       },
       setAll(cookiesToSet) {
         cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
-        response = NextResponse.next({ request });
+        response = passThrough();
         cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
       },
     },
@@ -43,7 +56,6 @@ export async function proxy(request: NextRequest) {
 
   const { data, error } = await supabase.auth.getClaims();
   const isAuthenticated = Boolean(data?.claims) && !error;
-  const isProtectedPath = protectedPrefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
 
   if (isProtectedPath && !isAuthenticated) {
     const destination = new URL(pathname === "/teach/apply" ? "/sign-up" : "/sign-in", request.url);
@@ -60,5 +72,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/settings/:path*", "/teach/apply/:path*", "/teach/application/:path*", "/instructor/:path*", "/admin/:path*", "/sign-in", "/sign-up"],
+  matcher: ["/dashboard/:path*", "/learning/dashboard/:path*", "/auth", "/auth/callback", "/auth/reset", "/auth/forgot-password", "/api/auth/welcome", "/api/newsletter/subscribe", "/sw.js", "/pwa/launch.html", "/offline.html", "/manifest.webmanifest", "/site.webmanifest", "/jobs", "/jobs/:id", "/companies/:id", "/employers", "/updates", "/get-started", "/career-assistant", "/settings/:path*", "/teach/apply/:path*", "/teach/application/:path*", "/instructor/:path*", "/admin/:path*", "/sign-in", "/sign-up"],
 };

@@ -1,4 +1,5 @@
-import Link from "next/link";
+import { learningPath } from "@/app/lib/site-urls.mjs";
+import Link from "@/app/components/learning-link";
 import { redirect } from "next/navigation";
 import { OperationsSearchControls } from "@/app/components/operations-search-controls";
 import { SearchHighlight } from "@/app/components/search-highlight";
@@ -13,7 +14,7 @@ import styles from "@/app/components/admin/reviews.module.css";
 export const metadata = { title: "Course reviews" };
 
 export default async function AdminCourseQueuePage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
-  if (!await isLearningAdmin()) redirect("/dashboard");
+  if (!await isLearningAdmin()) redirect(learningPath("/dashboard"));
   const query = normalizeOperationsQuery(await searchParams);
   const locale = await getRequestLocale();
   const ui = reviewUi[locale];

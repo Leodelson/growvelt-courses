@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/app/components/learning-link";
 import { ActionButton } from "@/app/components/ui/action-button";
 import { useLanguage } from "@/app/components/language-provider";
 import { LearningIcon } from "@/app/components/learning-icon";

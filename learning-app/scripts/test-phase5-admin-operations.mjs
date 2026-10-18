@@ -22,6 +22,7 @@ const result=data=>({data:empty?[]:data,error:readError?{message:'Example unavai
 const client={auth:{getUser:async()=>({data:{user:authenticated?{id:'example-admin'}:null}})},rpc:async name=>{reads.push(name);return result(rpcData[name]??[]);},from(name){reads.push(name);const chain={select(){return chain;},eq(){return chain;},order(){return chain;},limit(){return chain;},in(){return chain;},then(resolve,reject){return Promise.resolve(result(tables[name]??[])).then(resolve,reject);}};return chain;}};
 function load(file){if(cache.has(file))return cache.get(file);const mod={exports:{}};const js=ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,esModuleInterop:true}}).outputText;
  vm.runInNewContext(js,{URL,URLSearchParams,crypto:webcrypto,process:{env:{}},exports:mod.exports,require(id){
+ if(id.endsWith("site-urls.mjs"))return require("../app/lib/site-urls.mjs");
  if(id==='next/link')return ({children,...props})=>React.createElement('a',props,children);
  if(id==='next/navigation')return {redirect(){throw Error('REDIRECT');},useRouter:()=>({refresh(){}})};
  if(id.endsWith('.module.css'))return {__esModule:true,default:new Proxy({},{get:(_,key)=>String(key)})};

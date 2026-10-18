@@ -1,4 +1,5 @@
 "use client";
+import { careersAbsoluteUrl, getLearningOrigin } from "@/app/lib/site-urls.mjs";
 
 import QRCode from "qrcode";
 import { useEffect, useState } from "react";
@@ -19,7 +20,7 @@ type CertificateRendererProps = {
   };
 };
 
-const verificationOrigin = "https://learn.growvelt.com";
+const verificationOrigin = getLearningOrigin();
 
 export function CertificateRenderer({ certificate }: CertificateRendererProps) {
   const [qrCode, setQrCode] = useState<string | null>(null);
@@ -109,7 +110,7 @@ export function CertificateRenderer({ certificate }: CertificateRendererProps) {
           <a className="button button-secondary" href={verificationUrl} target="_blank" rel="noreferrer">
             Verify Certificate
           </a>
-          <a className="button button-secondary" href="https://growvelt.com" target="_blank" rel="noreferrer">
+          <a className="button button-secondary" href={careersAbsoluteUrl("/")} target="_blank" rel="noreferrer">
             Explore Jobs
           </a>
         </div>

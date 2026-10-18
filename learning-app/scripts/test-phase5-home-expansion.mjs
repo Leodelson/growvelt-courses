@@ -21,6 +21,7 @@ function load(file) {
   vm.runInNewContext(compiled, {
     exports: mod.exports,
     require: (id) => {
+ if(id.endsWith("site-urls.mjs"))return require("../app/lib/site-urls.mjs");
       if (id === "react") return { ...React, useState: (initial) => {
         const index = cursor++;
         if (values[index] === undefined) values[index] = initial;
@@ -80,7 +81,7 @@ for (locale of ["en", "fr", "es"]) {
   }
   const hiring = renderToStaticMarkup(React.createElement(sections.HomeHiring));
   assert.equal((hiring.match(/<a /g) || []).length, 1);
-  assert.match(hiring, /href="https:\/\/www.growvelt.com" target="_blank" rel="noreferrer"/);
+  assert.match(hiring, /href="https:\/\/www.growvelt.com\/" target="_blank" rel="noreferrer"/);
   assert.match(hiring, /home-hiring-corporate-woman.webp/);
   const partner = renderToStaticMarkup(React.createElement(sections.HomePartnership));
   assert.equal((partner.match(/<a /g) || []).length, 1);
