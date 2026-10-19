@@ -4,6 +4,7 @@ import { createClient } from "@/app/lib/supabase/server";
 import { createAdminClient } from "@/app/lib/supabase/admin";
 import { isSameOriginRequest } from "@/app/lib/security/request-origin";
 import { getPaystackTestConfig } from "@/app/lib/payments/paystack";
+import { paystackCallbackForRequest } from "@/app/lib/payments/paystack-config";
 import { initializePaystackTestSubscriptionCheckout, PaystackTestSubscriptionCheckoutError } from "@/app/lib/payments/paystack-subscriptions";
 import { canStartTestSubscriptionCheckout, canUsePrivateTestSubscriptionCheckout } from "@/app/lib/subscriptions/feature";
 
@@ -27,6 +28,13 @@ export async function handleLearningTestSubscriptionCheckout(
 ) {
   if (!isSameOriginRequest(request)) return NextResponse.json({ code: "invalid_origin" }, { status: 403 });
   if (!canStartTestSubscriptionCheckout()) {
+    return NextResponse.json({ code: "subscription_checkout_disabled", message: "Test Mode subscriptions are not available right now." }, { status: 503 });
+  }
+
+  let callbackUrl: string;
+  try {
+    callbackUrl = paystackCallbackForRequest(request.url, getPaystackTestConfig(true).callbackUrl);
+  } catch {
     return NextResponse.json({ code: "subscription_checkout_disabled", message: "Test Mode subscriptions are not available right now." }, { status: 503 });
   }
 
@@ -95,8 +103,7 @@ export async function handleLearningTestSubscriptionCheckout(
   }
 
   try {
-    const configuration = getPaystackTestConfig(true);
-    const callback = new URL(configuration.callbackUrl);
+    const callback = new URL(callbackUrl);
     callback.searchParams.set("reference", reservation.reference);
     const checkout = await initializePaystackTestSubscriptionCheckout({
       email: user.email,

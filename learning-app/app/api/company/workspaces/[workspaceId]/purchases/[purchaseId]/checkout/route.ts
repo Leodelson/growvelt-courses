@@ -3,6 +3,7 @@ import { getPaystackConfig, initializePaystackLiveTransaction, initializePaystac
 import { isSameOriginRequest } from "@/app/lib/security/request-origin";
 import { createAdminClient } from "@/app/lib/supabase/admin";
 import { createClient } from "@/app/lib/supabase/server";
+import { paystackCallbackForRequest } from "@/app/lib/payments/paystack-config";
 
 type CheckoutRow = { purchase_id: number; attempt_id: number; provider_reference: string; amount_minor: number; currency: string; status: string };
 
@@ -24,6 +25,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ wor
   let config;
   try {
     config = getPaystackConfig(true);
+    config.callbackUrl = paystackCallbackForRequest(request.url, config.callbackUrl);
     if (config.mode === "live" && process.env.PAYMENTS_LIVE_COMPANY_CHECKOUT_ENABLED !== "true") {
       throw new Error("Live company checkout is disabled.");
     }

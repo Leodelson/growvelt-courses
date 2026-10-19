@@ -1,4 +1,4 @@
-import { getLearningOrigin, legacyLearningOrigin } from "../site-urls.mjs";
+import { futureLearningOrigin, getLearningOrigin, legacyLearningOrigin } from "../site-urls.mjs";
 
 export type PaystackMode = "test" | "live";
 export type PaystackEnvironment = Record<string, string | undefined>;
@@ -11,6 +11,26 @@ export type PaystackConfiguration = {
   refundsEnabled: boolean;
   liveRefundsEnabled: boolean;
 };
+
+/** Keep new payment returns on the initiating session host during the grace period.
+ * Call only after the route's same-origin check. Never use body/forwarded headers.
+ * Existing provider authorizations and callbacks are deliberately not rewritten.
+ */
+export function paystackCallbackForRequest(requestUrl: string, configuredUrl: string, environment: PaystackEnvironment = process.env): string {
+  if (getLearningOrigin(environment) !== futureLearningOrigin) return configuredUrl;
+  const origin = new URL(requestUrl).origin;
+  if (![legacyLearningOrigin, futureLearningOrigin].includes(origin)) {
+    throw new Error("Unapproved Learning checkout origin.");
+  }
+  const configured = new URL(configuredUrl);
+  if (![legacyLearningOrigin, futureLearningOrigin].includes(configured.origin)
+    || configured.pathname !== "/payments/paystack/callback"
+    || configured.username || configured.password || configured.hash) {
+    throw new Error("Unapproved Learning payment callback.");
+  }
+  const callback = new URL(configured.pathname + configured.search, origin);
+  return callback.href;
+}
 
 /**
  * Resolves only server environment. It intentionally never returns a value to

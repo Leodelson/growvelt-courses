@@ -4,6 +4,7 @@ import { createAdminClient } from "@/app/lib/supabase/admin";
 import { isSameOriginRequest } from "@/app/lib/security/request-origin";
 import { getPaystackConfig, getPaystackTestConfig, initializePaystackLiveTransaction, initializePaystackTestTransaction } from "@/app/lib/payments/paystack";
 import type { PaystackConfiguration } from "@/app/lib/payments/paystack-config";
+import { paystackCallbackForRequest } from "@/app/lib/payments/paystack-config";
 
 type OrderRow = { order_id: number; order_reference: string; payment_attempt_id: number; amount_minor: number; currency: string };
 
@@ -12,6 +13,7 @@ export async function POST(request: Request) {
   let configuration: PaystackConfiguration;
   try {
     configuration = getPaystackConfig(true);
+    configuration.callbackUrl = paystackCallbackForRequest(request.url, configuration.callbackUrl);
     if (configuration.mode === "live" && !configuration.liveLearnerCheckoutEnabled) {
       throw new Error("Live learner checkout is disabled.");
     }
