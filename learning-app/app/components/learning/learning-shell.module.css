@@ -8,7 +8,7 @@
 .shell :global(.mobile-nav)[hidden] { display: none; }
 .drawerBody { min-width: 0; min-height: 0; flex: 1 1 auto; overflow-y: auto; overscroll-behavior: contain; padding: 0 4px 16px; scrollbar-width: thin; }
 .drawerFooter { flex: 0 0 auto; padding: 14px 4px 0; border-top: 1px solid var(--line); background: var(--surface); }
-.drawerFooter :global(.profile-sign-out) { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; min-height: 46px; }
+.drawerFooter :global(.profile-sign-out) { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 48px; font-size: 14px; }
 .drawerBody :global(.theme-control) { margin-top: 18px; width: 100%; }
 @media(max-width:900px) {
   .shell .drawerHeader { z-index: 100; }
@@ -24,3 +24,6 @@
 @media(max-width:900px) { .shell :global(.mobile-nav) a { min-height: 52px; }.shell :global(.mobile-dashboard-menu) nav a, .shell :global(.mobile-dashboard-workspaces) a { min-height: 44px; }.shell :global(.mobile-dashboard-menu) { scrollbar-width: thin; } }
 @media(prefers-reduced-motion:reduce) { .shell:global(.app-shell) { transition: none; } }
 @media(max-width:420px) { .shell :global(.mobile-nav) small { max-width: 100%; white-space: normal; overflow-wrap: anywhere; text-overflow: clip; font-size: 10px; line-height: 1.2; }.shell :global(.mobile-nav) a { align-content: start; } }
+.shell :global(.profile-sign-out) { border-color: color-mix(in srgb, var(--danger) 28%, var(--line)); background: color-mix(in srgb, var(--danger) 7%, var(--surface)); color: var(--danger); font-size: 14px; font-weight: 750; }
+.shell :global(.profile-sign-out):hover { background: color-mix(in srgb, var(--danger) 12%, var(--surface)); }
+.shell :global(.dashboard-account-popover) > :global(.profile-sign-out) { display: flex; align-items: center; justify-content: flex-start; gap: 7px; padding-inline: 11px; }

@@ -22,12 +22,15 @@ function load(file) {
     exports: mod.exports,
     require: (id) => {
  if(id.endsWith("site-urls.mjs"))return require("../app/lib/site-urls.mjs");
-      if (id === "react") return { ...React, useState: (initial) => {
+      if (id === "react") return { ...React, useRef: (initial) => ({ current: initial }), useEffect() {}, useState: (initial) => {
         const index = cursor++;
         if (values[index] === undefined) values[index] = initial;
-        return [values[index], (next) => { values[index] = next; }];
+        return [values[index], (next) => { values[index] = typeof next === "function" ? next(values[index]) : next; }];
       } };
       if (id === "@/app/components/language-provider") return { useLanguage: () => ({ locale, t: (key) => key }) };
+      if (id === "@/app/components/learning-icon") return { LearningIcon: () => null };
+      if (id === "@/app/components/learning-mark") return { LearningMark: () => null };
+      if (id === "@/app/lib/i18n") return { languageOptions: [] };
       if (id === "@/app/lib/home-discovery-copy") return load("app/lib/home-discovery-copy.ts");
       if (id === "@/app/lib/public-experience-copy") return load("app/lib/public-experience-copy.ts");
       if (id === "./home-discovery-sections") return load("app/components/public/home-discovery-sections.tsx");
@@ -51,7 +54,7 @@ const { homeDiscoveryCopy } = load("app/lib/home-discovery-copy.ts");
 const { publicExperienceCopy } = load("app/lib/public-experience-copy.ts");
 const { PublicHome } = load("app/components/public/public-home.tsx");
 const flatten = (node) => !node || typeof node !== "object" ? [] : [node, ...React.Children.toArray(node.props?.children).flatMap(flatten)];
-const render = (Component) => { cursor = 0; return Component(); };
+const render = (Component, props) => { cursor = 0; return Component(props); };
 const buttons = (tree) => flatten(tree).filter((node) => node.type === "button");
 
 for (locale of ["en", "fr", "es"]) {
@@ -106,5 +109,24 @@ const header = fs.readFileSync(new URL("../app/components/public-header.tsx", im
 assert.match(header, /action="\/learn" method="get"/);
 assert.match(header, /type="search" name="q"/);
 assert.equal(publicExperienceCopy.en.nav.placeholder, "What would you like to learn?");
+const CareersMenu = load("app/components/public-header.tsx").CareersMenu;
+for (locale of ["en", "fr", "es"]) {
+  values = [false];
+  let menu = render(CareersMenu, { copy: publicExperienceCopy[locale].nav });
+  let trigger = flatten(menu).find((node) => node.type === "button");
+  assert.equal(trigger.props["aria-expanded"], false);
+  assert.equal(flatten(menu).filter((node) => node.type === "a").length, 0, "Careers choices start collapsed");
+  trigger.props.onClick();
+  menu = render(CareersMenu, { copy: publicExperienceCopy[locale].nav });
+  trigger = flatten(menu).find((node) => node.type === "button");
+  assert.equal(trigger.props["aria-expanded"], true);
+  const links = flatten(menu).filter((node) => node.type === "a");
+  assert.equal(links.length, 2);
+  assert.match(links[0].props.href, /https:\/\/[^/]+\/jobs$/);
+  assert.match(links[1].props.href, /https:\/\/[^/]+\/$/);
+  assert.ok(links.every((link) => link.props.target === "_blank" && link.props.rel === "noreferrer"));
+  assert.match(renderToStaticMarkup(menu), new RegExp(publicExperienceCopy[locale].nav.findJobs));
+  assert.match(renderToStaticMarkup(menu), new RegExp(publicExperienceCopy[locale].nav.hireTalent));
+}
 for (const file of ["home-hiring-corporate-woman.webp", "home-partnership-collaboration.webp"]) assert.ok(fs.statSync(new URL(`../public/images/${file}`, import.meta.url)).size < 100_000);
-console.log("PASS: question-style search, four goal choices and encoded search links, all routine selections and arithmetic, three locales, single employer/partnership actions, no synthetic catalog/cart, retained FAQ/guides and published-course shelf, optimized assets. Browser QA remains separate.");
+console.log("PASS: question-style search, four goal choices and encoded search links, all routine selections and arithmetic, localized Careers dropdown with verified destination paths, three locales, single employer/partnership actions, no synthetic catalog/cart, retained FAQ/guides and published-course shelf, optimized assets. Browser QA remains separate.");

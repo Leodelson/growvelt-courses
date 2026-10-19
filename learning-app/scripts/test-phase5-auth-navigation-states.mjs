@@ -4,8 +4,8 @@ const require=createRequire(import.meta.url),cache=new Map();let locale='en',dra
 function load(file){if(cache.has(file))return cache.get(file);const mod={exports:{}};const js=ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,esModuleInterop:true}}).outputText;vm.runInNewContext(js,{URL,URLSearchParams,process:{env:{}},exports:mod.exports,require(id){
  if(id.endsWith("site-urls.mjs"))return require("../app/lib/site-urls.mjs");
  if(id==='react')return {...React,useState(initial){return React.useState(drawerOpen&&initial===null?'mobile':initial);}};
- if(id==='next/link')return ({children,...props})=>React.createElement('a',props,children);
- if(id==='next/image')return ({priority,...props})=>React.createElement('img',props);
+ if(id==='next/link'){function MockLink({children,...props}){return React.createElement('a',props,children);}MockLink.displayName='MockLink';return MockLink;}
+ if(id==='next/image'){function MockImage({priority,...props}){return React.createElement('img',{...props,'data-priority':priority});}MockImage.displayName='MockImage';return MockImage;}
  if(id==='next/navigation')return {usePathname:()=>'/dashboard/admin',useRouter:()=>({refresh(){}})};
  if(id.endsWith('.module.css'))return {__esModule:true,default:new Proxy({},{get:(_,key)=>String(key)})};
  if(id.endsWith('/language-provider'))return {useLanguage:()=>({locale,setLocale(){},t:key=>load('app/lib/i18n.ts').translate(locale,key)})};
@@ -26,7 +26,7 @@ for(const role of ['learner','instructor','admin','combined']){
  drawerOpen=true;const html=renderToStaticMarkup(React.createElement(Shell,{isInstructor:role==='instructor'||role==='combined',isAdmin:role==='admin'||role==='combined',isCompany:role==='combined',showSubscriptionPlans:true,initialSidebarCollapsed:false,userEmail:'example@example.invalid',displayName:'Example',avatarUrl:null},React.createElement('h1',null,'Example workspace')));
  assert.match(html,/class="mobile-nav" hidden=""/);assert.match(html,/class="drawerFooter"/);assert.match(html,/lucide-log-out/);
  const body=html.split('class="mobile-dashboard-workspaces"')[1].split('</footer>')[0],hrefs=[...body.matchAll(/href="([^"]+)"/g)].map(m=>m[1]);assert.equal(hrefs.length,new Set(hrefs).size,role+' duplicate drawer destination');
- assert.ok(hrefs.includes('/dashboard'));assert.ok(hrefs.includes('/dashboard/my-learning'));assert.ok(hrefs.includes('/dashboard/explore'));assert.ok(hrefs.includes('https://www.growvelt.com/'));
+ assert.ok(hrefs.includes('/dashboard'));assert.ok(!hrefs.includes('/dashboard/my-learning'));assert.ok(!hrefs.includes('/dashboard/explore'));assert.ok(hrefs.includes('https://www.growvelt.com/'));
  assert.equal(hrefs.includes('/dashboard/admin/payments'),role==='admin'||role==='combined');assert.equal(hrefs.includes('/dashboard/instructor/courses'),role==='instructor'||role==='combined');
  if(role==='instructor'||role==='combined'){assert.ok(hrefs.includes('/dashboard/instructor/courses/new'));assert.ok(hrefs.includes('/dashboard/instructor/earnings'));}
 }
@@ -43,4 +43,4 @@ function filesUnder(directory){return fs.readdirSync(directory,{withFileTypes:tr
 const files=filesUnder('app').filter(file=>!file.includes('ui-review'));
 for(const file of files.filter(file=>file.endsWith('not-found.tsx'))){const Page=load(file).default,html=renderToStaticMarkup(await Page());assert.equal((html.match(/<h1\b/g)||[]).length,1,file);assert.match(html,/href="\//,file);assert.match(html,/route-feedback-panel/,file);}
 for(const file of files.filter(file=>file.endsWith('loading.tsx'))){const source=fs.readFileSync(file,'utf8');assert.match(source,/aria-busy|role="status"|WorkspaceLoading|export.*from/,file);}
-console.log('PASS: four unique role menus, hidden bottom bar, logout icon, six auth pages/one h1, onboarding/fields/CAPTCHA, all not-found panels and loading status contracts. No requests or writes.');
+console.log('PASS: four role menus omit duplicated My Learning/Explore destinations, hidden bottom bar, logout icon, six auth pages/one h1, onboarding/fields/CAPTCHA, all not-found panels and loading status contracts. No requests or writes.');
