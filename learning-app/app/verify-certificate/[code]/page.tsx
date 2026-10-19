@@ -2,6 +2,7 @@ import { getRequestLocale } from "@/app/lib/i18n-server";
 import { createClient } from "@/app/lib/supabase/server";
 import Link from "next/link";
 import { VerifiedProviderBadge } from "@/app/components/verified-provider-badge";
+import styles from "@/app/components/public/coverage-refinements.module.css";
 
 export const metadata = { title: "Certificate verification" };
 
@@ -14,12 +15,14 @@ const copy = {
 export default async function VerifyCertificatePage({ params }: { params: Promise<{ code: string }> }) {
   const [{ code }, locale] = await Promise.all([params, getRequestLocale()]);
   const text = copy[locale];
-  const { data } = await (await createClient()).rpc("verify_learning_certificate", { p_certificate_code: code });
+  const { data, error } = await (await createClient()).rpc("verify_learning_certificate", { p_certificate_code: code });
+  if (error) throw new Error("Certificate verification is temporarily unavailable.");
   const certificate = data?.[0];
   const status = certificate ? (certificate.is_valid ? "valid" : "revoked") : "missing";
 
   return (
-    <main className="certificate-view section-shell">
+    <main id="main-content" className={`certificate-view section-shell ${styles.verification}`}>
+      <Link className="back-link" href="/certificates">Growvelt Learning · Certificates</Link>
       <article className={`verification-card verification-${status}`}>
         <p className="eyebrow">{text.eyebrow}</p>
         {certificate ? (

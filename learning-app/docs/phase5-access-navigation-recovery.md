@@ -33,4 +33,4 @@ AuthForm, password forms, CAPTCHA component, auth callback, redirect helpers, se
 
 ## Resume here
 
-Authentication presentation and this shared-state group are complete. Next: inspect the remaining secondary public pages and teaching/lesson/certificate presentation against the coverage inventory, preserving content, access and policy wording. Do not declare Phase 5 complete until that coverage pass is done. Notifications remain excluded; Phase 6 launch hardening and Live financial activation remain separate readiness work.
+Authentication presentation and this shared-state group are complete. The secondary public and teaching/lesson/certificate implementation review is recorded in [the secondary coverage checkpoint](phase5-secondary-coverage.md). Next: signed-in visual acceptance of teaching applications, long lesson menus and issued-certificate printing. Phase 5 remains open pending that acceptance. Notifications remain excluded; Phase 6 launch hardening and Live financial activation remain separate readiness work.

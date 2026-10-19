@@ -17,7 +17,7 @@ export function ApplicationStatusLoader() {
     return () => { active = false; };
   }, []);
 
-  if (state === "loading") return <section className="application-status"><p className="eyebrow">Instructor application</p><h1>Checking your application status…</h1><p>We’re loading the latest review status for this account.</p></section>;
-  if (state === "unavailable") return <section className="application-status"><p className="eyebrow">Instructor application</p><h1>Your application is safe.</h1><p>We could not load its current review status right now. Please refresh this page shortly; do not submit another application.</p></section>;
+  if (state === "loading") return <section className="application-status" aria-busy="true"><p className="eyebrow">Instructor application</p><h1>Checking your application status…</h1><p role="status">We’re loading the latest review status for this account.</p></section>;
+  if (state === "unavailable") return <section className="application-status" role="alert"><p className="eyebrow">Instructor application</p><h1>Application status unavailable</h1><p>We could not load the current review status. Try loading this page again before submitting another application.</p><button className="button button-secondary" type="button" onClick={() => window.location.reload()}>Try again</button></section>;
   return <ApplicationStatus application={application} />;
 }

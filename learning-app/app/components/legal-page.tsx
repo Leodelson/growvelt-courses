@@ -1,6 +1,7 @@
 import Link from "next/link";
 import FooterWrapper from "@/app/components/FooterWrapper";
 import { PublicHeader } from "@/app/components/public-header";
+import styles from "@/app/components/public/coverage-refinements.module.css";
 
 type LegalSection = { heading: string; paragraphs: string[]; bullets?: string[] };
 
@@ -18,15 +19,15 @@ function LegalParagraph({ children }: { children: string }) {
 export function LegalPage({ title, summary, updated, sections }: { title: string; summary: string; updated: string; sections: LegalSection[] }) {
   return <div className="public-page legal-page">
     <PublicHeader />
-    <main>
-      <section className="legal-hero section-shell">
+    <main id="public-main">
+      <section className={`legal-hero section-shell ${styles.legalHero}`}>
         <p className="eyebrow">Growvelt legal</p>
         <h1>{title}</h1>
         <p>{summary}</p>
         <small>Last updated: {updated}</small>
       </section>
-      <section className="legal-layout section-shell">
-        <aside>
+      <section className={`legal-layout section-shell ${styles.legalLayout}`}>
+        <aside aria-label="Policy sections">
           <p className="eyebrow">On this page</p>
           <ol>{sections.map((section, index) => <li key={section.heading}><a href={`#legal-section-${index + 1}`}>{section.heading.replace(/^\d+\.\s*/, "")}</a></li>)}</ol>
           <Link href="/about" className="text-link">About Growvelt <span aria-hidden="true">&rarr;</span></Link>

@@ -1,0 +1,20 @@
+.legalHero { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
+.legalHero > * { margin: 0; }
+.legalLayout { align-items: start; }
+.legalLayout > aside { max-height: calc(100dvh - 125px); overflow-y: auto; }
+.legalLayout > article { min-width: 0; overflow-wrap: anywhere; }
+.verification { min-height: 65dvh; align-content: center; }
+.verification > a { justify-self: start; }
+.verification > article { width: 100%; border-radius: 20px; }
+.lessonJump { display: inline-flex; justify-self: start; padding-block: 10px; color: var(--purple); font-weight: 750; text-decoration: underline; text-underline-offset: 4px; }
+.lessonLayout { align-items: start; }
+.lessonLayout > aside { max-height: calc(100dvh - 130px); overflow-y: auto; overscroll-behavior: contain; }
+.lessonLayout > article { scroll-margin-top: 110px; }
+.lessonLayout > article:focus { outline: 2px solid var(--purple); outline-offset: 4px; }
+.application > * { min-width: 0; }
+.preparation { margin-top: 28px; padding: 24px; border: 1px solid var(--line); border-radius: 20px; background: var(--surface); }
+.preparation h2 { margin: 0 0 16px; font-size: 20px; }
+.preparation ul { display: grid; gap: 14px; margin: 0; padding-left: 18px; color: var(--muted); line-height: 1.7; }
+.application :global(.application-account-summary) { overflow-wrap: anywhere; }
+@media (max-width: 880px) { .lessonLayout > aside { max-height: 280px; }.legalLayout > aside { max-height: none; } }
+@media (max-width: 620px) { .lessonLayout :global(.lesson-pagination) { display: grid; grid-template-columns: minmax(0, 1fr); overflow: visible; }.lessonLayout :global(.lesson-pagination) > *, .lessonLayout :global(.lesson-pagination) > *:last-child { min-width: 0; width: 100%; white-space: normal; text-align: center; }.lessonLayout :global(.lesson-pagination) > span:empty { display: none; } }
