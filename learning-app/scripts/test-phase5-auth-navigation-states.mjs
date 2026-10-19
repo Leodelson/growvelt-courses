@@ -26,7 +26,9 @@ for(const role of ['learner','instructor','admin','combined']){
  drawerOpen=true;const html=renderToStaticMarkup(React.createElement(Shell,{isInstructor:role==='instructor'||role==='combined',isAdmin:role==='admin'||role==='combined',isCompany:role==='combined',showSubscriptionPlans:true,initialSidebarCollapsed:false,userEmail:'example@example.invalid',displayName:'Example',avatarUrl:null},React.createElement('h1',null,'Example workspace')));
  assert.match(html,/class="mobile-nav" hidden=""/);assert.match(html,/class="drawerFooter"/);assert.match(html,/lucide-log-out/);
  const body=html.split('class="mobile-dashboard-workspaces"')[1].split('</footer>')[0],hrefs=[...body.matchAll(/href="([^"]+)"/g)].map(m=>m[1]);assert.equal(hrefs.length,new Set(hrefs).size,role+' duplicate drawer destination');
- assert.ok(hrefs.includes('/dashboard'));assert.ok(!hrefs.includes('/dashboard/my-learning'));assert.ok(!hrefs.includes('/dashboard/explore'));assert.ok(hrefs.includes('https://www.growvelt.com/'));
+ assert.ok(!hrefs.includes('/dashboard'));assert.ok(!hrefs.includes('/dashboard/my-learning'));assert.ok(!hrefs.includes('/dashboard/explore'));assert.ok(hrefs.includes('https://www.growvelt.com/'));
+ const bottomNav=html.match(/<nav class="mobile-nav"[^>]*>(.*?)<\/nav>/)?.[1]??'';assert.match(bottomNav,/href="\/dashboard"/,'Home remains in the persistent bottom navigation');
+ if(role==='learner'||role==='admin'){assert.match(bottomNav,/href="\/dashboard\/my-learning"/);assert.match(bottomNav,/href="\/dashboard\/explore"/);}
  assert.equal(hrefs.includes('/dashboard/admin/payments'),role==='admin'||role==='combined');assert.equal(hrefs.includes('/dashboard/instructor/courses'),role==='instructor'||role==='combined');
  if(role==='instructor'||role==='combined'){assert.ok(hrefs.includes('/dashboard/instructor/courses/new'));assert.ok(hrefs.includes('/dashboard/instructor/earnings'));}
 }
@@ -43,4 +45,4 @@ function filesUnder(directory){return fs.readdirSync(directory,{withFileTypes:tr
 const files=filesUnder('app').filter(file=>!file.includes('ui-review'));
 for(const file of files.filter(file=>file.endsWith('not-found.tsx'))){const Page=load(file).default,html=renderToStaticMarkup(await Page());assert.equal((html.match(/<h1\b/g)||[]).length,1,file);assert.match(html,/href="\//,file);assert.match(html,/route-feedback-panel/,file);}
 for(const file of files.filter(file=>file.endsWith('loading.tsx'))){const source=fs.readFileSync(file,'utf8');assert.match(source,/aria-busy|role="status"|WorkspaceLoading|export.*from/,file);}
-console.log('PASS: four role menus omit duplicated My Learning/Explore destinations, hidden bottom bar, logout icon, six auth pages/one h1, onboarding/fields/CAPTCHA, all not-found panels and loading status contracts. No requests or writes.');
+console.log('PASS: four role menus omit duplicated Home/My Learning/Explore destinations while retaining bottom-nav shortcuts, hidden bottom bar, logout icon, six auth pages/one h1, onboarding/fields/CAPTCHA, all not-found panels and loading status contracts. No requests or writes.');
