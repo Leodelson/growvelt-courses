@@ -1,8 +1,9 @@
 import { ApplicationStatusLoader } from "@/app/components/instructor/application-status-loader";
-import { ProtectedPageHeader } from "@/app/components/protected-page-header";
+import { ApplicationStatusHeader } from "./application-status-header";
+import styles from "./application-status.module.css";
 
 export const metadata = { title: "Instructor application" };
 
 export default async function TeachApplicationPage() {
-  return <><ProtectedPageHeader context="Instructor application" backHref="/teach" backLabel="Back to Teach on Growvelt" /><main id="main-content" className="instructor-page section-shell"><ApplicationStatusLoader /></main></>;
+  return <><ApplicationStatusHeader /><main id="main-content" className={`section-shell ${styles.main}`}><ApplicationStatusLoader /></main></>;
 }

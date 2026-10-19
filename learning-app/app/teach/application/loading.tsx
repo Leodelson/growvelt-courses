@@ -1,5 +1,7 @@
 import { Skeleton } from "@/app/components/ui/skeleton";
+import { ApplicationStatusHeader } from "./application-status-header";
+import styles from "./application-status.module.css";
 
 export default function TeachApplicationLoading() {
-  return <><header className="protected-page-header skeleton-protected-header" aria-hidden="true"><div className="protected-page-header-inner"><Skeleton className="skeleton-brand" /><Skeleton className="skeleton-link" /></div></header><main className="instructor-page section-shell" aria-busy="true"><p className="sr-only" role="status">Loading Instructor application status…</p><section className="application-status skeleton-card"><Skeleton className="skeleton-eyebrow" /><Skeleton className="skeleton-title" /><Skeleton className="skeleton-copy" /><Skeleton className="skeleton-copy skeleton-copy-short" /><Skeleton className="skeleton-button" /></section></main></>;
+  return <><ApplicationStatusHeader /><main id="main-content" className={`section-shell ${styles.main}`} aria-busy="true"><p className="sr-only" role="status">Loading Instructor application status…</p><section className="application-status skeleton-card"><Skeleton className="skeleton-eyebrow" /><Skeleton className="skeleton-title" /><Skeleton className="skeleton-copy" /><Skeleton className="skeleton-copy skeleton-copy-short" /><Skeleton className="skeleton-button" /></section></main></>;
 }

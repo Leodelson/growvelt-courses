@@ -44,4 +44,12 @@ assert.match(html,/intent-teach is-selected/);assert.match(html,/auth\.learn/);a
 assert.match(html,/href="\/sign-in\?next=%2Fteach%2Fapply"/);
 const ordinary=renderToStaticMarkup(React.createElement(AuthForm,{mode:'sign-up',next:'/dashboard'}));
 assert.match(ordinary,/intent-learn is-selected/);
+const {ApplicationStatus}=load('app/components/instructor/application-status.tsx');
+for(const [status,expectedHref] of [[null,'/teach/apply'],['pending',null],['rejected',null],['approved','/dashboard/instructor']]){
+  const application=status===null?null:{approval_status:status};
+  const statusHtml=renderToStaticMarkup(React.createElement(ApplicationStatus,{application}));
+  assert.equal((statusHtml.match(/<h1\b/g)||[]).length,1,`one heading for ${status??'new'} status`);
+  const statusHrefs=[...statusHtml.matchAll(/href="([^"]+)"/g)].map(match=>match[1]);
+  assert.deepEqual(statusHrefs,expectedHref?[expectedHref]:[],`status-specific action for ${status??'new'} application`);
+}
 console.log('PASS: teaching guests enter Create account; existing users continue without signup; other protected routes still use sign-in; both intent choices visible, Teach preselected, safe next preserved. No external requests.');
