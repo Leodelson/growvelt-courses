@@ -7,8 +7,8 @@
 }
 
 .logo img { width: 100%; height: auto; object-fit: contain; }
-.lightImage { display: block; mix-blend-mode: multiply; }
-.darkImage { display: none; mix-blend-mode: screen; }
+.lightImage { display: block; }
+.darkImage { display: none; }
 
 :global(html[data-theme="dark"]) .auto .lightImage,
 .dark .lightImage { display: none; }

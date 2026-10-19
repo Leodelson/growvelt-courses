@@ -176,7 +176,7 @@ assert.equal(exchanges, 2);
 // Render the actual app email template without server-only effects or sending email.
 const template = load("../app/lib/email/growvelt-email-template.ts", { "server-only": {}, "../site-urls.mjs": boundUrls });
 const html = template.renderGrowveltEmail({ greeting: "Test <person>", title: "Account", paragraphs: ["Example"], reason: "Test only", baseUrl: "https://evil.invalid" });
-assert.ok(html.includes("https://www.growvelt.com/logo/growvelt-magenta-email.png"));
+assert.ok(html.includes("https://www.growvelt.com/logo/growvelt-wordmark-purple-20261019.png"));
 assert.ok(html.includes("https://www.growvelt.com/privacy-policy"));
 assert.ok(!html.includes("https://evil.invalid"));
 assert.ok(html.includes("Test &lt;person&gt;"));
@@ -184,11 +184,19 @@ const robots = load("../app/robots.ts", { "@/app/lib/seo": { absoluteLearningUrl
 assert.equal(robots.sitemap, "https://www.growvelt.com/sitemap.xml");
 assert.ok(robots.rules.disallow.includes("/learning/dashboard/"));
 const root = fileURLToPath(new URL("../", import.meta.url));
+// Approved branding may change presentation; authentication content and links
+// must still match the fixed pre-transition release.
+function emailContent(template) {
+  return template.match(/<body[^>]*>([\s\S]*)<\/body>/i)[1]
+    .replace(/\s(?:style|bgcolor)="[^"]*"/g, "")
+    .replace(/growvelt-(?:magenta-email|wordmark-purple-20261019)\.png/g, "approved-logo.png")
+    .replace(/width="(?:116|124)" alt="Growvelt"/g, 'alt="Growvelt"');
+}
 for (const name of readdirSync(new URL("../supabase/email-templates/", import.meta.url)).filter(name => name.endsWith(".html"))) {
   const currentTemplate = readFileSync(new URL(`../supabase/email-templates/${name}`, import.meta.url), "utf8").replaceAll("\r\n", "\n");
   // Fixed pre-transition release, not HEAD: this protection must still work
   // after the preparation itself is committed and deployed.
   const originalTemplate = execFileSync("git", ["show", `35021b7:learning-app/supabase/email-templates/${name}`], { cwd: root, encoding: "utf8" }).replaceAll("\r\n", "\n");
-  assert.equal(currentTemplate.trimEnd(), originalTemplate.replaceAll("https://learn.growvelt.com", "{{ .SiteURL }}").trimEnd(), `${name}: only SiteURL substitutions are permitted; preserve all authentication variables and content`);
+  assert.equal(emailContent(currentTemplate), emailContent(originalTemplate.replaceAll("https://learn.growvelt.com", "{{ .SiteURL }}")), `${name}: preserve all authentication variables, content and links`);
 }
 console.log("PASS Learning domain transition: strict origins, exact collisions, alias protection/cookies, original-origin PKCE, payment guards, email and robots (no hosted writes)");

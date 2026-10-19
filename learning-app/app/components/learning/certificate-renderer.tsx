@@ -49,7 +49,7 @@ export function CertificateRenderer({ certificate }: CertificateRendererProps) {
         <div className="certificate-corner certificate-corner-top" aria-hidden="true" />
 
         <header className="certificate-brand">
-          <img src="/logo/growvelt-magenta-light.webp" alt="Growvelt" width={720} height={208} />
+          <img src="/logo/growvelt-wordmark-purple-20261019.png" alt="Growvelt" width={720} height={208} />
           <p>GROWVELT LEARNING &amp; CAREER DEVELOPMENT SERVICES</p>
         </header>
 
