@@ -10,9 +10,18 @@ import styles from "@/app/components/public/public-experience.module.css";
 
 export const metadata: Metadata = {
   title: "Explore practical courses",
-  description: "Browse live Growvelt Learning courses in data, technology, business, and practical career skills.",
+  description: "Explore Growvelt Learning online courses in data analytics, technology, business, and other practical skills. Compare course details and find a learning path that fits your goals.",
   alternates: { canonical: "/learn" },
-  openGraph: { url: "/learn", title: "Explore practical courses | Growvelt Learning" },
+  openGraph: {
+    url: "/learn",
+    title: "Explore online courses | Growvelt Learning",
+    description: "Browse practical online courses in data analytics, technology, business, and more. Find a course that fits your goals.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Explore online courses | Growvelt Learning",
+    description: "Browse practical online courses in data analytics, technology, business, and more. Find a course that fits your goals.",
+  },
 };
 
 export default async function LearnPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {

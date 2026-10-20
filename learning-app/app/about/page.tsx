@@ -4,10 +4,19 @@ import { PublicHeader } from "@/app/components/public-header";
 import { AboutPageContent } from "@/app/components/about-page-content";
 
 export const metadata: Metadata = {
-  title: "About Growvelt",
-  description: "Learn about Growvelt, our practical learning approach, career support, and mission to connect skills with opportunity.",
+  title: "About",
+  description: "Learn how Growvelt Learning helps people and teams build practical skills through courses, instructor-led teaching, and private company workspaces.",
   alternates: { canonical: "/about" },
-  openGraph: { url: "/about", title: "About Growvelt | Practical learning and opportunity" },
+  openGraph: {
+    url: "/about",
+    title: "About Growvelt Learning | Practical skills for people and teams",
+    description: "Learn about practical online courses, instructor-led teaching, and private company learning workspaces on Growvelt Learning.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "About Growvelt Learning | Practical skills for people and teams",
+    description: "Learn about practical online courses, instructor-led teaching, and private company learning workspaces on Growvelt Learning.",
+  },
 };
 
 /* const offerings = [
@@ -43,7 +52,7 @@ export default function AboutPage() {
           <aside className="about-hero-card" aria-label="Growvelt at a glance">
             <LearningMark compact />
             <div className="about-hero-copy">
-              <p>Growvelt is a technology ecosystem connecting skills development, career intelligence, and employment; helping emerging-market talent move from learning → career readiness → verified skills → employment.</p>
+              <p>Growvelt Learning brings practical online courses, hands-on learning, instructor-led teaching, certificates, and private company workspaces together to help people and teams build useful skills.</p>
               <p>We bring learning, career development, intelligent hiring tools, and real job opportunities together in one platform.</p>
             </div>
             <dl>

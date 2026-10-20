@@ -5,7 +5,21 @@ import FooterWrapper from "@/app/components/FooterWrapper";
 import { PublicHeader } from "@/app/components/public-header";
 import styles from "@/app/components/public/secondary-pages.module.css";
 
-export const metadata: Metadata = { title: "Company learning", description: "Bring your people into a private Growvelt Learning workspace." };
+export const metadata: Metadata = {
+  title: "Company learning for your team",
+  description: "Help your team build practical skills with Growvelt Learning. Create a private workspace, assign courses, invite employees, and track learning progress.",
+  alternates: { canonical: "/company-learning" },
+  openGraph: {
+    url: "/company-learning",
+    title: "Company learning for your team | Growvelt Learning",
+    description: "Create a private company workspace, assign practical courses, invite employees, and follow team learning progress.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Company learning for your team | Growvelt Learning",
+    description: "Create a private company workspace, assign practical courses, invite employees, and follow team learning progress.",
+  },
+};
 
 export default function CompanyLearningPage() {
   return <div className="public-page"><PublicHeader /><main id="public-main" className={styles.page}>

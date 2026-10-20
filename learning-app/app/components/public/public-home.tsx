@@ -75,7 +75,7 @@ export function PublicHome({ courses }: { courses: PublishedCourse[] }) {
         <header className={styles.sectionHeading}><div><p className={styles.eyebrow}>{home.pathsEyebrow}</p><h2 id="paths-title">{home.pathsTitle}</h2></div></header>
         <div className={styles.pathGrid}>
           <article className={styles.path}><div className={styles.pathPhoto}><Image src="/images/teaching-practical-expertise.jpg" alt="" fill sizes="(max-width: 700px) 100vw, 45vw" /></div><div className={styles.pathCopy}><p className={styles.eyebrow}>{copy.nav.teach}</p><h3>{home.teacherTitle}</h3><p>{home.teacherCopy}</p><Link className={styles.quiet} href="/teach">{home.teacherAction}<ArrowUpRight aria-hidden="true" size={18} /></Link></div></article>
-          <article className={styles.path}><div className={styles.pathPhoto}><Image src="/images/pexels-alexander-suhorucov-6457554.jpg" alt="" fill sizes="(max-width: 700px) 100vw, 45vw" /></div><div className={styles.pathCopy}><p className={styles.eyebrow}>{copy.nav.teams}</p><h3>{home.teamsTitle}</h3><p>{home.teamsCopy}</p><Link className={styles.quiet} href="/company-learning">{home.teamsAction}<ArrowUpRight aria-hidden="true" size={18} /></Link></div></article>
+          <article className={styles.path}><div className={styles.pathPhoto}><Image src="/images/company%20learning.png" alt="A diverse team learning together in a bright office." fill sizes="(max-width: 700px) 100vw, 45vw" /></div><div className={styles.pathCopy}><p className={styles.eyebrow}>{copy.nav.teams}</p><h3>{home.teamsTitle}</h3><p>{home.teamsCopy}</p><Link className={styles.quiet} href="/company-learning">{home.teamsAction}<ArrowUpRight aria-hidden="true" size={18} /></Link></div></article>
         </div>
       </section>
 

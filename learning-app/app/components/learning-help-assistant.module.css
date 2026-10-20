@@ -79,13 +79,13 @@
 .tabs button { position: relative; display: grid; align-content: center; justify-items: center; gap: 5px; min-width: 0; border: 0; border-radius: 12px; background: transparent; color: #f2efff; font: inherit; font-size: 12px; font-weight: 800; cursor: pointer; }
 .tabs button[aria-selected="true"] { color: #f58dff; }
 .tabs button[aria-selected="true"]::after { position: absolute; bottom: 1px; width: 36px; height: 2px; border-radius: 99px; background: currentColor; content: ""; }
-.welcomeBubble { position: relative; display: grid; grid-template-columns: 54px minmax(0, 1fr); align-items: start; gap: 12px; width: min(360px, calc(100vw - 32px)); padding: 17px; border: 1px solid #e4e0ed; border-radius: 22px; background: var(--surface); box-shadow: 0 10px 36px #17102d22; }
+.welcomeBubble { position: relative; display: grid; grid-template-columns: 44px minmax(0, 1fr); align-items: start; gap: 10px; width: min(320px, calc(100vw - 24px)); padding: 14px; border: 1px solid #e4e0ed; border-radius: 20px; background: var(--surface); box-shadow: 0 10px 30px #17102d22; }
 .welcomeBubble::after { position: absolute; right: 25px; bottom: -9px; width: 18px; height: 18px; transform: rotate(45deg); border-right: 1px solid #e4e0ed; border-bottom: 1px solid #e4e0ed; background: var(--surface); content: ""; }
-.welcomeMark { display: grid; width: 52px; height: 52px; place-items: center; border: 5px solid #f2e5ff; border-radius: 17px; background: linear-gradient(145deg, #9200ef, #ed64b1); color: #fff; box-shadow: 0 7px 18px #8d00de33; }
+.welcomeMark { display: grid; width: 44px; height: 44px; place-items: center; border: 4px solid #f2e5ff; border-radius: 15px; background: linear-gradient(145deg, #9200ef, #ed64b1); color: #fff; box-shadow: 0 7px 18px #8d00de33; }
 .welcomeBubble > div { display: grid; gap: 2px; padding-right: 10px; }
-.welcomeBubble strong { color: var(--ink); font-size: 16px; font-weight: 850; }
-.welcomeBubble > div > span { color: var(--ink); font-size: 14px; font-weight: 700; }
-.welcomeBubble > div > button { justify-self: start; margin-top: 9px; padding: 9px 14px; border: 0; border-radius: 999px; background: linear-gradient(105deg, #8900df, #c100db); color: #fff; font: inherit; font-size: 12px; font-weight: 800; cursor: pointer; }
+.welcomeBubble strong { color: var(--ink); font-size: 15px; font-weight: 850; }
+.welcomeBubble > div > span { color: var(--ink); font-size: 13px; font-weight: 700; }
+.welcomeBubble > div > button { justify-self: start; margin-top: 7px; padding: 8px 12px; border: 0; border-radius: 999px; background: linear-gradient(105deg, #8900df, #c100db); color: #fff; font: inherit; font-size: 12px; font-weight: 800; cursor: pointer; }
 .welcomeClose { position: absolute; z-index: 1; top: 8px; right: 8px; display: grid; width: 26px; height: 26px; place-items: center; border: 0; border-radius: 50%; background: var(--surface-muted); color: var(--muted); cursor: pointer; }
 .assistant :is(button, a):focus-visible { outline: 3px solid #f4a23e; outline-offset: 3px; }
 body:has(.mobile-dashboard-menu) .assistant { visibility: hidden; }
@@ -107,7 +107,7 @@ body:has(.mobile-dashboard-menu) .assistant { visibility: hidden; }
   .assistant { right: 10px; }
   .topicGrid { grid-template-columns: 1fr; }
   .topicCard { min-height: 108px; }
-  .welcomeBubble { width: calc(100vw - 24px); }
+  .welcomeBubble { width: min(320px, calc(100vw - 24px)); }
 }
 @media (prefers-reduced-motion: reduce) {
   .topicCard { transition: none; }

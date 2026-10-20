@@ -29,7 +29,18 @@ async function getProviderProfile(slug: string) {
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const provider = await getProviderProfile(slug);
-  return provider ? { title: `${provider.name} | Verified training provider`, description: provider.headline } : { title: "Provider not found" };
+  if (!provider) return { title: "Provider not found", robots: { index: false, follow: false } };
+
+  const title = `${provider.name} | Verified training provider`;
+  const description = provider.headline || `Explore verified courses from ${provider.name} on Growvelt Learning.`;
+  const canonical = `/providers/${provider.slug}`;
+  return {
+    title,
+    description,
+    alternates: { canonical },
+    openGraph: { url: canonical, title: `${title} | Growvelt Learning`, description },
+    twitter: { card: "summary_large_image", title: `${title} | Growvelt Learning`, description },
+  };
 }
 
 export default async function PublicProviderProfilePage({ params }: { params: Promise<{ slug: string }> }) {
