@@ -22,7 +22,9 @@ export async function GET(request: NextRequest) {
       logSupabaseError("auth.oauth_code_exchange_failed", error);
       return preventAuthRedirectCaching(NextResponse.redirect(new URL("/auth/error", requestUrl.origin)));
     }
-    await recordLearningSignIn(data.session.user, request.headers).catch(() => {
+    // A successful PKCE exchange is a fresh sign-in even if the provider's
+    // returned user object omits or lags `last_sign_in_at`.
+    await recordLearningSignIn(data.session.user, request.headers, new Date().toISOString()).catch(() => {
       console.error("Learning OAuth login activity could not be recorded.");
     });
   } catch (error) {

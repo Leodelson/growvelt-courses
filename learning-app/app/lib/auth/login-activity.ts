@@ -1,6 +1,7 @@
 import "server-only";
 import type { User } from "@supabase/supabase-js";
 import { createAdminClient } from "@/app/lib/supabase/admin";
+import { scheduleLearningLoginActivityEmail } from "@/app/lib/email/login-activity";
 
 function deviceDetails(userAgent: string) {
   const device = /iPad|Tablet|Android(?!.*Mobile)/i.test(userAgent) ? "Tablet" : /Mobile|iPhone|Android/i.test(userAgent) ? "Mobile" : "Desktop";
@@ -8,11 +9,13 @@ function deviceDetails(userAgent: string) {
   return { device, browser };
 }
 
-export async function recordLearningSignIn(user: User, headers: Headers) {
-  const signInAt = user.last_sign_in_at;
+export async function recordLearningSignIn(user: User, headers: Headers, verifiedSignInAt?: string) {
+  const signInAt = verifiedSignInAt ?? user.last_sign_in_at;
   if (!signInAt || !Number.isFinite(Date.parse(signInAt))) return;
-  // Only a fresh authentication event can create a receipt. A dashboard refresh cannot.
-  if (Math.abs(Date.now() - Date.parse(signInAt)) > 30 * 60 * 1000) return;
+  // Password sign-ins are recorded through the authenticated POST endpoint, so
+  // their Supabase timestamp must be recent. OAuth code exchange is itself a
+  // one-time proof of a fresh sign-in and passes its own trusted timestamp.
+  if (!verifiedSignInAt && Math.abs(Date.now() - Date.parse(signInAt)) > 30 * 60 * 1000) return;
 
   const admin = createAdminClient();
   const details = deviceDetails(headers.get("user-agent") ?? "");
@@ -23,6 +26,8 @@ export async function recordLearningSignIn(user: User, headers: Headers) {
   });
   if (error?.code === "23505") return;
   if (error) throw error;
+
+  scheduleLearningLoginActivityEmail(user, headers, signInAt, details.browser, details.device);
 
   const { error: notificationError } = await admin.from("learning_notifications").insert({
     user_id: user.id,
