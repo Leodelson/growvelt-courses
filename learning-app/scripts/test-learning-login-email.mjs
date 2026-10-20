@@ -20,6 +20,8 @@ assert.match(email, /If this was you, no action is needed/, "the email must incl
 assert.match(email, /category", value: "login_security".*product", value: "learning"/s, "the alert must be tagged as Learning transactional security email");
 assert.match(template, /input\.details\?\.length/, "the shared email renderer must support an optional sign-in details table");
 assert.match(template, /escapeEmailHtml\(detail\.label\).*escapeEmailHtml\(detail\.value\)/s, "detail values must be escaped before rendering");
+assert.match(template, /padding-top:6px;text-align:center/, "primary account action should be centered in email clients");
+assert.match(template, /margin:0 auto 14px/, "the CTA table should center reliably in email clients");
 assert.match(authRoute, /recordLearningSignIn\(user, request\.headers\)/, "password sign-ins must create the email-triggering record");
 assert.match(oauthCallback, /recordLearningSignIn\(data\.session\.user, request\.headers, new Date\(\)\.toISOString\(\)\)/, "OAuth sign-ins must create the email-triggering record");
 

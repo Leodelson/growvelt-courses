@@ -1030,7 +1030,8 @@ p { color: var(--muted); line-height: 1.65; }
 
 .dashboard-notifications { margin-right: 16px; padding-right: 20px; border-right: 1px solid var(--line); }
 .dashboard-notifications > button, .dashboard-account-trigger, .mobile-dashboard-menu-button { display: flex; align-items: center; justify-content: center; border: 1px solid transparent; background: transparent; color: var(--muted); cursor: pointer; }
-.dashboard-notifications > button { width: 42px; height: 42px; border-radius: 50%; }
+.dashboard-notifications > button { position: relative; width: 42px; height: 42px; border-radius: 50%; }
+.dashboard-notification-badge { position: absolute; top: -2px; right: -2px; display: grid; min-width: 19px; height: 19px; padding: 0 5px; place-items: center; border: 2px solid var(--surface); border-radius: 999px; background: #e11d48; color: #fff; font-size: 10px; font-weight: 850; line-height: 1; }
 .dashboard-notifications > button:hover, .dashboard-account-trigger:hover, .mobile-dashboard-menu-button:hover { border-color: var(--line); background: var(--surface-muted); color: var(--purple); }
 .dashboard-account-trigger { gap: 8px; padding: 3px; border-radius: 999px; }
 .dashboard-account-menu.is-open .account-chevron { transform: rotate(180deg); }

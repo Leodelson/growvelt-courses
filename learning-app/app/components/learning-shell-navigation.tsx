@@ -12,7 +12,7 @@ import { ThemeControl } from "@/app/components/theme-control";
 import { useLanguage } from "@/app/components/language-provider";
 import { languageOptions } from "@/app/lib/i18n";
 import { SkipLink } from "@/app/components/ui/skip-link";
-import { LearningNotifications } from "@/app/components/learning-notifications";
+import { LearningNotifications, type Notice } from "@/app/components/learning-notifications";
 
 import { isDashboardNavigationCurrent } from "@/app/lib/learning/overview";
 import { useDashboardDrawer } from "@/app/components/learning/use-dashboard-drawer";
@@ -86,6 +86,9 @@ export function LearningShellNavigation({ children, initialSidebarCollapsed, isI
   const pathname = internalLearningPath(usePathname());
   const [collapsed, setCollapsed] = useState(initialSidebarCollapsed);
   const [openPanel, setOpenPanel] = useState<OpenPanel>(null);
+  const [notificationItems, setNotificationItems] = useState<Notice[]>([]);
+  const [notificationState, setNotificationState] = useState<"loading" | "ready" | "error">("loading");
+  const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
   const languageRef = useRef<HTMLDivElement>(null);
   const notificationsRef = useRef<HTMLDivElement>(null);
   const accountRef = useRef<HTMLDivElement>(null);
@@ -96,6 +99,27 @@ export function LearningShellNavigation({ children, initialSidebarCollapsed, isI
   const isActive = (href: string) => isDashboardNavigationCurrent(pathname, href);
   const bottomNavigation = isInstructor ? mobileInstructorNavigation : isCompany ? [...mobileNavigation.slice(0, 4), mobileCompanyNavigation] : mobileNavigation;
   const isBottomActive = isActive;
+
+  const refreshNotifications = useCallback(async (signal?: AbortSignal) => {
+    try {
+      const response = await fetch("/api/learning/notifications", { credentials: "same-origin", cache: "no-store", signal });
+      if (!response.ok) throw new Error("Learning notifications unavailable");
+      const result = await response.json() as { notifications: Notice[]; unread_count: number };
+      if (signal?.aborted) return;
+      setNotificationItems(result.notifications);
+      setUnreadNotificationCount(result.unread_count);
+      setNotificationState("ready");
+    } catch {
+      if (signal?.aborted) return;
+      setNotificationState((current) => current === "ready" ? current : "error");
+    }
+  }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    const prefetch = window.setTimeout(() => { void refreshNotifications(controller.signal); }, 0);
+    return () => { window.clearTimeout(prefetch); controller.abort(); };
+  }, [refreshNotifications]);
 
   useEffect(() => {
     function closeOnOutsideClick(event: PointerEvent) {
@@ -109,7 +133,16 @@ export function LearningShellNavigation({ children, initialSidebarCollapsed, isI
     return () => { document.removeEventListener("pointerdown", closeOnOutsideClick); document.removeEventListener("keydown", closeOnEscape); };
   }, [openPanel]);
 
-  const togglePanel = (panel: Exclude<OpenPanel, null>) => setOpenPanel((current) => current === panel ? null : panel);
+  const togglePanel = (panel: Exclude<OpenPanel, null>) => {
+    if (panel === "notifications") void refreshNotifications();
+    setOpenPanel((current) => current === panel ? null : panel);
+  };
+
+  const markNotificationRead = (id: string) => {
+    const wasUnread = notificationItems.some((item) => item.id === id && !item.read_at);
+    setNotificationItems((current) => current.map((item) => item.id === id ? { ...item, read_at: new Date().toISOString() } : item));
+    if (wasUnread) setUnreadNotificationCount((current) => Math.max(0, current - 1));
+  };
 
   return <div className={`${styles.shell} ${collapsed ? "app-shell is-sidebar-collapsed" : "app-shell"}`}>
     <SkipLink />
@@ -135,8 +168,8 @@ export function LearningShellNavigation({ children, initialSidebarCollapsed, isI
           </aside></>}
         </div>
         <div className="dashboard-notifications" ref={notificationsRef} data-shell-popover>
-          <button type="button" aria-label="Learning notifications" aria-expanded={openPanel === "notifications"} onClick={() => togglePanel("notifications")}><LearningIcon name="bell" size={23} /></button>
-          {openPanel === "notifications" && <LearningNotifications onClose={() => setOpenPanel(null)} />}
+          <button type="button" aria-label={unreadNotificationCount ? `Learning notifications, ${unreadNotificationCount} unread` : "Learning notifications"} aria-expanded={openPanel === "notifications"} onClick={() => togglePanel("notifications")}><LearningIcon name="bell" size={23} />{unreadNotificationCount > 0 && <span className="dashboard-notification-badge" aria-hidden="true">{unreadNotificationCount > 99 ? "99+" : unreadNotificationCount}</span>}</button>
+          {openPanel === "notifications" && <LearningNotifications items={notificationItems} state={notificationState} onClose={() => setOpenPanel(null)} onMarkRead={markNotificationRead} />}
         </div>
         <AccountMenu userEmail={userEmail} displayName={displayName} avatarUrl={avatarUrl} open={openPanel === "account"} onToggle={() => togglePanel("account")} onNavigate={closeDrawer} menuRef={accountRef} />
       </div></header>

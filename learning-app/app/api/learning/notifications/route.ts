@@ -6,9 +6,13 @@ export async function GET() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Sign in required." }, { status: 401 });
-  const { data, error } = await supabase.from("learning_notifications").select("id,kind,title,body,href,created_at,read_at").order("created_at", { ascending: false }).limit(20);
-  if (error) return NextResponse.json({ error: "Notifications are temporarily unavailable." }, { status: 503 });
-  return NextResponse.json({ notifications: data }, { headers: { "Cache-Control": "private, no-store" } });
+  const [notificationsResult, unreadResult] = await Promise.all([
+    supabase.from("learning_notifications").select("id,kind,title,body,href,created_at,read_at").order("created_at", { ascending: false }).limit(20),
+    supabase.from("learning_notifications").select("id", { count: "exact", head: true }).is("read_at", null),
+  ]);
+  if (notificationsResult.error) return NextResponse.json({ error: "Notifications are temporarily unavailable." }, { status: 503 });
+  const notifications = notificationsResult.data ?? [];
+  return NextResponse.json({ notifications, unread_count: unreadResult.error ? notifications.filter((item) => !item.read_at).length : unreadResult.count ?? 0 }, { headers: { "Cache-Control": "private, no-store" } });
 }
 
 export async function PATCH(request: Request) {
