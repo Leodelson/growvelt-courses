@@ -13,6 +13,7 @@ import type { PublishedCourse } from "@/app/lib/catalog/published-courses";
 import { HomeHiring, HomePartnership, HomeSkillFinder, HomeStudyRoutine } from "./home-discovery-sections";
 import styles from "./public-experience.module.css";
 import { HomeMotionReel } from "./home-motion-reel";
+import { LearningGoogleOneTap } from "@/app/components/auth/learning-google-one-tap";
 
 const subjectIcons = [BarChart3, Code2, Megaphone, BriefcaseBusiness, Palette, Clock3];
 const videoIds = ["b_hmIZRnD1Q", "cFJt2gytwjY", "Xac1qNAcKHc"];
@@ -31,6 +32,7 @@ export function PublicHome({ courses }: { courses: PublishedCourse[] }) {
 
   return <div className={styles.publicPage}>
     <PublicHeader />
+    <LearningGoogleOneTap />
     <main id="public-main">
       <HomeMotionReel />
 
