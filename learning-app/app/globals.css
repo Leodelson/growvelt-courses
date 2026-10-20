@@ -1720,6 +1720,7 @@ p { color: var(--muted); line-height: 1.65; }
 .account-delete-form textarea { resize: vertical; }
 .account-delete-form small { color: var(--muted); font-size: 12px; font-weight: 500; }
 .account-delete-form footer { display: flex; justify-content: flex-end; gap: 12px; padding-top: 4px; }
+.dashboard-main:has(> .profile-page) { padding-top: 26px; }
 .profile-page { gap: 22px; }
 .profile-cover-skeleton { width: 100%; min-height: clamp(250px, 30vw, 360px); border-radius: 28px 28px 0 0; }
 .profile-identity-skeleton { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 22px; align-items: center; min-height: 180px; padding: 30px; border: 1px solid var(--line); border-radius: 0 0 24px 24px; background: var(--surface); box-shadow: var(--shadow); }

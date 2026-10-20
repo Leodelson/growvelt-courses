@@ -52,9 +52,7 @@ export default async function DashboardProfilePage() {
   const providerLogos = await Promise.all(providerBrandings.map(async ({ organizationId, profile }) => ({ organizationId, url: profile?.logo_storage_path ? (await supabase.storage.from("learning-provider-media").createSignedUrl(profile.logo_storage_path, 60 * 60)).data?.signedUrl ?? null : null })));
 
   return (
-    <section className={`profile-page section-shell ${styles.page} ${styles.profile}`} aria-labelledby="account-profile-title">
-      <div className={styles.header}><div><h1 id="account-profile-title">{text.profile}</h1><p>{text.profileIntro}</p></div><Link href="/dashboard/settings" className="button button-secondary">{text.settings}</Link></div>
-      <nav className={styles.profileNav} aria-label={text.profile}><a href="#profile-identity">{text.identity}</a><a href="#profile-setup-title">{text.profileChecklist}</a><a href="#profile-links">{text.links}</a></nav>
+    <section className={`profile-page section-shell ${styles.page} ${styles.profile}`} aria-label={text.profile}>
       <header
         className="profile-cover"
       >
