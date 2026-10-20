@@ -55,7 +55,7 @@
   border: 1px solid #e7e1ef;
   border-radius: 18px;
   background: #fff;
-  color: inherit;
+  color: #1d1630;
   text-align: left;
   cursor: pointer;
   transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
@@ -74,8 +74,8 @@
   outline-offset: 3px;
 }
 
-.choices strong { font-size: 17px; }
-.choices span { color: var(--muted, #696477); font-size: 13px; line-height: 1.5; }
+.choices strong { color: #21183a; font-size: 17px; }
+.choices span { color: #51495f; font-size: 13px; line-height: 1.5; }
 .choices button:disabled, .later:disabled { cursor: wait; opacity: .65; }
 
 .later {
