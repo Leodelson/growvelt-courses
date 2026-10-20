@@ -117,7 +117,14 @@ export function AuthForm({ mode, next }: { mode: AuthMode; next?: string | null 
     const postAuthDestination = getPostAuthDestination();
     try {
       const callback = learningAuthCallbackUrl(window.location.origin, postAuthDestination);
-      const { error } = await createClient().auth.signInWithOAuth({ provider: "google", options: { redirectTo: callback } });
+      const { error } = await createClient().auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: callback,
+          // Always let the person choose which Google account to use.
+          queryParams: { prompt: "select_account" },
+        },
+      });
       if (error) {
         setMessage("Google sign-in could not be started. Please try again.");
         setIsGoogleBusy(false);
