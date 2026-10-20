@@ -29,7 +29,7 @@ function load(file) {
     if(id.endsWith('/instructor/authorization')) return {isApprovedInstructor:async()=>false};
     if(id.endsWith('/instructor/application')) return {getOwnInstructorApplication:async()=>null};
     if(id.endsWith('/instructor/organizations')) return new Proxy({},{get:()=>async()=>[]});
-    if(id.endsWith('/supabase/server')) return {createClient:async()=>({storage:{}})};
+    if(id.endsWith('/supabase/server')) return {createClient:async()=>({storage:{},from(){const query={select(){return query;},order(){return query;},limit(){return Promise.resolve({data:[],error:null});},maybeSingle(){return Promise.resolve({data:null,error:null});}};return query;}})};
     const mockControls={
       '/profile-settings-form':'ProfileSettingsForm','/profile-media-upload-button':'ProfileMediaUploadButton','/profile-social-links-form':'ProfileSocialLinksForm',
       '/auth/delete-account-control':'DeleteAccountControl','/privacy/cookie-settings-button':'CookieSettingsButton','/language-control':'LanguageControl','/theme-control':'ThemeControl',
@@ -62,6 +62,7 @@ for(locale of ['en','fr','es']) {
   }
   const profileHtml=renderToStaticMarkup(await Profile());
   assert.equal((profileHtml.match(/<h1\b/g)||[]).length,1);
+  assert.doesNotMatch(profileHtml,/Growvelt Learning member|Membre Growvelt Learning|Miembro de Growvelt Learning/i,'Profile identity should not repeat the Learning brand above the cover and profile photo');
   assert.match(profileHtml,/href="#profile-identity"/);
   assert.match(profileHtml,/href="#profile-links"/);
   assert.doesNotMatch(profileHtml,/profile-avatar-preview[^>]*aria-hidden/,'Photo upload control must remain accessible');

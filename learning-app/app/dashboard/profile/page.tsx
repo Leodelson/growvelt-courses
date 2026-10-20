@@ -53,7 +53,7 @@ export default async function DashboardProfilePage() {
 
   return (
     <section className={`profile-page section-shell ${styles.page} ${styles.profile}`} aria-labelledby="account-profile-title">
-      <div className={styles.header}><div><p className="eyebrow">{t("profile.member")}</p><h1 id="account-profile-title">{text.profile}</h1><p>{text.profileIntro}</p></div><Link href="/dashboard/settings" className="button button-secondary">{text.settings}</Link></div>
+      <div className={styles.header}><div><h1 id="account-profile-title">{text.profile}</h1><p>{text.profileIntro}</p></div><Link href="/dashboard/settings" className="button button-secondary">{text.settings}</Link></div>
       <nav className={styles.profileNav} aria-label={text.profile}><a href="#profile-identity">{text.identity}</a><a href="#profile-setup-title">{text.profileChecklist}</a><a href="#profile-links">{text.links}</a></nav>
       <header
         className="profile-cover"
@@ -87,7 +87,6 @@ export default async function DashboardProfilePage() {
           />
         </div>
         <div className="profile-identity-copy">
-          <p className="eyebrow">{t("profile.member")}</p>
           <ProfileSettingsForm
             userId={profile.id}
             email={profile.email}
