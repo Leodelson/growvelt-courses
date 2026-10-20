@@ -55,7 +55,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             __html: `(() => {
               try {
                 const stored = localStorage.getItem("growvelt-learning-theme");
-                const theme = stored === "light" || stored === "dark" || stored === "system" ? stored : "system";
+                const theme = stored === "light" || stored === "dark" || stored === "system" ? stored : "light";
                 const resolved = theme === "system"
                   ? (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")
                   : theme;

@@ -13,10 +13,10 @@ function applyTheme(theme: Theme) {
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>("system");
+  const [theme, setThemeState] = useState<Theme>("light");
   useEffect(() => {
     const stored = window.localStorage.getItem("growvelt-learning-theme") as Theme | null;
-    const next = stored === "light" || stored === "dark" || stored === "system" ? stored : "system";
+    const next = stored === "light" || stored === "dark" || stored === "system" ? stored : "light";
     applyTheme(next);
     const timer = window.setTimeout(() => setThemeState(next), 0);
     return () => window.clearTimeout(timer);

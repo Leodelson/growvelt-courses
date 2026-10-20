@@ -13,6 +13,7 @@ import { useLanguage } from "@/app/components/language-provider";
 import { languageOptions } from "@/app/lib/i18n";
 import { SkipLink } from "@/app/components/ui/skip-link";
 import { LearningNotifications, type Notice } from "@/app/components/learning-notifications";
+import { isLearningNotificationVisible, loginNotificationExpiresAt } from "@/app/lib/learning/notification-retention";
 
 import { isDashboardNavigationCurrent } from "@/app/lib/learning/overview";
 import { useDashboardDrawer } from "@/app/components/learning/use-dashboard-drawer";
@@ -99,6 +100,20 @@ export function LearningShellNavigation({ children, initialSidebarCollapsed, isI
   const isActive = (href: string) => isDashboardNavigationCurrent(pathname, href);
   const bottomNavigation = isInstructor ? mobileInstructorNavigation : isCompany ? [...mobileNavigation.slice(0, 4), mobileCompanyNavigation] : mobileNavigation;
   const isBottomActive = isActive;
+
+  const nextLoginNotificationExpiry = notificationItems
+    .filter((item) => item.kind === "login" && item.read_at)
+    .map((item) => loginNotificationExpiresAt(item.read_at))
+    .filter((expiresAt): expiresAt is number => expiresAt !== null)
+    .sort((left, right) => left - right)[0] ?? null;
+
+  useEffect(() => {
+    if (nextLoginNotificationExpiry === null) return;
+    const timer = window.setTimeout(() => {
+      setNotificationItems((current) => current.filter((item) => isLearningNotificationVisible(item, Date.now())));
+    }, Math.max(0, nextLoginNotificationExpiry - Date.now()));
+    return () => window.clearTimeout(timer);
+  }, [nextLoginNotificationExpiry, notificationItems]);
 
   const refreshNotifications = useCallback(async (signal?: AbortSignal) => {
     try {
