@@ -4,6 +4,7 @@ import { LanguageProvider } from "@/app/components/language-provider";
 import { ThemeProvider } from "@/app/components/theme-provider";
 import { CookieConsentProvider } from "@/app/components/privacy/cookie-consent-provider";
 import { defaultSocialImage, growveltLearningUrl } from "@/app/lib/seo";
+import { LearningHelpAssistant } from "@/app/components/learning-help-assistant";
 
 export const metadata: Metadata = {
   metadataBase: growveltLearningUrl,
@@ -66,7 +67,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         />
       </head>
       <body>
-        <ThemeProvider><LanguageProvider initialLocale="en"><CookieConsentProvider>{children}</CookieConsentProvider></LanguageProvider></ThemeProvider>
+        <ThemeProvider><LanguageProvider initialLocale="en"><CookieConsentProvider>{children}<LearningHelpAssistant /></CookieConsentProvider></LanguageProvider></ThemeProvider>
       </body>
     </html>
   );

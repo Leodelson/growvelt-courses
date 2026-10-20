@@ -1,0 +1,6 @@
+.stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.stats article { display: grid; gap: 8px; padding: 20px 22px; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); box-shadow: var(--shadow-xs); }
+.stats span { color: var(--muted); font-size: 14px; }
+.stats strong { font-size: clamp(26px, 4vw, 36px); }
+.countNote { margin: -8px 0 -8px; color: var(--muted); font-size: 13px; }
+@media (max-width: 600px) { .stats { grid-template-columns: 1fr; } }

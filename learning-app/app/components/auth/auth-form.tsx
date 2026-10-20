@@ -9,7 +9,7 @@ import { LearningIcon } from "@/app/components/learning-icon";
 import { getExplicitSafeNextPath, getSafeNextPath } from "@/app/lib/auth/redirect";
 import { verifyTurnstileToken } from "@/app/lib/auth/turnstile";
 import { createClient } from "@/app/lib/supabase/browser";
-import { learningAuthCallbackUrl } from "@/app/lib/site-urls.mjs";
+import { learningAuthCallbackUrl, learningPath } from "@/app/lib/site-urls.mjs";
 import { useLanguage } from "@/app/components/language-provider";
 
 type AuthMode = "sign-in" | "sign-up";
@@ -104,6 +104,7 @@ export function AuthForm({ mode, next }: { mode: AuthMode; next?: string | null 
         pendingRef.current = false;
         return;
       }
+      await fetch(learningPath("/api/auth/login-activity"), { method: "POST", credentials: "same-origin", signal: AbortSignal.timeout(3000) }).catch(() => undefined);
       window.location.assign(safeNext);
     }, isSignUp ? "sign_up" : "sign_in");
   }

@@ -1,0 +1,48 @@
+.page { display: grid; gap: 24px; width: min(100%, 1040px); margin: 0 auto; padding: clamp(20px, 4vw, 48px) 0 72px; }
+.hero { padding: clamp(24px, 4vw, 42px); border: 1px solid var(--line); border-radius: 26px; background: linear-gradient(125deg, color-mix(in srgb, var(--purple) 13%, var(--surface)), var(--surface)); }
+.hero h1 { margin: 8px 0 12px; font-size: clamp(32px, 4vw, 50px); }
+.hero p { max-width: 710px; line-height: 1.6; }
+.grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, .95fr); gap: 20px; align-items: start; }
+.card { display: grid; gap: 16px; min-width: 0; padding: clamp(22px, 3vw, 32px); background: var(--surface); border: 1px solid var(--line); border-radius: 22px; box-shadow: var(--shadow-xs); }
+.card h2 { margin: 0; font-size: 24px; }
+.card p { margin: 0; color: var(--muted); line-height: 1.6; }
+.card label { display: grid; gap: 8px; font-weight: 700; }
+.card input, .card select, .card textarea { width: 100%; min-width: 0; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-muted); color: var(--ink); font: inherit; }
+.card textarea { resize: vertical; }
+.card > button, .card form > button { justify-self: start; }
+.cases { display: grid; gap: 10px; }
+.case { display: grid; gap: 6px; padding: 17px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface-muted); color: var(--ink); text-decoration: none; }
+.case:hover { border-color: var(--purple); }
+.case span, .case small { color: var(--muted); }
+.case .status { color: inherit; }
+.thread { display: grid; gap: 12px; max-height: 560px; overflow-y: auto; }
+.message { max-width: min(85%, 680px); padding: 15px 18px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface-muted); }
+.message.support { justify-self: start; background: color-mix(in srgb, var(--purple) 10%, var(--surface)); }
+.message.customer { justify-self: end; }
+.thread[data-viewer="admin"] .message.support { justify-self: end; }
+.thread[data-viewer="admin"] .message.customer { justify-self: start; }
+.message strong { display: block; margin-bottom: 6px; }
+.message p { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--ink); }
+.message small { color: var(--muted); }
+.actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.error, .success { padding: 13px 16px; border-radius: 12px; }
+.error { background: #9b1c1c18; color: #ca3131; }.success { background: #16825218; color: #178254; }
+.empty { padding: 25px; border: 1px dashed var(--line); border-radius: 14px; color: var(--muted); }
+.stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.stats article { display: grid; gap: 8px; padding: 20px 22px; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); box-shadow: var(--shadow-xs); }
+.stats article span { color: var(--muted); font-size: 14px; }
+.stats article strong { font-size: clamp(26px, 4vw, 36px); }
+.sectionHeading, .threadTitle { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; }
+.sectionHeading > div { display: grid; gap: 7px; }
+.threadTitle { align-items: center; margin: 10px 0 14px; }
+.threadTitle h1 { margin: 0; overflow-wrap: anywhere; }
+.threadTitle p { margin-top: 8px; }
+.back { justify-self: start; color: var(--purple); font-weight: 700; text-decoration: none; }
+.back:hover { text-decoration: underline; }
+.status { justify-self: start; padding: 6px 10px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--muted); font-size: 12px; font-weight: 800; text-transform: capitalize; white-space: nowrap; }
+.open { border-color: color-mix(in srgb, #c2410c 25%, var(--line)); background: color-mix(in srgb, #c2410c 10%, var(--surface)); color: #c2410c; }
+.waiting { border-color: color-mix(in srgb, var(--purple) 25%, var(--line)); background: color-mix(in srgb, var(--purple) 10%, var(--surface)); color: var(--purple); }
+.resolved { border-color: color-mix(in srgb, #168252 25%, var(--line)); background: color-mix(in srgb, #168252 10%, var(--surface)); color: #168252; }
+.threadTitle + small { color: var(--muted); overflow-wrap: anywhere; }
+@media (max-width: 760px) { .page { padding-inline: 12px; }.grid { grid-template-columns: 1fr; }.message { max-width: 94%; } }
+@media (max-width: 600px) { .stats { grid-template-columns: 1fr; }.sectionHeading, .threadTitle { flex-direction: column; }.threadTitle .status { align-self: start; } }

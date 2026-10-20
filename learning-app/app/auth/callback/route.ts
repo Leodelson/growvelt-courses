@@ -2,6 +2,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import { getSafeNextPath } from "@/app/lib/auth/redirect";
 import { createAuthCallbackClient, preventAuthRedirectCaching } from "@/app/lib/supabase/auth-callback";
 import { logSupabaseError } from "@/app/lib/supabase/logging";
+import { recordLearningSignIn } from "@/app/lib/auth/login-activity";
 
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
@@ -21,6 +22,9 @@ export async function GET(request: NextRequest) {
       logSupabaseError("auth.oauth_code_exchange_failed", error);
       return preventAuthRedirectCaching(NextResponse.redirect(new URL("/auth/error", requestUrl.origin)));
     }
+    await recordLearningSignIn(data.session.user, request.headers).catch(() => {
+      console.error("Learning OAuth login activity could not be recorded.");
+    });
   } catch (error) {
     logSupabaseError("auth.oauth_callback_failed", error);
     return preventAuthRedirectCaching(NextResponse.redirect(new URL("/auth/error", requestUrl.origin)));
