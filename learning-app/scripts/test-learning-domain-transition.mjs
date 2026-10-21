@@ -150,7 +150,13 @@ assert.equal(oldAuth.headers.get("x-middleware-next"), "1");
 assert.ok(config.matcher.includes("/learning/dashboard/:path*"));
 
 let exchanges = 0;
+const signInEvents = [];
 const authHandler = load("../app/auth/callback/route.ts", {
+  "@/app/lib/auth/login-activity": {
+    recordLearningSignIn: async (user, headers, timestamp) => {
+      signInEvents.push({ userId: user.id, timestamp, hasHeaders: headers instanceof Headers });
+    },
+  },
   "@/app/lib/auth/redirect": redirect,
   "@/app/lib/supabase/logging": { logSupabaseError() {} },
   "@/app/lib/supabase/auth-callback": {
@@ -172,6 +178,9 @@ for (const [origin, path] of [["https://learn.growvelt.com", "/auth/callback"], 
   assert.match(response.headers.get("cache-control"), /no-store/);
 }
 assert.equal(exchanges, 2);
+assert.equal(signInEvents.length, 2, "both Learning callback hosts record fresh sign-in activity");
+assert.ok(signInEvents.every(event => event.userId === "fake-user"));
+assert.ok(signInEvents.every(event => event.hasHeaders && Number.isFinite(Date.parse(event.timestamp))));
 
 // Render the actual app email template without server-only effects or sending email.
 const template = load("../app/lib/email/growvelt-email-template.ts", { "server-only": {}, "../site-urls.mjs": boundUrls });

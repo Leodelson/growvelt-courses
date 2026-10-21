@@ -53,6 +53,7 @@ export default async function DashboardProfilePage() {
 
   return (
     <section className={`profile-page section-shell ${styles.page} ${styles.profile}`} aria-label={text.profile}>
+      <h1 className="sr-only">{text.profile}</h1>
       <header
         className="profile-cover"
       >

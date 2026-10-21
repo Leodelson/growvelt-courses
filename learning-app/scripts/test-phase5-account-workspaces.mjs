@@ -64,7 +64,7 @@ for(locale of ['en','fr','es']) {
   assert.equal((profileHtml.match(/<h1\b/g)||[]).length,1);
   assert.doesNotMatch(profileHtml,/Growvelt Learning member|Membre Growvelt Learning|Miembro de Growvelt Learning/i,'Profile identity should not repeat the Learning brand above the cover and profile photo');
   assert.match(profileHtml,/href="#profile-identity"/);
-  assert.match(profileHtml,/href="#profile-links"/);
+  assert.match(profileHtml,/id="profile-links"/,'Professional links section remains available after header navigation removal');
   assert.doesNotMatch(profileHtml,/profile-avatar-preview[^>]*aria-hidden/,'Photo upload control must remain accessible');
   assert.doesNotMatch(profileHtml,/Verified email|E-mail vérifié|Correo verificado/,'Do not invent email verification status');
   const settingsHtml=renderToStaticMarkup(await Settings());

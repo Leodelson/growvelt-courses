@@ -30,6 +30,7 @@ function load(file) {
       if (id === "@/app/components/language-provider") return { useLanguage: () => ({ locale, t: (key) => key }) };
       if (id === "@/app/components/learning-icon") return { LearningIcon: () => null };
       if (id === "@/app/components/learning-mark") return { LearningMark: () => null };
+      if (id === "@/app/components/auth/learning-google-one-tap") return { LearningGoogleOneTap: () => null };
       if (id === "@/app/lib/i18n") return { languageOptions: [] };
       if (id === "@/app/lib/home-discovery-copy") return load("app/lib/home-discovery-copy.ts");
       if (id === "@/app/lib/public-experience-copy") return load("app/lib/public-experience-copy.ts");

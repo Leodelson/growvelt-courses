@@ -11,6 +11,7 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
+    "test:phase6:headers": "node scripts/test-phase6-response-headers.mjs",
     "prepare:security:local": "node scripts/prepare-phase0c-local.mjs",
     "test:security:local": "node scripts/run-phase0c-local-security-tests.mjs",
     "test:security:staging": "node scripts/run-phase0c-security-tests.mjs",
@@ -92,7 +93,7 @@
     "@supabase/supabase-js": "^2.99.1",
     "@types/qrcode": "^1.5.6",
     "lucide-react": "^1.31.0",
-    "next": "^16.0.10",
+    "next": "16.3.8",
     "qrcode": "^1.5.4",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
@@ -105,7 +106,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "16.0.8",
+    "eslint-config-next": "16.3.8",
     "tailwindcss": "^4.1.18",
     "typescript": "^5"
   }

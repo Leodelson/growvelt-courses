@@ -60,8 +60,8 @@ for (locale of ["en", "fr", "es"]) {
 }
 
 // Protect the actual shipped multilingual content and team data through URL changes.
-// The earlier 2e4b537 snapshot predates the owner's already-published copy edits.
-const shippedBaseline = "35021b7";
+// This fixed release includes the owner's approved Learning-specific SEO copy.
+const shippedBaseline = "b305e73";
 function declaration(source, name) {
   const ast = ts.createSourceFile("content.tsx", source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
   let result;
