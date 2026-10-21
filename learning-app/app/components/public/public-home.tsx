@@ -45,7 +45,7 @@ export function PublicHome({ courses }: { courses: PublishedCourse[] }) {
           <ul className={styles.promises}>{home.promises.map((promise) => <li key={promise}><CircleCheck aria-hidden="true" size={16} />{promise}</li>)}</ul>
         </div>
         <figure className={styles.heroVisual}>
-          <div className={styles.heroPhoto}><Image src="/images/learning-woman-with-laptop.jpg" alt={home.imageAlt} fill priority sizes="(max-width: 780px) 100vw, 45vw" /></div>
+          <div className={styles.heroPhoto}><Image src="/images/learning-woman-with-laptop.jpg" alt={home.imageAlt} fill loading="lazy" sizes="(max-width: 780px) 100vw, 45vw" /></div>
           <div className={styles.photoAccent} aria-hidden="true" />
           <figcaption><span>{home.imageKicker}</span><strong>{home.imageTitle}</strong></figcaption>
           <div className={styles.heroStamp} aria-hidden="true"><BookOpen size={26} /><span>Growvelt<br />Learning</span></div>

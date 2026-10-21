@@ -53,7 +53,7 @@ function load(path, mocks = {}) {
   const compiled = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true } }).outputText;
   const moduleValue = { exports: {} };
   vm.runInNewContext(compiled, {
-    module: moduleValue, exports: moduleValue.exports, URL, Request, Response, Headers, FormData, AbortSignal, console,
+    module: moduleValue, exports: moduleValue.exports, URL, Request, Response, Headers, FormData, AbortSignal, TextDecoder, console,
     process: { env: { TURNSTILE_SECRET_KEY: "local-test-value" } },
     fetch: async (...args) => { providerCalls.push(args); throw new Error("Provider access forbidden in this suite"); },
     require: id => id in mocks ? mocks[id] : id in shared ? shared[id] : require(id),
@@ -63,6 +63,7 @@ function load(path, mocks = {}) {
 
 const shared = {};
 shared["@/app/lib/security/request-origin"] = load("app/lib/security/request-origin.ts");
+shared["@/app/lib/security/json-body"] = load("app/lib/security/json-body.ts");
 shared["@/app/lib/supabase/server"] = { createClient: async () => { clientCalls++; return client(); } };
 shared["@/app/lib/supabase/admin"] = { createAdminClient: () => { adminCalls++; return client(); } };
 shared["@/app/lib/email/growvelt-email-template"] = { renderGrowveltEmail: () => "mock-email" };
@@ -110,6 +111,15 @@ const routes = [
 const handlers = new Map(routes.map(([path]) => [path, load(path)]));
 const context = { params: Promise.resolve({ id: noticeId, workspaceId: "1" }) };
 const request = (method, headers = { Origin: hosts[0] }, body = {}) => new Request(hosts[0] + "/api/local-fixture", { method, headers: { "Content-Type": "application/json", ...headers }, body: JSON.stringify(body) });
+
+for (const path of ["app/api/inquiries/route.ts", "app/api/newsletter/subscribe/route.ts", "app/api/auth/verify-turnstile/route.ts"]) {
+  for (const [type, body, status] of [["text/plain", "{}", 415], ["application/json", "{broken", 400], ["application/json", JSON.stringify({ padding: "x".repeat(33000) }), 413]]) {
+    const before = [clientCalls, adminCalls, operations.length, providerCalls.length];
+    const invalid = new Request(hosts[0] + "/api/local-fixture", { method: "POST", headers: { Origin: hosts[0], "Content-Type": type }, body });
+    assert.equal((await handlers.get(path).POST(invalid)).status, status, `${path}: invalid/oversized JSON`);
+    assert.deepEqual([clientCalls, adminCalls, operations.length, providerCalls.length], before, "invalid body rejected before backend/provider access");
+  }
+}
 
 actor = { id: userId, email: "test@example.invalid", role: "admin" };
 for (const [path, methods] of routes) {
@@ -166,4 +176,4 @@ for (const [path, method] of [["app/api/learning/notifications/route.ts", "PATCH
   assert.equal((await handlers.get(path)[method](request(method), context)).status, 401, `${path}: signed-out requests are denied`);
 }
 assert.equal(providerCalls.length, 0, "no email, CAPTCHA, activity, or payment provider was called");
-console.log("PASS 14 mutation handlers: cross-origin and sibling-site denial before backend access; Email Center role guards; notification/preference ownership; assignment validation and permissions; same-origin public forms; signed-out denial. All clients mocked.");
+console.log("PASS 14 mutation handlers: origin denial before backend access; bounded public JSON; Email Center roles; notification/preference ownership; assignment permissions; same-origin forms; signed-out denial. All clients mocked.");

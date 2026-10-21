@@ -46,6 +46,7 @@ for (locale of ["en", "fr", "es"]) {
 const home = read("app/components/public/public-home.tsx");
 assert.ok(home.indexOf("<HomeMotionReel />") < home.indexOf('aria-labelledby="home-title"'));
 assert.equal((home.match(/<HomeMotionReel \/>/g) || []).length, 1);
+assert.match(home, /src="\/images\/learning-woman-with-laptop.jpg"[^>]*loading="lazy"/, "retained hero below the full-height motion opening must not be preloaded");
 const motion = read("app/components/public/home-motion-reel.module.css");
 assert.match(motion, /\.reel \{ width: 100%; margin: 0;/);
 assert.doesNotMatch(motion, /border-radius/);

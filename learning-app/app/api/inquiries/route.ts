@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/app/lib/supabase/server";
 import { isSameOriginRequest } from "@/app/lib/security/request-origin";
+import { JsonBodyError, readBoundedJson } from "@/app/lib/security/json-body";
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const inquiryKinds = new Set(["contact", "partnership"]);
@@ -13,11 +14,11 @@ export async function POST(request: Request) {
   if (!isSameOriginRequest(request)) return NextResponse.json({ message: "This request was not accepted." }, { status: 403 });
   let body: Record<string, unknown>;
   try {
-    const parsed: unknown = await request.json();
+    const parsed = await readBoundedJson(request, 32 * 1024);
     if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) throw new Error("Invalid payload");
     body = parsed as Record<string, unknown>;
-  } catch {
-    return NextResponse.json({ message: "Please complete the form and try again." }, { status: 400 });
+  } catch (error) {
+    return NextResponse.json({ message: "Please complete the form and try again." }, { status: error instanceof JsonBodyError ? error.status : 400 });
   }
 
   const kind = field(body.kind, 32);

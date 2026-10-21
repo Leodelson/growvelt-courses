@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/app/lib/supabase/server";
 import { isSameOriginRequest } from "@/app/lib/security/request-origin";
+import { JsonBodyError, readBoundedJson } from "@/app/lib/security/json-body";
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -8,9 +9,9 @@ export async function POST(request: Request) {
   if (!isSameOriginRequest(request)) return NextResponse.json({ message: "This request was not accepted." }, { status: 403 });
   let body: unknown;
   try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ message: "Please enter a valid email address." }, { status: 400 });
+    body = await readBoundedJson(request, 1024);
+  } catch (error) {
+    return NextResponse.json({ message: "Please enter a valid email address." }, { status: error instanceof JsonBodyError ? error.status : 400 });
   }
 
   const rawEmail = typeof body === "object" && body !== null && "email" in body ? (body as { email?: unknown }).email : undefined;

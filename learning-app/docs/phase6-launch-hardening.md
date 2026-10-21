@@ -100,6 +100,48 @@ The signed Paystack webhook and token-based unsubscribe confirmation were not
 converted into browser-origin-only endpoints. No hosted Auth/payment settings,
 database migrations, Careers files, or separately uncommitted PWA files changed.
 
+## Third hardening slice
+
+- Stream and cap public form JSON before parsing: newsletter 1 KiB (including
+  the Learning alias), CAPTCHA verification 8 KiB, contact/partnership inquiry
+  32 KiB. Check actual bytes, not just the declared length; reject unsupported
+  content types (415), oversize bodies (413), and malformed JSON/UTF-8 (400).
+  Cancel the reader on rejection and do not log request contents. Existing
+  JSON clients, CAPTCHA actions, database permissions, and success messages
+  stay unchanged. No paid service or hosted configuration is required.
+- Remove eager preloading from the retained homepage photo, which now appears
+  below the full-height motion opening. Keep responsive sizing and lazy image
+  optimization. The approved opening and its motion/data-saver behavior stay
+  unchanged.
+- Add `test:phase6:json` for exact limits, absent/forged content lengths,
+  streamed cancellation, and UTF-8 split across chunks. Extend actual-handler
+  fixtures to assert that invalid/oversize requests never reach a database or
+  provider. Production HTTP tests check rejection statuses for inquiries and
+  both newsletter URLs. CAPTCHA rejection is tested with a fake secret/provider
+  fixture, without contacting Cloudflare.
+- Build/TypeScript, focused lint, API/assistant fixtures, homepage/opening/motion,
+  domain transition, Auth session, and production HTTP header checks passed.
+
+`test:phase6:public` checks six locally served production pages for HTTP 200,
+one primary heading, main landmark, viewport, skip link, and image alt attributes.
+On this machine the second full HTML GETs were 11–58 ms; decoded HTML was
+34,780–68,437 bytes and estimated gzip HTML 7,383–14,659 bytes. These are local
+HTTP/HTML baselines, not production timings or browser LCP/INP/CLS. No browser
+script/image execution or complete accessibility audit is implied.
+
+An Edge FAQ page was opened for interactive review, but target geometry/input
+and screenshot capture were inconsistent during window switching. No interactive
+accessibility sign-off was recorded. Keyboard/contrast/mobile overflow and
+browser Web Vitals remain open. The current motion regression explicitly
+preserves the previously approved button-free loop; its pause-control
+accessibility requirement needs review rather than a claim of conformance.
+
+Important remaining abuse gap: body/origin limits are not distributed rate
+limiting. Public newsletter INSERT and inquiry RPC access still exist through
+Supabase's public roles; direct API traffic bypasses app-route limits. Review
+durable quotas and grants together before launch, rather than relying on an
+in-memory per-instance counter. No hosted grants or migrations were changed.
+
 ## Remaining Phase 6 work, in order
 
 1. Resolve or document the upstream development-tool advisory and continue the

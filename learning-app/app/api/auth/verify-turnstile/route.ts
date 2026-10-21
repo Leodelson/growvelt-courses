@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { isSameOriginRequest } from "@/app/lib/security/request-origin";
+import { JsonBodyError, readBoundedJson } from "@/app/lib/security/json-body";
 
 const actions = new Set(["sign_in", "sign_up", "password_recovery"]);
 
@@ -9,7 +10,7 @@ export async function POST(request: Request) {
   if (!secret) return NextResponse.json({ ok: false, message: "Security verification is not configured." }, { status: 503 });
 
   try {
-    const { token, action } = await request.json() as { token?: unknown; action?: unknown };
+    const { token, action } = await readBoundedJson(request, 8 * 1024) as { token?: unknown; action?: unknown };
     if (typeof token !== "string" || !token || typeof action !== "string" || !actions.has(action)) {
       return NextResponse.json({ ok: false, message: "Complete the security check and try again." }, { status: 400 });
     }
@@ -23,8 +24,8 @@ export async function POST(request: Request) {
     if (!result.success || result.action !== action || (hostname !== "localhost" && result.hostname !== hostname)) {
       return NextResponse.json({ ok: false, message: "Security verification could not be confirmed. Please try again." }, { status: 400 });
     }
-  } catch {
-    return NextResponse.json({ ok: false, message: "Security verification could not be confirmed. Please try again." }, { status: 400 });
+  } catch (error) {
+    return NextResponse.json({ ok: false, message: "Security verification could not be confirmed. Please try again." }, { status: error instanceof JsonBodyError ? error.status : 400 });
   }
 
   return NextResponse.json({ ok: true });
