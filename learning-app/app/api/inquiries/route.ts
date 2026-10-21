@@ -50,6 +50,7 @@ export async function POST(request: Request) {
   });
 
   if (error) {
+    if (error.code === "PT429") return NextResponse.json({ message: "We’ve received too many messages. Please try again later or use the support channels listed on this page." }, { status: 429, headers: { "Retry-After": "3600", "Cache-Control": "no-store" } });
     if (error.code === "22023") return NextResponse.json({ message: "Please review the form and try again." }, { status: 400 });
     return NextResponse.json({ message: "We couldn’t send your message right now. Please try again or use one of the direct support channels." }, { status: 500 });
   }

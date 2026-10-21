@@ -26,8 +26,11 @@ export async function POST(request: Request) {
     source_page: "growvelt-learning-footer",
   });
 
-  if (error?.code === "23505") return NextResponse.json({ message: "You are already subscribed." });
+  if (error?.code === "PT429") return NextResponse.json({ message: "We’ve received too many sign-up requests. Please try again later." }, { status: 429, headers: { "Retry-After": "3600", "Cache-Control": "no-store" } });
+  if (error?.code === "22023") return NextResponse.json({ message: "Please enter a valid email address." }, { status: 400 });
+  // Do not disclose whether an address is already subscribed.
+  if (error?.code === "23505") return NextResponse.json({ message: "Thanks. Your subscription request has been received." }, { status: 202 });
   if (error) return NextResponse.json({ message: "We couldn’t save your subscription. Please try again." }, { status: 500 });
 
-  return NextResponse.json({ message: "Thanks! You subscribed to Growvelt updates." }, { status: 201 });
+  return NextResponse.json({ message: "Thanks. Your subscription request has been received." }, { status: 202 });
 }

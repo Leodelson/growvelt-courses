@@ -15,6 +15,7 @@ const noticeId = "00000000-0000-4000-8000-000000000003";
 let actor = null;
 let clientCalls = 0;
 let adminCalls = 0;
+let intakeError = null;
 const operations = [];
 const providerCalls = [];
 
@@ -23,6 +24,7 @@ function client() {
     auth: { getUser: async () => ({ data: { user: actor }, error: null }) },
     async rpc(name, args) {
       operations.push({ rpc: name, args });
+      if (name === "submit_public_learning_inquiry") return { data: [], error: intakeError };
       if (name === "is_growvelt_learning_admin") return { data: actor?.role === "admin", error: null };
       if (name === "is_approved_growvelt_instructor") return { data: actor?.role === "instructor", error: null };
       if (name === "assign_learning_company_course" && actor?.role !== "companyAdmin") return { data: null, error: { code: "42501" } };
@@ -31,7 +33,7 @@ function client() {
     from(table) {
       const operation = { table, filters: [] };
       operations.push(operation);
-      const result = { data: [], error: null, count: 0 };
+      const result = { data: [], error: table === "newsletter_subscribers" ? intakeError : null, count: 0 };
       const query = {
         select() { return query; },
         update(value) { operation.update = value; return query; },
@@ -169,7 +171,22 @@ assert.equal((await assignments.POST(request("POST", undefined, { courseId: 1, a
 const contact = handlers.get("app/api/inquiries/route.ts");
 assert.equal((await contact.POST(request("POST", undefined, { kind: "contact", name: "Example", email: "test@example.invalid", subject: "Course help", message: "Please help me access my course materials." }))).status, 201);
 const newsletter = handlers.get("app/api/newsletter/subscribe/route.ts");
-assert.equal((await newsletter.POST(request("POST", undefined, { email: "test@example.invalid" }))).status, 201);
+const newsletterBody = { email: "test@example.invalid" };
+const accepted = await newsletter.POST(request("POST", undefined, newsletterBody));
+assert.equal(accepted.status, 202);
+const acceptedMessage = await accepted.json();
+intakeError = { code: "23505" };
+const duplicate = await newsletter.POST(request("POST", undefined, newsletterBody));
+assert.equal(duplicate.status, accepted.status, "newsletter duplicate does not disclose membership through status");
+assert.deepEqual(await duplicate.json(), acceptedMessage, "newsletter duplicate has the same generic response");
+intakeError = { code: "PT429" };
+for (const [route, body] of [[newsletter, newsletterBody], [contact, { kind: "contact", name: "Example", email: "test@example.invalid", subject: "Course help", message: "Please help me access my course materials." }]]) {
+  const limited = await route.POST(request("POST", undefined, body));
+  assert.equal(limited.status, 429);
+  assert.equal(limited.headers.get("retry-after"), "3600");
+  assert.equal(limited.headers.get("cache-control"), "no-store");
+}
+intakeError = null;
 
 actor = null;
 for (const [path, method] of [["app/api/learning/notifications/route.ts", "PATCH"], ["app/api/learning/support/route.ts", "POST"], ["app/api/learning/email/preferences/route.ts", "POST"], ["app/api/auth/login-activity/route.ts", "POST"], ["app/api/instructor/payout-profile/route.ts", "POST"]]) {

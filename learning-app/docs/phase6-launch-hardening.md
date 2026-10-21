@@ -142,6 +142,26 @@ Supabase's public roles; direct API traffic bypasses app-route limits. Review
 durable quotas and grants together before launch, rather than relying on an
 in-memory per-instance counter. No hosted grants or migrations were changed.
 
+## Fourth hardening slice — durable intake preparation
+
+Prepared `20261106000000_add_public_intake_quotas.sql`, with table-level guards
+for direct newsletter INSERTs and inquiries through the existing public RPC.
+Atomic fixed-window counters enforce proposed global/per-email accepted-volume
+budgets. Existing records, grants and consent remain intact. Compatible app
+handlers return friendly HTTP 429 responses and identical generic 202 responses
+for new/existing newsletter addresses.
+
+The isolated SQL tests passed migration/reapply/rollback, permissions, all quota
+slots, timestamp spoofing, normalization, atomic rejection, and cleanup. After
+the owner started Docker, the real local PostgreSQL test passed four concurrent
+global/email hour/day races with observed lock waits and atomic rejected-counter
+rollback. Its fresh disposable database was removed; the existing local database
+was unchanged. Build/TypeScript, focused lint, API fixtures, public pages/headers,
+and Auth/domain regressions also passed. Hosted quotas still require explicit
+limit/migration approval. Preparation is not live spam protection.
+See [activation and rollback](phase6-public-intake-activation.md) for proposed
+limits, privacy/retention details, residual public API risks, and exact steps.
+
 ## Remaining Phase 6 work, in order
 
 1. Resolve or document the upstream development-tool advisory and continue the
