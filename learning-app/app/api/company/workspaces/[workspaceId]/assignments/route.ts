@@ -1,14 +1,16 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/app/lib/supabase/server";
+import { isSameOriginRequest } from "@/app/lib/security/request-origin";
 
 export async function POST(request: Request, { params }: { params: Promise<{ workspaceId: string }> }) {
+  if (!isSameOriginRequest(request)) return NextResponse.json({ code: "invalid_origin" }, { status: 403 });
   const { workspaceId } = await params;
   const workspaceKey = Number(workspaceId);
-  if (!Number.isSafeInteger(workspaceKey)) return NextResponse.json({ code: "invalid_workspace" }, { status: 400 });
+  if (!Number.isSafeInteger(workspaceKey) || workspaceKey < 1) return NextResponse.json({ code: "invalid_workspace" }, { status: 400 });
   const body = await request.json().catch(() => null) as { courseId?: unknown; assignedUserId?: unknown } | null;
   const courseId = Number(body?.courseId);
   const assignedUserId = typeof body?.assignedUserId === "string" ? body.assignedUserId : "";
-  if (!Number.isSafeInteger(courseId) || !assignedUserId) return NextResponse.json({ code: "invalid_assignment" }, { status: 400 });
+  if (!Number.isSafeInteger(courseId) || courseId < 1 || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(assignedUserId)) return NextResponse.json({ code: "invalid_assignment" }, { status: 400 });
   const supabase = await createClient();
   const { data: user } = await supabase.auth.getUser();
   if (!user.user) return NextResponse.json({ code: "not_authenticated" }, { status: 401 });

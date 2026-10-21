@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/app/lib/supabase/server";
+import { isSameOriginRequest } from "@/app/lib/security/request-origin";
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const inquiryKinds = new Set(["contact", "partnership"]);
@@ -9,6 +10,7 @@ function field(value: unknown, maxLength: number) {
 }
 
 export async function POST(request: Request) {
+  if (!isSameOriginRequest(request)) return NextResponse.json({ message: "This request was not accepted." }, { status: 403 });
   let body: Record<string, unknown>;
   try {
     const parsed: unknown = await request.json();

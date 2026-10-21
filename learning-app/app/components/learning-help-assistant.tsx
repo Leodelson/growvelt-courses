@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useId, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "@/app/components/learning-link";
 import { careersAbsoluteUrl } from "@/app/lib/site-urls.mjs";
@@ -128,6 +128,9 @@ function initialWelcomeDismissed() {
 }
 
 export function LearningHelpAssistant() {
+  const assistantId = useId();
+  const panelRef = useRef<HTMLElement>(null);
+  const launcherRef = useRef<HTMLButtonElement>(null);
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<AssistantTab>("guide");
   const [topic, setTopic] = useState<HelpTopic | null>(null);
@@ -140,14 +143,27 @@ export function LearningHelpAssistant() {
   useEffect(() => {
     const timer = window.setTimeout(() => setWelcomeReady(true), 900);
     const listener = () => { setOpen(true); setTab("guide"); setTopic(null); };
-    const closeOnEscape = (event: KeyboardEvent) => { if (event.key === "Escape") setOpen(false); };
     window.addEventListener("growvelt:open-help-assistant", listener);
-    document.addEventListener("keydown", closeOnEscape);
-    return () => { window.clearTimeout(timer); window.removeEventListener("growvelt:open-help-assistant", listener); document.removeEventListener("keydown", closeOnEscape); };
+    return () => { window.clearTimeout(timer); window.removeEventListener("growvelt:open-help-assistant", listener); };
   }, []);
 
   useEffect(() => {
-    if (tab !== "messages") return;
+    if (!open) return;
+    const panel = panelRef.current;
+    const launcher = launcherRef.current;
+    const previousFocus = document.activeElement;
+    panel?.focus();
+    return () => {
+      // This is non-modal: do not pull focus back if the user moved outside it.
+      if (panel?.contains(document.activeElement) || document.activeElement === document.body) {
+        const target = previousFocus instanceof HTMLElement && previousFocus.isConnected ? previousFocus : launcher;
+        target?.focus();
+      }
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (!open || tab !== "messages") return;
     const controller = new AbortController();
     fetch("/api/learning/support", { credentials: "same-origin", cache: "no-store", signal: controller.signal })
       .then(async (response) => {
@@ -164,7 +180,7 @@ export function LearningHelpAssistant() {
       })
       .catch(() => { if (!controller.signal.aborted) setMessageState("error"); });
     return () => controller.abort();
-  }, [tab]);
+  }, [open, tab]);
 
   const filteredTopics = useMemo(() => {
     const normalized = query.trim().toLowerCase();
@@ -185,6 +201,7 @@ export function LearningHelpAssistant() {
   }
 
   function selectTab(nextTab: AssistantTab) {
+    if (nextTab === tab) return;
     if (nextTab === "messages") setMessageState("loading");
     setTab(nextTab);
     if (nextTab !== "guide") setTopic(null);
@@ -196,13 +213,15 @@ export function LearningHelpAssistant() {
   const updatesHref = careersAbsoluteUrl("/updates");
 
   return <div className={styles.assistant}>
-    {open && <section className={styles.panel} role="dialog" aria-modal="false" aria-label="Growvelt Learning assistant">
+    {open && <section ref={panelRef} id={assistantId} tabIndex={-1} className={styles.panel} role="dialog" aria-modal="false" aria-label="Growvelt Learning assistant" onKeyDown={(event) => {
+      if (event.key === "Escape" && !event.defaultPrevented) { event.stopPropagation(); setOpen(false); }
+    }}>
       <header className={styles.panelHeader}>
         <div className={styles.headerIdentity}><AssistantAvatars compact /><div><h2>Growvelt Assistant</h2><p>{tabSubtitle(tab, topic)}</p></div></div>
         <button className={styles.closeButton} type="button" aria-label="Close assistant" onClick={() => setOpen(false)}><X size={19} /></button>
       </header>
 
-      <div className={styles.panelBody} key={`${tab}-${topic?.id ?? "index"}`}>
+      <div className={styles.panelBody} key={`${tab}-${topic?.id ?? "index"}`} id={`${assistantId}-content`} role="tabpanel" aria-labelledby={`${assistantId}-${tab}`} tabIndex={0}>
         {tab === "guide" && (topic ? <div className={styles.guideDetail}>
           <button className={styles.backButton} type="button" onClick={() => setTopic(null)}><ArrowLeft size={16} /> Back to topics</button>
           <section className={styles.topicOverview}><span className={styles.topicIcon}><topic.icon size={22} /></span><div><h3>{topic.title}</h3><p>{topic.overview}</p></div></section>
@@ -241,10 +260,20 @@ export function LearningHelpAssistant() {
         </div>}
       </div>
 
-      <nav className={styles.tabs} role="tablist" aria-label="Assistant sections">
-        <button type="button" role="tab" aria-selected={tab === "guide"} onClick={() => selectTab("guide")}><BookOpen size={22} /><span>Guide</span></button>
-        <button type="button" role="tab" aria-selected={tab === "messages"} onClick={() => selectTab("messages")}><MessageCircle size={22} /><span>Messages</span></button>
-        <button type="button" role="tab" aria-selected={tab === "updates"} onClick={() => selectTab("updates")}><BellRing size={22} /><span>Updates</span></button>
+      <nav className={styles.tabs} role="tablist" aria-label="Assistant sections" onKeyDown={(event) => {
+        const keys = ["ArrowLeft", "ArrowRight", "Home", "End"];
+        if (!keys.includes(event.key)) return;
+        const tabs = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="tab"]'));
+        const index = tabs.findIndex((item) => item === event.target);
+        if (index < 0) return;
+        event.preventDefault();
+        const next = event.key === "Home" ? 0 : event.key === "End" ? tabs.length - 1 : (index + (event.key === "ArrowRight" ? 1 : -1) + tabs.length) % tabs.length;
+        tabs[next]?.focus();
+        tabs[next]?.click();
+      }}>
+        <button id={`${assistantId}-guide`} type="button" role="tab" aria-controls={`${assistantId}-content`} tabIndex={tab === "guide" ? 0 : -1} aria-selected={tab === "guide"} onClick={() => selectTab("guide")}><BookOpen size={22} /><span>Guide</span></button>
+        <button id={`${assistantId}-messages`} type="button" role="tab" aria-controls={`${assistantId}-content`} tabIndex={tab === "messages" ? 0 : -1} aria-selected={tab === "messages"} onClick={() => selectTab("messages")}><MessageCircle size={22} /><span>Messages</span></button>
+        <button id={`${assistantId}-updates`} type="button" role="tab" aria-controls={`${assistantId}-content`} tabIndex={tab === "updates" ? 0 : -1} aria-selected={tab === "updates"} onClick={() => selectTab("updates")}><BellRing size={22} /><span>Updates</span></button>
       </nav>
     </section>}
 
@@ -254,7 +283,10 @@ export function LearningHelpAssistant() {
       <div><strong>Hello there!</strong><span>Need some help?</span><button type="button" onClick={openFromWelcome}>Let&rsquo;s chat now</button></div>
     </aside>}
 
-    <button className={styles.launcher} type="button" aria-expanded={open} aria-label={open ? "Close Growvelt Learning assistant" : "Open Growvelt Learning assistant"} onClick={() => setOpen((value) => !value)}>
+    <button ref={launcherRef} className={styles.launcher} type="button" aria-controls={open ? assistantId : undefined} aria-expanded={open} aria-label={open ? "Close Growvelt Learning assistant" : "Open Growvelt Learning assistant"} onClick={() => {
+      if (!open && tab === "messages") setMessageState("loading");
+      setOpen((value) => !value);
+    }}>
       <span className={styles.launcherIcon}>{open ? <X size={20} /> : <MessageCircle size={20} />}</span><span>Help</span><span className={styles.launcherArrow} aria-hidden="true">{open ? "↑" : "→"}</span>
     </button>
   </div>;

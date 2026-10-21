@@ -31,4 +31,13 @@ for (const path of ["/auth/callback", "/auth/learning/callback"]) {
 }
 const unsubscribe = await check("/api/learning/email/unsubscribe?token=invalid", 400, "no-referrer");
 assert.match(unsubscribe.headers.get("cache-control"), /no-store/);
-console.log("PASS local production HTTP headers on public pages/assets, recovery, both callback routes, and unsubscribe; FAQ content and callback cache protections remain intact");
+// These requests must be denied before any Auth/database/provider work. Never
+// exercise a successful mutation against a configured server in this suite.
+for (const path of ["/api/inquiries", "/api/newsletter/subscribe", "/api/learning/newsletter/subscribe", "/api/auth/verify-turnstile", "/api/company/workspaces/1/assignments"]) {
+  const response = await fetch(new URL(path, base), {
+    method: "POST", headers: { Origin: "https://jobs.growvelt.com", "Content-Type": "application/json" },
+    body: "{}", redirect: "manual", signal: AbortSignal.timeout(15000),
+  });
+  assert.equal(response.status, 403, `${path}: reject sibling-origin POST`);
+}
+console.log("PASS local production HTTP headers, FAQ content, both callback/cache protections, and sibling-origin rejection on five mutation URLs including the Learning newsletter alias");

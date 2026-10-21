@@ -12,6 +12,8 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test:phase6:headers": "node scripts/test-phase6-response-headers.mjs",
+    "test:phase6:api": "node scripts/test-phase6-api-boundaries.mjs",
+    "test:phase6:assistant": "node scripts/test-phase6-assistant-interactions.mjs",
     "prepare:security:local": "node scripts/prepare-phase0c-local.mjs",
     "test:security:local": "node scripts/run-phase0c-local-security-tests.mjs",
     "test:security:staging": "node scripts/run-phase0c-security-tests.mjs",

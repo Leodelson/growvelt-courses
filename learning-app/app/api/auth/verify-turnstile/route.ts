@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
+import { isSameOriginRequest } from "@/app/lib/security/request-origin";
 
 const actions = new Set(["sign_in", "sign_up", "password_recovery"]);
 
 export async function POST(request: Request) {
+  if (!isSameOriginRequest(request)) return NextResponse.json({ ok: false, message: "This request was not accepted." }, { status: 403 });
   const secret = process.env.TURNSTILE_SECRET_KEY;
   if (!secret) return NextResponse.json({ ok: false, message: "Security verification is not configured." }, { status: 503 });
 

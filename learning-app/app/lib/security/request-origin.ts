@@ -4,5 +4,7 @@ export function isSameOriginRequest(request: Request) {
   if (origin) return origin === expectedOrigin;
 
   const fetchSite = request.headers.get("sec-fetch-site");
-  return !fetchSite || fetchSite === "same-origin" || fetchSite === "same-site";
+  // Sibling subdomains are separate products, not trusted request origins.
+  // Header-less non-browser clients still rely on each route's authentication.
+  return !fetchSite || fetchSite === "same-origin";
 }

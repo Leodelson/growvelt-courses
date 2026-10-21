@@ -60,11 +60,51 @@ next security pass. Do not describe the full dependency audit as clean.
 These checks do not send emails, sign in to a hosted user account, charge a
 card, apply a hosted migration, or certify the production payment settings.
 
+## Second hardening slice
+
+- Stop treating `Sec-Fetch-Site: same-site` as an acceptable substitute for
+  same-origin requests. Careers and Learning remain separate trust boundaries.
+  Explicit origins must match the request origin, including on each retained
+  Learning hostname. Header-less non-browser clients remain compatible and
+  still require each protected route's authentication and permissions.
+- Add the missing mutation-origin checks to company course assignments,
+  public inquiries, newsletter subscription (including its Learning alias),
+  and CAPTCHA verification. Validate positive workspace/course IDs and UUID
+  assignees before assignment database access. Existing RPC permissions remain
+  authoritative; origin validation does not grant access.
+- Fix Help Assistant Messages getting stuck on Loading after clicking its
+  already-selected tab. Fetch previews only while Messages is open, cancel
+  on close, and refresh when reopened. Add initial/return focus, locally scoped
+  Escape handling, linked tab/panel semantics, and Arrow/Home/End tab controls.
+  The assistant remains non-modal and does not trap focus.
+
+Verification for this slice:
+
+- `npm run test:phase6:api`: execute 14 actual mutation handlers with mocked
+  clients. Reject sibling/foreign requests before backend/provider access;
+  check Email Center role denial, notification/preference ownership,
+  assignment validation/permission denial, public form success, and signed-out
+  denial. All three Learning origins have helper-level compatibility checks.
+- `npm run test:phase6:assistant`: actual component with isolated hook/event
+  fixtures for focus, Escape, tab keys/labels, repeated Messages clicks,
+  reopening, and closed-panel fetch suppression. These are not browser or
+  assistive-technology certification tests.
+- Production build/TypeScript and focused ESLint passed. Domain compatibility,
+  Auth session propagation, Paystack signature/amount/ownership, Help Assistant
+  structure, and isolated PGlite communications/RLS suites passed again.
+- Local production HTTP header/content/callback checks passed again, plus
+  rejected sibling-origin POSTs to all four newly guarded routes and the
+  newsletter alias. No successful hosted mutation or provider call was made.
+
+The signed Paystack webhook and token-based unsubscribe confirmation were not
+converted into browser-origin-only endpoints. No hosted Auth/payment settings,
+database migrations, Careers files, or separately uncommitted PWA files changed.
+
 ## Remaining Phase 6 work, in order
 
 1. Resolve or document the upstream development-tool advisory and continue the
-   role/API authorization, mutation-origin, input-abuse, and secret-boundary
-   review, using isolated local fixtures.
+   broader role/API authorization, input-abuse/rate-limit, and secret-boundary
+   review beyond the tested handlers, using isolated local fixtures.
 2. Perform keyboard, focus, contrast, mobile viewport, and page-performance
    checks on the current public and signed-in experiences. Record real results
    rather than treating the completed visual sign-off as an accessibility audit.
