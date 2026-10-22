@@ -4,6 +4,12 @@ export class JsonBodyError extends Error {
   }
 }
 
+export async function readBoundedJsonObject(request: Request, maxBytes: number): Promise<Record<string, unknown>> {
+  const parsed = await readBoundedJson(request, maxBytes);
+  if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) throw new JsonBodyError(400);
+  return parsed as Record<string, unknown>;
+}
+
 // Bound actual streamed bytes as well as Content-Length: a missing or forged
 // header must not turn a small public form into an unbounded JSON allocation.
 export async function readBoundedJson(request: Request, maxBytes: number): Promise<unknown> {

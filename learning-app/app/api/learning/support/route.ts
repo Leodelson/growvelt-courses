@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/app/lib/supabase/server";
 import { isSameOriginRequest } from "@/app/lib/security/request-origin";
+import { JsonBodyError, readBoundedJsonObject } from "@/app/lib/security/json-body";
 
 const topics = new Set(["courses", "billing", "teaching", "organizations", "account", "other"]);
 
@@ -30,7 +31,9 @@ export async function POST(request: Request) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Sign in to contact Learning support." }, { status: 401 });
-  const input = await request.json().catch(() => null) as { topic?: unknown; subject?: unknown; message?: unknown } | null;
+  let input: Record<string, unknown>;
+  try { input = await readBoundedJsonObject(request, 32 * 1024); }
+  catch (error) { return NextResponse.json({ error: "Check the topic, subject, and message." }, { status: error instanceof JsonBodyError ? error.status : 400, headers: { "Cache-Control": "private, no-store" } }); }
   const topic = typeof input?.topic === "string" ? input.topic : "";
   const subject = typeof input?.subject === "string" ? input.subject.trim() : "";
   const message = typeof input?.message === "string" ? input.message.trim() : "";

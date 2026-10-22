@@ -7,7 +7,7 @@ const source = readFileSync(new URL("../app/lib/security/json-body.ts", import.m
 const compiled = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
 const moduleValue = { exports: {} };
 vm.runInNewContext(compiled, { module: moduleValue, exports: moduleValue.exports, TextDecoder });
-const { JsonBodyError, readBoundedJson } = moduleValue.exports;
+const { JsonBodyError, readBoundedJson, readBoundedJsonObject } = moduleValue.exports;
 const encode = text => new TextEncoder().encode(text);
 const request = (body, headers = {}) => new Request("http://127.0.0.1/api/local-fixture", { method: "POST", headers: { "Content-Type": "application/json", ...headers }, body });
 const rejects = (promise, status) => assert.rejects(promise, error => error instanceof JsonBodyError && error.status === status);
@@ -39,4 +39,6 @@ assert.equal(stream.locked, false, "reader lock is released after rejection");
 let reads = 0;
 await rejects(readBoundedJson({ headers: new Headers({ "Content-Type": "application/json", "Content-Length": "1025" }), body: { getReader() { reads++; throw new Error("must not read"); } } }, 1024), 413);
 assert.equal(reads, 0, "declared oversize is rejected before reading any bytes");
+for (const value of ["null", "[]", '"text"', "true", "123"]) await rejects(readBoundedJsonObject(request(value), 100), 400);
+assert.equal((await readBoundedJsonObject(request('{"marketingOptIn":false}'), 100)).marketingOptIn, false);
 console.log("PASS bounded JSON: content type, exact limit, missing/forged length, streamed cancellation, invalid JSON/UTF-8, and fragmented multibyte characters. No backend or network access.");

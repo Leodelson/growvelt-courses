@@ -210,6 +210,35 @@ coverage, the approved motion loop's pause-control question, and real browser
 LCP/INP/CLS remain open. No hosted settings, database or payment mutation was
 performed for this slice; unrelated local PWA/email-template work was excluded.
 
+## Sixth hardening slice — communications boundaries and failure review
+
+Bound authenticated support open/reply and admin Email Center JSON to 32 KiB,
+and notification/preference JSON to 1 KiB. Preserve origin, verified session,
+admin role and RPC/RLS checks; reject malformed/non-object JSON before mutation
+or privileged client creation. Actual-byte limits include forged length headers
+and maximum-length Unicode-escaped valid support fields. Parsing failures use
+private/no-store responses. No database or hosted configuration change.
+
+Extended the actual-handler fixtures for these limits, support sender/owner
+spoofing, permission/throttle/unavailable responses and invalid thread IDs.
+Added real-module login-alert scheduling/provider failure fixtures: deferred
+delivery, stable idempotency, timeout/rejection/scheduling failures, missing
+configuration/recipient and private-data-safe logs, without network calls.
+
+Production build/TypeScript, focused ESLint, JSON/API/recovery fixtures, PGlite
+communications ownership/RLS, login-email structure, Auth/domain/Paystack
+regressions and the navigation fixture passed. Local production HTTP checks
+passed ten sibling-origin mutation denials plus the existing header/callback
+and public body-rejection checks. No successful configured-server mutation,
+real email, hosted migration or payment was performed.
+
+The [communications recovery checkpoint](phase6-communications-recovery.md)
+records safe incident/rollback steps and gaps found during inspection: login
+alerts have no durable retry queue; broadcast delivery claims and unchecked
+persistence results still require reconciliation/retry hardening; support
+database quota concurrency is not covered by public intake quotas. Do not
+describe these pipelines as fully hardened or enable automated retries.
+
 ## Remaining Phase 6 work, in order
 
 1. Resolve or document the upstream development-tool advisory and continue the

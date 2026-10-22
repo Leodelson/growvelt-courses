@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/app/lib/supabase/server";
 import { isSameOriginRequest } from "@/app/lib/security/request-origin";
+import { JsonBodyError, readBoundedJsonObject } from "@/app/lib/security/json-body";
 
 const validId = (id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
 type Context = { params: Promise<{ id: string }> };
@@ -25,7 +26,9 @@ export async function POST(request: Request, { params }: Context) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return new NextResponse(null, { status: 401 });
-  const input = await request.json().catch(() => null) as { message?: unknown } | null;
+  let input: Record<string, unknown>;
+  try { input = await readBoundedJsonObject(request, 32 * 1024); }
+  catch (error) { return NextResponse.json({ error: "Write a message of up to 5,000 characters." }, { status: error instanceof JsonBodyError ? error.status : 400, headers: { "Cache-Control": "private, no-store" } }); }
   const message = typeof input?.message === "string" ? input.message.trim() : "";
   if (!message || message.length > 5000) return NextResponse.json({ error: "Write a message of up to 5,000 characters." }, { status: 400 });
   const { error } = await supabase.rpc("post_learning_support_message", { p_conversation_id: id, p_message: message });

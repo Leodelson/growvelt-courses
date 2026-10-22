@@ -16,6 +16,7 @@ let actor = null;
 let clientCalls = 0;
 let adminCalls = 0;
 let intakeError = null;
+let supportError = null;
 const operations = [];
 const providerCalls = [];
 
@@ -27,6 +28,7 @@ function client() {
       if (name === "submit_public_learning_inquiry") return { data: [], error: intakeError };
       if (name === "is_growvelt_learning_admin") return { data: actor?.role === "admin", error: null };
       if (name === "is_approved_growvelt_instructor") return { data: actor?.role === "instructor", error: null };
+      if (["create_learning_support_case", "post_learning_support_message", "resolve_learning_support_case"].includes(name)) return { data: noticeId, error: supportError };
       if (name === "assign_learning_company_course" && actor?.role !== "companyAdmin") return { data: null, error: { code: "42501" } };
       return { data: [], error: null };
     },
@@ -124,6 +126,29 @@ for (const path of ["app/api/inquiries/route.ts", "app/api/newsletter/subscribe/
 }
 
 actor = { id: userId, email: "test@example.invalid", role: "admin" };
+const boundedRoutes = [
+  ["app/api/learning/admin/emails/route.ts", "POST", 32768],
+  ["app/api/learning/support/route.ts", "POST", 32768],
+  ["app/api/learning/support/[id]/route.ts", "POST", 32768],
+  ["app/api/learning/notifications/route.ts", "PATCH", 1024],
+  ["app/api/learning/email/preferences/route.ts", "POST", 1024],
+];
+for (const [path, method, limit] of boundedRoutes) {
+  for (const [type, body, status] of [
+    ["text/plain", "{}", 415], ["application/json", "{broken", 400],
+    ...["null", "[]", '"text"', "true", "12"].map(value => ["application/json", value, 400]),
+    ["application/json", JSON.stringify({padding: "x".repeat(limit)}), 413],
+  ]) {
+    const beforeAdmin = adminCalls, beforeOps = operations.length, beforeProvider = providerCalls.length;
+    const invalid = new Request(hosts[0] + "/api/local-fixture", { method, headers: { Origin: hosts[0], "Content-Type": type, "Content-Length": "1" }, body });
+    const rejected = await handlers.get(path)[method](invalid, context);
+    assert.equal(rejected.status, status, `${path}: invalid or oversized body`);
+    assert.match(rejected.headers.get("cache-control"), /no-store/);
+    assert.equal(adminCalls, beforeAdmin, "invalid body never creates the privileged client");
+    assert.equal(providerCalls.length, beforeProvider);
+    assert.ok(operations.slice(beforeOps).every(op => op.rpc === "is_growvelt_learning_admin"), "authentication/role checks may run, but no mutation or content query");
+  }
+}
 for (const [path, methods] of routes) {
   for (const method of methods) {
     for (const headers of [{ Origin: "https://jobs.growvelt.com" }, { Origin: "https://evil.invalid" }, { "Sec-Fetch-Site": "same-site" }]) {
@@ -139,7 +164,9 @@ for (const user of [null, { id: userId, role: "learner" }, { id: userId, role: "
   actor = user;
   const before = adminCalls;
   assert.equal((await email.GET()).status, 403);
-  assert.equal((await email.POST(request("POST", undefined, { action: "create" }))).status, 403);
+  const forbidden = request("POST", undefined, { action: "create" });
+  Object.defineProperty(forbidden, "body", { get() { throw new Error("must not parse a forbidden request"); } });
+  assert.equal((await email.POST(forbidden)).status, 403);
   assert.equal(adminCalls, before, "Email Center denies other roles before using the service role");
 }
 
@@ -157,6 +184,37 @@ const preferences = handlers.get("app/api/learning/email/preferences/route.ts");
 before = operations.length;
 assert.equal((await preferences.POST(request("POST", undefined, { marketingOptIn: false, userId: otherId }))).status, 200);
 assert.equal(operations[before].upsert.user_id, userId, "email preferences cannot target another user");
+
+// Exact 1 KiB JSON is supported; one additional byte is rejected, even when
+// the payload includes a valid notification ID or preference value.
+for (const [route, method, payload] of [[notices, "PATCH", {id: noticeId}], [preferences, "POST", {marketingOptIn: false}]]) {
+  const base = JSON.stringify({...payload, padding: ""});
+  const exact = JSON.stringify({...payload, padding: "x".repeat(1024 - base.length)});
+  assert.equal((await route[method](new Request(hosts[0] + "/api/local-fixture", {method, headers:{Origin:hosts[0], "Content-Type":"application/json"}, body:exact}))).status, method === "PATCH" ? 204 : 200);
+  assert.equal((await route[method](new Request(hosts[0] + "/api/local-fixture", {method, headers:{Origin:hosts[0], "Content-Type":"application/json"}, body:exact + " "}))).status, 413);
+}
+const support = handlers.get("app/api/learning/support/route.ts");
+const thread = handlers.get("app/api/learning/support/[id]/route.ts");
+// Maximum fields with JSON escaping remain within the byte envelope.
+const maxMessage = '"'.repeat(5000);
+assert.equal((await support.POST(request("POST", undefined, {topic:"courses",subject:'"'.repeat(160),message:maxMessage,userId:otherId}))).status, 201);
+const escapedSupport = '{"topic":"courses","subject":"' + '\\u0061'.repeat(160) + '","message":"' + '\\u0061'.repeat(5000) + '"}';
+assert.equal((await support.POST(new Request(hosts[0] + "/api/local-fixture", {method:"POST",headers:{Origin:hosts[0],"Content-Type":"application/json"},body:escapedSupport}))).status,201,"full Unicode-escaped maximum-length support fields remain compatible");
+before = operations.length;
+assert.equal((await thread.POST(request("POST", undefined, {message:maxMessage,userId:otherId,sender_role:"support"}), context)).status, 204);
+assert.deepEqual(Object.keys(operations[before].args).sort(), ["p_conversation_id", "p_message"], "caller cannot supply the sender or target user");
+assert.equal(operations[before].args.p_conversation_id, noticeId);
+for (const [code, status] of [["42501",403],["22023",429],["XX000",503]]) {
+  supportError = {code};
+  assert.equal((await thread.POST(request("POST", undefined, {message:"Please check my course."}),context)).status,status);
+  assert.equal((await thread.PATCH(request("PATCH"),context)).status,code === "42501" ? 403 : 503);
+}
+supportError = null;
+const beforeInvalidThread = operations.length;
+assert.equal((await thread.POST(request("POST",undefined,{message:"test"}),{params:Promise.resolve({id:"invalid"})})).status,404);
+assert.equal(operations.length,beforeInvalidThread);
+actor = {id:userId,role:"admin"};
+assert.equal((await email.POST(request("POST",undefined,{action:"create",audience:"learners",subject:'"'.repeat(160),headline:'"'.repeat(160),body:'"'.repeat(4000)}))).status,201);
 
 const assignments = handlers.get("app/api/company/workspaces/[workspaceId]/assignments/route.ts");
 for (const body of [{ courseId: 0, assignedUserId: userId }, { courseId: 1, assignedUserId: "invalid" }]) {
@@ -190,7 +248,9 @@ intakeError = null;
 
 actor = null;
 for (const [path, method] of [["app/api/learning/notifications/route.ts", "PATCH"], ["app/api/learning/support/route.ts", "POST"], ["app/api/learning/email/preferences/route.ts", "POST"], ["app/api/auth/login-activity/route.ts", "POST"], ["app/api/instructor/payout-profile/route.ts", "POST"]]) {
-  assert.equal((await handlers.get(path)[method](request(method), context)).status, 401, `${path}: signed-out requests are denied`);
+  const signedOut = request(method);
+  Object.defineProperty(signedOut, "body", { get() { throw new Error("must not parse before authentication"); } });
+  assert.equal((await handlers.get(path)[method](signedOut, context)).status, 401, `${path}: signed-out requests are denied before parsing`);
 }
 assert.equal(providerCalls.length, 0, "no email, CAPTCHA, activity, or payment provider was called");
-console.log("PASS 14 mutation handlers: origin denial before backend access; bounded public JSON; Email Center roles; notification/preference ownership; assignment permissions; same-origin forms; signed-out denial. All clients mocked.");
+console.log("PASS 14 mutation handlers: origin denial; bounded public and authenticated JSON (including exact limits and maximum escaped valid fields); Email Center roles; notification/preference ownership; support identity/permission/error boundaries; assignment permissions; signed-out denial. All clients mocked.");

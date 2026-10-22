@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/app/lib/supabase/server";
 import { isSameOriginRequest } from "@/app/lib/security/request-origin";
+import { JsonBodyError, readBoundedJsonObject } from "@/app/lib/security/json-body";
 import { LOGIN_NOTIFICATION_KIND, LOGIN_NOTIFICATION_RETENTION_MS } from "@/app/lib/learning/notification-retention";
 
 export async function GET() {
@@ -22,7 +23,9 @@ export async function PATCH(request: Request) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return new NextResponse(null, { status: 401 });
-  const body = await request.json().catch(() => null) as { id?: unknown } | null;
+  let body: Record<string, unknown>;
+  try { body = await readBoundedJsonObject(request, 1024); }
+  catch (error) { return new NextResponse(null, { status: error instanceof JsonBodyError ? error.status : 400, headers: { "Cache-Control": "private, no-store" } }); }
   if (typeof body?.id !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(body.id)) return new NextResponse(null, { status: 400 });
   const { error } = await supabase.from("learning_notifications").update({ read_at: new Date().toISOString() }).eq("id", body.id).eq("user_id", user.id);
   if (error) return new NextResponse(null, { status: 503 });

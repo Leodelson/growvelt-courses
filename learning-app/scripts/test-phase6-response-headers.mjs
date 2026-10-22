@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 
 // Run against a local production server: next start --hostname 127.0.0.1 --port 4316.
-// This suite uses unauthenticated GETs only, without credentials or database writes.
+// Uses unauthenticated GETs and rejected POST/PATCHs, without credentials or writes.
 // Next's standalone local server normalizes Route Handler URLs to localhost;
 // use that same origin when testing browser-style POSTs.
 const base = new URL(process.env.PHASE6_LOCAL_BASE_URL ?? "http://localhost:4316");
@@ -35,12 +35,16 @@ const unsubscribe = await check("/api/learning/email/unsubscribe?token=invalid",
 assert.match(unsubscribe.headers.get("cache-control"), /no-store/);
 // These requests must be denied before any Auth/database/provider work. Never
 // exercise a successful mutation against a configured server in this suite.
-for (const path of ["/api/inquiries", "/api/newsletter/subscribe", "/api/learning/newsletter/subscribe", "/api/auth/verify-turnstile", "/api/company/workspaces/1/assignments"]) {
+const originDenials = [
+  ...["/api/inquiries", "/api/newsletter/subscribe", "/api/learning/newsletter/subscribe", "/api/auth/verify-turnstile", "/api/company/workspaces/1/assignments", "/api/learning/support", "/api/learning/support/00000000-0000-4000-8000-000000000001", "/api/learning/admin/emails", "/api/learning/email/preferences"].map(path => [path, "POST"]),
+  ["/api/learning/notifications", "PATCH"],
+];
+for (const [path, method] of originDenials) {
   const response = await fetch(new URL(path, base), {
-    method: "POST", headers: { Origin: "https://jobs.growvelt.com", "Content-Type": "application/json" },
+    method, headers: { Origin: "https://jobs.growvelt.com", "Content-Type": "application/json" },
     body: "{}", redirect: "manual", signal: AbortSignal.timeout(15000),
   });
-  assert.equal(response.status, 403, `${path}: reject sibling-origin POST`);
+  assert.equal(response.status, 403, `${path}: reject sibling-origin ${method}`);
 }
 for (const path of ["/api/inquiries", "/api/newsletter/subscribe", "/api/learning/newsletter/subscribe"]) {
   for (const [type, body, status] of [["text/plain", "{}", 415], ["application/json", "{broken", 400], ["application/json", JSON.stringify({ padding: "x".repeat(33000) }), 413]]) {
@@ -51,4 +55,4 @@ for (const path of ["/api/inquiries", "/api/newsletter/subscribe", "/api/learnin
     assert.equal(response.status, status, `${path}: bounded JSON rejection`);
   }
 }
-console.log("PASS local production HTTP headers, FAQ/callback/cache protections, five sibling-origin denials, and public JSON rejection statuses including the Learning newsletter alias");
+console.log("PASS local production HTTP headers, FAQ/callback/cache protections, ten sibling-origin denials, and public JSON rejection statuses including the Learning newsletter alias");

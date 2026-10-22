@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/app/lib/supabase/server";
 import { createAdminClient } from "@/app/lib/supabase/admin";
 import { isSameOriginRequest } from "@/app/lib/security/request-origin";
+import { JsonBodyError, readBoundedJsonObject } from "@/app/lib/security/json-body";
 import { renderGrowveltEmail } from "@/app/lib/email/growvelt-email-template";
 import { learningAbsoluteUrl } from "@/app/lib/site-urls.mjs";
 
@@ -36,8 +37,9 @@ export async function POST(request: Request) {
   if (!isSameOriginRequest(request)) return new NextResponse(null, { status: 403 });
   const actor = await adminSession();
   if (!actor) return NextResponse.json({ error: "Not authorized." }, { status: 403 });
-  const input = await request.json().catch(() => null) as Record<string, unknown> | null;
-  if (!input) return NextResponse.json({ error: "Invalid request." }, { status: 400 });
+  let input: Record<string, unknown>;
+  try { input = await readBoundedJsonObject(request, 32 * 1024); }
+  catch (error) { return NextResponse.json({ error: "Invalid request." }, { status: error instanceof JsonBodyError ? error.status : 400, headers: { "Cache-Control": "private, no-store" } }); }
   const admin = createAdminClient();
 
   if (input.action === "create") {
