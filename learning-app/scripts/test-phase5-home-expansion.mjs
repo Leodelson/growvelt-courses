@@ -22,7 +22,7 @@ function load(file) {
     exports: mod.exports,
     require: (id) => {
  if(id.endsWith("site-urls.mjs"))return require("../app/lib/site-urls.mjs");
-      if (id === "react") return { ...React, useRef: (initial) => ({ current: initial }), useEffect() {}, useState: (initial) => {
+      if (id === "react") return { ...React, useId: () => "menu-fixture", useRef: (initial) => ({ current: initial }), useEffect() {}, useState: (initial) => {
         const index = cursor++;
         if (values[index] === undefined) values[index] = initial;
         return [values[index], (next) => { values[index] = typeof next === "function" ? next(values[index]) : next; }];

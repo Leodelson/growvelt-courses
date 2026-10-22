@@ -52,6 +52,8 @@
 .drawerLanguage :global(.public-language-trigger) { width: 100%; }
 .drawerLanguage :global(.public-language-label) { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 12px; }
 .drawerLanguage :global(.public-language-options) { width: 100%; }
+.language :global(.public-language-trigger):focus-visible, .drawerLanguage :global(.public-language-trigger):focus-visible { outline: 3px solid var(--purple); outline-offset: 3px; box-shadow: none; }
+.language :global(.public-language-options button):focus-visible, .drawerLanguage :global(.public-language-options button):focus-visible { outline: 2px solid var(--purple); outline-offset: -2px; box-shadow: none; }
 .drawerActions { display: grid; gap: 10px; margin-top: auto; }
 @media (max-width: 1200px) { .inner { gap: 18px; }.navigation { gap: 14px; }.navigation a { font-size: 12px; }.search { flex-basis: 240px; }.account { gap: 8px; }.account .login, .account .join { padding-inline: 12px; } }
 @media (max-width: 1200px) { .navigation, .account { display: none; }.inner { min-height: 78px; }.search { max-width: none; margin-left: 12px; }.menuButton { display: flex; } }

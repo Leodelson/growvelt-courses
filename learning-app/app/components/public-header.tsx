@@ -2,7 +2,7 @@
 import { careersAbsoluteUrl } from "@/app/lib/site-urls.mjs";
 
 import Link from "next/link";
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { ArrowUpRight, BriefcaseBusiness, ChevronDown, Globe, UsersRound } from "lucide-react";
 import { LearningIcon } from "@/app/components/learning-icon";
@@ -16,31 +16,48 @@ function useClientReady() {
   return useSyncExternalStore(() => () => undefined, () => true, () => false);
 }
 
-function PublicLanguageControl({ mobile = false }: { mobile?: boolean }) {
+export function PublicLanguageControl({ mobile = false }: { mobile?: boolean }) {
   const { t, locale, setLocale } = useLanguage();
   const [open, setOpen] = useState(false);
   const controlRef = useRef<HTMLDivElement>(null);
+  const listId = useId();
   const selected = languageOptions.find((option) => option.code === locale) ?? languageOptions[0];
 
   useEffect(() => {
     const close = (event: MouseEvent) => {
       if (controlRef.current && !controlRef.current.contains(event.target as Node)) setOpen(false);
     };
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setOpen(false);
-    };
-    document.addEventListener("mousedown", close);
-    window.addEventListener("keydown", closeOnEscape);
+    document.addEventListener("pointerdown", close);
     return () => {
-      document.removeEventListener("mousedown", close);
-      window.removeEventListener("keydown", closeOnEscape);
+      document.removeEventListener("pointerdown", close);
     };
   }, []);
 
-  return <div className={`public-language-control${mobile ? " is-mobile" : ""}`} ref={controlRef}>
+  useEffect(() => {
+    if (open) controlRef.current?.querySelector<HTMLElement>('[role="option"][aria-selected="true"]')?.focus();
+  }, [open]);
+
+  const closeAndRestoreFocus = () => {
+    setOpen(false);
+    controlRef.current?.querySelector<HTMLButtonElement>(".public-language-trigger")?.focus();
+  };
+
+  return <div className={`public-language-control${mobile ? " is-mobile" : ""}`} ref={controlRef}
+    onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setOpen(false); }}
+    onKeyDown={(event) => {
+      if (event.key === "Escape" && open) { event.preventDefault(); event.stopPropagation(); closeAndRestoreFocus(); return; }
+      if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) return;
+      event.preventDefault();
+      if (!open) { setOpen(true); return; }
+      const options = Array.from(controlRef.current?.querySelectorAll<HTMLButtonElement>('[role="option"]') ?? []);
+      if (!options.length) return;
+      const current = options.indexOf(document.activeElement as HTMLButtonElement);
+      const next = event.key === "Home" ? 0 : event.key === "End" ? options.length - 1 : (current + (event.key === "ArrowDown" ? 1 : -1) + options.length) % options.length;
+      options[next]?.focus();
+    }}>
     {mobile ? <div className="public-language-label"><Globe aria-hidden="true" size={16} /><span>{t("language.label")}</span></div> : null}
-    <button type="button" className="public-language-trigger" aria-expanded={open} aria-haspopup="listbox" aria-label={t("language.label")} onClick={() => setOpen((current) => !current)}>{mobile ? null : <Globe aria-hidden="true" size={18} />}<span>{selected.label}</span><ChevronDown aria-hidden="true" size={17} /></button>
-    {open ? <div className="public-language-options" role="listbox" aria-label={t("language.label")}>{languageOptions.map((option) => <button className={locale === option.code ? "is-selected" : ""} type="button" role="option" aria-selected={locale === option.code} onClick={() => { setLocale(option.code); setOpen(false); }} key={option.code}>{option.label}</button>)}</div> : null}
+    <button type="button" className="public-language-trigger" aria-expanded={open} aria-controls={open ? listId : undefined} aria-haspopup="listbox" aria-label={t("language.label")} onClick={() => setOpen((current) => !current)}>{mobile ? null : <Globe aria-hidden="true" size={18} />}<span>{selected.label}</span><ChevronDown aria-hidden="true" size={17} /></button>
+    {open ? <div id={listId} className="public-language-options" role="listbox" aria-label={t("language.label")}>{languageOptions.map((option) => <button className={locale === option.code ? "is-selected" : ""} type="button" role="option" tabIndex={-1} aria-selected={locale === option.code} onClick={() => { setLocale(option.code); closeAndRestoreFocus(); }} key={option.code}>{option.label}</button>)}</div> : null}
   </div>;
 }
 
@@ -49,30 +66,30 @@ type PublicNavCopy = typeof publicExperienceCopy.en.nav;
 export function CareersMenu({ copy, onNavigate }: { copy: PublicNavCopy; onNavigate?: () => void }) {
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const dropdownId = useId();
 
   useEffect(() => {
     if (!open) return;
     const closeOnOutsideClick = (event: PointerEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) setOpen(false);
     };
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") return;
-      setOpen(false);
-      menuRef.current?.querySelector<HTMLButtonElement>("button")?.focus();
-    };
     document.addEventListener("pointerdown", closeOnOutsideClick);
-    window.addEventListener("keydown", closeOnEscape);
     return () => {
       document.removeEventListener("pointerdown", closeOnOutsideClick);
-      window.removeEventListener("keydown", closeOnEscape);
     };
   }, [open]);
 
-  return <div className={styles.careersMenu} ref={menuRef}>
-    <button className={styles.careersTrigger} type="button" aria-expanded={open} onClick={() => setOpen((current) => !current)}>
+  return <div className={styles.careersMenu} ref={menuRef}
+    onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setOpen(false); }}
+    onKeyDown={(event) => {
+      if (event.key !== "Escape" || !open) return;
+      event.preventDefault(); event.stopPropagation(); setOpen(false);
+      menuRef.current?.querySelector<HTMLButtonElement>("button")?.focus();
+    }}>
+    <button className={styles.careersTrigger} type="button" aria-expanded={open} aria-controls={open ? dropdownId : undefined} onClick={() => setOpen((current) => !current)}>
       <span>{copy.careers}</span><ChevronDown aria-hidden="true" size={16} />
     </button>
-    {open ? <div className={styles.careersDropdown}>
+    {open ? <div id={dropdownId} className={styles.careersDropdown}>
       <p className={styles.careersDropdownTitle}>{copy.careersMenuTitle}</p>
       <div className={styles.careersDropdownGroup} role="group" aria-label={copy.careersMenuTitle}>
         <a href={careersAbsoluteUrl("/jobs")} target="_blank" rel="noreferrer" onClick={onNavigate}>
@@ -108,6 +125,7 @@ export function PublicHeader({ initialQuery = "" }: { initialQuery?: string }) {
     document.body.style.overflow = "hidden";
     drawerRef.current?.querySelector<HTMLButtonElement>("button")?.focus();
     const handleKey = (event: KeyboardEvent) => {
+      if (event.defaultPrevented) return;
       if (event.key === "Escape") setIsOpen(false);
       if (event.key !== "Tab") return;
       const controls = Array.from(drawerRef.current?.querySelectorAll<HTMLElement>('a[href], button:not([disabled]), select, input') ?? []).filter((element) => element.getClientRects().length > 0);

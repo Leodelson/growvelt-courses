@@ -1,7 +1,9 @@
-# Public intake quotas — prepared, not active
+# Public intake quotas — activated after owner approval
 
-21 October 2026. Learning only; no hosted migration, Auth/payment setting,
-Careers change, or paid service is authorized by preparing these files.
+Prepared 21 October 2026; the owner subsequently explicitly approved applying
+this one migration. It is now active in Learning project `qtcpjcaoptdunuefwvgc`.
+No other migration, Auth/payment setting, Careers resource, or paid service was
+changed. The steps below remain the activation/rollback runbook.
 
 ## Scope and proposed limits
 
@@ -110,4 +112,29 @@ preserves operator settings/counters; it is not a budget reset.
 Verification complete for this slice: isolated SQL/reapply/rollback, real
 multi-session PostgreSQL races, API fixtures, focused lint, production build,
 Auth/domain regressions and local production HTTP checks all passed.
-Status: local preparation only. Hosted quota activation remains unapproved.
+## Hosted activation evidence
+
+- Owner approval: “So go ahead and, um, run the apply.”
+- Verified the linked project was `qtcpjcaoptdunuefwvgc` (Growvelt Courses
+  Project), PostgreSQL 17.6. The two intake tables/RPC existed, the quota
+  objects did not, and this migration was not already recorded.
+- Vercel showed commit `146282a` Ready in Production, deployment
+  `4k715Zdw7ZXDBPSDy28q6hPW9UxN`, before database activation.
+- Applied only the approved migration using the CLI single-file query against
+  that explicit project, then passed the read-only activation assertions.
+  Both triggers, private RLS/grants, original entry permissions, and all eight
+  approved limit values passed.
+- Recorded only version `20261106000000`, name `add_public_intake_quotas`, in
+  Supabase migration history after verification. No blanket `db push` ran.
+- Hosted function bodies matched the tested file (SHA-256, CRLF normalized):
+  budget `0f3a6c2883d21741a00b373c1093064f401bbf96187569d97ea9395531130e48`;
+  guard `43a24fc6721a616177f223597d0f4a5e2449139e99673593fba8ab6f46753120`.
+- Aggregate-only before/after counts remained one newsletter record and one
+  inquiry record; counters were empty. No fake subscriber, inquiry, email,
+  CAPTCHA verification, or payment was submitted for production testing.
+- Production GET checks for `/`, `/contact`, and `/frequently-asked-questions`
+  on `https://www.growvelt.com` all returned HTTP 200.
+
+Status: approved hosted quotas active and verified. Residual risks and the
+rollback procedure above still apply. This does not close the rest of Phase 6
+or enable Live checkout. This activation required no new application deployment.

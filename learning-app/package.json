@@ -14,6 +14,7 @@
     "test:phase6:headers": "node scripts/test-phase6-response-headers.mjs",
     "test:phase6:api": "node scripts/test-phase6-api-boundaries.mjs",
     "test:phase6:assistant": "node scripts/test-phase6-assistant-interactions.mjs",
+    "test:phase6:navigation": "node scripts/test-phase6-public-navigation.mjs",
     "test:phase6:json": "node scripts/test-phase6-json-body.mjs",
     "test:phase6:public": "node scripts/test-phase6-public-baseline.mjs",
     "test:phase6:intake-db": "node scripts/test-phase6-public-intake-db.cjs",

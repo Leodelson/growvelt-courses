@@ -141,8 +141,10 @@ limiting. Public newsletter INSERT and inquiry RPC access still exist through
 Supabase's public roles; direct API traffic bypasses app-route limits. Review
 durable quotas and grants together before launch, rather than relying on an
 in-memory per-instance counter. No hosted grants or migrations were changed.
+The fourth slice below supersedes this accepted-record quota gap; it does not
+add a per-attempt, CAPTCHA-provider, or DDoS limit.
 
-## Fourth hardening slice — durable intake preparation
+## Fourth hardening slice — durable intake activation
 
 Prepared `20261106000000_add_public_intake_quotas.sql`, with table-level guards
 for direct newsletter INSERTs and inquiries through the existing public RPC.
@@ -157,10 +159,56 @@ the owner started Docker, the real local PostgreSQL test passed four concurrent
 global/email hour/day races with observed lock waits and atomic rejected-counter
 rollback. Its fresh disposable database was removed; the existing local database
 was unchanged. Build/TypeScript, focused lint, API fixtures, public pages/headers,
-and Auth/domain regressions also passed. Hosted quotas still require explicit
-limit/migration approval. Preparation is not live spam protection.
+and Auth/domain regressions also passed.
+
+The owner subsequently approved the single hosted apply. Verified the explicit
+Learning project and Ready Production deployment `146282a`, applied only this
+file, passed the hosted read-only assertions, and recorded only this version
+in migration history. Active function checksums match the tested file; both
+intake record counts remained unchanged and no production fixture was submitted.
+The homepage, Contact and FAQ pages returned HTTP 200. Hosted accepted-volume
+quotas are now active; no Auth/payment, domain, Careers, or paid-service settings
+changed. No application redeploy was needed for activation.
 See [activation and rollback](phase6-public-intake-activation.md) for proposed
 limits, privacy/retention details, residual public API risks, and exact steps.
+
+## Fifth hardening slice — public navigation keyboard review, 22 October
+
+Real in-app-browser checks against the local production FAQ reproduced two
+issues: language arrow keys did nothing and Escape discarded focus onto the
+document; Escape in the mobile Careers disclosure closed its parent drawer too.
+The language globe also lost the global purple focus shadow through a more
+specific CSS rule, leaving a nearly white outline against a white surface.
+
+- Language menus now focus the saved option on opening, support Arrow Up/Down
+  with wrap and Home/End, link trigger/listbox IDs, and return focus after
+  selection or Escape. Leaving the control closes it without moving focus
+  back from the user's next destination. Pointer dismissal supports touch.
+- Careers Escape is scoped to its disclosure; one Escape closes the submenu,
+  another closes the mobile drawer and restores its trigger. No destination
+  links, Auth behavior, role permissions or approved layout changed.
+- Explicit theme-aware purple focus outlines cover desktop/mobile language
+  triggers and options without clipping the option indicator at the popup edge.
+- `test:phase6:navigation` executes the actual components in isolated hook/event
+  fixtures for both menu variants, saved selection, focus restoration, blur,
+  arrow/Home/End keys, linked IDs, and nested Escape propagation.
+
+Browser confirmation on the rebuilt production FAQ: desktop arrow/Home/End,
+Enter selection and focus return; mobile language arrows/Escape; Careers
+submenu-first Escape; drawer first/last Tab wrapping, scroll lock and cleanup.
+At requested viewport widths 320 and 390 px there was no document horizontal
+overflow (content widths 305 and 375 px with the browser's scrollbar). The
+desktop focus outline resolved to purple `rgb(138, 4, 223)` against white,
+and the reviewed tab had no captured console errors. This is a focused public
+navigation review, not a complete screen-reader, contrast or signed-in audit.
+
+Build/TypeScript, focused lint, navigation/assistant/API fixtures, existing
+homepage/navigation regressions, local public/header HTTP checks and domain/Auth
+regressions passed. Six local second HTML GETs were 6–12 ms in this run; these
+remain local HTTP timings, not browser or production Web Vitals. Broader page
+coverage, the approved motion loop's pause-control question, and real browser
+LCP/INP/CLS remain open. No hosted settings, database or payment mutation was
+performed for this slice; unrelated local PWA/email-template work was excluded.
 
 ## Remaining Phase 6 work, in order
 
