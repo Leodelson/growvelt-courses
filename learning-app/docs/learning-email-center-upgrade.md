@@ -24,6 +24,16 @@ provider test remain separate prerequisites. The pre-release local checkpoints
 below are retained as dated history, not current claims that migrations remain
 unapplied. Deployment readiness is verified separately after the push.
 
+The isolated release `08374c5` reached Vercel Ready/Production deployment
+`7PFdJCPNo8wNp2BkUYDB8Tb3gQw9`. The live access check found that the finite
+Careers compatibility inventory also owns `/dashboard/admin/emails`. A narrow
+follow-up adds Learning's explicit `/learning/dashboard/admin/emails` alias;
+existing Learning navigation uses the shared link helper and follows that alias.
+The original www path remains Careers-owned, while learn keeps its original
+path. Regression checks cover link generation, safe sign-in return, authenticated
+proxy rewrites/cookies, old Careers routing and the learn route. Sending gates
+and provider configuration remain unchanged and disabled.
+
 ## Local build checkpoint — 23 October 2026 (before approved release)
 
 The local broadcast worker, protected HTTP actions, exact-recipient release

@@ -51,6 +51,7 @@ const mappings = [
   ["/dashboard", "/learning/dashboard"], ["/dashboard/profile", "/learning/dashboard/profile"],
   ["/dashboard/settings", "/learning/dashboard/settings"], ["/auth/callback", "/auth/learning/callback"],
   ["/api/auth/welcome", "/api/learning/auth/welcome"], ["/api/newsletter/subscribe", "/api/learning/newsletter/subscribe"],
+  ["/dashboard/admin/emails", "/learning/dashboard/admin/emails"],
 ];
 for (const [old, alias] of mappings) {
   assert.equal(urls.learningPath(old, current), old);
@@ -106,6 +107,8 @@ const boundUrls = Object.fromEntries(Object.entries(urls).map(([key, value]) => 
 const redirect = load("../app/lib/auth/redirect.ts", { "../site-urls.mjs": boundUrls });
 assert.equal(redirect.getSafeNextPath("/dashboard/profile?tab=details"), "/learning/dashboard/profile?tab=details");
 assert.equal(redirect.getSafeNextPath("/learning/dashboard"), "/learning/dashboard");
+assert.equal(redirect.getSafeNextPath("/dashboard/admin/emails"), "/learning/dashboard/admin/emails");
+assert.equal(redirect.getSafeNextPath("/learning/dashboard/admin/emails"), "/learning/dashboard/admin/emails");
 assert.equal(redirect.getSafeNextPath("https://jobs.growvelt.com/dashboard"), "/learning/dashboard");
 for (const bad of ["//jobs.growvelt.com/dashboard", "/learning/dashboard/../../api/auth/welcome", "%2F%2Fjobs.growvelt.com", "/learning/dashboard/unknown", "/learning/dashboard\\evil"]) {
   assert.equal(redirect.getSafeNextPath(bad), "/learning/dashboard");
@@ -115,6 +118,7 @@ const link = load("../app/components/learning-link.tsx", {
   "next/link": { __esModule: true, default: ({ href, children }) => React.createElement("a", { href: typeof href === "string" ? href : href.pathname }, children) },
 }).default;
 assert.ok(renderToStaticMarkup(React.createElement(link, { href: "/dashboard/profile?tab=details" }, "Profile")).includes('href="/learning/dashboard/profile?tab=details"'));
+assert.ok(renderToStaticMarkup(React.createElement(link, { href: "/dashboard/admin/emails" }, "Email Center")).includes('href="/learning/dashboard/admin/emails"'));
 
 // Exercise the real proxy with synthetic requests and a fake Auth client; no network.
 let clientCalls = 0;
@@ -139,12 +143,16 @@ for (const [path, method] of [["/dashboard", "GET"], ["/dashboard/profile", "GET
   assert.match(response.headers.get("cache-control"), /no-store/);
   assert.equal(clientCalls, before, "collision must be rejected before any Learning Auth/database work");
 }
-for (const [old, alias] of mappings.slice(0, 3)) {
+for (const [old, alias] of [...mappings.slice(0, 3), mappings.at(-1)]) {
   const response = await proxy(new NextRequest("https://www.growvelt.com" + alias + "?tab=details"));
   assert.equal(response.headers.get("x-middleware-rewrite"), "https://www.growvelt.com" + old + "?tab=details");
   assert.match(response.headers.get("set-cookie"), /sb-learning-fake=fake-session/);
   assert.doesNotMatch(response.headers.get("set-cookie"), /domain=/i);
 }
+const legacyEmailCenter = await proxy(new NextRequest("https://www.growvelt.com/dashboard/admin/emails"));
+assert.equal(legacyEmailCenter.headers.get("location"), "https://jobs.growvelt.com/dashboard/admin/emails#careers-moved");
+const learnEmailCenter = await proxy(new NextRequest("https://learn.growvelt.com/dashboard/admin/emails"));
+assert.equal(learnEmailCenter.headers.get("x-middleware-next"), "1");
 const oldAuth = await proxy(new NextRequest("https://learn.growvelt.com/auth/callback?code=fake"));
 assert.equal(oldAuth.headers.get("x-middleware-next"), "1");
 assert.ok(config.matcher.includes("/learning/dashboard/:path*"));

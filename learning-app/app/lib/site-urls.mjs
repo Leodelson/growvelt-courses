@@ -5,6 +5,7 @@ const aliases = {
   "/dashboard": "/learning/dashboard",
   "/dashboard/profile": "/learning/dashboard/profile",
   "/dashboard/settings": "/learning/dashboard/settings",
+  "/dashboard/admin/emails": "/learning/dashboard/admin/emails",
   "/auth/callback": "/auth/learning/callback",
   "/api/auth/welcome": "/api/learning/auth/welcome",
   "/api/newsletter/subscribe": "/api/learning/newsletter/subscribe",
