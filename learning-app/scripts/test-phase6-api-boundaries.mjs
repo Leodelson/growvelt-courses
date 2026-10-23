@@ -68,6 +68,13 @@ function load(path, mocks = {}) {
 const shared = {};
 shared["@/app/lib/security/request-origin"] = load("app/lib/security/request-origin.ts");
 shared["@/app/lib/security/json-body"] = load("app/lib/security/json-body.ts");
+shared["@/app/lib/email/email-center"] = load("app/lib/email/email-center.ts");
+shared["@/app/lib/email/email-center-authorization"] = load("app/lib/email/email-center-authorization.ts", {"server-only":{}});
+shared["@/app/lib/email/email-center-render"] = { renderEmailCenterMessage: () => "fixture email preview" };
+shared["@/app/lib/email/email-center-runtime"] = { emailCenterRelease: () => ({enabled:false}) };
+shared["@/app/lib/email/email-center-broadcast-worker"] = {};
+shared["@/app/lib/email/email-center-account-worker"] = {};
+shared["@/app/lib/email/email-center-consent-worker"] = {};
 shared["@/app/lib/supabase/server"] = { createClient: async () => { clientCalls++; return client(); } };
 shared["@/app/lib/supabase/admin"] = { createAdminClient: () => { adminCalls++; return client(); } };
 shared["@/app/lib/email/growvelt-email-template"] = { renderGrowveltEmail: () => "mock-email" };
@@ -125,7 +132,7 @@ for (const path of ["app/api/inquiries/route.ts", "app/api/newsletter/subscribe/
   }
 }
 
-actor = { id: userId, email: "test@example.invalid", role: "admin" };
+actor = { id: userId, email: "admin@growvelt.com", email_confirmed_at:"2026-10-22", role: "admin" };
 const boundedRoutes = [
   ["app/api/learning/admin/emails/route.ts", "POST", 32768],
   ["app/api/learning/support/route.ts", "POST", 32768],
@@ -160,7 +167,7 @@ for (const [path, methods] of routes) {
 }
 
 const email = handlers.get(routes[0][0]);
-for (const user of [null, { id: userId, role: "learner" }, { id: userId, role: "instructor" }]) {
+for (const user of [null, { id: userId, role: "learner" }, { id: userId, role: "instructor" }, {id:userId,role:"admin",email:"other@growvelt.com",email_confirmed_at:"2026-10-22"}, {id:userId,role:"admin",email:"admin@growvelt.com"}, {id:userId,role:"learner",email:"admin@growvelt.com",email_confirmed_at:"2026-10-22"}]) {
   actor = user;
   const before = adminCalls;
   assert.equal((await email.GET()).status, 403);
@@ -170,7 +177,7 @@ for (const user of [null, { id: userId, role: "learner" }, { id: userId, role: "
   assert.equal(adminCalls, before, "Email Center denies other roles before using the service role");
 }
 
-actor = { id: userId, email: "test@example.invalid", role: "learner" };
+actor = { id: userId, email: "test@example.invalid", email_confirmed_at:"2026-10-22", role: "learner" };
 const notices = handlers.get("app/api/learning/notifications/route.ts");
 let before = operations.length;
 assert.equal((await notices.PATCH(request("PATCH", undefined, { id: noticeId, userId: otherId }))).status, 204);
@@ -183,7 +190,9 @@ assert.equal(operations.length, before);
 const preferences = handlers.get("app/api/learning/email/preferences/route.ts");
 before = operations.length;
 assert.equal((await preferences.POST(request("POST", undefined, { marketingOptIn: false, userId: otherId }))).status, 200);
-assert.equal(operations[before].upsert.user_id, userId, "email preferences cannot target another user");
+assert.equal(operations[before].rpc, "set_learning_email_preference");
+assert.equal(operations[before].args.p_user_id, userId, "email preferences cannot target another user");
+assert.equal(operations[before].args.p_source, "settings");
 
 // Exact 1 KiB JSON is supported; one additional byte is rejected, even when
 // the payload includes a valid notification ID or preference value.
@@ -213,8 +222,20 @@ supportError = null;
 const beforeInvalidThread = operations.length;
 assert.equal((await thread.POST(request("POST",undefined,{message:"test"}),{params:Promise.resolve({id:"invalid"})})).status,404);
 assert.equal(operations.length,beforeInvalidThread);
-actor = {id:userId,role:"admin"};
-assert.equal((await email.POST(request("POST",undefined,{action:"create",audience:"learners",subject:'"'.repeat(160),headline:'"'.repeat(160),body:'"'.repeat(4000)}))).status,201);
+actor = {id:userId,email:"admin@growvelt.com",email_confirmed_at:"2026-10-22",role:"admin"};
+assert.equal((await email.POST(request("POST",undefined,{action:"save",id:noticeId,revision:0,document:{sender:"learning",mode:"marketing",audience:"learners",recipients:[],subject:'"'.repeat(160),headline:'"'.repeat(160),message:'"'.repeat(4000),personalized:false,buttonText:"",buttonUrl:"",bell:false}}))).status,201);
+for (const address of ["admin@growvelt.com","nduleonardc@gmail.com"]) {
+  actor={id:userId,email:address,email_confirmed_at:"2026-10-22",role:"admin"};
+  assert.equal((await email.GET()).status,200,"both permitted confirmed admins can load Email Center");
+  const beforePreview=adminCalls;
+  const document={sender:"partnerships",mode:"marketing",audience:"all",recipients:[],subject:"Learning news",headline:"",message:"A message for our Learning community.",personalized:false,buttonText:"",buttonUrl:"",bell:false};
+  assert.equal((await email.POST(request("POST",undefined,{action:"preview",document}))).status,200);
+  assert.equal(adminCalls,beforePreview,"preview does not use privileged recipient access");
+  assert.equal((await email.POST(request("POST",undefined,{action:"send",confirmation:"SEND LEARNING EMAILS"}))).status,503,"real and legacy sending stay closed");
+  assert.equal(adminCalls,beforePreview,"send gate stops before creating a privileged client");
+  assert.equal((await email.POST(request("POST",undefined,{action:"save",id:"invalid",revision:0,document}))).status,400);
+  assert.equal((await email.POST(request("POST",undefined,{action:"review",id:noticeId,revision:1}))).status,200);
+}
 
 const assignments = handlers.get("app/api/company/workspaces/[workspaceId]/assignments/route.ts");
 for (const body of [{ courseId: 0, assignedUserId: userId }, { courseId: 1, assignedUserId: "invalid" }]) {

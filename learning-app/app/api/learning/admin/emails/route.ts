@@ -3,94 +3,97 @@ import { createClient } from "@/app/lib/supabase/server";
 import { createAdminClient } from "@/app/lib/supabase/admin";
 import { isSameOriginRequest } from "@/app/lib/security/request-origin";
 import { JsonBodyError, readBoundedJsonObject } from "@/app/lib/security/json-body";
-import { renderGrowveltEmail } from "@/app/lib/email/growvelt-email-template";
-import { learningAbsoluteUrl } from "@/app/lib/site-urls.mjs";
+import { emailUuid, parseEmailDocument, senderChoices } from "@/app/lib/email/email-center";
+import { isEmailOperator } from "@/app/lib/email/email-center-authorization";
+import { renderEmailCenterMessage } from "@/app/lib/email/email-center-render";
+import { emailCenterRelease, emailCenterProviderRuntime, checkEmailCenterTestRecipients } from "@/app/lib/email/email-center-runtime";
+import { runLearningBroadcast } from "@/app/lib/email/email-center-broadcast-worker";
+import { deliverLearningAccountNotice } from "@/app/lib/email/email-center-account-worker";
+import { synchronizeLearningConsent } from "@/app/lib/email/email-center-consent-worker";
 
-type Audience = "learners" | "instructors" | "organizations";
-type Recipient = { user_id: string; email: string; unsubscribe_token: string };
-type Campaign = { id: string; audience: Audience; subject: string; headline: string; body: string; status: string; sent_count: number; failed_count: number };
-const audiences = new Set<Audience>(["learners", "instructors", "organizations"]);
-const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-async function adminSession() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
-  const { data, error } = await supabase.rpc("is_growvelt_learning_admin");
+const json = (data: unknown, status = 200) => NextResponse.json(data, {status,headers:{"Cache-Control":"private, no-store"}});
+async function operatorSession() {
+  const client = await createClient();
+  const {data:{user},error:authError} = await client.auth.getUser();
+  if (authError || !isEmailOperator(user)) return null;
+  const {data,error} = await client.rpc("is_growvelt_learning_admin");
   return !error && data === true ? user : null;
 }
-
 export async function GET() {
-  if (!await adminSession()) return NextResponse.json({ error: "Not authorized." }, { status: 403 });
+  if (!await operatorSession()) return json({error:"Only the two authorized Learning email administrators may use Email Center."},403);
   const admin = createAdminClient();
-  const [campaigns, learners, instructors, organizations] = await Promise.all([
-    admin.from("learning_email_campaigns").select("id,audience,subject,headline,body,status,sent_count,failed_count,created_at").order("created_at", { ascending: false }).limit(20),
-    admin.rpc("learning_marketing_recipient_count", { p_audience: "learners" }),
-    admin.rpc("learning_marketing_recipient_count", { p_audience: "instructors" }),
-    admin.rpc("learning_marketing_recipient_count", { p_audience: "organizations" }),
+  const [drafts,legacy,operations,attempts] = await Promise.all([
+    admin.from("learning_email_center_drafts").select("id,document,revision,status,created_at,updated_at,reviewed_at").order("updated_at",{ascending:false}).limit(30),
+    admin.from("learning_email_campaigns").select("id,subject,status,sent_count,failed_count,created_at").order("created_at",{ascending:false}).limit(10),
+    admin.from("learning_email_broadcast_operations").select("draft_id,revision,phase,provider_status,updated_at").order("updated_at",{ascending:false}).limit(30),
+    admin.from("learning_email_center_attempts").select("draft_id,target_key,state,checked_at").order("claimed_at",{ascending:false}).limit(100),
   ]);
-  if (campaigns.error || learners.error || instructors.error || organizations.error) return NextResponse.json({ error: "Email Center is unavailable until its database migration is applied." }, { status: 503 });
-  return NextResponse.json({ campaigns: campaigns.data, counts: { learners: learners.data, instructors: instructors.data, organizations: organizations.data } }, { headers: { "Cache-Control": "private, no-store" } });
+  if (drafts.error) return json({error:"The Email Center upgrade needs its approved Learning database migration. Existing campaigns are preserved.",setupRequired:true},503);
+  return json({drafts:drafts.data ?? [],legacy:legacy.error ? [] : legacy.data ?? [],
+    senders:senderChoices.map(sender=>({id:sender.id,configured:!!process.env[sender.variable]})),
+    operations:operations.error ? [] : operations.data ?? [],attempts:attempts.error ? [] : attempts.data ?? [],
+    recoveryEnabled:emailCenterRelease().enabled || process.env.LEARNING_EMAIL_CENTER_RECOVERY === "enabled",
+    deliveryEnabled:emailCenterRelease().enabled,deliveryNotice:"Only the approved controlled-test allowlist can receive messages. Preparing never sends; final release approval expires after 15 minutes. Unknown outcomes are reconciled, never blindly retried. Bell and push remain separate and disabled.",
+  });
 }
-
 export async function POST(request: Request) {
-  if (!isSameOriginRequest(request)) return new NextResponse(null, { status: 403 });
-  const actor = await adminSession();
-  if (!actor) return NextResponse.json({ error: "Not authorized." }, { status: 403 });
-  let input: Record<string, unknown>;
-  try { input = await readBoundedJsonObject(request, 32 * 1024); }
-  catch (error) { return NextResponse.json({ error: "Invalid request." }, { status: error instanceof JsonBodyError ? error.status : 400, headers: { "Cache-Control": "private, no-store" } }); }
-  const admin = createAdminClient();
-
-  if (input.action === "create") {
-    const audience = input.audience;
-    const subject = typeof input.subject === "string" ? input.subject.trim() : "";
-    const headline = typeof input.headline === "string" ? input.headline.trim() : "";
-    const body = typeof input.body === "string" ? input.body.trim() : "";
-    if (!audiences.has(audience as Audience) || subject.length < 3 || subject.length > 160 || headline.length < 3 || headline.length > 160 || body.length < 10 || body.length > 4000) return NextResponse.json({ error: "Check the audience and message fields." }, { status: 400 });
-    const { data, error } = await admin.from("learning_email_campaigns").insert({ created_by: actor.id, audience, subject, headline, body }).select("id").single();
-    if (error) return NextResponse.json({ error: "Draft could not be saved." }, { status: 503 });
-    return NextResponse.json({ id: data.id }, { status: 201 });
-  }
-
-  if (input.action !== "send" || typeof input.campaignId !== "string" || !uuid.test(input.campaignId) || input.confirmation !== "SEND LEARNING EMAILS") return NextResponse.json({ error: "Explicit send confirmation is required." }, { status: 400 });
-  if (!process.env.RESEND_API_KEY) return NextResponse.json({ error: "Email sending is not configured." }, { status: 503 });
-  const { data: campaign, error: campaignError } = await admin.from("learning_email_campaigns").select("id,audience,subject,headline,body,status,sent_count,failed_count").eq("id", input.campaignId).single();
-  if (campaignError || !campaign || !["draft", "partial", "failed", "sending"].includes(campaign.status)) return NextResponse.json({ error: "This campaign cannot be sent." }, { status: 409 });
-  const current = campaign as Campaign;
-  const { data, error } = await admin.rpc("learning_marketing_recipients", { p_audience: current.audience, p_campaign_id: current.id, p_limit: 3 });
-  if (error) return NextResponse.json({ error: "Recipients could not be checked." }, { status: 503 });
-  const recipients = (data ?? []) as Recipient[];
-  if (!recipients.length) {
-    await admin.from("learning_email_campaigns").update({ status: current.failed_count ? "partial" : "sent", updated_at: new Date().toISOString() }).eq("id", current.id);
-    return NextResponse.json({ accepted: 0, failed: 0, remaining: false });
-  }
-
-  let accepted = 0; let failed = 0;
-  for (const recipient of recipients) {
-    const { error: claimError } = await admin.from("learning_email_deliveries").insert({ campaign_id: current.id, user_id: recipient.user_id, state: "claimed" });
-    if (claimError) continue; // Unique claim: concurrent requests cannot send twice.
-    const { data: preference } = await admin.from("learning_email_preferences").select("marketing_opt_in").eq("user_id", recipient.user_id).single();
-    if (preference?.marketing_opt_in !== true) {
-      await admin.from("learning_email_deliveries").update({ state: "skipped" }).eq("campaign_id", current.id).eq("user_id", recipient.user_id);
-      continue;
-    }
-    const unsubscribeUrl = learningAbsoluteUrl(`/api/learning/email/unsubscribe?token=${recipient.unsubscribe_token}`);
-    const html = renderGrowveltEmail({ baseUrl: learningAbsoluteUrl("/"), greeting: "there", title: current.headline, paragraphs: current.body.split(/\n{2,}/).map((paragraph) => paragraph.trim()).filter(Boolean), reason: "You received this because you opted in to Growvelt Learning updates.", unsubscribeUrl });
+  if (!isSameOriginRequest(request)) return json({error:"This request was not accepted."},403);
+  const actor = await operatorSession();
+  if (!actor) return json({error:"Only the two authorized Learning email administrators may use Email Center."},403);
+  let input: Record<string,unknown>;
+  try { input = await readBoundedJsonObject(request,32*1024); }
+  catch (error) { return json({error:"Check the request fields."},error instanceof JsonBodyError ? error.status : 400); }
+  // No fallback to the old per-recipient marketing sender.
+  if (["send","prepare-broadcast","dispatch-broadcast","reconcile-broadcast","cancel-broadcast","release-review","approve-release","sync-consent"].includes(String(input.action))) {
+    const recoveryAction=["reconcile-broadcast","cancel-broadcast"].includes(String(input.action));
+    if (!emailCenterRelease().enabled && !(recoveryAction && process.env.LEARNING_EMAIL_CENTER_RECOVERY === "enabled")) return json({error:"Sending is not activated. Complete Learning provider and budget verification first. No email was sent."},503);
+    const admin = createAdminClient();
     try {
-      const response = await fetch("https://api.resend.com/emails", { method: "POST", headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, "Content-Type": "application/json", "Idempotency-Key": `learning-campaign-${current.id}-${recipient.user_id}` }, body: JSON.stringify({ from: "Growvelt <no-reply@growvelt.com>", to: [recipient.email], reply_to: "support@growvelt.com", subject: current.subject, html, text: `${current.headline}\n\n${current.body}\n\nUnsubscribe: ${unsubscribeUrl}`, tags: [{ name: "product", value: "learning" }, { name: "category", value: "marketing" }] }), signal: AbortSignal.timeout(12000) });
-      if (!response.ok) throw new Error(`provider_${response.status}`);
-      const provider = await response.json().catch(() => null) as { id?: string } | null;
-      await admin.from("learning_email_deliveries").update({ state: "accepted", provider_message_id: provider?.id ?? null }).eq("campaign_id", current.id).eq("user_id", recipient.user_id);
-      accepted++;
-    } catch {
-      await admin.from("learning_email_deliveries").update({ state: "failed" }).eq("campaign_id", current.id).eq("user_id", recipient.user_id);
-      failed++;
+      if (input.action === "sync-consent") {
+        if (typeof input.userId !== "string" || !emailUuid.test(input.userId)) return json({error:"Choose a valid Learning account."},400);
+        const {membership} = emailCenterProviderRuntime();
+        return json(await synchronizeLearningConsent({database:admin,provider:membership,userId:input.userId,enabled:true}));
+      }
+      if (typeof input.id !== "string" || !emailUuid.test(input.id) || !Number.isSafeInteger(input.revision) || Number(input.revision)<1) return json({error:"Choose a saved review."},400);
+      // Reconciliation and cancellation must still work after a user's opt-out
+      // or identity change. Never gate those safety operations on current consent.
+      if (["reconcile-broadcast","cancel-broadcast"].includes(String(input.action))) {
+        const runtime = emailCenterProviderRuntime({recoveryOnly:true});
+        return json(await runLearningBroadcast({database:admin,...runtime,actorId:actor.id,draftId:input.id,revision:Number(input.revision),enabled:true},input.action === "cancel-broadcast" ? "cancel" : "reconcile"));
+      }
+      const review = await checkEmailCenterTestRecipients(admin,actor.id,input.id,Number(input.revision));
+      if (input.action === "release-review") return json({targets:review.targets,subject:review.document.subject,sender:emailCenterProviderRuntime().transport.senderIdentity(parseEmailDocument(review.document).sender),mode:review.document.mode});
+      if (input.action === "approve-release") {
+        if (!Array.isArray(input.recipients) || input.recipients.length>10 || input.recipients.some(value=>typeof value!=="string")) return json({error:"Confirm the reviewed addresses."},400);
+        const approval = await admin.rpc("approve_learning_email_release",{p_actor:actor.id,p_id:input.id,p_revision:input.revision,p_recipients:input.recipients});
+        if (approval.error) return json({error:"Release approval failed. Review recipients again."},409);
+        return json({state:"approved",notice:"This exact revision and recipient list are approved for 15 minutes. Nothing was sent."});
+      }
+      const runtime = emailCenterProviderRuntime();
+      if (input.action === "prepare-broadcast" || input.action === "dispatch-broadcast") return json(await runLearningBroadcast({database:admin,...runtime,actorId:actor.id,draftId:input.id,revision:Number(input.revision),enabled:true},input.action === "prepare-broadcast" ? "prepare" : "dispatch"));
+      if (typeof input.targetUserId !== "string" || !emailUuid.test(input.targetUserId)) return json({error:"Choose a reviewed recipient."},400);
+      const approval = await admin.rpc("check_learning_email_release",{p_actor:actor.id,p_id:input.id,p_revision:input.revision});
+      if (approval.error || approval.data!==true) return json({error:"An unexpired exact release approval is required."},409);
+      return json(await deliverLearningAccountNotice({database:admin,transport:runtime.transport,actorId:actor.id,draftId:input.id,revision:Number(input.revision),targetUserId:input.targetUserId,enabled:true}));
+    } catch (error) {
+      return json({error:error instanceof Error ? error.message : "This operation needs review. Do not resend."},503);
     }
   }
-  const { count: remainingCount } = await admin.from("learning_email_deliveries").select("user_id", { count: "exact", head: true }).eq("campaign_id", current.id);
-  const { count: acceptedCount } = await admin.from("learning_email_deliveries").select("user_id", { count: "exact", head: true }).eq("campaign_id", current.id).eq("state", "accepted");
-  const { count: failedCount } = await admin.from("learning_email_deliveries").select("user_id", { count: "exact", head: true }).eq("campaign_id", current.id).eq("state", "failed");
-  await admin.from("learning_email_campaigns").update({ status: failed ? "partial" : "sending", sent_count: acceptedCount ?? accepted, failed_count: failedCount ?? failed, updated_at: new Date().toISOString() }).eq("id", current.id);
-  return NextResponse.json({ accepted, failed, processed: remainingCount ?? 0, remaining: true, note: "Provider accepted messages; final delivery is not confirmed." }, { headers: { "Cache-Control": "no-store" } });
+  if (["preview","save"].includes(String(input.action))) {
+    let document;
+    try { document = parseEmailDocument(input.document); }
+    catch (error) { return json({error:error instanceof Error ? error.message : "Check the email fields."},400); }
+    if (input.action === "preview") return json({html:renderEmailCenterMessage(document,document.personalized ? "Alex" : "there"),exampleName:document.personalized,subject:document.subject});
+    if (typeof input.id !== "string" || !emailUuid.test(input.id) || !Number.isSafeInteger(input.revision) || Number(input.revision)<0) return json({error:"Check the draft ID and revision."},400);
+    const {data,error} = await createAdminClient().rpc("save_learning_email_center_draft",{p_actor:actor.id,p_id:input.id,p_revision:input.revision,p_document:document});
+    if (error) return json({error:error.code === "40001" ? "This draft changed. Reload it before saving." : "Draft could not be saved. Keep your text and try again."},error.code === "40001" ? 409 : 503);
+    return json(data,201);
+  }
+  if (input.action === "review") {
+    if (typeof input.id !== "string" || !emailUuid.test(input.id) || !Number.isSafeInteger(input.revision) || Number(input.revision)<1) return json({error:"Save a draft before reviewing."},400);
+    const {data,error} = await createAdminClient().rpc("review_learning_email_center_draft",{p_actor:actor.id,p_id:input.id,p_revision:input.revision});
+    if (error) return json({error:error.code === "40001" ? "This draft changed. Reload and review again." : error.code === "22023" ? "No eligible recipients, unknown selected accounts, or recipient limit exceeded. Marketing requires explicit Learning opt-in." : "Recipients could not be checked. No messages were sent."},error.code === "40001" ? 409 : error.code === "22023" ? 400 : 503);
+    return json(data);
+  }
+  return json({error:"Choose preview, save or review. Legacy sending is disabled."},400);
 }

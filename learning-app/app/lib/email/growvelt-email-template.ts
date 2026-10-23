@@ -1,5 +1,6 @@
 import "server-only";
 import { learningAbsoluteUrl } from "../site-urls.mjs";
+import { renderEmailMarkdown } from "./email-markdown";
 
 type EmailAction = { label: string; href: string };
 type EmailDetail = { label: string; value: string };
@@ -15,6 +16,7 @@ export type GrowveltEmail = {
   details?: EmailDetail[];
   reason: string;
   unsubscribeUrl?: string;
+  messageMarkdown?: string;
 };
 
 const colors = {
@@ -43,7 +45,7 @@ function actionHtml(action: EmailAction, primary = false) {
 
 export function renderGrowveltEmail(input: GrowveltEmail) {
   const logoUrl = learningAbsoluteUrl("/logo/growvelt-wordmark-purple-20261019.png");
-  const paragraphHtml = input.paragraphs.map((paragraph) => `<p style="margin:0 0 16px;font-size:16px;line-height:1.62;color:${colors.text}">${escapeEmailHtml(paragraph)}</p>`).join("");
+  const paragraphHtml = input.messageMarkdown !== undefined ? renderEmailMarkdown(input.messageMarkdown) : input.paragraphs.map((paragraph) => `<p style="margin:0 0 16px;font-size:16px;line-height:1.62;color:${colors.text}">${escapeEmailHtml(paragraph)}</p>`).join("");
   const detailsHtml = input.details?.length ? `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" bgcolor="${colors.panel}" style="margin:22px 0 24px;background:${colors.panel};border:1px solid ${colors.divider};border-radius:8px;border-collapse:separate;border-spacing:0;overflow:hidden">${input.details.map((detail, index) => `<tr><td style="width:34%;padding:12px 14px;background:${colors.panel};border-bottom:${index === input.details!.length - 1 ? "0" : `1px solid ${colors.divider}`};color:${colors.muted};font-size:13px;font-weight:700;vertical-align:top">${escapeEmailHtml(detail.label)}</td><td style="padding:12px 14px;background:${colors.panel};border-bottom:${index === input.details!.length - 1 ? "0" : `1px solid ${colors.divider}`};color:${colors.text};font-size:14px;line-height:1.5;word-break:break-word">${escapeEmailHtml(detail.value)}</td></tr>`).join("")}</table>` : "";
   const highlightsHtml = input.highlights?.length ? `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" bgcolor="${colors.panel}" style="margin:24px 0 0;background:${colors.panel};border:1px solid ${colors.divider};border-radius:8px"><tr><td style="padding:18px"><p style="margin:0 0 10px;font-size:15px;font-weight:700;color:${colors.heading}">What happens next</p><ul style="margin:0;padding-left:20px;color:${colors.text};font-size:14px;line-height:1.75">${input.highlights.map((item) => `<li>${escapeEmailHtml(item)}</li>`).join("")}</ul></td></tr></table>` : "";
   const year = new Date().getFullYear();

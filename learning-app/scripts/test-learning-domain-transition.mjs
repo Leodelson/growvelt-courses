@@ -183,7 +183,7 @@ assert.ok(signInEvents.every(event => event.userId === "fake-user"));
 assert.ok(signInEvents.every(event => event.hasHeaders && Number.isFinite(Date.parse(event.timestamp))));
 
 // Render the actual app email template without server-only effects or sending email.
-const template = load("../app/lib/email/growvelt-email-template.ts", { "server-only": {}, "../site-urls.mjs": boundUrls });
+const template = load("../app/lib/email/growvelt-email-template.ts", { "server-only": {}, "../site-urls.mjs": boundUrls, "./email-markdown": load("../app/lib/email/email-markdown.ts") });
 const html = template.renderGrowveltEmail({ greeting: "Test <person>", title: "Account", paragraphs: ["Example"], reason: "Test only", baseUrl: "https://evil.invalid" });
 assert.ok(html.includes("https://www.growvelt.com/logo/growvelt-wordmark-purple-20261019.png"));
 assert.ok(html.includes("https://www.growvelt.com/privacy-policy"));

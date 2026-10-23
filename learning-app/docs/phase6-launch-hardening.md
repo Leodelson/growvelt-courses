@@ -239,7 +239,76 @@ persistence results still require reconciliation/retry hardening; support
 database quota concurrency is not covered by public intake quotas. Do not
 describe these pipelines as fully hardened or enable automated retries.
 
+## Owner-requested Email Center upgrade — local stage
+
+After the Careers handoff, the owner approved a separate Learning composer and
+specified two email operators. The first local build adds the matching design,
+existing branded renderer preview, server-only operator restriction plus the
+existing admin RPC, sender/audience/mode controls, persisted revisioned drafts,
+consent-aware recipient snapshots and unique claim/checkpoint foundations.
+Actual sending, bell and push remain closed. No hosted migration or provider
+change, contact sync, push, email or deployment was performed.
+
+See [local build and remaining integration](learning-email-center-upgrade.md).
+Build/TypeScript, lint, isolated SQL/validation/API/worker fixtures and existing
+Auth/domain/login-email/Paystack regressions passed. Browser fixture checks
+exercised real local React/API/SQL save, renderer preview, reload and review,
+plus mobile overflow at 320/390 px. Operator addresses are absent from the
+generated client bundles. This is not complete delivery functionality: Resend
+transports, provider targeting/consent synchronization, account-wide budget
+coordination and reconciliation still need implementation/verification before
+activation. The prepared migration remains local and unapplied.
+
+Follow-up: the owner confirmed a shared Resend team, and a read-only dashboard
+check verified both sending domains and the free-plan usage/segment constraint
+(details and timestamp in the Email Center document). A local-only HTTP adapter
+adds transactional idempotency, draft-only broadcast preparation and private
+rate-limit/error handling. It is not connected to the route or a shared quota
+allocator. After the owner's conditional approval and report of Careers'
+re-established production mappings/known-good redeploy, the empty General
+segment was renamed Growvelt Learning, retaining its ID and zero contacts.
+This label-only audience reservation is the sole provider mutation; no contacts,
+subscriptions, keys, billing, Learning hosted settings, deployment or real emails
+were changed. Sending remains closed and the remaining integration is still open.
+
+The next local slice adds a second unapplied migration for versioned consent
+audit/sync state and zero-default Email Center allowance reservations. Settings
+and token-unsubscribe use atomic service-only RPCs; stale sync acknowledgements
+and pending-sync marketing claims fail closed. A Learning-only exact-audience
+planner preserves global suppression and checks the free shared contact ceiling.
+The internal account-notice worker connects saved reviews, unique claims, the
+allowance ledger, provider adapter and checked checkpoints in isolated SQL/fake
+HTTP tests. Each notice also checks fresh shared-provider usage with the same
+transactional key and conservative headroom; this is not a cross-product quota
+reservation. An internal disabled-by-default consent worker changes only
+Learning membership, preserves global suppression, checks version/read-back,
+compensates stale adds and retains a non-expiring lease on uncertainty. No
+automatic import or background job is enabled. Broadcast workflow/queued-audience
+ownership, webhook reconciliation, HTTP activation and shared-account operational
+coordination remain required; nothing was deployed/applied/sent in this slice.
+
 ## Remaining Phase 6 work, in order
+
+Latest approved-release checkpoint, 23 October: the three Email Center migrations
+are applied to Learning only, with matching recorded sources, 12 RLS tables and
+17 service-only functions verified. All 13 users are preserved, all new delivery
+records are empty, and quota defaults remain zero. The owner approved an isolated
+push/deployment with sending disabled; final local build/TypeScript passed.
+No contacts were imported or emails sent. Activation/provider configuration and
+the owner-only real test still require their separate checks. Earlier local-only
+notes below are historical; Phase Six and all payment gates remain open.
+
+23 October Email Center checkpoint: local broadcast preparation/dispatch,
+exact-recipient 15-minute approval, controlled-test allowlist, and recovery/
+cancellation/history are connected and tested with fake provider calls and all
+three real local migrations. Build/TypeScript pass. No migration, push/deploy,
+contact import or real email was performed. Read-only hosted audit found 13
+confirmed Learning accounts and **zero marketing opt-ins**, including the owner
+currently opted out. The owner-only controlled test therefore awaits self opt-in,
+sender/configuration verification and explicit release/import/send approval.
+See `learning-email-center-upgrade.md` for the exact sequence and rollback.
+Broad/unattended marketing, automated consent scheduling/webhooks and unverifiable
+outcome recovery remain gated; this does not close Phase Six or activate checkout.
 
 1. Resolve or document the upstream development-tool advisory and continue the
    broader role/API authorization, input-abuse/rate-limit, and secret-boundary
