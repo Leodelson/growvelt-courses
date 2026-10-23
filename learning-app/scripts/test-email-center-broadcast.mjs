@@ -16,7 +16,7 @@ const {runLearningBroadcast}=load("email-center-broadcast-worker"),{createEmailC
 const operator="00000000-0000-4000-8000-000000000001",learner="00000000-0000-4000-8000-000000000002",foreign="00000000-0000-4000-8000-000000000003";
 const contact={id:"40000000-0000-4000-8000-000000000001",email:"learner@example.invalid",unsubscribed:false};
 const runtime=load("email-center-runtime");
-const envNames=["LEARNING_EMAIL_CENTER_RELEASE","LEARNING_EMAIL_CENTER_RECOVERY","LEARNING_EMAIL_CENTER_TEST_RECIPIENTS","RESEND_LEARNING_SEGMENT_ID"],previousEnv=Object.fromEntries(envNames.map(name=>[name,process.env[name]]));
+const envNames=["LEARNING_EMAIL_CENTER_RELEASE","LEARNING_EMAIL_CENTER_RECOVERY","LEARNING_EMAIL_CENTER_TEST_RECIPIENTS","RESEND_LEARNING_SEGMENT_ID","LEARNING_EMAIL_CENTER_LIVE_MAX_RECIPIENTS"],previousEnv=Object.fromEntries(envNames.map(name=>[name,process.env[name]]));
 try {
   process.env.LEARNING_EMAIL_CENTER_RELEASE="disabled";process.env.LEARNING_EMAIL_CENTER_RECOVERY="disabled";
   assert.equal(runtime.emailCenterRelease().enabled,false);assert.throws(()=>runtime.emailCenterProviderRuntime(),/not activated/);
@@ -27,12 +27,32 @@ try {
   process.env.RESEND_LEARNING_SEGMENT_ID=load("email-center-audience").LEARNING_EMAIL_SEGMENT_ID;
   process.env.LEARNING_EMAIL_CENTER_TEST_RECIPIENTS=contact.email;
   assert.equal(runtime.emailCenterRelease().enabled,true);
-  await assert.rejects(runtime.checkEmailCenterTestRecipients({rpc:async()=>({data:{targets:[{email:"careers@example.invalid"}]},error:null})},operator,learner,1),/allowlist/);
+  await assert.rejects(runtime.checkEmailCenterRecipients({rpc:async()=>({data:{targets:[{email:"careers@example.invalid"}]},error:null})},operator,learner,1),/allowlist/);
   process.env.LEARNING_EMAIL_CENTER_TEST_RECIPIENTS=Array.from({length:11},(_,n)=>`user${n}@example.invalid`).join(",");
   assert.equal(runtime.emailCenterRelease().enabled,false,"controlled release cannot expand past ten approved addresses");
   process.env.LEARNING_EMAIL_CENTER_TEST_RECIPIENTS=contact.email;
   process.env.RESEND_LEARNING_SEGMENT_ID="a8776ea3-0012-4c55-a887-1c0153466738";
   assert.equal(runtime.emailCenterRelease().enabled,false,"Careers segment never activates Learning release");
+  process.env.RESEND_LEARNING_SEGMENT_ID=load("email-center-audience").LEARNING_EMAIL_SEGMENT_ID;
+  process.env.LEARNING_EMAIL_CENTER_RELEASE="admin-live";
+  for(const invalid of ["","0","101","1.5"," 100","100 ","Infinity","1e2"]){
+    process.env.LEARNING_EMAIL_CENTER_LIVE_MAX_RECIPIENTS=invalid;
+    assert.equal(runtime.emailCenterRelease().enabled,false,"live mode requires an explicit bounded integer limit");
+  }
+  process.env.LEARNING_EMAIL_CENTER_LIVE_MAX_RECIPIENTS="100";
+  delete process.env.LEARNING_EMAIL_CENTER_TEST_RECIPIENTS;
+  assert.equal(runtime.emailCenterRelease().enabled,true);
+  const targets=Array.from({length:100},(_,n)=>({email:`learning${n}@example.invalid`,confirmed:true,marketingOptIn:true}));
+  const check=async(values,mode="marketing")=>runtime.checkEmailCenterRecipients({rpc:async()=>({data:{document:{mode},targets:values},error:null})},operator,learner,1);
+  assert.equal((await check(targets)).targets.length,100,"live marketing accepts the reviewed Learning audience, not a test allowlist");
+  await assert.rejects(check([...targets,{email:"extra@example.invalid",confirmed:true,marketingOptIn:true}]),/limit/);
+  await assert.rejects(check([{...targets[0],marketingOptIn:false}]),/consent/);
+  await assert.rejects(check([{...targets[0],confirmed:false}]),/Confirmed/);
+  await assert.rejects(check([targets[0],{...targets[0],email:targets[0].email.toUpperCase()}]),/unique/);
+  await assert.rejects(check(targets.slice(0,11),"transactional"),/Confirmed/);
+  assert.equal((await check([{...targets[0],marketingOptIn:false}],"transactional")).targets.length,1,"genuine account notices do not require marketing consent; quota still applies");
+  process.env.RESEND_LEARNING_SEGMENT_ID="a8776ea3-0012-4c55-a887-1c0153466738";
+  assert.equal(runtime.emailCenterRelease().enabled,false,"live release cannot target Careers segments");
 }finally{for(const name of envNames){if(previousEnv[name]===undefined)delete process.env[name];else process.env[name]=previousEnv[name];}}
 const db=new PGlite();
 try {

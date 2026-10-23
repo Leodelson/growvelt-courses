@@ -36,7 +36,7 @@ const operator='00000000-0000-4000-8000-000000000001',learner='00000000-0000-400
   const providerContact={id:'40000000-0000-4000-8000-000000000001',email:'learner@example.invalid',unsubscribed:false};
   const members=new Set(),broadcasts=new Map();
   const runtime={emailCenterRelease:()=>({enabled:true,emails:[providerContact.email]}),
-    async checkEmailCenterTestRecipients(database,actor,id,revision){const result=await database.rpc('read_learning_email_center_review',{p_actor:actor,p_id:id,p_revision:revision});if(result.error)throw new Error('Fixture review failed');return result.data;},
+    async checkEmailCenterRecipients(database,actor,id,revision){const result=await database.rpc('read_learning_email_center_review',{p_actor:actor,p_id:id,p_revision:revision});if(result.error)throw new Error('Fixture review failed');return result.data;},
     emailCenterProviderRuntime:()=>({membership:{async setMember(id,member){if(member)members.add(id);else members.delete(id);}},transport:{
       senderIdentity:()=> 'Growvelt Learning <learning@growvelt.com>',
       async readAudience(segmentOnly=false){return{complete:true,contacts:!segmentOnly||members.has(providerContact.id)?[providerContact]:[]};},

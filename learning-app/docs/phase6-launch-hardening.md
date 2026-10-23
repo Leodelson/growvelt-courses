@@ -289,6 +289,15 @@ coordination remain required; nothing was deployed/applied/sent in this slice.
 
 ## Remaining Phase 6 work, in order
 
+23 October activation follow-up: the dedicated Learning marketing credential
+and five sender identities are configured in Learning Production; the approved
+owner-only broadcast reports one delivered recipient in Resend and is reconciled
+to `sent` in Learning. The owner then approved bounded `admin-live` broadcasts
+with an explicit cap of 100 opted-in Learning accounts. Exact review, suppression,
+free-plan safeguards and no automatic import remain required. Transactional
+quota defaults and bell/push remain unchanged. See the latest Email Center
+checkpoint; older sending-disabled/local-stage entries are retained history.
+
 Latest approved-release checkpoint, 23 October: the three Email Center migrations
 are applied to Learning only, with matching recorded sources, 12 RLS tables and
 17 service-only functions verified. All 13 users are preserved, all new delivery

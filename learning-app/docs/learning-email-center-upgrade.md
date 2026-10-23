@@ -1,4 +1,61 @@
-# Learning Email Center — controlled release, sending disabled
+# Learning Email Center — bounded live broadcast release
+
+## Provider setup and controlled delivery — 23 October 2026
+
+The owner approved activation, creation of a dedicated Full-access Learning
+Resend key and saving it as a server-only Learning Production secret. The key
+was created as `Growvelt Learning Email Center`; the owner saved its one-time
+value as `RESEND_MARKETING_API_KEY`. Vercel confirms the Production Secret entry;
+the value was not printed, stored in source or copied from Careers. Existing
+keys and Careers configuration were unchanged. Resend Full access is team-wide,
+not a provider-enforced Learning-only permission boundary.
+
+Ten non-secret Learning Production variables were saved: five sender mailboxes,
+the reserved Learning segment, verified `growvelt.com`, recovery enabled,
+controlled-test mode and the owner-only recipient allowlist. Known-good source
+`55a2948` was redeployed as Ready/Current Production
+`kUiy65ohYy4hoxCwCYRNx3LSJzfK`, without publishing unrelated local work.
+
+Read-only provider verification: `growvelt.com` and `updates.growvelt.com`
+Verified; Free usage 1/100 daily transactional, 156/3,000 monthly, 592/1,000
+contacts, 3/3 segments; paid overages remained disabled. The owner's existing
+globally subscribed contact was reused, without import or resubscription.
+Learning's actual recipient review confirmed their saved marketing opt-in.
+
+Exactly one approved test was sent from `Growvelt Learning <no-reply@growvelt.com>`
+to `nduleonardc@gmail.com`, subject `Growvelt Learning email test`, using the
+previously approved body. Draft `0d1e7fa1-93e2-4b09-8304-2ad4a2ef4341`, provider
+broadcast `dfae45b7-ebb1-46b6-86e0-4f0309d507b4`: Resend reports Sent, 1 delivered,
+0 bounced, 0 suppressed. Learning's no-resend reconciliation subsequently
+recorded `sent / provider sent` and draft `accepted`; the segment lease is
+released only by that verified terminal transition. No other campaign was sent.
+This is provider delivery evidence, not a claim to have inspected the inbox.
+
+After the successful test, the owner separately approved normal admin-reviewed
+broadcasts to at most 100 explicitly opted-in Learning accounts per campaign.
+The release contract is `LEARNING_EMAIL_CENTER_RELEASE=admin-live` plus an
+explicit `LEARNING_EMAIL_CENTER_LIVE_MAX_RECIPIENTS=100` (valid range 1–100).
+Missing/invalid caps, an unknown release mode or any non-Learning segment leave
+sending disabled. Controlled-test mode retains its independent ten-address
+allowlist. Both modes retain the two confirmed operators plus Learning admin
+RPC, current confirmed identities/consent, exact immutable 15-minute approval,
+global suppression, exact provider membership and fresh free-plan checks.
+
+This does not activate unattended scheduling, automatic contact creation,
+webhooks, notification-bell delivery or push. A missing opted-in provider
+contact stops preparation before writes and requires a separately approved
+import. Account/support notices remain capped at ten and require their existing
+separate short-lived transactional budget allocation; zero defaults were not
+raised. This release is bounded live **broadcasts**, not all delivery channels.
+Shared Resend global unsubscribes can also suppress Careers; no global opt-out
+was toggled for this test. Product opt-outs continue to be checked from Learning.
+
+Activation rollback: set the release gate to `disabled`, leave recovery enabled,
+redeploy known-good source, reconcile existing IDs without another send, and
+preserve tables/claims/provider records. Previous sending-off deployment:
+`4Eq5HFizd3j1Ps8Fpu16PRhzMrPk`. No role grants, hosted Auth, payment, DNS, domain,
+Careers, or billing settings changed. Phase Six and Live financial gates remain
+open. Earlier sections below are dated history superseded by this checkpoint.
 
 ## Approved release checkpoint — 23 October 2026
 

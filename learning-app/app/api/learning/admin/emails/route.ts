@@ -6,7 +6,7 @@ import { JsonBodyError, readBoundedJsonObject } from "@/app/lib/security/json-bo
 import { emailUuid, parseEmailDocument, senderChoices } from "@/app/lib/email/email-center";
 import { isEmailOperator } from "@/app/lib/email/email-center-authorization";
 import { renderEmailCenterMessage } from "@/app/lib/email/email-center-render";
-import { emailCenterRelease, emailCenterProviderRuntime, checkEmailCenterTestRecipients } from "@/app/lib/email/email-center-runtime";
+import { emailCenterRelease, emailCenterProviderRuntime, checkEmailCenterRecipients } from "@/app/lib/email/email-center-runtime";
 import { runLearningBroadcast } from "@/app/lib/email/email-center-broadcast-worker";
 import { deliverLearningAccountNotice } from "@/app/lib/email/email-center-account-worker";
 import { synchronizeLearningConsent } from "@/app/lib/email/email-center-consent-worker";
@@ -29,11 +29,15 @@ export async function GET() {
     admin.from("learning_email_center_attempts").select("draft_id,target_key,state,checked_at").order("claimed_at",{ascending:false}).limit(100),
   ]);
   if (drafts.error) return json({error:"The Email Center upgrade needs its approved Learning database migration. Existing campaigns are preserved.",setupRequired:true},503);
+  const release = emailCenterRelease();
   return json({drafts:drafts.data ?? [],legacy:legacy.error ? [] : legacy.data ?? [],
     senders:senderChoices.map(sender=>({id:sender.id,configured:!!process.env[sender.variable]})),
     operations:operations.error ? [] : operations.data ?? [],attempts:attempts.error ? [] : attempts.data ?? [],
-    recoveryEnabled:emailCenterRelease().enabled || process.env.LEARNING_EMAIL_CENTER_RECOVERY === "enabled",
-    deliveryEnabled:emailCenterRelease().enabled,deliveryNotice:"Only the approved controlled-test allowlist can receive messages. Preparing never sends; final release approval expires after 15 minutes. Unknown outcomes are reconciled, never blindly retried. Bell and push remain separate and disabled.",
+    recoveryEnabled:release.enabled || process.env.LEARNING_EMAIL_CENTER_RECOVERY === "enabled",
+    deliveryEnabled:release.enabled,releaseMode:release.mode,marketingRecipientLimit:release.maxRecipients,
+    deliveryNotice:(release.mode === "admin-live" && release.enabled
+      ? `Admin-approved broadcasts allow up to ${release.maxRecipients} opted-in Learning accounts. Account/support messages retain their separate short-lived quota approval. `
+      : "Only the approved controlled-test allowlist can receive messages. ") + "Preparing never sends; final release approval expires after 15 minutes. Unknown outcomes are reconciled, never blindly retried. Bell and push remain separate and disabled.",
   });
 }
 export async function POST(request: Request) {
@@ -61,10 +65,10 @@ export async function POST(request: Request) {
         const runtime = emailCenterProviderRuntime({recoveryOnly:true});
         return json(await runLearningBroadcast({database:admin,...runtime,actorId:actor.id,draftId:input.id,revision:Number(input.revision),enabled:true},input.action === "cancel-broadcast" ? "cancel" : "reconcile"));
       }
-      const review = await checkEmailCenterTestRecipients(admin,actor.id,input.id,Number(input.revision));
+      const review = await checkEmailCenterRecipients(admin,actor.id,input.id,Number(input.revision));
       if (input.action === "release-review") return json({targets:review.targets,subject:review.document.subject,sender:emailCenterProviderRuntime().transport.senderIdentity(parseEmailDocument(review.document).sender),mode:review.document.mode});
       if (input.action === "approve-release") {
-        if (!Array.isArray(input.recipients) || input.recipients.length>10 || input.recipients.some(value=>typeof value!=="string")) return json({error:"Confirm the reviewed addresses."},400);
+        if (!Array.isArray(input.recipients) || input.recipients.length>emailCenterRelease().maxRecipients || input.recipients.some(value=>typeof value!=="string")) return json({error:"Confirm the reviewed addresses."},400);
         const approval = await admin.rpc("approve_learning_email_release",{p_actor:actor.id,p_id:input.id,p_revision:input.revision,p_recipients:input.recipients});
         if (approval.error) return json({error:"Release approval failed. Review recipients again."},409);
         return json({state:"approved",notice:"This exact revision and recipient list are approved for 15 minutes. Nothing was sent."});
