@@ -12,7 +12,7 @@ export async function synchronizeLearningConsent(input: {
   userId: string; enabled?: boolean;
 }) {
   if (input.enabled !== true) throw new Error("Consent synchronization activation is required.");
-  if (!emailUuid.test(input.userId)) throw new Error("Invalid Learning user.");
+  if (!emailUuid.test(input.userId)) throw new Error("Invalid Growvelt user.");
   async function rpc(name: string, args: object) {
     const result = await input.database.rpc(name, args);
     if (result.error) throw new Error("Consent state could not be persisted; review before retry.");

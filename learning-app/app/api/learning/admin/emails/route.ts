@@ -20,7 +20,7 @@ async function operatorSession() {
   return !error && data === true ? user : null;
 }
 export async function GET() {
-  if (!await operatorSession()) return json({error:"Only the two authorized Learning email administrators may use Email Center."},403);
+  if (!await operatorSession()) return json({error:"Only the two authorized Growvelt email administrators may use Email Center."},403);
   const admin = createAdminClient();
   const [drafts,legacy,operations,attempts] = await Promise.all([
     admin.from("learning_email_center_drafts").select("id,document,revision,status,created_at,updated_at,reviewed_at").order("updated_at",{ascending:false}).limit(30),
@@ -28,7 +28,7 @@ export async function GET() {
     admin.from("learning_email_broadcast_operations").select("draft_id,revision,phase,provider_status,updated_at").order("updated_at",{ascending:false}).limit(30),
     admin.from("learning_email_center_attempts").select("draft_id,target_key,state,checked_at").order("claimed_at",{ascending:false}).limit(100),
   ]);
-  if (drafts.error) return json({error:"The Email Center upgrade needs its approved Learning database migration. Existing campaigns are preserved.",setupRequired:true},503);
+  if (drafts.error) return json({error:"The Email Center upgrade needs its approved Growvelt database migration. Existing campaigns are preserved.",setupRequired:true},503);
   const release = emailCenterRelease();
   return json({drafts:drafts.data ?? [],legacy:legacy.error ? [] : legacy.data ?? [],
     senders:senderChoices.map(sender=>({id:sender.id,configured:!!process.env[sender.variable]})),
@@ -36,25 +36,25 @@ export async function GET() {
     recoveryEnabled:release.enabled || process.env.LEARNING_EMAIL_CENTER_RECOVERY === "enabled",
     deliveryEnabled:release.enabled,releaseMode:release.mode,marketingRecipientLimit:release.maxRecipients,
     deliveryNotice:(release.mode === "admin-live" && release.enabled
-      ? `Admin-approved broadcasts allow up to ${release.maxRecipients} opted-in Learning accounts. Account/support messages retain their separate short-lived quota approval. `
+      ? `Admin-approved broadcasts allow up to ${release.maxRecipients} opted-in Growvelt accounts. Account/support messages retain their separate short-lived quota approval. `
       : "Only the approved controlled-test allowlist can receive messages. ") + "Preparing never sends; final release approval expires after 15 minutes. Unknown outcomes are reconciled, never blindly retried. Bell and push remain separate and disabled.",
   });
 }
 export async function POST(request: Request) {
   if (!isSameOriginRequest(request)) return json({error:"This request was not accepted."},403);
   const actor = await operatorSession();
-  if (!actor) return json({error:"Only the two authorized Learning email administrators may use Email Center."},403);
+  if (!actor) return json({error:"Only the two authorized Growvelt email administrators may use Email Center."},403);
   let input: Record<string,unknown>;
   try { input = await readBoundedJsonObject(request,32*1024); }
   catch (error) { return json({error:"Check the request fields."},error instanceof JsonBodyError ? error.status : 400); }
   // No fallback to the old per-recipient marketing sender.
   if (["send","prepare-broadcast","dispatch-broadcast","reconcile-broadcast","cancel-broadcast","release-review","approve-release","sync-consent"].includes(String(input.action))) {
     const recoveryAction=["reconcile-broadcast","cancel-broadcast"].includes(String(input.action));
-    if (!emailCenterRelease().enabled && !(recoveryAction && process.env.LEARNING_EMAIL_CENTER_RECOVERY === "enabled")) return json({error:"Sending is not activated. Complete Learning provider and budget verification first. No email was sent."},503);
+    if (!emailCenterRelease().enabled && !(recoveryAction && process.env.LEARNING_EMAIL_CENTER_RECOVERY === "enabled")) return json({error:"Sending is not activated. Complete Growvelt provider and budget verification first. No email was sent."},503);
     const admin = createAdminClient();
     try {
       if (input.action === "sync-consent") {
-        if (typeof input.userId !== "string" || !emailUuid.test(input.userId)) return json({error:"Choose a valid Learning account."},400);
+        if (typeof input.userId !== "string" || !emailUuid.test(input.userId)) return json({error:"Choose a valid Growvelt account."},400);
         const {membership} = emailCenterProviderRuntime();
         return json(await synchronizeLearningConsent({database:admin,provider:membership,userId:input.userId,enabled:true}));
       }
@@ -96,7 +96,7 @@ export async function POST(request: Request) {
   if (input.action === "review") {
     if (typeof input.id !== "string" || !emailUuid.test(input.id) || !Number.isSafeInteger(input.revision) || Number(input.revision)<1) return json({error:"Save a draft before reviewing."},400);
     const {data,error} = await createAdminClient().rpc("review_learning_email_center_draft",{p_actor:actor.id,p_id:input.id,p_revision:input.revision});
-    if (error) return json({error:error.code === "40001" ? "This draft changed. Reload and review again." : error.code === "22023" ? "No eligible recipients, unknown selected accounts, or recipient limit exceeded. Marketing requires explicit Learning opt-in." : "Recipients could not be checked. No messages were sent."},error.code === "40001" ? 409 : error.code === "22023" ? 400 : 503);
+    if (error) return json({error:error.code === "40001" ? "This draft changed. Reload and review again." : error.code === "22023" ? "No eligible recipients, unknown selected accounts, or recipient limit exceeded. Marketing requires explicit marketing opt-in." : "Recipients could not be checked. No messages were sent."},error.code === "40001" ? 409 : error.code === "22023" ? 400 : 503);
     return json(data);
   }
   return json({error:"Choose preview, save or review. Legacy sending is disabled."},400);

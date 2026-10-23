@@ -14,7 +14,7 @@ export function OrganizationInvitationForm({ organizationId }: { organizationId:
     window.sessionStorage.removeItem(successStorageKey);
     setFeedback({ kind: "success", text: saved });
   }, [successStorageKey]);
-  const failureMessage = (code?: string) => code === "invitee_not_found" ? "That email does not belong to a Growvelt Learning account yet." : code === "invitee_not_approved" ? "That account has not been approved as a Growvelt instructor yet." : code === "already_member" ? "That instructor is already an active member of this organization." : code === "organization_access_denied" ? "Your active Owner access could not be verified. Refresh and try again." : "We could not confirm that invitation. Please refresh once before trying again.";
+  const failureMessage = (code?: string) => code === "invitee_not_found" ? "That email does not belong to a Growvelt account yet." : code === "invitee_not_approved" ? "That account has not been approved as a Growvelt instructor yet." : code === "already_member" ? "That instructor is already an active member of this organization." : code === "organization_access_denied" ? "Your active Owner access could not be verified. Refresh and try again." : "We could not confirm that invitation. Please refresh once before trying again.";
   function showSavedInvitation(text: string) {
     setFeedback({ kind: "success", text });
     window.setTimeout(() => {

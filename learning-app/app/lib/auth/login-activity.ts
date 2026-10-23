@@ -32,7 +32,7 @@ export async function recordLearningSignIn(user: User, headers: Headers, verifie
   const { error: notificationError } = await admin.from("learning_notifications").insert({
     user_id: user.id,
     kind: "login",
-    title: "New sign-in to your Learning account",
+    title: "New sign-in to your Growvelt account",
     body: `${details.browser} on ${details.device}${country ? ` · ${country}` : ""}. If this wasn't you, reset your password in Settings.`,
     href: "/dashboard/settings",
     source_key: `login:${signInAt}`,

@@ -6,9 +6,9 @@ import styles from "./home-motion-reel.module.css";
 
 const film = "/videos/growvelt-learning-reel-v1.mp4";
 const copy = {
-  en: { kicker: "Growvelt Learning", title: "Where learning", accent: "meets opportunity.", intro: "Build practical skills for the next chapter of your life.", description: "A silent montage of teaching, remote learning, career preparation and professional collaboration." },
-  fr: { kicker: "Growvelt Learning", title: "L’apprentissage ouvre", accent: "de nouvelles perspectives.", intro: "Développez des compétences pratiques pour votre prochain chapitre.", description: "Un montage muet d’enseignement, d’apprentissage à distance, de préparation professionnelle et de collaboration." },
-  es: { kicker: "Growvelt Learning", title: "Donde aprender", accent: "abre oportunidades.", intro: "Desarrolla habilidades prácticas para el próximo capítulo de tu vida.", description: "Un montaje sin sonido de enseñanza, aprendizaje remoto, preparación profesional y colaboración." },
+  en: { kicker: "Growvelt", title: "Where learning", accent: "meets opportunity.", intro: "Build practical skills for the next chapter of your life.", description: "A silent montage of teaching, remote learning, career preparation and professional collaboration." },
+  fr: { kicker: "Growvelt", title: "L’apprentissage ouvre", accent: "de nouvelles perspectives.", intro: "Développez des compétences pratiques pour votre prochain chapitre.", description: "Un montage muet d’enseignement, d’apprentissage à distance, de préparation professionnelle et de collaboration." },
+  es: { kicker: "Growvelt", title: "Donde aprender", accent: "abre oportunidades.", intro: "Desarrolla habilidades prácticas para el próximo capítulo de tu vida.", description: "Un montaje sin sonido de enseñanza, aprendizaje remoto, preparación profesional y colaboración." },
 };
 
 export function HomeMotionReel() {

@@ -14,7 +14,7 @@ export function AuthFrame({ children }: { children: React.ReactNode }) {
       <aside className="auth-story">
         <LearningMark href="/" />
         <div className="auth-story-copy">
-          <p className="eyebrow">Growvelt Learning</p>
+          <p className="eyebrow">Growvelt</p>
           <h2>{t("auth.storyTitle")}</h2>
           <div className="auth-value-list">
             <p><span>01</span>{t("auth.storyOne")}</p>

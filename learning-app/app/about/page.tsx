@@ -5,17 +5,17 @@ import { AboutPageContent } from "@/app/components/about-page-content";
 
 export const metadata: Metadata = {
   title: "About",
-  description: "Learn how Growvelt Learning helps people and teams build practical skills through courses, instructor-led teaching, and private company workspaces.",
+  description: "Learn how Growvelt helps people and teams build practical skills through courses, instructor-led teaching, and private company workspaces.",
   alternates: { canonical: "/about" },
   openGraph: {
     url: "/about",
-    title: "About Growvelt Learning | Practical skills for people and teams",
-    description: "Learn about practical online courses, instructor-led teaching, and private company learning workspaces on Growvelt Learning.",
+    title: "About Growvelt | Practical skills for people and teams",
+    description: "Learn about practical online courses, instructor-led teaching, and private team training workspaces on Growvelt.",
   },
   twitter: {
     card: "summary_large_image",
-    title: "About Growvelt Learning | Practical skills for people and teams",
-    description: "Learn about practical online courses, instructor-led teaching, and private company learning workspaces on Growvelt Learning.",
+    title: "About Growvelt | Practical skills for people and teams",
+    description: "Learn about practical online courses, instructor-led teaching, and private team training workspaces on Growvelt.",
   },
 };
 

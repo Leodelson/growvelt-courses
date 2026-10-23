@@ -40,7 +40,7 @@ export type InstructorLearningAnalytics = {
 
 export async function getOwnInstructorLearningAnalytics(): Promise<InstructorLearningAnalytics> {
   const { data, error } = await (await createClient()).rpc("get_own_instructor_learning_analytics");
-  if (error) throw new Error("Unable to load Instructor Learning Analytics.");
+  if (error) throw new Error("Unable to load Instructor Course Analytics.");
 
   const courses = ((data ?? []) as InstructorAnalyticsRow[]).map((row) => ({
     courseId: row.course_id,

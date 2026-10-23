@@ -55,7 +55,7 @@ export function SubscriptionPlanForm({ courses }: { courses: InstructorSubscript
 
       <fieldset className={styles.coursePicker}>
         <legend>Courses included</legend>
-        <p>Select 1–50 of your published paid NGN courses with the same commercial terms. Company Test Mode-only courses can be used to prepare a Test Mode plan, but are never offered through public subscription checkout; keep them separate from public courses. Paystack coupon test fixtures are excluded.</p>
+        <p>Select 1 to 50 of your published paid NGN courses with the same commercial terms. Company Test Mode-only courses can be used to prepare a Test Mode plan, but are never offered through public subscription checkout; keep them separate from public courses. Paystack coupon test fixtures are excluded.</p>
         {courses.length > 0 && <><label className="course-field">{ui.findCourses}<input type="search" onKeyDown={event=>{if(event.key==="Enter")event.preventDefault();}} value={courseSearch} maxLength={120} onChange={event=>setCourseSearch(event.target.value)} /></label><p role="status">{ui.selected}: {selectedIds.length} / 50 · {ui.results}: {courses.filter(course=>matchesSearch(course.title)).length} / {courses.length}</p><p>{ui.selectionHint}</p></>}
         {courses.length ? <div className={styles.courseList}>{courses.map((course) => <label className={styles.courseOption} key={course.course_id} hidden={!matchesSearch(course.title)}>
           <input type="checkbox" name="course_ids" value={course.course_id} checked={selectedIds.includes(course.course_id)} disabled={selectedIds.length >= 50 && !selectedIds.includes(course.course_id)} onChange={(event) => changeCourseSelection(course.course_id, event.target.checked)} />

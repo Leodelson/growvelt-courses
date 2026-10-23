@@ -27,7 +27,7 @@ export async function POST(request: Request) {
     const processArgs = mode === "live" ? { p_event_id: Number(eventId), p_operator_id: user.id } : { p_event_id: Number(eventId) };
     const {data,error}=await admin.rpc(processFunction,processArgs); if(error) throw error;
     const outcome=(data as Array<{outcome?:string}>|null)?.[0]?.outcome??verified.status;
-    if(outcome==="lost"){const context=await getOrderNotificationContext(target.order_reference);if(context)await sendPaymentNotification({key:`access-revoked:chargeback:provider-api:${eventId}`,type:"access_revoked",recipient:context.email,subject:"Growvelt Learning course access updated",heading:"Course access has ended",message:`Paystack confirmed a financial reversal for ${context.courseTitle}. Future access has ended while historical learning activity remains retained.`,orderId:context.orderId,caseId});}
+    if(outcome==="lost"){const context=await getOrderNotificationContext(target.order_reference);if(context)await sendPaymentNotification({key:`access-revoked:chargeback:provider-api:${eventId}`,type:"access_revoked",recipient:context.email,subject:"Growvelt course access updated",heading:"Course access has ended",message:`Paystack confirmed a financial reversal for ${context.courseTitle}. Future access has ended while historical learning activity remains retained.`,orderId:context.orderId,caseId});}
     return NextResponse.json({outcome});
   } catch(error) {
     console.error("dispute.operator_recovery_failed",{provider:"paystack",caseId,operatorId:user.id,message:error instanceof Error?error.message:"Unknown error"});

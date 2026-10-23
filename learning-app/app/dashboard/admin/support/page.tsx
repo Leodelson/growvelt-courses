@@ -19,7 +19,7 @@ export default async function AdminLearningSupportPage() {
   const resolvedCount = cases?.filter((item) => item.status === "resolved").length ?? 0;
 
   return <main className={styles.page}>
-    <header className={styles.hero}><p className="eyebrow">Learning administration</p><h1>Support inbox</h1><p>Reply to Learning account requests here. This inbox is separate from Growvelt Careers and uses Learning accounts only.</p></header>
+    <header className={styles.hero}><p className="eyebrow">Growvelt administration</p><h1>Support inbox</h1><p>Reply to Growvelt account requests here. This inbox is separate from Growvelt Careers and uses Growvelt accounts only.</p></header>
     <p className={adminStyles.countNote}>Counts reflect the most recent 100 requests shown below.</p>
     <section className={adminStyles.stats} aria-label="Support request totals">
       <article><span>Needs a reply</span><strong>{openCount}</strong></article>
@@ -27,7 +27,7 @@ export default async function AdminLearningSupportPage() {
       <article><span>Resolved</span><strong>{resolvedCount}</strong></article>
     </section>
     <section className={styles.card}><div className={styles.sectionHeading}><div><h2>Recent requests</h2><p>Showing the latest 100 cases, most recently updated first.</p></div><Link className="button button-secondary" href="/dashboard/support">View learner support page</Link></div>
-      {error ? <p className={styles.error}>The inbox is unavailable. Confirm that Learning&rsquo;s support-inbox migration has been applied.</p> : !cases?.length ? <div className={styles.empty}><strong>No support requests yet</strong><p>New requests from signed-in Learning users will appear here.</p></div> : <div className={styles.cases}>{cases.map((item) => <Link className={styles.case} href={`/dashboard/support/${item.id}`} key={item.id}>
+      {error ? <p className={styles.error}>The inbox is unavailable. Confirm that Growvelt&rsquo;s support-inbox migration has been applied.</p> : !cases?.length ? <div className={styles.empty}><strong>No support requests yet</strong><p>New requests from signed-in Growvelt users will appear here.</p></div> : <div className={styles.cases}>{cases.map((item) => <Link className={styles.case} href={`/dashboard/support/${item.id}`} key={item.id}>
         <span className={`${styles.status} ${item.status === "open" ? styles.open : item.status === "waiting" ? styles.waiting : styles.resolved}`}>{item.status === "open" ? "Needs reply" : item.status === "waiting" ? "Waiting on learner" : "Resolved"}</span>
         <strong>{item.subject}</strong><span>{item.topic} · account {item.user_id.slice(0, 8)}</span>
         <small>Last update · {new Date(item.last_message_at).toISOString().slice(0, 16).replace("T", " ")} UTC</small>

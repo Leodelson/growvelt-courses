@@ -7,7 +7,7 @@ import { CompanyReportList } from "@/app/components/company/report-list";
 import base from "@/app/components/instructor/provider-workspaces.module.css";
 import styles from "@/app/components/company/workspaces.module.css";
 
-export const metadata = { title: "Company learning report" };
+export const metadata = { title: "Team Training report" };
 
 export default async function CompanyLearningReportPage() {
   if (!(await (await createClient()).auth.getUser()).data.user) redirect("/sign-in");
@@ -20,7 +20,7 @@ export default async function CompanyLearningReportPage() {
   const averageProgress = assignments.length ? Math.round(assignments.reduce((total, row) => total + displayProgress(row.progress_percent), 0) / assignments.length) : 0;
 
   return <section className={`instructor-earnings-page section-shell ${base.page} ${styles.page}`}>
-    <Link className={base.back} href="/dashboard/company">← Back to Company learning</Link>
+    <Link className={base.back} href="/dashboard/company">← Back to Team Training</Link>
     <header className="instructor-earnings-hero"><p className="eyebrow">Private company report</p><h1>Your team’s assigned learning.</h1><p>Follow employee progress across company-sponsored courses. Personal learning, personal earnings and Growvelt-wide financial data are never included.</p></header>
     <dl className={styles.summary} aria-label="All authorized assignment records">{[{label:"Assignments",value:assignments.length},{label:"Employees with assignments",value:employeeCount},{label:"Completed assignments",value:completedCount},{label:"Average recorded progress",value:`${averageProgress}%`}].map(item=><div key={item.label}><dt>{item.label}</dt><dd>{item.value}</dd></div>)}</dl>
     {!assignments.length ? <section className="organization-panel company-report-empty"><h2>No assigned learning yet</h2><p>Invite an employee and assign a published free course to begin private company reporting. Paid assignments follow the existing payment-confirmation requirements.</p></section> : <section className="organization-panel company-report-panel">

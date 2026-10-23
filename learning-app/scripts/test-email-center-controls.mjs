@@ -30,7 +30,7 @@ const complete = contacts => ({ complete: true, contacts });
 const planInput = { segmentId: audience.LEARNING_EMAIL_SEGMENT_ID, accounts: [account], providerCatalog: complete([contact]), segment: complete([]) };
 assert.deepEqual([...audience.planLearningAudienceSync(planInput).addContactIds], [contactId]);
 assert.equal(audience.verifyLearningBroadcastAudience({ ...planInput, segment: complete([contact]) }).recipients, 1);
-assert.throws(() => audience.planLearningAudienceSync({ ...planInput, segmentId: "a8776ea3-0012-4c55-a887-1c0153466738" }), /reserved Learning/);
+assert.throws(() => audience.planLearningAudienceSync({ ...planInput, segmentId: "a8776ea3-0012-4c55-a887-1c0153466738" }), /reserved Growvelt/);
 assert.throws(() => audience.verifyLearningBroadcastAudience({ ...planInput, segment: complete([{ id: other, email: "careers@example.invalid", unsubscribed: false }]), providerCatalog: complete([contact, { id: other, email: "careers@example.invalid", unsubscribed: false }]) }), /membership/);
 assert.throws(() => audience.planLearningAudienceSync({ ...planInput, providerCatalog: { complete: false, contacts: [contact] } }), /complete/);
 const suppressed = { ...contact, unsubscribed: true };

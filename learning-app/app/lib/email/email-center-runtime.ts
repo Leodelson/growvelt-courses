@@ -45,6 +45,6 @@ export async function checkEmailCenterRecipients(database: Pick<SupabaseClient, 
     || data.targets.some((target: { email: string; confirmed: boolean; marketingOptIn: boolean }) =>
       !target || typeof target.email !== "string" || target.email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(target.email)
       || target.confirmed !== true || mode === "marketing" && target.marketingOptIn !== true)
-    || new Set(data.targets.map((target: { email: string }) => target.email.toLowerCase())).size !== data.targets.length) throw new Error("Confirmed, unique Learning accounts and current marketing consent are required. No email was sent.");
+    || new Set(data.targets.map((target: { email: string }) => target.email.toLowerCase())).size !== data.targets.length) throw new Error("Confirmed, unique Growvelt accounts and current marketing consent are required. No email was sent.");
   return data;
 }

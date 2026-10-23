@@ -22,7 +22,7 @@ export function HomeHeroCarousel() {
   }, []);
   const slide = slides[active];
   const copy = slide.key === "learn"
-    ? { eyebrow: "Growvelt Learning", title: t("home.hero"), body: t("home.heroCopy"), action: t("home.how") }
+    ? { eyebrow: "Growvelt", title: t("home.hero"), body: t("home.heroCopy"), action: t("home.how") }
     : slide.key === "teach"
       ? { eyebrow: t("home.teachEyebrow"), title: t("home.teachTitle"), body: t("home.teachCopy"), action: t("public.teach") }
       : { eyebrow: t("home.collabEyebrow"), title: t("home.collabTitle"), body: t("home.collabCopy"), action: t("home.partner") };

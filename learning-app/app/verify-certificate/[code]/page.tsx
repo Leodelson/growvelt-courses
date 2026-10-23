@@ -7,9 +7,9 @@ import styles from "@/app/components/public/coverage-refinements.module.css";
 export const metadata = { title: "Certificate verification" };
 
 const copy = {
-  en: { eyebrow: "Growvelt Learning verification", valid: "Valid certificate", revoked: "Revoked certificate", validCopy: "This Growvelt Learning certificate is valid.", revokedCopy: "This certificate record exists but is no longer a valid credential.", missing: "Certificate not found", missingCopy: "Check the verification code and try again.", recipient: "Recipient", course: "Course", reference: "Reference" },
-  fr: { eyebrow: "Vérification Growvelt Learning", valid: "Certificat valide", revoked: "Certificat révoqué", validCopy: "Ce certificat Growvelt Learning est valide.", revokedCopy: "Ce dossier de certificat existe, mais n’est plus un justificatif valide.", missing: "Certificat introuvable", missingCopy: "Vérifiez le code de vérification et réessayez.", recipient: "Bénéficiaire", course: "Cours", reference: "Référence" },
-  es: { eyebrow: "Verificación de Growvelt Learning", valid: "Certificado válido", revoked: "Certificado revocado", validCopy: "Este certificado de Growvelt Learning es válido.", revokedCopy: "Este registro de certificado existe, pero ya no es una credencial válida.", missing: "Certificado no encontrado", missingCopy: "Comprueba el código de verificación e inténtalo de nuevo.", recipient: "Destinatario", course: "Curso", reference: "Referencia" },
+  en: { eyebrow: "Growvelt verification", valid: "Valid certificate", revoked: "Revoked certificate", validCopy: "This Growvelt certificate is valid.", revokedCopy: "This certificate record exists but is no longer a valid credential.", missing: "Certificate not found", missingCopy: "Check the verification code and try again.", recipient: "Recipient", course: "Course", reference: "Reference" },
+  fr: { eyebrow: "Vérification Growvelt", valid: "Certificat valide", revoked: "Certificat révoqué", validCopy: "Ce certificat Growvelt est valide.", revokedCopy: "Ce dossier de certificat existe, mais n’est plus un justificatif valide.", missing: "Certificat introuvable", missingCopy: "Vérifiez le code de vérification et réessayez.", recipient: "Bénéficiaire", course: "Cours", reference: "Référence" },
+  es: { eyebrow: "Verificación de Growvelt", valid: "Certificado válido", revoked: "Certificado revocado", validCopy: "Este certificado de Growvelt es válido.", revokedCopy: "Este registro de certificado existe, pero ya no es una credencial válida.", missing: "Certificado no encontrado", missingCopy: "Comprueba el código de verificación e inténtalo de nuevo.", recipient: "Destinatario", course: "Curso", reference: "Referencia" },
 } as const;
 
 export default async function VerifyCertificatePage({ params }: { params: Promise<{ code: string }> }) {
@@ -22,7 +22,7 @@ export default async function VerifyCertificatePage({ params }: { params: Promis
 
   return (
     <main id="main-content" className={`certificate-view section-shell ${styles.verification}`}>
-      <Link className="back-link" href="/certificates">Growvelt Learning · Certificates</Link>
+      <Link className="back-link" href="/certificates">Growvelt · Certificates</Link>
       <article className={`verification-card verification-${status}`}>
         <p className="eyebrow">{text.eyebrow}</p>
         {certificate ? (

@@ -34,7 +34,7 @@ function welcomeEmailHtml(firstName: string, appBaseUrl: string) {
     greeting: firstName,
     title: "Welcome to Growvelt",
     paragraphs: ["Your account is ready. Explore practical courses, build skills at your pace, and keep your learning progress in one place."],
-    primaryAction: { label: "Explore Learning", href: learningUrl },
+    primaryAction: { label: "Explore courses", href: learningUrl },
     secondaryAction: { label: "Explore Growvelt Jobs", href: jobsUrl },
     highlights: ["Discover practical courses and learn at your pace", "Track progress and complete learning activities", "Build a record of skills and earned proof"],
     reason: "You received this email because you created a Growvelt account.",

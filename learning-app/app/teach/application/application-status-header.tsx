@@ -8,7 +8,7 @@ export function ApplicationStatusHeader() {
     <SkipLink />
     <div className={styles.headerInner}>
       <LearningMark compact href="/dashboard" />
-      <Link className={styles.teachLink} href="/teach" aria-label="Back to Teach on Growvelt">Teach on Growvelt</Link>
+      <Link className={styles.teachLink} href="/teach" aria-label="Back to Become Instructor">Become Instructor</Link>
     </div>
   </header>;
 }

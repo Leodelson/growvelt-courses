@@ -8,12 +8,12 @@ const topics = new Set(["courses", "billing", "teaching", "organizations", "acco
 export async function GET() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Sign in to view Learning messages." }, { status: 401, headers: { "Cache-Control": "private, no-store" } });
+  if (!user) return NextResponse.json({ error: "Sign in to view Growvelt messages." }, { status: 401, headers: { "Cache-Control": "private, no-store" } });
 
   const { data: cases, error } = await supabase.from("learning_support_conversations")
     .select("id,subject,topic,status,updated_at,last_message_at")
     .eq("user_id", user.id).order("last_message_at", { ascending: false }).limit(4);
-  if (error) return NextResponse.json({ error: "Learning messages are temporarily unavailable." }, { status: 503, headers: { "Cache-Control": "private, no-store" } });
+  if (error) return NextResponse.json({ error: "Growvelt messages are temporarily unavailable." }, { status: 503, headers: { "Cache-Control": "private, no-store" } });
 
   const conversations = await Promise.all((cases ?? []).map(async (item) => {
     const { data: latestMessage, error: messageError } = await supabase.from("learning_support_messages")
@@ -22,7 +22,7 @@ export async function GET() {
     if (messageError) return null;
     return { ...item, latest_message: latestMessage?.body ?? null, latest_sender_role: latestMessage?.sender_role ?? null, latest_message_at: latestMessage?.created_at ?? null };
   }));
-  if (conversations.some((item) => item === null)) return NextResponse.json({ error: "Learning messages are temporarily unavailable." }, { status: 503, headers: { "Cache-Control": "private, no-store" } });
+  if (conversations.some((item) => item === null)) return NextResponse.json({ error: "Growvelt messages are temporarily unavailable." }, { status: 503, headers: { "Cache-Control": "private, no-store" } });
   return NextResponse.json({ conversations }, { headers: { "Cache-Control": "private, no-store" } });
 }
 
@@ -30,7 +30,7 @@ export async function POST(request: Request) {
   if (!isSameOriginRequest(request)) return new NextResponse(null, { status: 403 });
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Sign in to contact Learning support." }, { status: 401 });
+  if (!user) return NextResponse.json({ error: "Sign in to contact Growvelt support." }, { status: 401 });
   let input: Record<string, unknown>;
   try { input = await readBoundedJsonObject(request, 32 * 1024); }
   catch (error) { return NextResponse.json({ error: "Check the topic, subject, and message." }, { status: error instanceof JsonBodyError ? error.status : 400, headers: { "Cache-Control": "private, no-store" } }); }

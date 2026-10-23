@@ -9,6 +9,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import ts from "typescript";
 import { NextRequest } from "next/server.js";
 import * as urls from "../app/lib/site-urls.mjs";
+import { updatedCopy } from "./update-visible-brand-copy.mjs";
 import { careersCompatibilityResponse, learningWwwSafetyBridgeResponse } from "../app/lib/careers-compatibility.mjs";
 
 const require = createRequire(import.meta.url);
@@ -191,7 +192,7 @@ assert.ok(signInEvents.every(event => event.userId === "fake-user"));
 assert.ok(signInEvents.every(event => event.hasHeaders && Number.isFinite(Date.parse(event.timestamp))));
 
 // Render the actual app email template without server-only effects or sending email.
-const template = load("../app/lib/email/growvelt-email-template.ts", { "server-only": {}, "../site-urls.mjs": boundUrls, "./email-markdown": load("../app/lib/email/email-markdown.ts") });
+const template = load("../app/lib/email/growvelt-email-template.ts", { "server-only": {}, "../site-urls.mjs": boundUrls, "./email-markdown": load("../app/lib/email/email-markdown.ts"), "./email-dark-compatibility": load("../app/lib/email/email-dark-compatibility.ts") });
 const html = template.renderGrowveltEmail({ greeting: "Test <person>", title: "Account", paragraphs: ["Example"], reason: "Test only", baseUrl: "https://evil.invalid" });
 assert.ok(html.includes("https://www.growvelt.com/logo/growvelt-wordmark-purple-20261019.png"));
 assert.ok(html.includes("https://www.growvelt.com/privacy-policy"));
@@ -204,16 +205,21 @@ const root = fileURLToPath(new URL("../", import.meta.url));
 // Approved branding may change presentation; authentication content and links
 // must still match the fixed pre-transition release.
 function emailContent(template) {
-  return template.match(/<body[^>]*>([\s\S]*)<\/body>/i)[1]
+  const content = template.match(/<body[^>]*>([\s\S]*)<\/body>/i)[1]
     .replace(/\s(?:style|bgcolor)="[^"]*"/g, "")
+    .replace(/\sclass="gvl-(?:gmail-surface-\d+|s(?: gvl-r)?|d)"/g, "")
+    .replace(/<\/?span>/g, "")
     .replace(/growvelt-(?:magenta-email|wordmark-purple-20261019)\.png/g, "approved-logo.png")
     .replace(/width="(?:116|124)" alt="Growvelt"/g, 'alt="Growvelt"');
+  // Canonical entity spelling is not authentication content. The dedicated
+  // mobile test additionally protects every token, link, text and table cell.
+  return content.replace(/&rarr;/g,"→").replace(/&middot;/g,"·").replace(/&copy;/g,"©");
 }
 for (const name of readdirSync(new URL("../supabase/email-templates/", import.meta.url)).filter(name => name.endsWith(".html"))) {
   const currentTemplate = readFileSync(new URL(`../supabase/email-templates/${name}`, import.meta.url), "utf8").replaceAll("\r\n", "\n");
   // Fixed pre-transition release, not HEAD: this protection must still work
   // after the preparation itself is committed and deployed.
   const originalTemplate = execFileSync("git", ["show", `35021b7:learning-app/supabase/email-templates/${name}`], { cwd: root, encoding: "utf8" }).replaceAll("\r\n", "\n");
-  assert.equal(emailContent(currentTemplate), emailContent(originalTemplate.replaceAll("https://learn.growvelt.com", "{{ .SiteURL }}")), `${name}: preserve all authentication variables, content and links`);
+  assert.equal(emailContent(currentTemplate), emailContent(updatedCopy(originalTemplate.replaceAll("https://learn.growvelt.com", "{{ .SiteURL }}"))), `${name}: preserve authentication variables, approved copy and links`);
 }
 console.log("PASS Learning domain transition: strict origins, exact collisions, alias protection/cookies, original-origin PKCE, payment guards, email and robots (no hosted writes)");

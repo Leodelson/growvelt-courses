@@ -130,7 +130,7 @@ export function CourseVideoCoverUpload({ courseId, userId }: { courseId: number;
     if (uploadError) {
       if (process.env.NODE_ENV === "development") {
         console.error(
-          `Course video cover upload failed — code: ${uploadError.name ?? "unknown"}; message: ${uploadError.message ?? "none"}`,
+          `Course video cover upload failed, code: ${uploadError.name ?? "unknown"}; message: ${uploadError.message ?? "none"}`,
         );
         console.error("raw course video cover upload error:", uploadError);
       }

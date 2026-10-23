@@ -1,0 +1,15 @@
+{
+  "confirm-sign-up.html": "Confirm your Growvelt account",
+  "invite-user.html": "You are invited to Growvelt",
+  "magic-link-or-otp.html": "Your Growvelt sign-in link or code",
+  "change-email-address.html": "Confirm your new Growvelt email address",
+  "reset-password.html": "Reset your Growvelt password",
+  "reauthentication.html": "Verify your Growvelt identity",
+  "password-changed.html": "Your Growvelt password was changed",
+  "email-address-changed.html": "Your Growvelt email address was changed",
+  "phone-number-changed.html": "Your Growvelt phone number was changed",
+  "sign-in-method-linked.html": "Sign-in method added to your Growvelt account",
+  "sign-in-method-removed.html": "Sign-in method removed from your Growvelt account",
+  "mfa-method-added.html": "MFA method added to your Growvelt account",
+  "mfa-method-removed.html": "MFA method removed from your Growvelt account"
+}

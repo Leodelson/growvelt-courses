@@ -21,7 +21,7 @@ function lessonLabel(locale: Locale, type: "video" | "text" | "quiz" | "project"
 
 function courseDescription(course: Awaited<ReturnType<typeof getPublishedLearningCourse>>) {
   if (!course) return "";
-  return course.summary || course.description || "A practical Growvelt Learning course.";
+  return course.summary || course.description || "A practical Growvelt course.";
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
@@ -40,11 +40,11 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     openGraph: {
       type: "website",
       url,
-      title: `${course.title} | Growvelt Learning`,
+      title: `${course.title} | Growvelt`,
       description,
-      images: [{ url: defaultSocialImage, width: 1200, height: 630, alt: `${course.title} on Growvelt Learning` }],
+      images: [{ url: defaultSocialImage, width: 1200, height: 630, alt: `${course.title} on Growvelt` }],
     },
-    twitter: { card: "summary_large_image", title: `${course.title} | Growvelt Learning`, description, images: [defaultSocialImage] },
+    twitter: { card: "summary_large_image", title: `${course.title} | Growvelt`, description, images: [defaultSocialImage] },
   };
 }
 

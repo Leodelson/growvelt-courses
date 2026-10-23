@@ -139,7 +139,7 @@ export default async function DashboardProfilePage() {
 
       <div className={styles.stats}><div className={styles.stat}><div><strong>{Number(Boolean(profile.avatarUrl)) + Number(Boolean(profile.coverUrl))} / 2</strong><span>{text.photos}</span></div></div><div className={styles.stat}><div><strong>{socialLinkCount} / 5</strong><span>{text.linksCount}</span></div></div></div>
 
-      <section className="profile-details-grid" aria-label="Learning profile details">
+      <section className="profile-details-grid" aria-label="Growvelt profile details">
         <article>
           <p className="eyebrow">{t("profile.identity")}</p>
           <h2>{t("profile.identityTitle")}</h2>

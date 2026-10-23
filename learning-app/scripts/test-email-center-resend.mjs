@@ -52,7 +52,7 @@ await assert.rejects(createEmailCenterResendTransport({ ...config, verifiedDomai
 await assert.rejects(createEmailCenterResendTransport({ ...config, senders: { learning: "careers@unrelated.invalid" }, allowProviderWrites: true }).sendTransactional(item), /Verify/);
 await assert.rejects(createEmailCenterResendTransport({ ...config, senders: { partnerships: "partnerships@growvelt.com" }, allowProviderWrites: true }).sendTransactional({ ...item, document: { ...transactional, sender: "partnerships" } }), /approved partnership/);
 assert.equal(calls.length, 1, "invalid requests never reach the provider");
-await assert.rejects(transport.createBroadcastDraft({ document: marketing, segmentId: id, operationKey: "learning-center-fixture-broadcast" }), /approved Learning/);
+await assert.rejects(transport.createBroadcastDraft({ document: marketing, segmentId: id, operationKey: "learning-center-fixture-broadcast" }), /approved Growvelt/);
 await transport.createBroadcastDraft({ document: marketing, segmentId, operationKey: "learning-center-fixture-broadcast" });
 const broadcast = JSON.parse(calls.at(-1).init.body);
 assert.equal(calls.at(-1).url, "https://api.resend.com/broadcasts");

@@ -12,6 +12,6 @@ export function providerSetupChecklist(
     { label: "Provider details saved", complete: Boolean(profile), href: "#provider-details" },
     { label: "Provider logo uploaded", complete: Boolean(profile?.logo_storage_path), href: "#provider-branding" },
     { label: "Cover image uploaded", complete: Boolean(profile?.cover_storage_path), href: "#provider-branding" },
-    { label: "Learning Admin verification", complete: verified, href: "#provider-verification" },
+    { label: "Growvelt Admin verification", complete: verified, href: "#provider-verification" },
   ];
 }

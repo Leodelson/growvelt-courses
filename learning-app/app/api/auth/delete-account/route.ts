@@ -23,7 +23,7 @@ export async function POST(request: Request) {
     p_certificate_choice: certificateChoice,
   });
   if (deletionStateError || !deletionState?.[0]) {
-    console.error("Growvelt Learning account deletion preflight failed.", { message: deletionStateError?.message });
+    console.error("Growvelt account deletion preflight failed.", { message: deletionStateError?.message });
     return NextResponse.json({ code: "delete_failed", message: "Account deletion could not be prepared." }, { status: 500 });
   }
 
@@ -53,11 +53,11 @@ export async function POST(request: Request) {
     entity_id: user.id,
     metadata: { source: "self_service", certificate_choice: certificateChoice },
   }).then(({ error: auditError }) => {
-    if (auditError) console.error("Growvelt Learning account deletion audit failed.", { message: auditError.message });
+    if (auditError) console.error("Growvelt account deletion audit failed.", { message: auditError.message });
   });
   const { error } = await admin.auth.admin.deleteUser(user.id);
   if (error) {
-    console.error("Growvelt Learning account deletion failed.", { message: error.message });
+    console.error("Growvelt account deletion failed.", { message: error.message });
     return NextResponse.json({ code: "delete_failed", message: "Account deletion could not be completed." }, { status: 500 });
   }
 
@@ -65,7 +65,7 @@ export async function POST(request: Request) {
     .filter((path): path is string => typeof path === "string" && path.startsWith(`${user.id}/`));
   if (profilePaths.length) {
     const { error: mediaError } = await admin.storage.from("learning-profile-media").remove(profilePaths);
-    if (mediaError) console.error("Growvelt Learning deleted the account but could not remove all profile media.", { message: mediaError.message });
+    if (mediaError) console.error("Growvelt deleted the account but could not remove all profile media.", { message: mediaError.message });
   }
 
   return new NextResponse(null, { status: 204 });

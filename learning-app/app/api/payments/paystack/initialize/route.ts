@@ -75,7 +75,7 @@ export async function POST(request: Request) {
       ? "fail_paystack_live_learning_attempt"
       : "fail_paystack_test_learning_attempt";
     const { error: cleanupError } = await admin.rpc(failFunction, { p_order_reference: order.order_reference, p_failure_code: "paystack_initialize_failed", p_failure_message: error instanceof Error ? error.message : "Paystack initialization failed" });
-    console.error("Growvelt Learning Paystack checkout initialization failed.", {
+    console.error("Growvelt Paystack checkout initialization failed.", {
       reference: order.order_reference,
       mode: configuration.mode,
       message: error instanceof Error ? error.message : "Unknown error",

@@ -23,7 +23,7 @@ export function propagateAuthCookies(
 export function createAuthCallbackClient(request: NextRequest, response: NextResponse) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-  if (!url || !publishableKey) throw new Error("Growvelt Learning authentication is not configured.");
+  if (!url || !publishableKey) throw new Error("Growvelt authentication is not configured.");
 
   return createServerClient(url, publishableKey, {
     cookies: {

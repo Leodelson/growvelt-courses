@@ -50,7 +50,7 @@ function makeLoginEmailHtml(user: User, headers: Headers, signInAt: string, brow
     baseUrl: getLearningOrigin(),
     greeting: getGreeting(user),
     title: "New login to your Growvelt account",
-    paragraphs: ["We noticed a new sign-in to your Growvelt Learning account. Here are the details."],
+    paragraphs: ["We noticed a new sign-in to your Growvelt account. Here are the details."],
     details: [
       { label: "Location", value: loginLocation(headers) },
       { label: "Device", value: `${browser} on ${device}` },
@@ -59,7 +59,7 @@ function makeLoginEmailHtml(user: User, headers: Headers, signInAt: string, brow
       { label: "Date", value: dateFormatter.format(time) },
     ],
     primaryAction: { label: "Review account settings", href: learningAbsoluteUrl("/dashboard/settings") },
-    reason: "If this was you, no action is needed. If you do not recognize this sign-in, reset your password and contact Growvelt Support. You received this email because a new sign-in was recorded on your Learning account.",
+    reason: "If this was you, no action is needed. If you do not recognize this sign-in, reset your password and contact Growvelt Support. You received this email because a new sign-in was recorded on your Growvelt account.",
   });
 }
 
@@ -67,7 +67,7 @@ async function sendLoginActivityEmail(user: User, headers: Headers, signInAt: st
   if (!user.email) return;
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
-    console.warn("Learning login activity email is not configured.");
+    console.warn("Growvelt login activity email is not configured.");
     return;
   }
 
@@ -91,9 +91,9 @@ async function sendLoginActivityEmail(user: User, headers: Headers, signInAt: st
       signal: AbortSignal.timeout(12000),
     });
 
-    if (!response.ok) console.error("Learning login activity email delivery failed.", response.status);
+    if (!response.ok) console.error("Growvelt login activity email delivery failed.", response.status);
   } catch {
-    console.error("Learning login activity email delivery failed.");
+    console.error("Growvelt login activity email delivery failed.");
   }
 }
 
@@ -102,6 +102,6 @@ export function scheduleLearningLoginActivityEmail(user: User, headers: Headers,
     after(() => sendLoginActivityEmail(user, headers, signInAt, browser, device));
   } catch {
     // A notification-email scheduling failure must never block sign-in.
-    console.error("Learning login activity email could not be scheduled.");
+    console.error("Growvelt login activity email could not be scheduled.");
   }
 }

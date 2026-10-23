@@ -1,6 +1,7 @@
 import "server-only";
 import { emailUuid, parseEmailDocument, senderChoices, type EmailDocument } from "./email-center";
 import { renderEmailCenterMessage } from "./email-center-render";
+import { legacyEmailCenterSender } from "./email-center-legacy";
 import { readEmailCenterProviderUsage } from "./email-center-provider-usage";
 import { LEARNING_EMAIL_SEGMENT_ID, type CompleteProviderContacts } from "./email-center-audience";
 import { setTimeout as delay } from "node:timers/promises";
@@ -128,8 +129,14 @@ export function createEmailCenterResendTransport(options: TransportOptions) {
       return data;
     },
     matchesBroadcast(data: Record<string, unknown>, document: EmailDocument, operation: string) {
-      return data.name === operation && data.segment_id === LEARNING_EMAIL_SEGMENT_ID && data.from === from(document.sender)
-        && data.subject === document.subject && data.html === renderEmailCenterMessage(document, "there") && !data.topic_id;
+      // Already-prepared/queued campaigns keep their exact original HTML. Do
+      // not edit, recreate or quarantine them merely because new email CSS ships.
+      const identity = from(document.sender);
+      return data.name === operation && data.segment_id === LEARNING_EMAIL_SEGMENT_ID
+        && data.subject === document.subject && !data.topic_id
+        && (data.from === identity && data.html === renderEmailCenterMessage(document, "there")
+          || data.from === legacyEmailCenterSender(document.sender, identity)
+            && data.html === renderEmailCenterMessage(document, "there", undefined, true));
     },
     async sendBroadcast(id: string) {
       if (!emailUuid.test(id)) throw new Error("Invalid broadcast ID.");
@@ -165,7 +172,7 @@ export function createEmailCenterResendTransport(options: TransportOptions) {
       const document = parseEmailDocument(input.document);
       if (document.mode !== "marketing") throw new Error("Only marketing content belongs in a broadcast draft.");
       operationKey(input.operationKey);
-      if (input.segmentId !== LEARNING_EMAIL_SEGMENT_ID || input.topicId !== undefined) throw new Error("Check the approved Learning segment/topic. Topics are not activated.");
+      if (input.segmentId !== LEARNING_EMAIL_SEGMENT_ID || input.topicId !== undefined) throw new Error("Check the approved Growvelt segment/topic. Topics are not activated.");
       // The create endpoint is not assumed idempotent. Claim/persist its ID in
       // the durable worker; a lost response must never trigger blind creation.
       // No send:true shortcut: recipient/provider review happens before sending.

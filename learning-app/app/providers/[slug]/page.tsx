@@ -32,14 +32,14 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   if (!provider) return { title: "Provider not found", robots: { index: false, follow: false } };
 
   const title = `${provider.name} | Verified training provider`;
-  const description = provider.headline || `Explore verified courses from ${provider.name} on Growvelt Learning.`;
+  const description = provider.headline || `Explore verified courses from ${provider.name} on Growvelt.`;
   const canonical = `/providers/${provider.slug}`;
   return {
     title,
     description,
     alternates: { canonical },
-    openGraph: { url: canonical, title: `${title} | Growvelt Learning`, description },
-    twitter: { card: "summary_large_image", title: `${title} | Growvelt Learning`, description },
+    openGraph: { url: canonical, title: `${title} | Growvelt`, description },
+    twitter: { card: "summary_large_image", title: `${title} | Growvelt`, description },
   };
 }
 
@@ -73,9 +73,9 @@ export default async function PublicProviderProfilePage({ params }: { params: Pr
       </div>
     </section>
     <section className="provider-profile-details-grid" aria-label="Provider details">
-      <article><p className="eyebrow">About</p><h2>Learning with {provider.name}</h2><p>{provider.description}</p></article>
+      <article><p className="eyebrow">About</p><h2>Study with {provider.name}</h2><p>{provider.description}</p></article>
       <aside><p className="eyebrow">Connect</p><h2>Contact this provider</h2><a className="provider-profile-email" href={`mailto:${provider.contact_email}`}>{provider.contact_email}</a>{links.length > 0 && <nav className="provider-profile-links" aria-label={`${provider.name} links`}>{links.map((link) => <a key={link.label} href={link.href} target="_blank" rel="noreferrer">{link.label} <span aria-hidden="true">↗</span></a>)}</nav>}</aside>
     </section>
-    <section className="provider-profile-courses" aria-labelledby="provider-courses-title"><header><div><p className="eyebrow">Courses</p><h2 id="provider-courses-title">Courses from {provider.name}</h2><p>Browse the active learning experiences this verified provider offers.</p></div><span>{courses.length} active {courses.length === 1 ? "course" : "courses"}</span></header>{courses.length ? <div className="provider-course-grid">{courses.map((course) => <article key={course.id}><div><p>{course.category || "Learning"} · {course.level || "All levels"}</p><h3>{course.title}</h3><span>{course.summary || "Explore this course and start learning with Growvelt."}</span></div><footer><strong>{course.isFree ? "Free" : `${course.priceCurrency || "NGN"} ${Number(course.priceAmount ?? 0).toLocaleString("en-NG")}`}</strong><Link href={`/courses/${encodeURIComponent(course.slug)}`}>View course <span aria-hidden="true">→</span></Link></footer></article>)}</div> : <div className="provider-course-empty"><h3>No public courses yet</h3><p>This provider has not published a course yet. Explore the Growvelt Learning catalog in the meantime.</p><Link href="/courses" className="button button-secondary">Explore courses</Link></div>}</section>
+    <section className="provider-profile-courses" aria-labelledby="provider-courses-title"><header><div><p className="eyebrow">Courses</p><h2 id="provider-courses-title">Courses from {provider.name}</h2><p>Browse the active learning experiences this verified provider offers.</p></div><span>{courses.length} active {courses.length === 1 ? "course" : "courses"}</span></header>{courses.length ? <div className="provider-course-grid">{courses.map((course) => <article key={course.id}><div><p>{course.category || "Courses"} · {course.level || "All levels"}</p><h3>{course.title}</h3><span>{course.summary || "Explore this course and start learning with Growvelt."}</span></div><footer><strong>{course.isFree ? "Free" : `${course.priceCurrency || "NGN"} ${Number(course.priceAmount ?? 0).toLocaleString("en-NG")}`}</strong><Link href={`/courses/${encodeURIComponent(course.slug)}`}>View course <span aria-hidden="true">→</span></Link></footer></article>)}</div> : <div className="provider-course-empty"><h3>No public courses yet</h3><p>This provider has not published a course yet. Explore the Growvelt catalog in the meantime.</p><Link href="/courses" className="button button-secondary">Explore courses</Link></div>}</section>
   </main>;
 }

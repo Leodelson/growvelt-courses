@@ -12,7 +12,7 @@ export async function POST(request: Request) {
     await recordLearningSignIn(user, request.headers);
   } catch {
     // Activity must never block an authenticated learner.
-    console.error("Learning login activity could not be recorded.");
+    console.error("Growvelt login activity could not be recorded.");
   }
   return new NextResponse(null, { status: 204, headers: { "Cache-Control": "no-store" } });
 }

@@ -11,7 +11,7 @@ export function CourseWorkflow({courseId,active}:{courseId?:number;active:"detai
 }
 export function DraftDetailsChecklist({values,isFree,price}:{values:{title:string;summary:string;description:string};isFree:boolean;price:number|null}) {
   const {locale}=useLanguage(),text=workbenchCopy[locale], checks=draftDetailChecks(values,isFree,price),labels=[text.titleCheck,text.summaryCheck,text.descriptionCheck,text.accessCheck];
-  return <aside className={styles.checklist} aria-labelledby="draft-checklist-title"><div><h2 id="draft-checklist-title">{text.checklist}</h2><strong>{checks.filter(Boolean).length} / 4</strong></div><ul>{checks.map((done,index)=><li key={labels[index]}><span aria-hidden="true">{done?"✓":"○"}</span><span>{labels[index]}</span><span className="sr-only">{done?" ✓":" —"}</span></li>)}</ul><p>{text.checkCopy}</p></aside>;
+  return <aside className={styles.checklist} aria-labelledby="draft-checklist-title"><div><h2 id="draft-checklist-title">{text.checklist}</h2><strong>{checks.filter(Boolean).length} / 4</strong></div><ul>{checks.map((done,index)=><li key={labels[index]}><span aria-hidden="true">{done?"✓":"○"}</span><span>{labels[index]}</span><span className="sr-only">{done?" ✓":", "}</span></li>)}</ul><p>{text.checkCopy}</p></aside>;
 }
 export function CurriculumSnapshot({modules}:{modules:CurriculumModule[]}) {
   const {locale}=useLanguage(),text=workbenchCopy[locale],data=curriculumSnapshot(modules);

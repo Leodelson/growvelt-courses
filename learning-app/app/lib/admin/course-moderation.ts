@@ -15,7 +15,7 @@ function throwAdminCourseReaderError(message: string, error: RpcError): never {
       details: error.details ?? null,
       hint: error.hint ?? null,
     };
-    console.error("Growvelt Learning Admin course reader RPC failed", diagnostic);
+    console.error("Growvelt Admin course reader RPC failed", diagnostic);
     throw new Error(`${message} ${JSON.stringify(diagnostic)}`);
   }
 

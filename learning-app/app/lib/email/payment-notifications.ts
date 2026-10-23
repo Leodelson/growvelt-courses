@@ -24,8 +24,8 @@ export async function sendPaymentNotification(input: NoticeInput) {
   try {
     const response = await fetch("https://api.resend.com/emails", {
       method: "POST", headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json", "Idempotency-Key": input.key },
-      body: JSON.stringify({ from: "Growvelt Learning <no-reply@growvelt.com>", to: [input.recipient], reply_to: input.type.startsWith("refund_") ? "refund@growvelt.com" : "support@growvelt.com", subject: input.subject,
-        html: renderGrowveltEmail({ baseUrl: getLearningOrigin(), greeting: "there", title: input.heading, paragraphs: [input.message], reason: "You received this email because of activity on your Growvelt Learning account." }),
+      body: JSON.stringify({ from: "Growvelt <no-reply@growvelt.com>", to: [input.recipient], reply_to: input.type.startsWith("refund_") ? "refund@growvelt.com" : "support@growvelt.com", subject: input.subject,
+        html: renderGrowveltEmail({ baseUrl: getLearningOrigin(), greeting: "there", title: input.heading, paragraphs: [input.message], reason: "You received this email because of activity on your Growvelt account." }),
       }), signal: AbortSignal.timeout(15000),
     });
     const body = await response.json().catch(() => null) as { id?: string } | null;

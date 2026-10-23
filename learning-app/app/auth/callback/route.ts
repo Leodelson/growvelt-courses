@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
     // A successful PKCE exchange is a fresh sign-in even if the provider's
     // returned user object omits or lags `last_sign_in_at`.
     await recordLearningSignIn(data.session.user, request.headers, new Date().toISOString()).catch(() => {
-      console.error("Learning OAuth login activity could not be recorded.");
+      console.error("Growvelt OAuth login activity could not be recorded.");
     });
   } catch (error) {
     logSupabaseError("auth.oauth_callback_failed", error);

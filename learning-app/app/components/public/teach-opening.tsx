@@ -7,9 +7,9 @@ import { useLanguage } from "@/app/components/language-provider";
 import styles from "./teach-opening.module.css";
 
 const copy = {
-  en: { eyebrow: "Teach on Growvelt", title: "Talent is", line: "everywhere.", accent: "Opportunity", close: "should be, too.", intro: "Someone is ready to learn what you know. Turn your experience into practical lessons that help others move forward.", action: "Explore teaching", alt: "A smiling educator in a bright workspace" },
-  fr: { eyebrow: "Enseigner sur Growvelt", title: "Le talent est", line: "partout.", accent: "Les possibilités", close: "devraient l’être aussi.", intro: "Quelqu’un est prêt à apprendre ce que vous savez. Transformez votre expérience en leçons pratiques pour aider les autres à avancer.", action: "Découvrir l’enseignement", alt: "Une formatrice souriante dans un espace lumineux" },
-  es: { eyebrow: "Enseñar en Growvelt", title: "El talento está", line: "en todas partes.", accent: "Las oportunidades", close: "también deberían estarlo.", intro: "Alguien está listo para aprender lo que sabes. Convierte tu experiencia en lecciones prácticas que ayuden a otros a avanzar.", action: "Descubrir la enseñanza", alt: "Una educadora sonriente en un espacio luminoso" },
+  en: { eyebrow: "Become Instructor", title: "Talent is", line: "everywhere.", accent: "Opportunity", close: "should be, too.", intro: "Someone is ready to learn what you know. Turn your experience into practical lessons that help others move forward.", action: "Explore teaching", alt: "A smiling educator in a bright workspace" },
+  fr: { eyebrow: "Devenir formateur", title: "Le talent est", line: "partout.", accent: "Les possibilités", close: "devraient l’être aussi.", intro: "Quelqu’un est prêt à apprendre ce que vous savez. Transformez votre expérience en leçons pratiques pour aider les autres à avancer.", action: "Découvrir l’enseignement", alt: "Une formatrice souriante dans un espace lumineux" },
+  es: { eyebrow: "Hazte instructor", title: "El talento está", line: "en todas partes.", accent: "Las oportunidades", close: "también deberían estarlo.", intro: "Alguien está listo para aprender lo que sabes. Convierte tu experiencia en lecciones prácticas que ayuden a otros a avanzar.", action: "Descubrir la enseñanza", alt: "Una educadora sonriente en un espacio luminoso" },
 };
 
 export function TeachOpening() {

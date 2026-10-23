@@ -82,7 +82,7 @@ export function LearnerPaymentReturnCheck({ complete, reference }: { complete: b
         <button className="button button-primary" type="button" onClick={() => void checkNow()} disabled={checking}>
           {checking ? "Checking…" : "Check again"}
         </button>
-        <Link className="button button-secondary" href="/dashboard/my-learning">My Learning</Link>
+        <Link className="button button-secondary" href="/dashboard/my-learning">My Courses</Link>
       </div>
     </div>
   );

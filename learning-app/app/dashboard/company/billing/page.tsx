@@ -57,14 +57,14 @@ export default async function CompanyBillingPage() {
 
   const totals = billingSnapshot(records.flatMap(record=>record.purchases));
   return <section className={`instructor-earnings-page section-shell company-billing-page ${base.page} ${styles.page}`}>
-    <Link className={base.back} href="/dashboard/company">← Back to Company learning</Link>
+    <Link className={base.back} href="/dashboard/company">← Back to Team Training</Link>
     <header className="instructor-earnings-hero">
       <p className="eyebrow">Private company billing</p>
       <h1>Paid course purchases</h1>
       <p>Only active company owners and admins can see these company-sponsored purchases. Personal courses and earnings are never included.</p>
     </header>
     <dl className={styles.summary} aria-label="Company billing overview">{[{label:"Purchase records",value:totals.purchases},{label:"Paid purchases",value:totals.paid},{label:"Seats in paid purchases",value:totals.seats},{label:"Recorded paid course totals",value:formatNaira(totals.paidMinor)}].map(item=><div key={item.label}><dt>{item.label}</dt><dd>{item.value}</dd></div>)}</dl>
-    <p className={styles.notice}>Paid purchase, seat and monetary totals include confirmed paid records only—not pending checkouts. They are purchase snapshots, not refunds-adjusted settlement balances, tax invoices or Paystack receipts.</p>
+    <p className={styles.notice}>Paid purchase, seat and monetary totals include confirmed paid records only, not pending checkouts. They are purchase snapshots, not refunds-adjusted settlement balances, tax invoices or Paystack receipts.</p>
     {records.length === 0 && <section className="organization-panel"><p>No company billing workspace is available to this account.</p></section>}
     {records.map(({ workspace, purchases }) => <section className="organization-panel" key={workspace.workspace_id}>
       <header><p className="eyebrow">Company billing</p><h2>{workspace.name}</h2><p>One purchase covers the selected employee seats for one course. This summary is not a tax invoice or Paystack receipt.</p></header>
@@ -76,7 +76,7 @@ export default async function CompanyBillingPage() {
             <div><dt>Course price per seat</dt><dd>{formatNaira(purchase.unit_amount_minor)}</dd></div>
             <div><dt>Course total</dt><dd>{formatNaira(purchase.total_amount_minor)}</dd></div>
             <div><dt>Created</dt><dd>{companyDate(purchase.created_at)}</dd></div>
-            <div><dt>Paystack reference</dt><dd className="company-billing-reference">{referenceByPurchase.get(purchase.purchase_id) ?? "Not started"}</dd></div>
+            <div><dt>Reference</dt><dd className="company-billing-reference">{referenceByPurchase.get(purchase.purchase_id) ?? "Not started"}</dd></div>
           </dl>
         </article>}))} />
       </div>}

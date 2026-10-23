@@ -36,7 +36,7 @@ function throwAdminReaderError(message: string, error: RpcError): never {
       hint: error.hint ?? null,
     };
 
-    console.error("Growvelt Learning Admin reader RPC failed", diagnostic);
+    console.error("Growvelt Admin reader RPC failed", diagnostic);
     throw new Error(`${message} ${JSON.stringify(diagnostic)}`);
   }
 

@@ -50,7 +50,7 @@ export function CertificateRenderer({ certificate }: CertificateRendererProps) {
 
         <header className="certificate-brand">
           <img src="/logo/growvelt-wordmark-purple-20261019.png" alt="Growvelt" width={720} height={208} />
-          <p>GROWVELT LEARNING &amp; CAREER DEVELOPMENT SERVICES</p>
+          <p>GROWVELT &amp; CAREER DEVELOPMENT SERVICES</p>
         </header>
 
         <div className="certificate-main">
@@ -61,7 +61,7 @@ export function CertificateRenderer({ certificate }: CertificateRendererProps) {
           <p className="certificate-intro">For successfully completing the course</p>
           <h2>{certificate.courseTitle}</h2>
           <p className="certificate-provider">Issued by {certificate.providerName || "Growvelt Technologies Limited"}{certificate.providerName && certificate.providerVerified && <VerifiedProviderBadge />}</p>
-          <p className="certificate-instructor">Course Instructor: {certificate.instructorName || "Growvelt Learning"}</p>
+          <p className="certificate-instructor">Course Instructor: {certificate.instructorName || "Growvelt"}</p>
         </div>
 
         <footer className="certificate-footer">
@@ -98,7 +98,7 @@ export function CertificateRenderer({ certificate }: CertificateRendererProps) {
           </div>
         </footer>
 
-        {isRevoked && <div className="certificate-revoked" role="status">Revoked certificate — this credential is no longer valid.</div>}
+        {isRevoked && <div className="certificate-revoked" role="status">Revoked certificate, this credential is no longer valid.</div>}
         <div className="certificate-corner certificate-corner-bottom" aria-hidden="true" />
       </article>
 

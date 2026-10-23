@@ -10,8 +10,8 @@ export function LearningNotifications({ items, state, onClose, onMarkRead }: { i
     const response = await fetch("/api/learning/notifications", { method: "PATCH", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
     if (response.ok) onMarkRead(id);
   }
-  return <section className="dashboard-notifications-popover" aria-label="Learning notifications">
-    <header><div><p>Notifications</p><span>Learning updates</span></div><button type="button" aria-label="Close notifications" onClick={onClose}><LearningIcon name="close" size={18} /></button></header>
+  return <section className="dashboard-notifications-popover" aria-label="Growvelt notifications">
+    <header><div><p>Notifications</p><span>Growvelt updates</span></div><button type="button" aria-label="Close notifications" onClick={onClose}><LearningIcon name="close" size={18} /></button></header>
     {state === "loading" && <div className="dashboard-notifications-empty"><p>Loading notifications…</p></div>}
     {state === "error" && <div className="dashboard-notifications-empty"><p>Notifications are unavailable right now. Try again later.</p></div>}
     {state === "ready" && !items.length && <div className="dashboard-notifications-empty"><span className="dashboard-notifications-empty-icon"><LearningIcon name="bell" size={28} /></span><h2>You&rsquo;re all caught up.</h2><p>Account and learning updates will appear here.</p></div>}

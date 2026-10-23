@@ -3,23 +3,23 @@ import { LegalPage } from "@/app/components/legal-page";
 
 export const metadata: Metadata = {
   title: "Privacy Policy",
-  description: "How Growvelt Learning collects, uses, protects, and manages personal information.",
+  description: "How Growvelt collects, uses, protects, and manages personal information.",
 };
 
 const sections = [
   {
     heading: "1. About this policy",
     paragraphs: [
-      "This Privacy Policy explains how Growvelt Technologies Limited (RC 8738218) handles personal information when you use Growvelt Learning, including its public pages, learner and instructor accounts, course services, company workspaces, support tools, and related features.",
-      "Growvelt Careers is a separate product with separate authentication, sessions, and user data. A Learning account does not automatically sign you into Careers, and the two products do not share account cookies or course records. Notices shown inside a particular feature may add details to this policy.",
+      "This Privacy Policy explains how Growvelt Technologies Limited (RC 8738218) handles personal information when you use Growvelt, including its public pages, learner and instructor accounts, course services, company workspaces, support tools, and related features.",
+      "Growvelt Careers is a separate product with separate authentication, sessions, and user data. A Growvelt account does not automatically sign you into Careers, and the two products do not share account cookies or course records. Notices shown inside a particular feature may add details to this policy.",
     ],
   },
   {
     heading: "2. Information we handle",
     paragraphs: [
       "Depending on what you do, we may handle account identifiers, name, email address, profile photo, country or location, preferences, teaching application and expertise details, organization information, course content you submit, and messages or files you send to support.",
-      "To provide Learning, we process course enrollments, lesson and quiz activity, completion and certificate records, saved courses, and company-workspace invitations, membership, course assignments, and assignment progress. Authorized company owners and administrators can see information about company-sponsored assignments, including their status and recorded progress; those reports do not provide an employee’s full personal learning history or individual quiz answers.",
-      "We also handle order references, course prices, payment and refund status, and related financial records. Payment providers process payment credentials. Learning sign-in history can include the sign-in time, a browser and device category, and a country when available. Hosting and security providers may separately process technical request information such as an IP address or device data to operate and protect the service.",
+      "To provide Growvelt, we process course enrollments, lesson and quiz activity, completion and certificate records, saved courses, and company-workspace invitations, membership, course assignments, and assignment progress. Authorized company owners and administrators can see information about company-sponsored assignments, including their status and recorded progress; those reports do not provide an employee’s full personal learning history or individual quiz answers.",
+      "We also handle order references, course prices, payment and refund status, and related financial records. Payment providers process payment credentials. Growvelt sign-in history can include the sign-in time, a browser and device category, and a country when available. Hosting and security providers may separately process technical request information such as an IP address or device data to operate and protect the service.",
     ],
   },
   {
@@ -32,12 +32,12 @@ const sections = [
   {
     heading: "4. Accounts and sign-in",
     paragraphs: [
-      "Learning supports the sign-in options displayed on its authentication pages, which may include email and password or Google sign-in. If you choose a third-party provider, that provider may share account details such as an identifier, email address, name, or profile image according to your provider settings and its own privacy policy.",
+      "Growvelt supports the sign-in options displayed on its authentication pages, which may include email and password or Google sign-in. If you choose a third-party provider, that provider may share account details such as an identifier, email address, name, or profile image according to your provider settings and its own privacy policy.",
       "We use authentication and session technology to keep you signed in. A successful sign-in may create a security record and an email or in-app alert. If you do not recognize a sign-in, use the account security controls and contact support.",
     ],
   },
   {
-    heading: "5. Learning, teaching, and company workspaces",
+    heading: "5. Courses, teaching, and company workspaces",
     paragraphs: [
       "Course activity and assessment records let us provide progress, completion, and eligible certificates. Teaching applications and submitted courses are used for instructor review, course review, and publication workflows. Organization owners and authorized instructors may see the organization information needed to manage their provider workspace.",
       "In a company workspace, authorized owners and administrators can manage invitations and assignments and see progress for company-sponsored learning. This is separate from an employee’s personal course history. We do not provide individual quiz answers through company progress reports.",
@@ -54,7 +54,7 @@ const sections = [
     heading: "7. Email and other communications",
     paragraphs: [
       "We send essential account, sign-in security, payment, course, invitation, and support messages when needed to operate a feature you requested. These service messages are separate from optional marketing messages.",
-      "Growvelt Learning news and offers are sent only when you opt in. You can change the marketing-email preference in Account Settings or use an unsubscribe link in a marketing email. Turning off marketing does not stop essential account or course-service messages.",
+      "Growvelt news and offers are sent only when you opt in. You can change the marketing-email preference in Account Settings or use an unsubscribe link in a marketing email. Turning off marketing does not stop essential account or course-service messages.",
     ],
   },
   {
@@ -62,13 +62,13 @@ const sections = [
     paragraphs: [
       "Essential cookies and similar technologies support sign-in, session security, requested authentication and payment flows, and core platform features. Browser storage may remember interface choices such as theme or language, temporary workflow state, and other preferences you request. Where available, the Progressive Web App may use Cache Storage for its stated offline or performance features.",
       "Growvelt uses a first-party cookie to remember cookie or technology choices and consent-version information. It is not intended to contain passwords, authentication tokens, payment credentials, account role, or sensitive personal information. You can manage optional choices through Cookie Settings where available; blocking essential storage may stop parts of the service from working.",
-      "Based on the current Learning implementation review, no third-party analytics or browser advertising tracker is intentionally installed. If optional measurement technologies are introduced later, this policy and any required consent choices will be updated before they are used where required by law.",
+      "Based on the current Growvelt implementation review, no third-party analytics or browser advertising tracker is intentionally installed. If optional measurement technologies are introduced later, this policy and any required consent choices will be updated before they are used where required by law.",
     ],
   },
   {
     heading: "9. Service providers and other sharing",
     paragraphs: [
-      "We use service providers to operate Learning. Depending on the feature, these may include Vercel for hosting, Supabase for authentication, database, and storage, Paystack for payments, Resend for email delivery, Google for sign-in, Cloudflare Turnstile for abuse prevention, and YouTube for video content. Providers process information as needed to provide their services under their own terms and applicable safeguards.",
+      "We use service providers to operate Growvelt. Depending on the feature, these may include Vercel for hosting, Supabase for authentication, database, and storage, Paystack for payments, Resend for email delivery, Google for sign-in, Cloudflare Turnstile for abuse prevention, and YouTube for video content. Providers process information as needed to provide their services under their own terms and applicable safeguards.",
       "We share application or workspace information with the employer, organization, or authorized workspace manager that needs it to provide the service you chose. We may also disclose information when required by law, to protect users or the service, investigate abuse, enforce our terms, or complete a business transfer. We do not sell personal information as a standalone product.",
     ],
   },
@@ -103,12 +103,12 @@ const sections = [
   {
     heading: "14. Changes and contact",
     paragraphs: [
-      "We may revise this policy when Learning features, providers, legal requirements, or our practices change. We will post the current version with its latest update date. Material changes may also be communicated through an appropriate service channel.",
+      "We may revise this policy when Growvelt features, providers, legal requirements, or our practices change. We will post the current version with its latest update date. Material changes may also be communicated through an appropriate service channel.",
       "For privacy questions or requests, contact support@growvelt.com or use the Contact us page.",
     ],
   },
 ];
 
 export default function PrivacyPolicyPage() {
-  return <LegalPage title="Privacy Policy" summary="How Growvelt Learning handles personal information and technology choices." updated="October 20, 2026" sections={sections} />;
+  return <LegalPage title="Privacy Policy" summary="How Growvelt handles personal information and technology choices." updated="October 20, 2026" sections={sections} />;
 }

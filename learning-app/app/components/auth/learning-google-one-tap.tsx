@@ -145,7 +145,7 @@ export function LearningGoogleOneTap() {
     {message && !showRoleChoice && <p className={styles.status} role="status">{message}</p>}
     {showRoleChoice && <div className={styles.backdrop}>
       <section className={styles.dialog} role="dialog" aria-modal="true" aria-labelledby="one-tap-title" aria-describedby="one-tap-copy">
-        <p className={styles.eyebrow}>Welcome to Growvelt Learning</p>
+        <p className={styles.eyebrow}>Welcome to Growvelt</p>
         <h2 id="one-tap-title">What brings you here?</h2>
         <p id="one-tap-copy">Choose how you’d like to get started. You can change direction any time.</p>
         <div className={styles.choices}>

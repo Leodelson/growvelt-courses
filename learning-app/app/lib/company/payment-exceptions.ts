@@ -33,7 +33,7 @@ export async function recordCompanyPaymentManualReview(reference: string) {
     key,
     type: "operator_reconciliation",
     recipient: paymentOperationsRecipient(),
-    subject: "Growvelt Learning company payment needs review",
+    subject: "Growvelt company payment needs review",
     heading: "A verified company charge needs reconciliation",
     message: `Paystack Test confirmed company transaction ${reference} for purchase ${purchase.id}, but that attempt cannot be finalized because the purchase or attempt is already in a terminal state. Review the provider transaction and purchase before any adjustment. No additional employee access was granted.`,
   });

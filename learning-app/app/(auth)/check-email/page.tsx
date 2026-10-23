@@ -9,5 +9,5 @@ export default async function CheckEmailPage({ searchParams }: { searchParams: P
   const { next } = await searchParams;
   const safeNext = getSafeNextPath(next);
 
-  return <AuthFrame><section className="auth-card auth-notice-card"><p className="eyebrow">One more step</p><h1>Check your email.</h1><p>We’ve requested a confirmation email for your Growvelt Learning account. Open the confirmation link before signing in for the first time.</p><p>Check your spam or junk folder if it does not arrive shortly.</p><Link className="button button-primary" href={`/sign-in?next=${encodeURIComponent(safeNext)}`}>Return to sign in</Link></section></AuthFrame>;
+  return <AuthFrame><section className="auth-card auth-notice-card"><p className="eyebrow">One more step</p><h1>Check your email.</h1><p>We’ve requested a confirmation email for your Growvelt account. Open the confirmation link before signing in for the first time.</p><p>Check your spam or junk folder if it does not arrive shortly.</p><Link className="button button-primary" href={`/sign-in?next=${encodeURIComponent(safeNext)}`}>Return to sign in</Link></section></AuthFrame>;
 }

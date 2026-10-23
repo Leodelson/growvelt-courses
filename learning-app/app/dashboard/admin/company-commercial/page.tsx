@@ -100,15 +100,15 @@ export default async function CompanySellerEvidencePage() {
   return <section className={`${styles.page} ${ops.page} admin-page section-shell`}>
     <OperationsNavigation sections={[{id:"company-transfers",label:"Transfer evidence"},{id:"company-settlements",label:"Bank credits"},{id:"company-repayments",label:"Seller repayments"}]} />
     <header className="admin-page-header admin-review-hero">
-      <p className="eyebrow">Private finance operations · Learning Admin</p>
+      <p className="eyebrow">Private finance operations · Growvelt Admin</p>
       <h1>Company seller evidence</h1>
       <p>Review company-only seller outflow evidence and independently confirmed repayments. This workspace never initiates a transfer, collects a repayment, or deducts from future earnings.</p>
     </header>
 
     <section className={styles.summary} aria-label="Company evidence summary">
-      <article><span>Recent transferred boundaries</span><strong>{boundaryReadFailed ? "—" : boundaries.length}</strong><small>Latest 100 existing outflows</small></article>
-      <article><span>Evidence pending in this list</span><strong>{boundaryReadFailed || !evidenceSchemaReady ? "—" : pendingTransferCount}</strong><small>Requires provider verification</small></article>
-      <article><span>Open recovery balances</span><strong>{recoverySchemaReady ? recoveries.filter((item) => item.outstanding_minor > 0).length : "—"}</strong><small>Manual admin recovery only</small></article>
+      <article><span>Recent transferred boundaries</span><strong>{boundaryReadFailed ? ", " : boundaries.length}</strong><small>Latest 100 existing outflows</small></article>
+      <article><span>Evidence pending in this list</span><strong>{boundaryReadFailed || !evidenceSchemaReady ? ", " : pendingTransferCount}</strong><small>Requires provider verification</small></article>
+      <article><span>Open recovery balances</span><strong>{recoverySchemaReady ? recoveries.filter((item) => item.outstanding_minor > 0).length : ", "}</strong><small>Manual admin recovery only</small></article>
     </section>
 
     {(boundaryReadFailed || !evidenceSchemaReady || !recoverySchemaReady || !settlementSchemaReady || !bankSettlementSchemaReady || purchaseReadFailed) &&

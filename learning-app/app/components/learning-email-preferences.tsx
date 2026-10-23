@@ -15,5 +15,5 @@ export function LearningEmailPreferences({ initialValue }: { initialValue: boole
     } catch { setError("Your preference could not be saved. Please try again."); }
     finally { setBusy(false); }
   }
-  return <div className="learning-email-preferences"><strong>Marketing emails: {enabled ? "On" : "Off"}</strong><p>Optional course news and offers from Growvelt Learning. You can change this at any time. Essential account and course messages are separate.</p><button type="button" className="button button-secondary" disabled={busy} onClick={() => void update(!enabled)}>{busy ? "Saving…" : enabled ? "Turn off marketing emails" : "Get Learning updates"}</button>{error && <p role="alert">{error}</p>}</div>;
+  return <div className="learning-email-preferences"><strong>Marketing emails: {enabled ? "On" : "Off"}</strong><p>Optional course news and offers from Growvelt. You can change this at any time. Essential account and course messages are separate.</p><button type="button" className="button button-secondary" disabled={busy} onClick={() => void update(!enabled)}>{busy ? "Saving…" : enabled ? "Turn off marketing emails" : "Get Growvelt updates"}</button>{error && <p role="alert">{error}</p>}</div>;
 }

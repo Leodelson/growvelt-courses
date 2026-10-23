@@ -19,7 +19,7 @@ const copy = {
     paidThrough: "Access through", included: "Included courses", manage: "Manage or cancel with Paystack", manageCopy: "Paystack securely manages the recurring payment method. If you cancel, course access remains through the paid-through date.",
     noRenew: "Auto-renewal has been turned off. Your included course access remains available through the paid-through date.",
     error: "We could not open Paystack’s management page. Your subscription is unchanged; please try again later.",
-    back: "Back to My Learning", end: "End of subscriptions",
+    back: "Back to My Courses", end: "End of subscriptions",
   },
   fr: {
     eyebrow: "FACTURATION APPRENANT", title: "Mes abonnements", intro: "Consultez vos accès récurrents aux cours, le renouvellement et la date de fin de la période payée.",
@@ -28,7 +28,7 @@ const copy = {
     paidThrough: "Accès jusqu’au", included: "Cours inclus", manage: "Gérer ou annuler avec Paystack", manageCopy: "Paystack gère le moyen de paiement récurrent. En cas d’annulation, l’accès reste actif jusqu’à la fin de la période payée.",
     noRenew: "Le renouvellement automatique est désactivé. L’accès aux cours inclus reste disponible jusqu’à la fin de la période payée.",
     error: "Impossible d’ouvrir la page de gestion Paystack. Votre abonnement n’a pas changé ; réessayez plus tard.",
-    back: "Retour à Mon apprentissage", end: "Fin des abonnements",
+    back: "Retour à Mes cours", end: "Fin des abonnements",
   },
   es: {
     eyebrow: "FACTURACIÓN DEL ALUMNO", title: "Mis suscripciones", intro: "Consulta el acceso recurrente a tus cursos, el estado de renovación y la fecha hasta la que has pagado.",
@@ -37,7 +37,7 @@ const copy = {
     paidThrough: "Acceso hasta", included: "Cursos incluidos", manage: "Gestionar o cancelar con Paystack", manageCopy: "Paystack gestiona de forma segura el método de pago recurrente. Si cancelas, conservarás el acceso hasta la fecha pagada.",
     noRenew: "La renovación automática está desactivada. El acceso a los cursos incluidos sigue disponible hasta la fecha pagada.",
     error: "No se pudo abrir la página de gestión de Paystack. La suscripción no ha cambiado; inténtalo más tarde.",
-    back: "Volver a Mi aprendizaje", end: "Fin de las suscripciones",
+    back: "Volver a Mis cursos", end: "Fin de las suscripciones",
   },
 } as const;
 

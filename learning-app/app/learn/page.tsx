@@ -10,16 +10,16 @@ import styles from "@/app/components/public/public-experience.module.css";
 
 export const metadata: Metadata = {
   title: "Explore practical courses",
-  description: "Explore Growvelt Learning online courses in data analytics, technology, business, and other practical skills. Compare course details and find a learning path that fits your goals.",
+  description: "Explore Growvelt online courses in data analytics, technology, business, and other practical skills. Compare course details and find a learning path that fits your goals.",
   alternates: { canonical: "/learn" },
   openGraph: {
     url: "/learn",
-    title: "Explore online courses | Growvelt Learning",
+    title: "Explore online courses | Growvelt",
     description: "Browse practical online courses in data analytics, technology, business, and more. Find a course that fits your goals.",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Explore online courses | Growvelt Learning",
+    title: "Explore online courses | Growvelt",
     description: "Browse practical online courses in data analytics, technology, business, and more. Find a course that fits your goals.",
   },
 };

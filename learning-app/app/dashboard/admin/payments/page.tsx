@@ -26,7 +26,7 @@ export default async function PaymentOperationsPage({ searchParams }: { searchPa
     <OperationsNavigation sections={[{id:"payment-search",label:"Find an order"},{id:"payment-records",label:"Order records"}]} />
     <header className="admin-page-header admin-review-hero">
       <p className="eyebrow">Finance operations</p><h1>Payment reconciliation</h1>
-      <p>Inspect Growvelt Learning orders, provider events, access state, and reconciliation findings. Recovery always verifies Paystack server-side before changing state.</p>
+      <p>Inspect Growvelt orders, provider events, access state, and reconciliation findings. Recovery always verifies Paystack server-side before changing state.</p>
     </header>
     <OperationsSummary items={[{label:"Orders in this result",value:operations.length,detail:"Latest matching orders · up to 50"},{label:"Paid orders in this result",value:operations.filter(item=>item.order_status==="paid").length,detail:"Order state, not a settlement balance"},{label:"Reconciliation findings",value:operations.reduce((sum,item)=>sum+item.issue_count,0),detail:"Findings attached to these orders"}]} note="Counts describe this loaded result, not all payments. Search the server by reference, learner or course, then filter the returned records below." />
     <form id="payment-search" className="operations-search-form" action="/dashboard/admin/payments">

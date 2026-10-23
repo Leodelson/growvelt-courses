@@ -6,7 +6,7 @@ import { assignmentLabels, assignmentState, companyDate, displayProgress } from 
 import base from "@/app/components/instructor/provider-workspaces.module.css";
 import styles from "@/app/components/company/workspaces.module.css";
 
-export const metadata = { title: "Company learning progress" };
+export const metadata = { title: "Team Training progress" };
 
 export default async function CompanyLearningInsightsPage({ searchParams }: { searchParams: Promise<{ assignment?: string }> }) {
   if (!(await (await createClient()).auth.getUser()).data.user) redirect("/sign-in");
@@ -20,7 +20,7 @@ export default async function CompanyLearningInsightsPage({ searchParams }: { se
   const progress = displayProgress(assignment.progress_percent), state = assignmentState(assignment);
   return <section className={`instructor-earnings-page section-shell ${base.page} ${styles.page}`}>
     <Link className={base.back} href="/dashboard/company/reports">← Back to employee reports</Link>
-    <header className="instructor-earnings-hero"><p className="eyebrow">Company learning insights</p><h1>{assignment.employee_name || assignment.employee_email}</h1><p>{assignment.employee_email} · {workspace.name}</p></header>
+    <header className="instructor-earnings-hero"><p className="eyebrow">Team Training insights</p><h1>{assignment.employee_name || assignment.employee_email}</h1><p>{assignment.employee_email} · {workspace.name}</p></header>
     <section className="organization-panel company-progress-detail-page">
       <header><p className="eyebrow">Assigned course</p><h2>{assignment.course_title}</h2><p>Only authorized company owners and admins can view this assignment. Personal learning and individual answers are not included.</p></header>
       <div className="company-progress-summary"><div><strong>{progress}%</strong><span>Recorded course progress</span></div><div><strong>{assignmentLabels[state]}</strong><span>Assignment state</span></div><div><strong>{companyDate(assignment.assigned_at)}</strong><span>Assigned on</span></div></div>

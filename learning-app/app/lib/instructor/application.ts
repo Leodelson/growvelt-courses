@@ -39,7 +39,7 @@ export async function getOwnInstructorApplication() {
 export async function getOwnInstructorApplicationContext() {
   const supabase = await createClient();
   const { data: { user }, error: userError } = await supabase.auth.getUser();
-  if (userError || !user) throw new Error("Unable to verify your Growvelt Learning account.");
+  if (userError || !user) throw new Error("Unable to verify your Growvelt account.");
 
   const [applicationResult, profileResult] = await Promise.all([
     readOwnInstructorApplication(),
@@ -50,7 +50,7 @@ export async function getOwnInstructorApplicationContext() {
       .maybeSingle(),
   ]);
 
-  if (profileResult.error) throw new Error("Unable to load your Growvelt Learning account details.");
+  if (profileResult.error) throw new Error("Unable to load your Growvelt account details.");
 
   return {
     application: applicationResult,

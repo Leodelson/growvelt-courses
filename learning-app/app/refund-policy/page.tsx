@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { LegalPage } from "@/app/components/legal-page";
 
-export const metadata: Metadata = { title: "Refund Policy", description: "Growvelt Learning payment confirmation, full-refund eligibility, processing, access, and dispute policy." };
+export const metadata: Metadata = { title: "Refund Policy", description: "Growvelt payment confirmation, full-refund eligibility, processing, access, and dispute policy." };
 
 const sections = [
   { heading: "1. Payment confirmation", paragraphs: ["The course price displayed at checkout is the final course price charged by Growvelt unless the checkout clearly states otherwise. Paystack processes the payment. Growvelt grants access only after receiving or independently verifying authoritative payment confirmation.", "A browser redirect, screenshot, debit alert, or pending bank transaction does not by itself prove successful payment. If a payment appears successful but access is unavailable, contact support@growvelt.com with the Growvelt order reference and do not pay again unless Growvelt confirms the first attempt failed."] },
@@ -13,4 +13,4 @@ const sections = [
   { heading: "7. Contact", paragraphs: ["For refund requests, email refund@growvelt.com. For general account, course, or technical help, contact support@growvelt.com."] },
 ];
 
-export default function RefundPolicyPage() { return <LegalPage title="Refund Policy" summary="How Growvelt Learning confirms payments, reviews full-refund requests, and handles access after refunds or chargebacks." updated="September 1, 2026" sections={sections} />; }
+export default function RefundPolicyPage() { return <LegalPage title="Refund Policy" summary="How Growvelt confirms payments, reviews full-refund requests, and handles access after refunds or chargebacks." updated="September 1, 2026" sections={sections} />; }

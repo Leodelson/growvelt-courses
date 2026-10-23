@@ -21,10 +21,10 @@ function catalog(input: CompleteProviderContacts) {
   return byEmail;
 }
 function eligible(accounts: LearningAudienceAccount[]) {
-  if (accounts.length > 1000) throw new Error("Learning audience review limit exceeded.");
+  if (accounts.length > 1000) throw new Error("Growvelt audience review limit exceeded.");
   const emails = new Set<string>();
   for (const account of accounts) {
-    if (!emailUuid.test(account.userId) || typeof account.confirmed !== "boolean" || typeof account.marketingOptIn !== "boolean") throw new Error("Invalid Learning consent record.");
+    if (!emailUuid.test(account.userId) || typeof account.confirmed !== "boolean" || typeof account.marketingOptIn !== "boolean") throw new Error("Invalid marketing consent record.");
     const email = canonicalEmail(account.email);
     if (account.confirmed && account.marketingOptIn) emails.add(email);
   }
@@ -37,7 +37,7 @@ export function planLearningAudienceSync(input: {
   segmentId: string; accounts: LearningAudienceAccount[];
   providerCatalog: CompleteProviderContacts; segment: CompleteProviderContacts;
 }) {
-  if (input.segmentId !== LEARNING_EMAIL_SEGMENT_ID) throw new Error("Only the reserved Learning segment may be changed.");
+  if (input.segmentId !== LEARNING_EMAIL_SEGMENT_ID) throw new Error("Only the reserved Growvelt segment may be changed.");
   const provider = catalog(input.providerCatalog), segment = catalog(input.segment), wanted = eligible(input.accounts);
   const add: string[] = [], remove: string[] = [], missing: string[] = [], suppressed: string[] = [];
   for (const [email, contact] of segment) {
@@ -60,8 +60,8 @@ export function planLearningAudienceSync(input: {
 // Same-sized wrong/Careers audiences fail closed. Recheck directly before send.
 export function verifyLearningBroadcastAudience(input: Parameters<typeof planLearningAudienceSync>[0]) {
   const plan = planLearningAudienceSync(input);
-  if (plan.addContactIds.length || plan.removeContactIds.length || plan.missingContactEmails.length) throw new Error("Provider membership does not match the reviewed Learning audience.");
+  if (plan.addContactIds.length || plan.removeContactIds.length || plan.missingContactEmails.length) throw new Error("Provider membership does not match the reviewed Growvelt audience.");
   const count = eligible(input.accounts).size - plan.globallySuppressedEmails.length;
-  if (count < 1) throw new Error("No eligible subscribed Learning recipients.");
+  if (count < 1) throw new Error("No eligible subscribed Growvelt recipients.");
   return { recipients: count, suppressed: plan.globallySuppressedEmails.length, segmentId: input.segmentId };
 }

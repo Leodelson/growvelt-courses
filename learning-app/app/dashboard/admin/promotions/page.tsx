@@ -77,12 +77,12 @@ export default async function AdminPromotionsPage({
   return <section className={styles.page + " "+ops.page+" admin-page section-shell"}>
     <OperationsNavigation sections={[{id:"campaign-create",label:"Schedule campaign"},{id:"campaign-history",label:"Campaign history"},{id:"coupon-create",label:"Create coupon"},{id:"coupon-history",label:"Coupon register"}]} />
     <header className="admin-page-header admin-review-hero">
-      <p className="eyebrow">Phase 4 · Learning Admin</p>
+      <p className="eyebrow">Phase 4 · Growvelt Admin</p>
       <h1>Promotions and coupons</h1>
       <p>Curate scheduled featured-course campaigns and manage controlled coupon codes. Featured placement is editorial-only: no placement fee, checkout change, seller-share adjustment, or automatic transfer.</p>
     </header>
 
-    <OperationsSummary items={[{label:"Live campaigns",value:campaignError?"—":campaigns.filter(item=>item.campaign_state==="live").length,detail:"Live state in the loaded schedule"},{label:"Enabled coupon codes",value:couponsError?"—":coupons.filter(item=>item.active).length,detail:"Enabled does not mean currently redeemable"},{label:"Recorded redemptions",value:couponsError?"—":coupons.reduce((sum,item)=>sum+item.redeemed_count,0),detail:"Across the loaded coupon register"}]} note="Editorial campaigns and coupons are separate. An enabled code must still meet its date, course, learner and checkout restrictions." />
+    <OperationsSummary items={[{label:"Live campaigns",value:campaignError?", ":campaigns.filter(item=>item.campaign_state==="live").length,detail:"Live state in the loaded schedule"},{label:"Enabled coupon codes",value:couponsError?", ":coupons.filter(item=>item.active).length,detail:"Enabled does not mean currently redeemable"},{label:"Recorded redemptions",value:couponsError?", ":coupons.reduce((sum,item)=>sum+item.redeemed_count,0),detail:"Across the loaded coupon register"}]} note="Editorial campaigns and coupons are separate. An enabled code must still meet its date, course, learner and checkout restrictions." />
     <aside className={styles.safety}>
       <strong>{testCouponCheckoutActive ? "Test Mode coupon checkout enabled" : "Test Mode coupon checkout disabled"}</strong>
       <p>{testCouponCheckoutActive ? "Only the assigned tester can redeem a code on its active fixture course. No Live or company purchase uses coupons." : "Checkout needs Test Mode, learner checkout, and the explicit coupon feature flag. Company purchases, organization courses, private company test courses, subscriptions, and Live payments remain excluded."} Coupon terms cannot be edited after creation; disable a code and issue a new one instead.</p>
@@ -108,7 +108,7 @@ export default async function AdminPromotionsPage({
         const state = campaign.campaign_state.charAt(0).toUpperCase() + campaign.campaign_state.slice(1);
         return {id:String(campaign.campaign_id),title:campaign.campaign_title,group:campaign.campaign_state,keywords:campaign.campaign_message+" "+campaign.course_titles,content:<article>
           <div className={styles.heading}><div><strong>{campaign.campaign_title}</strong><span>{campaign.campaign_message}</span></div><span className={campaign.enabled ? styles.active : styles.disabled}>{state}</span></div>
-          <dl><div><dt>Featured courses</dt><dd>{campaign.course_titles || campaign.course_ids.map((id) => `Course #${id}`).join(", ")}</dd></div><div><dt>Window</dt><dd>{reviewDate(campaign.starts_at,"en",undefined,true)} – {reviewDate(campaign.ends_at,"en",undefined,true)}</dd></div></dl>
+          <dl><div><dt>Featured courses</dt><dd>{campaign.course_titles || campaign.course_ids.map((id) => `Course #${id}`).join(", ")}</dd></div><div><dt>Window</dt><dd>{reviewDate(campaign.starts_at,"en",undefined,true)}  to {reviewDate(campaign.ends_at,"en",undefined,true)}</dd></div></dl>
           {campaign.enabled && <form action={disableLearningCampaignAction}><input type="hidden" name="campaignId" value={campaign.campaign_id} /><ActionSubmitButton label="Disable campaign" pendingLabel="Disabling campaign…" tone="secondary" /></form>}
         </article>};
       })} /></div>}
@@ -131,10 +131,10 @@ export default async function AdminPromotionsPage({
     </section>
 
     <section id="coupon-history" className={styles.panel}>
-      <header><p className="eyebrow">Private administration</p><h2>Coupon codes</h2><p>Codes and redemption counters are visible only to Learning Admin.</p></header>
+      <header><p className="eyebrow">Private administration</p><h2>Coupon codes</h2><p>Codes and redemption counters are visible only to Growvelt Admin.</p></header>
       {couponsError ? <p className={styles.error}>Coupon records could not be loaded safely. The list is not being treated as empty.</p> : coupons.length === 0 ? <p className={styles.muted}>No coupon codes have been created.</p> : <div className={styles.list}><OperationRecords searchLabel="Find coupon codes or eligible courses" items={coupons.map((coupon) => ({id:String(coupon.coupon_id),title:coupon.code,group:coupon.active?"enabled":"disabled",keywords:coupon.course_ids.map(id=>courseTitles.get(id)??"Course #"+id).join(" "),content:<article>
         <div className={styles.heading}><div><strong><code>{coupon.code}</code></strong><span>{coupon.discount_kind === "fixed" ? money(coupon.discount_value) : (coupon.discount_value / 100).toFixed(2) + "%"} · max {money(coupon.max_discount_minor)}</span></div><span className={coupon.active ? styles.active : styles.disabled}>{coupon.active ? "Active" : "Disabled"}</span></div>
-        <dl><div><dt>Eligible courses</dt><dd>{coupon.course_ids.map((id) => courseTitles.get(id) ?? "Course #" + id).join(", ")}</dd></div><div><dt>Redemptions</dt><dd>{coupon.redeemed_count}{coupon.max_redemptions === null ? "" : " / " + coupon.max_redemptions}</dd></div><div><dt>Window</dt><dd>{reviewDate(coupon.starts_at,"en",undefined,true)} – {reviewDate(coupon.ends_at,"en",undefined,true)}</dd></div><div><dt>Minimum charge</dt><dd>{money(coupon.minimum_charge_minor)}</dd></div></dl>
+        <dl><div><dt>Eligible courses</dt><dd>{coupon.course_ids.map((id) => courseTitles.get(id) ?? "Course #" + id).join(", ")}</dd></div><div><dt>Redemptions</dt><dd>{coupon.redeemed_count}{coupon.max_redemptions === null ? "" : " / " + coupon.max_redemptions}</dd></div><div><dt>Window</dt><dd>{reviewDate(coupon.starts_at,"en",undefined,true)}  to {reviewDate(coupon.ends_at,"en",undefined,true)}</dd></div><div><dt>Minimum charge</dt><dd>{money(coupon.minimum_charge_minor)}</dd></div></dl>
         {coupon.active && <form action={disableLearningCouponAction}><input type="hidden" name="couponId" value={coupon.coupon_id} /><ActionSubmitButton label="Disable coupon" pendingLabel="Disabling coupon…" tone="secondary" /></form>}
       </article>}))} /></div>}
     </section>

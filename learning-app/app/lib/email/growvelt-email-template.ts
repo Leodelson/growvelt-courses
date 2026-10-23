@@ -1,6 +1,7 @@
 import "server-only";
 import { learningAbsoluteUrl } from "../site-urls.mjs";
 import { renderEmailMarkdown } from "./email-markdown";
+import { prepareMobileDarkEmailHtml } from "./email-dark-compatibility";
 
 type EmailAction = { label: string; href: string };
 type EmailDetail = { label: string; value: string };
@@ -43,7 +44,9 @@ function actionHtml(action: EmailAction, primary = false) {
   return `<table role="presentation" cellspacing="0" cellpadding="0" style="margin:0 auto 14px"><tr><td${background}><a href="${escapeEmailHtml(action.href)}" style="${buttonStyle}">${escapeEmailHtml(action.label)}${primary ? "&nbsp; →" : " →"}</a></td></tr></table>`;
 }
 
-export function renderGrowveltEmail(input: GrowveltEmail) {
+// Kept byte-stable for matching pre-release provider drafts during recovery.
+// New sends always use renderGrowveltEmail below.
+export function renderGrowveltEmailLegacy(input: GrowveltEmail) {
   const logoUrl = learningAbsoluteUrl("/logo/growvelt-wordmark-purple-20261019.png");
   const paragraphHtml = input.messageMarkdown !== undefined ? renderEmailMarkdown(input.messageMarkdown) : input.paragraphs.map((paragraph) => `<p style="margin:0 0 16px;font-size:16px;line-height:1.62;color:${colors.text}">${escapeEmailHtml(paragraph)}</p>`).join("");
   const detailsHtml = input.details?.length ? `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" bgcolor="${colors.panel}" style="margin:22px 0 24px;background:${colors.panel};border:1px solid ${colors.divider};border-radius:8px;border-collapse:separate;border-spacing:0;overflow:hidden">${input.details.map((detail, index) => `<tr><td style="width:34%;padding:12px 14px;background:${colors.panel};border-bottom:${index === input.details!.length - 1 ? "0" : `1px solid ${colors.divider}`};color:${colors.muted};font-size:13px;font-weight:700;vertical-align:top">${escapeEmailHtml(detail.label)}</td><td style="padding:12px 14px;background:${colors.panel};border-bottom:${index === input.details!.length - 1 ? "0" : `1px solid ${colors.divider}`};color:${colors.text};font-size:14px;line-height:1.5;word-break:break-word">${escapeEmailHtml(detail.value)}</td></tr>`).join("")}</table>` : "";
@@ -55,4 +58,11 @@ export function renderGrowveltEmail(input: GrowveltEmail) {
   const privacyUrl = escapeEmailHtml(learningAbsoluteUrl("/privacy-policy"));
 
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light only"><meta name="supported-color-schemes" content="light only"><style>:root{color-scheme:light only;supported-color-schemes:light only}</style></head><body bgcolor="${colors.outer}" style="margin:0;padding:0;background:${colors.outer};font-family:Arial,Helvetica,sans-serif;color:${colors.text}"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" bgcolor="${colors.outer}" style="background:${colors.outer}"><tr><td align="center" style="padding:24px 12px"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" bgcolor="${colors.surface}" style="max-width:640px;background:${colors.surface};border:1px solid ${colors.divider};border-radius:12px;overflow:hidden"><tr><td align="center" bgcolor="${colors.surface}" style="padding:27px 30px;background:${colors.surface};border-bottom:1px solid ${colors.divider};border-radius:12px 12px 0 0"><img src="${escapeEmailHtml(logoUrl)}" width="116" alt="Growvelt" style="display:block;width:116px;max-width:100%;height:auto;margin:0 auto;border:0" /></td></tr><tr><td bgcolor="${colors.surface}" style="padding:30px 24px 34px;background:${colors.surface}"><p style="margin:0 0 20px;font-size:16px;line-height:1.6;color:${colors.text}">Hello ${escapeEmailHtml(input.greeting)},</p><h1 style="margin:0 0 16px;font-size:30px;line-height:1.2;color:${colors.heading};font-weight:700">${escapeEmailHtml(input.title)}</h1>${paragraphHtml}${detailsHtml}${input.primaryAction ? `<div style="padding-top:6px;text-align:center">${actionHtml(input.primaryAction, true)}</div>` : ""}${input.secondaryAction ? actionHtml(input.secondaryAction) : ""}${highlightsHtml}<div style="height:1px;margin:28px 0 20px;background:${colors.divider}"></div><p style="margin:0 0 10px;font-size:13px;line-height:1.55;color:${colors.muted}">Need help? <a href="mailto:support@growvelt.com" style="color:${colors.link}">Contact us</a></p><p style="margin:0 0 12px;font-size:13px;line-height:1.65;color:${colors.muted}">${escapeEmailHtml(input.reason)}</p>${input.unsubscribeUrl ? `<p style="margin:0 0 12px;font-size:13px;line-height:1.65"><a href="${escapeEmailHtml(input.unsubscribeUrl)}" style="color:${colors.link}">Unsubscribe from marketing emails</a></p>` : ""}<p style="margin:0 0 12px;font-size:13px;line-height:1.65"><a href="${aboutUrl}" style="color:${colors.link}">About</a> · <a href="${contactUrl}" style="color:${colors.link}">Contact</a> · <a href="${termsUrl}" style="color:${colors.link}">Terms</a> · <a href="${privacyUrl}" style="color:${colors.link}">Privacy</a></p><p style="margin:0;font-size:13px;line-height:1.65;color:${colors.muted}">Follow us: <a href="https://www.linkedin.com/company/growvelt" style="color:${colors.link}">LinkedIn</a> · <a href="https://web.facebook.com/growvelttechnologies09" style="color:${colors.link}">Facebook</a> · <a href="https://www.instagram.com/growvelt" style="color:${colors.link}">Instagram</a><br />© ${year} Growvelt Technologies Limited (RC - 8738218). All rights reserved.</p></td></tr></table></td></tr></table></body></html>`;
+}
+
+export function renderGrowveltEmail(input: GrowveltEmail) {
+  const html = renderGrowveltEmailLegacy(input);
+  // Email Center's optional headline is independent of its inbox subject.
+  // Automatic security/account messages still supply their intended heading.
+  return prepareMobileDarkEmailHtml(input.title ? html : html.replace(/<h1[^>]*><\/h1>/,""));
 }

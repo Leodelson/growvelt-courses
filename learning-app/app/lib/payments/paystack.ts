@@ -287,7 +287,7 @@ function parsePaystackRefund(data: Record<string, unknown>, expectedDomain: Pays
 export async function createPaystackTestFullRefund(input: { transactionId: string; transactionReference: string; note: string }) {
   if (!/^\d+$/.test(input.transactionId) || !/^GL-[A-F0-9]{32}$/.test(input.transactionReference)) throw new Error("Invalid refund target.");
   const { secretKey } = requirePaystackTestRefundsEnabled();
-  const response = await fetch("https://api.paystack.co/refund", { method: "POST", headers: { Authorization: `Bearer ${secretKey}`, "Content-Type": "application/json" }, cache: "no-store", body: JSON.stringify({ transaction: input.transactionId, merchant_note: input.note, customer_note: "Growvelt Learning course refund" }), signal: AbortSignal.timeout(15000) });
+  const response = await fetch("https://api.paystack.co/refund", { method: "POST", headers: { Authorization: `Bearer ${secretKey}`, "Content-Type": "application/json" }, cache: "no-store", body: JSON.stringify({ transaction: input.transactionId, merchant_note: input.note, customer_note: "Growvelt course refund" }), signal: AbortSignal.timeout(15000) });
   const result = await response.json().catch(() => null) as { status?: unknown; message?: unknown; data?: Record<string, unknown> } | null;
   if (!response.ok || result?.status !== true || !result.data) throw new Error(typeof result?.message === "string" ? result.message : "Paystack refund initiation failed.");
   return parsePaystackRefund(result.data, "test", { transactionReference: input.transactionReference, transactionId: input.transactionId }) as PaystackTestRefund;
@@ -305,7 +305,7 @@ export async function verifyPaystackTestRefund(input: { refundId: string; transa
 export async function createPaystackLiveFullRefund(input: { transactionId: string; transactionReference: string; note: string }) {
   if (!/^\d+$/.test(input.transactionId) || !/^GL-[A-F0-9]{32}$/.test(input.transactionReference)) throw new Error("Invalid refund target.");
   const { secretKey } = requirePaystackLiveRefundsEnabled();
-  const response = await fetch("https://api.paystack.co/refund", { method: "POST", headers: { Authorization: `Bearer ${secretKey}`, "Content-Type": "application/json" }, cache: "no-store", body: JSON.stringify({ transaction: input.transactionId, merchant_note: input.note, customer_note: "Growvelt Learning course refund" }), signal: AbortSignal.timeout(15000) });
+  const response = await fetch("https://api.paystack.co/refund", { method: "POST", headers: { Authorization: `Bearer ${secretKey}`, "Content-Type": "application/json" }, cache: "no-store", body: JSON.stringify({ transaction: input.transactionId, merchant_note: input.note, customer_note: "Growvelt course refund" }), signal: AbortSignal.timeout(15000) });
   const result = await response.json().catch(() => null) as { status?: unknown; message?: unknown; data?: Record<string, unknown> } | null;
   if (!response.ok || result?.status !== true || !result.data) throw new Error(typeof result?.message === "string" ? result.message : "Paystack refund initiation failed.");
   return parsePaystackRefund(result.data, "live", { transactionReference: input.transactionReference, transactionId: input.transactionId });
@@ -430,7 +430,7 @@ export async function initiatePaystackTestTransfer(input: { recipientCode: strin
   const { secretKey } = getPaystackTestConfig(false);
   const response = await fetch("https://api.paystack.co/transfer", {
     method: "POST", headers: { Authorization: `Bearer ${secretKey}`, "Content-Type": "application/json" }, cache: "no-store",
-    body: JSON.stringify({ source: "balance", amount: input.amountMinor, recipient: input.recipientCode, reference: input.reference, currency: "NGN", reason: "Growvelt Learning instructor earnings" }), signal: AbortSignal.timeout(15000),
+    body: JSON.stringify({ source: "balance", amount: input.amountMinor, recipient: input.recipientCode, reference: input.reference, currency: "NGN", reason: "Growvelt instructor earnings" }), signal: AbortSignal.timeout(15000),
   });
   const result = await response.json().catch(() => null) as { status?: unknown; message?: unknown; data?: Record<string, unknown> } | null;
   const data = result?.data;

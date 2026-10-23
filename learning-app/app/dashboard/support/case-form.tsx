@@ -28,7 +28,7 @@ export function SupportCaseForm() {
     } catch (cause) { setError(cause instanceof Error ? cause.message : "Request could not be sent."); }
     finally { setBusy(false); }
   }
-  return <form className={styles.card} onSubmit={submit}><h2>Ask the Learning team</h2><p>For a course, payment, teaching, or organization question. Never include a password, card number, or secret key.</p>
+  return <form className={styles.card} onSubmit={submit}><h2>Ask the Growvelt team</h2><p>For a course, payment, teaching, or organization question. Never include a password, card number, or secret key.</p>
     <label>Topic<select value={topic} onChange={(event) => setTopic(event.target.value)}>{topics.map(([value, label]) => <option value={value} key={value}>{label}</option>)}</select></label>
     <label>Subject<input required minLength={5} maxLength={160} value={subject} onChange={(event) => setSubject(event.target.value)} /></label>
     <label>What happened?<textarea required rows={7} minLength={20} maxLength={5000} value={message} onChange={(event) => setMessage(event.target.value)} /></label>

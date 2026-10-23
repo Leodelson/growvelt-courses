@@ -39,7 +39,7 @@ export function getCareersOrigin(env = environment()) {
   const origin = exactOrigin(env.NEXT_PUBLIC_CAREERS_SITE_URL?.trim() || futureLearningOrigin,
     ["https://growvelt.com", futureLearningOrigin, "https://jobs.growvelt.com"]);
   if (getLearningOrigin(env) === futureLearningOrigin && origin !== "https://jobs.growvelt.com") {
-    throw new Error("The Learning cutover requires the explicit jobs.growvelt.com Careers origin.");
+    throw new Error("The Growvelt cutover requires the explicit jobs.growvelt.com Careers origin.");
   }
   return origin;
 }
@@ -56,9 +56,9 @@ export function learningPath(value, env = environment()) {
 }
 
 export function learningAbsoluteUrl(value = "/", env = environment()) {
-  if (!value.startsWith("/") || value.startsWith("//") || value.includes("\\")) throw new Error("A relative Learning path is required.");
+  if (!value.startsWith("/") || value.startsWith("//") || value.includes("\\")) throw new Error("A relative Course path is required.");
   const result = new URL(learningPath(value, env), getLearningOrigin(env));
-  if (result.origin !== getLearningOrigin(env)) throw new Error("Invalid Learning destination.");
+  if (result.origin !== getLearningOrigin(env)) throw new Error("Invalid Growvelt destination.");
   return result.href;
 }
 
@@ -75,7 +75,7 @@ export function learningAuthCallbackUrl(origin, next, env = environment()) {
   const trusted = [legacyLearningOrigin, futureLearningOrigin, "https://www.learn.growvelt.com"].includes(parsed.origin);
   if (parsed.username || parsed.password || parsed.pathname !== "/" || parsed.search || parsed.hash
     || !(loopback && ["http:", "https:"].includes(parsed.protocol) || parsed.protocol === "https:" && (trusted || preview))) {
-    throw new Error("Unapproved Learning authentication origin.");
+    throw new Error("Unapproved Growvelt authentication origin.");
   }
   // PKCE must return to the initiating origin, including throughout the grace period.
   const path = parsed.origin === legacyLearningOrigin || parsed.hostname === "www.learn.growvelt.com"

@@ -4,10 +4,10 @@ import { PublicHeader } from "@/app/components/public-header";
 import { ContactPageContent } from "@/app/components/contact-page-content";
 
 export const metadata: Metadata = {
-  title: "Contact us | Learning and support",
+  title: "Contact us | Growvelt and support",
   description: "Contact us for course questions, learner support, teaching enquiries, jobs, career tools, or partnership conversations.",
   alternates: { canonical: "/contact" },
-  openGraph: { url: "/contact", title: "Contact us | Learning and support" },
+  openGraph: { url: "/contact", title: "Contact us | Growvelt and support" },
 };
 
 export default function ContactPage() {

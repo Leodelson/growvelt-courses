@@ -20,13 +20,13 @@ export function paystackCallbackForRequest(requestUrl: string, configuredUrl: st
   if (getLearningOrigin(environment) !== futureLearningOrigin) return configuredUrl;
   const origin = new URL(requestUrl).origin;
   if (![legacyLearningOrigin, futureLearningOrigin].includes(origin)) {
-    throw new Error("Unapproved Learning checkout origin.");
+    throw new Error("Unapproved Growvelt checkout origin.");
   }
   const configured = new URL(configuredUrl);
   if (![legacyLearningOrigin, futureLearningOrigin].includes(configured.origin)
     || configured.pathname !== "/payments/paystack/callback"
     || configured.username || configured.password || configured.hash) {
-    throw new Error("Unapproved Learning payment callback.");
+    throw new Error("Unapproved Growvelt payment callback.");
   }
   const callback = new URL(configured.pathname + configured.search, origin);
   return callback.href;
@@ -63,7 +63,7 @@ export function resolvePaystackConfiguration(environment: PaystackEnvironment): 
   const allowedLiveOrigins = new Set([legacyLearningOrigin, getLearningOrigin(environment)]);
   if (parsedCallback.username || parsedCallback.password || parsedCallback.hash) throw new Error("Paystack callback URL is invalid.");
   if (mode === "live" && (!allowedLiveOrigins.has(parsedCallback.origin) || parsedCallback.pathname !== "/payments/paystack/callback")) {
-    throw new Error("Paystack live callback URL must be the Growvelt Learning HTTPS callback.");
+    throw new Error("Paystack live callback URL must be the Growvelt HTTPS callback.");
   }
 
   return { mode, secretKey, callbackUrl: parsedCallback.href, checkoutEnabled, liveLearnerCheckoutEnabled, refundsEnabled, liveRefundsEnabled };

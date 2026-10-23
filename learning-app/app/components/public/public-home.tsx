@@ -48,7 +48,7 @@ export function PublicHome({ courses }: { courses: PublishedCourse[] }) {
           <div className={styles.heroPhoto}><Image src="/images/learning-woman-with-laptop.jpg" alt={home.imageAlt} fill loading="lazy" sizes="(max-width: 780px) 100vw, 45vw" /></div>
           <div className={styles.photoAccent} aria-hidden="true" />
           <figcaption><span>{home.imageKicker}</span><strong>{home.imageTitle}</strong></figcaption>
-          <div className={styles.heroStamp} aria-hidden="true"><BookOpen size={26} /><span>Growvelt<br />Learning</span></div>
+          <div className={styles.heroStamp} aria-hidden="true"><BookOpen size={26} /><span>Growvelt<br />Growvelt</span></div>
         </figure>
       </section>
 

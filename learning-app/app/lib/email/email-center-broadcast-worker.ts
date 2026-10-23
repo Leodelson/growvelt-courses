@@ -86,7 +86,7 @@ export async function runLearningBroadcast(input: Input, action: "prepare" | "di
   let remote = await input.transport.getBroadcast(providerId);
   if (!input.transport.matchesBroadcast(remote, document, key)) throw new Error("Provider content or audience changed. Quarantined; no send or lease release.");
   if (op.phase === "creating") {
-    if (remote.status !== "draft") throw new Error("An uncheckpointed provider draft was changed outside Learning. Operator review required.");
+    if (remote.status !== "draft") throw new Error("An uncheckpointed provider draft was changed outside Growvelt. Operator review required.");
     await advance("creating", "draft", providerId, "draft");
     return { state: "draft", notice: "Recovered the existing provider draft. Nothing was sent." };
   }

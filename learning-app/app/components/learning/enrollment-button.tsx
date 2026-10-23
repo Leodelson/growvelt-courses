@@ -14,7 +14,7 @@ export function EnrollmentButton({ courseId, slug, isFree, isEnrolled, paidCheck
   const [error, setError] = useState<string | null>(null);
   const [couponCode, setCouponCode] = useState("");
   const [checkoutKey, setCheckoutKey] = useState<string | null>(null);
-  if (isEnrolled) return <div className="enrollment-actions"><Link className="button button-primary" href={`/dashboard/my-learning/${encodeURIComponent(slug)}`}>Continue Learning</Link><Link className="text-link" href="/dashboard/my-learning">View in My Learning</Link></div>;
+  if (isEnrolled) return <div className="enrollment-actions"><Link className="button button-primary" href={`/dashboard/my-learning/${encodeURIComponent(slug)}`}>Continue course</Link><Link className="text-link" href="/dashboard/my-learning">View in My Courses</Link></div>;
   if (!isFree && !paidCheckoutEnabled) return <p className="enrollment-unavailable">Paid enrollment is not available yet.</p>;
   async function enroll() {
     if (pending) return;

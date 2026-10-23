@@ -74,7 +74,7 @@ export function QuizPlayer({ quiz, slug, lessonId, nextHref, courseHref }: {
     if (rpcError || !data?.[0]) {
       if (process.env.NODE_ENV === "development" && rpcError) {
         console.error(
-          `Quiz submission failed — code: ${rpcError.code ?? "unknown"}; message: ${rpcError.message ?? "none"}; details: ${rpcError.details ?? "none"}; hint: ${rpcError.hint ?? "none"}`,
+          `Quiz submission failed, code: ${rpcError.code ?? "unknown"}; message: ${rpcError.message ?? "none"}; details: ${rpcError.details ?? "none"}; hint: ${rpcError.hint ?? "none"}`,
         );
       }
       setError(rpcError?.code === "42501"

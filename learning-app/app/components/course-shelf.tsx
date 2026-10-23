@@ -17,6 +17,6 @@ export function CourseShelf({ title, description, courses, dashboard = false, au
   function move(direction: number) { const el = track.current; if (el) el.scrollBy({ left: direction * el.clientWidth * .85, behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" }); }
   return <section className={styles.shelf} aria-label={title}>
     <header className={styles.heading}><div><h2>{title}</h2>{description ? <p>{description}</p> : null}</div><div className={styles.arrows}><button type="button" aria-label={`${copy.previous}: ${title}`} disabled={position.start} onClick={() => move(-1)}>←</button><button type="button" aria-label={`${copy.next}: ${title}`} disabled={position.end} onClick={() => move(1)}>→</button></div></header>
-    <div className={styles.track} ref={track} onScroll={measure} tabIndex={0} aria-label={`${title} — ${copy.scroll}`}>{courses.map((course, index) => <PublishedCourseCard key={course.id} course={course} index={index} href={`${dashboard ? "/dashboard/courses" : "/courses"}/${encodeURIComponent(course.slug)}`} authenticated={authenticated} isSaved={savedCourseIds.includes(course.id)} />)}</div>
+    <div className={styles.track} ref={track} onScroll={measure} tabIndex={0} aria-label={`${title}, ${copy.scroll}`}>{courses.map((course, index) => <PublishedCourseCard key={course.id} course={course} index={index} href={`${dashboard ? "/dashboard/courses" : "/courses"}/${encodeURIComponent(course.slug)}`} authenticated={authenticated} isSaved={savedCourseIds.includes(course.id)} />)}</div>
   </section>;
 }
