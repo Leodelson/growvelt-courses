@@ -92,9 +92,9 @@ const topics: HelpTopic[] = [
   },
   {
     id: "account", title: "Account and sign-in", description: "Update your profile and account preferences.",
-    overview: "Your Growvelt profile, security history, and preferences are managed separately from Growvelt Careers.",
+    overview: "Your Growvelt profile and preferences are managed separately from Growvelt Careers. Sign-in alerts appear in your notification bell and email.",
     keywords: ["google", "password", "profile", "settings", "security"],
-    steps: ["Open Profile to review your Growvelt account details.", "Open Settings to adjust available preferences and check recent sign-ins.", "If a sign-in looks unfamiliar, reset your password and contact Growvelt support."],
+    steps: ["Open Profile to review your Growvelt account details.", "Open Settings to adjust your available preferences.", "Check the notification bell or your email for sign-in alerts. If a sign-in looks unfamiliar, reset your password and contact Growvelt support."],
     href: "/dashboard/settings", action: "Open settings", icon: UserRound,
   },
 ];

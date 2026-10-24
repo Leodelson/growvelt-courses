@@ -82,7 +82,7 @@ const sections = [
     heading: "11. Retention and deletion",
     paragraphs: [
       "We keep information for as long as it is reasonably needed for the purpose it was collected, including to provide the service, maintain learning and certificate records, protect accounts, meet legal or financial obligations, resolve disputes, and enforce our terms. Retention periods vary by record type and purpose.",
-      "A sign-in alert in the notification bell is removed 24 hours after you mark it as read. The separate sign-in history in Account Settings is a security record and may be retained for a different period. Closing or deleting an account does not automatically erase financial, security, legal, or dispute records that must or may be retained.",
+      "A sign-in alert in the notification bell is removed 24 hours after you mark it as read. Security sign-in records may be retained separately for account protection. Closing or deleting an account does not automatically erase financial, security, legal, or dispute records that must or may be retained.",
       "When an eligible learner deletes an account, Growvelt asks whether an earned certificate should remain publicly verifiable. If you choose to keep verification, the certificate’s issued snapshot may remain available without being linked to an active account. If you choose to remove public verification, the learner name is removed from that verification record and the certificate is marked revoked. Instructors with dependent course content and active administrators require managed offboarding so content and platform access are handled safely.",
     ],
   },
