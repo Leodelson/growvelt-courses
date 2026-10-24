@@ -50,7 +50,7 @@ function makeLoginEmailHtml(user: User, headers: Headers, signInAt: string, brow
     baseUrl: getLearningOrigin(),
     greeting: getGreeting(user),
     title: "New login to your Growvelt account",
-    paragraphs: ["We noticed a new sign-in to your Growvelt account. Here are the details."],
+    paragraphs: ["We noticed a new sign-in to your Growvelt account. Here are the details.", "If this was you, no action is needed. If you do not recognize this sign-in, reset your password and contact Growvelt Support."],
     details: [
       { label: "Location", value: loginLocation(headers) },
       { label: "Device", value: `${browser} on ${device}` },
@@ -59,7 +59,7 @@ function makeLoginEmailHtml(user: User, headers: Headers, signInAt: string, brow
       { label: "Date", value: dateFormatter.format(time) },
     ],
     primaryAction: { label: "Review account settings", href: learningAbsoluteUrl("/dashboard/settings") },
-    reason: "If this was you, no action is needed. If you do not recognize this sign-in, reset your password and contact Growvelt Support. You received this email because a new sign-in was recorded on your Growvelt account.",
+    reason: `This security alert concerns your sign-in on ${dateFormatter.format(time)} at ${timeFormatter.format(time)} WAT (${time.toISOString()}). You received it because a new sign-in was recorded on your Growvelt account.`,
   });
 }
 
@@ -84,7 +84,9 @@ async function sendLoginActivityEmail(user: User, headers: Headers, signInAt: st
         from: "Growvelt Login Security <no-reply@growvelt.com>",
         to: [user.email],
         reply_to: "support@growvelt.com",
-        subject: "New login to your Growvelt account",
+        // Distinct security events should not be grouped as repeated replies.
+        // Gmail may still trim repeated content; senders cannot disable that UI.
+        subject: `New login to your Growvelt account: ${new Date(signInAt).toISOString()}`,
         html: makeLoginEmailHtml(user, headers, signInAt, browser, device),
         tags: [{ name: "category", value: "login_security" }, { name: "product", value: "learning" }],
       }),

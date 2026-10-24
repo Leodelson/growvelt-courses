@@ -37,6 +37,7 @@ for (const scenario of ["accepted","rejected","timeout","schedule-error","missin
     const {url,options}=calls[0], payload=JSON.parse(options.body);
     assert.equal(url,"https://api.resend.com/emails");
     assert.deepEqual(payload.to,[user.email]);
+    assert.equal(payload.subject, `New login to your Growvelt account: ${signInAt}`, "separate sign-in events have distinct inbox subjects to reduce Gmail thread trimming");
     assert.equal(options.headers["Idempotency-Key"],`growvelt-learning-login-${user.id}-${Date.parse(signInAt)}`);
     assert.ok(options.signal instanceof AbortSignal);
     assert.deepEqual(timeouts,[12000],"the existing 12-second provider bound remains wired");

@@ -5,10 +5,8 @@ import { useCallback, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { learningPath } from "@/app/lib/site-urls.mjs";
 import { createClient } from "@/app/lib/supabase/browser";
-import { useLanguage } from "@/app/components/language-provider";
 import styles from "./learning-google-one-tap.module.css";
 
-type LearningIntent = "learn" | "teach";
 type GoogleCredentialResponse = { credential: string };
 type GoogleIdentityApi = {
   initialize: (options: {
@@ -42,9 +40,6 @@ async function makeNonce() {
 
 export function LearningGoogleOneTap() {
   const router = useRouter();
-  const { t } = useLanguage();
-  const [showRoleChoice, setShowRoleChoice] = useState(false);
-  const [isBusy, setIsBusy] = useState(false);
   const [message, setMessage] = useState("");
   const initialized = useRef(false);
   const pending = useRef(false);
@@ -54,7 +49,6 @@ export function LearningGoogleOneTap() {
     if (!response.credential || pending.current) return;
     pending.current = true;
     setMessage("");
-    setIsBusy(true);
 
     try {
       if (!nonce.current) throw new Error("Google sign-in nonce is unavailable.");
@@ -73,19 +67,10 @@ export function LearningGoogleOneTap() {
         signal: AbortSignal.timeout(3000),
       }).catch(() => undefined);
 
-      const savedIntent = data.user.user_metadata?.growvelt_learning_intent;
-      if (savedIntent === "learn" || savedIntent === "teach") {
-        router.replace(learningPath(savedIntent === "teach" ? "/teach/apply" : "/dashboard"));
-        return;
-      }
-
-      window.sessionStorage.setItem(roleChoiceKey, "1");
-      setShowRoleChoice(true);
-      setIsBusy(false);
-      pending.current = false;
+      window.sessionStorage.removeItem(roleChoiceKey);
+      router.replace(learningPath("/dashboard"));
     } catch {
       setMessage("Google sign-in could not be completed. Please use the sign-in or Join for free option in the menu.");
-      setIsBusy(false);
       pending.current = false;
     }
   }, [router]);
@@ -98,7 +83,7 @@ export function LearningGoogleOneTap() {
       const supabase = createClient();
       const { data } = await supabase.auth.getSession();
       if (data.session) {
-        if (window.sessionStorage.getItem(roleChoiceKey) === "1") setShowRoleChoice(true);
+        window.sessionStorage.removeItem(roleChoiceKey);
         return;
       }
 
@@ -120,45 +105,10 @@ export function LearningGoogleOneTap() {
     }
   }, [completeSignIn]);
 
-  async function chooseIntent(intent: LearningIntent) {
-    if (pending.current) return;
-    pending.current = true;
-    setIsBusy(true);
-    setMessage("");
-
-    try {
-      const { error } = await createClient().auth.updateUser({ data: { growvelt_learning_intent: intent } });
-      if (error) throw error;
-      window.sessionStorage.removeItem(roleChoiceKey);
-      router.replace(learningPath(intent === "teach" ? "/teach/apply" : "/dashboard"));
-    } catch {
-      setMessage("Your account is ready, but we couldn’t save that choice. Please choose again.");
-      setIsBusy(false);
-      pending.current = false;
-    }
-  }
-
-  if (!clientId && !showRoleChoice) return null;
+  if (!clientId) return null;
 
   return <>
     {clientId && <Script id="google-identity-services" src="https://accounts.google.com/gsi/client" strategy="afterInteractive" onReady={() => { void initializeOneTap(); }} />}
-    {message && !showRoleChoice && <p className={styles.status} role="status">{message}</p>}
-    {showRoleChoice && <div className={styles.backdrop}>
-      <section className={styles.dialog} role="dialog" aria-modal="true" aria-labelledby="one-tap-title" aria-describedby="one-tap-copy">
-        <p className={styles.eyebrow}>Welcome to Growvelt</p>
-        <h2 id="one-tap-title">What brings you here?</h2>
-        <p id="one-tap-copy">Choose how you’d like to get started. You can change direction any time.</p>
-        <div className={styles.choices}>
-          <button autoFocus type="button" onClick={() => void chooseIntent("learn")} disabled={isBusy}>
-            <strong>{t("auth.learn")}</strong><span>{t("auth.learnCopy")}</span>
-          </button>
-          <button type="button" onClick={() => void chooseIntent("teach")} disabled={isBusy}>
-            <strong>{t("auth.teach")}</strong><span>{t("auth.teachCopy")}</span>
-          </button>
-        </div>
-        {message && <p className={styles.dialogStatus} role="alert">{message}</p>}
-        <button className={styles.later} type="button" onClick={() => void chooseIntent("learn")} disabled={isBusy}>Continue as a learner</button>
-      </section>
-    </div>}
+    {message && <p className={styles.status} role="status">{message}</p>}
   </>;
 }
