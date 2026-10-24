@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import styles from "./learning-email-preferences.module.css";
 
 export function LearningEmailPreferences({ initialValue }: { initialValue: boolean }) {
   const [enabled, setEnabled] = useState(initialValue);
@@ -15,5 +16,5 @@ export function LearningEmailPreferences({ initialValue }: { initialValue: boole
     } catch { setError("Your preference could not be saved. Please try again."); }
     finally { setBusy(false); }
   }
-  return <div className="learning-email-preferences"><strong>Marketing emails: {enabled ? "On" : "Off"}</strong><p>Optional course news and offers from Growvelt. You can change this at any time. Essential account and course messages are separate.</p><button type="button" className="button button-secondary" disabled={busy} onClick={() => void update(!enabled)}>{busy ? "Saving…" : enabled ? "Turn off marketing emails" : "Get Growvelt updates"}</button>{error && <p role="alert">{error}</p>}</div>;
+  return <div className={styles.preference}><div className={styles.copy}><div className={styles.titleLine}><strong>Optional marketing emails</strong><span className={enabled ? styles.statusOn : styles.statusOff} aria-live="polite">{busy ? "Saving…" : enabled ? "On" : "Off"}</span></div><p id="learning-marketing-email-copy">Course news and offers from Growvelt. You can change this at any time. Essential account and security messages are separate.</p>{error && <p className={styles.error} role="alert">{error}</p>}</div><button type="button" className={styles.switch} role="switch" aria-label="Optional marketing emails" aria-describedby="learning-marketing-email-copy" aria-checked={enabled} disabled={busy} onClick={() => void update(!enabled)}><span /></button></div>;
 }

@@ -45,6 +45,15 @@
 .cookieActions { display: flex; align-items: center; flex-wrap: wrap; gap: 18px; }
 .cookieActions > button { min-height: 44px; padding: 11px 16px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-muted); color: var(--ink); font-size: 13px; font-weight: 750; text-decoration: none; }
 .cookieActions a { color: var(--purple); font-size: 13px; }
+.notificationGrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; width: 100%; }
+.notificationCard { display: grid; min-width: 0; align-content: start; gap: 10px; padding: 18px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface-muted); }
+.notificationTop { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.notificationIcon { display: grid; width: 36px; height: 36px; place-items: center; border-radius: 11px; color: var(--purple); background: color-mix(in srgb, var(--purple) 10%, var(--surface)); }
+.statusActive, .statusPending { display: inline-flex; align-items: center; min-height: 24px; padding: 4px 9px; border-radius: 999px; font-size: 11px; font-weight: 800; white-space: nowrap; }
+.statusActive { color: #087b55; background: color-mix(in srgb, #10b981 14%, var(--surface)); }
+.statusPending { color: var(--muted); background: var(--surface); border: 1px solid var(--line); }
+.notificationCard h3 { margin: 0; font-size: 16px; }
+.notificationCard p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.65; }
 .profile :global(.profile-cover) { min-height: clamp(190px, 22vw, 270px); border-radius: 24px 24px 0 0; box-shadow: none; }
 .profile :global(.profile-identity-card) { grid-template-columns: auto minmax(0, 1fr); box-shadow: none; }
 .profile :global(.profile-identity-copy) { padding-bottom: 8px; }
@@ -58,5 +67,5 @@
 .profile :global(.profile-identity-card), .profile :global(.profile-social-card), .profile :global(.profile-setup-card) { scroll-margin-top: 105px; }
 .hint { margin: 16px 0 0; color: var(--muted); font-size: 13px; line-height: 1.7; }
 .profile :global(.profile-social-editor) label { min-width: 0; }
-@media (max-width: 900px) { .settingsLayout { grid-template-columns: 1fr; }.settingsNav { position: static; }.settingsNav > div { display: flex; flex-wrap: wrap; }.settingsNav button { width: auto; }.preferenceSummary { grid-template-columns: repeat(2, minmax(0, 1fr)); }.header { align-items: start; flex-direction: column; } }
+@media (max-width: 900px) { .settingsLayout { grid-template-columns: 1fr; }.settingsNav { position: static; }.settingsNav > div { display: flex; flex-wrap: wrap; }.settingsNav button { width: auto; }.preferenceSummary { grid-template-columns: repeat(2, minmax(0, 1fr)); }.notificationGrid { grid-template-columns: 1fr; }.header { align-items: start; flex-direction: column; } }
 @media (max-width: 620px) { .stats { gap: 8px; }.stat { align-items: start; padding: 16px 12px; flex-direction: column; gap: 12px; border-radius: 14px; }.stat strong { font-size: 25px; }.toolbar { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 16px; }.toolbar label:first-child { grid-column: 1 / -1; }.page { gap: 18px; }.profile :global(.profile-identity-card) { grid-template-columns: 1fr; padding: 64px 20px 24px; }.profile :global(.profile-social-heading) { align-items: stretch; flex-direction: column; }.profile :global(.profile-social-editor) { grid-template-columns: 1fr; }.settingsNav { padding: 18px; }.preferenceSummary { grid-template-columns: 1fr; }.page :global(.settings-card) { padding: 22px; }.page :global(.settings-card) :global(.button) { max-width: 100%; white-space: normal; }.cookieActions { align-items: start; flex-direction: column; }.header > a { flex-shrink: 1; } }

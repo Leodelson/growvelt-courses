@@ -1,0 +1,18 @@
+.cards { display: grid !important; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; width: min(100%, 520px); max-width: none; align-self: start; padding: 0; border: 0; border-radius: 0; background: transparent; }
+.option { display: grid; min-width: 0; gap: 12px; padding: 10px; border: 1px solid var(--line) !important; border-radius: 16px !important; background: var(--surface) !important; color: var(--ink) !important; text-align: left; cursor: pointer; transition: border-color .16s ease, box-shadow .16s ease, transform .16s ease; }
+.option:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--purple) 42%, var(--line)) !important; }
+.option[aria-pressed="true"] { border-color: var(--purple) !important; box-shadow: 0 0 0 2px color-mix(in srgb, var(--purple) 18%, transparent); }
+.preview { display: grid; align-content: center; gap: 7px; height: 66px; padding: 12px; overflow: hidden; border: 1px solid var(--line); border-radius: 10px; background: #f4f6fb; }
+.preview i { display: block; width: 78%; height: 6px; border-radius: 99px; background: #cbd3df; }
+.preview i:first-child { width: 48%; background: #9c25ed; }
+.darkPreview { background: #111827; border-color: #2b3548; }
+.darkPreview i { background: #344155; }
+.darkPreview i:first-child { background: #a344f4; }
+.systemPreview { background: linear-gradient(90deg, #f4f6fb 0 50%, #111827 50%); }
+.systemPreview i:nth-child(2) { background: linear-gradient(90deg, #cbd3df 0 50%, #344155 50%); }
+.systemPreview i:nth-child(3) { background: linear-gradient(90deg, #cbd3df 0 50%, #344155 50%); }
+.optionLabel { display: flex; align-items: center; gap: 8px; min-width: 0; color: var(--ink); font-size: 14px; font-weight: 800; }
+.optionLabel svg { flex: 0 0 auto; color: var(--purple); }
+.selected { display: inline-flex; align-items: center; gap: 4px; color: var(--purple); font-size: 11px; font-weight: 800; }
+@media (max-width: 560px) { .cards { gap: 8px; }.option { gap: 9px; padding: 8px; border-radius: 13px !important; }.preview { height: 52px; padding: 8px; }.optionLabel { gap: 5px; font-size: 12px; }.optionLabel svg { width: 15px; height: 15px; }.selected { font-size: 10px; } }
+@media (max-width: 360px) { .cards { grid-template-columns: 1fr; }.option { grid-template-columns: minmax(0, .8fr) minmax(0, 1fr); align-items: center; }.preview { grid-row: span 2; }.optionLabel { align-self: end; }.selected { align-self: start; } }
