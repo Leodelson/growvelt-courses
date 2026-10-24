@@ -15,7 +15,6 @@
 .query strong { color: var(--ink); }
 .resultsHeading { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin: 12px 0 24px; }
 .resultsHeading h2 { font-size: clamp(23px, 3vw, 30px); margin: 8px 0 0; letter-spacing: -.025em; }
-.page .grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; }
-@media (max-width: 1200px) { .page .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.page .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
 @media (max-width: 1000px) { .page .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .controls { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 620px) { .page { width: calc(100% - 36px); padding: 24px 0 48px; } .hero { padding: 20px 0 32px; } .hero > p:last-child { font-size: 16px; } .controls { padding: 16px; gap: 18px 12px; margin-bottom: 28px; } .controls select { font-size: 12px; padding: 0 6px; } .page .grid { grid-template-columns: minmax(0, 1fr); } .resultsHeading { align-items: flex-start; flex-direction: column; gap: 8px; } .filterHeading { gap: 12px; } .filterHeading a { white-space: nowrap; font-size: 12px; } }

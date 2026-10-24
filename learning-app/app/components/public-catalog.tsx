@@ -15,6 +15,7 @@ import styles from "./public-catalog.module.css";
 import { CourseShelf } from "./course-shelf";
 import { withCourseRatings } from "@/app/lib/catalog/course-ratings";
 import { coursePresentationCopy } from "@/app/lib/catalog/course-presentation-copy";
+import { LearningPathExplorer } from "./learning-path-explorer";
 
 const categories = ["Business", "Business Intelligence", "Creative Skills", "Cybersecurity", "Data Analytics", "Data Science", "Digital Marketing", "Digital Skills", "Productivity", "Programming", "Web Development"];
 const levels = ["Beginner", "Intermediate", "Beginner to intermediate", "Beginner to job-ready"];
@@ -101,11 +102,13 @@ export function PublicCatalog({ catalog, query, authenticated, savedCourseIds = 
   if (remaining.length) shelves.push([coursePresentationCopy[locale].more, remaining]);
 
   return <section className={`${styles.page} ${dashboard ? styles.dashboard : ""}`}>
-    <header className={styles.hero}><p className="eyebrow">{dashboard ? t("catalog.eyebrow") : copy.eyebrow}</p><h1>{dashboard ? t("catalog.title") : copy.title}</h1><p>{dashboard ? t("catalog.dashboardCopy") : copy.intro}</p><div className={styles.topics} aria-label="Browse by subject">{categories.slice(0, 6).map((category) => <Link key={category} href={publicCatalogHref({ ...query, page: 1 }, { category }, basePath)} aria-current={query.category === category ? "page" : undefined}>{category}<span aria-hidden="true"> ↗</span></Link>)}</div></header>
+    <header className={styles.hero}><p className="eyebrow">{copy.eyebrow}</p><h1>{copy.title}</h1><p>{copy.intro}</p><div className={styles.topics} aria-label="Browse by subject">{categories.slice(0, 6).map((category) => <Link key={category} href={publicCatalogHref({ ...query, page: 1 }, { category }, basePath)} aria-current={query.category === category ? "page" : undefined}>{category}<span aria-hidden="true"> ↗</span></Link>)}</div></header>
+
+    {!hasActiveFilters && query.page === 1 ? <LearningPathExplorer basePath={basePath} /> : null}
 
     {campaign && query.page === 1 && !hasActiveFilters ? <FeaturedLearningCampaign campaign={campaign} authenticated={authenticated} savedCourseIds={savedCourseIds} dashboard={dashboard} /> : null}
 
-    {!dashboard ? <div className={styles.filterHeading}><h2>{copy.filters}</h2>{hasActiveFilters ? <Link href={basePath}>{copy.reset}<span aria-hidden="true"> ↗</span></Link> : null}</div> : null}
+    <div className={styles.filterHeading}><h2>{copy.filters}</h2>{hasActiveFilters ? <Link href={basePath}>{copy.reset}<span aria-hidden="true"> ↗</span></Link> : null}</div>
     <div className={styles.controls} aria-label={t("catalog.filters")}>
       {dashboard ? <label className={styles.search}>{t("catalog.search")}<input name="q" type="search" value={typedQuery} placeholder={t("catalog.searchPlaceholder")} maxLength={120} onChange={(event) => setTypedQuery(event.target.value)} /></label> : null}
       <label>{t("catalog.category")}<select value={query.category} onChange={(event) => updateQuery({ category: event.target.value })}><option value="">{t("catalog.allCategories")}</option>{categories.map((category) => <option value={category} key={category}>{category}</option>)}</select></label>

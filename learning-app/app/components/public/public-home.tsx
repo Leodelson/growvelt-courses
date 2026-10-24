@@ -14,11 +14,12 @@ import { HomeHiring, HomePartnership, HomeSkillFinder, HomeStudyRoutine } from "
 import styles from "./public-experience.module.css";
 import { HomeMotionReel } from "./home-motion-reel";
 import { LearningGoogleOneTap } from "@/app/components/auth/learning-google-one-tap";
+import { LearningPathExplorer } from "@/app/components/learning-path-explorer";
 
 const subjectIcons = [BarChart3, Code2, Megaphone, BriefcaseBusiness, Palette, Clock3];
 const videoIds = ["b_hmIZRnD1Q", "cFJt2gytwjY", "Xac1qNAcKHc"];
 
-export function PublicHome({ courses }: { courses: PublishedCourse[] }) {
+export function PublicHome({ courses, popularCourses = false }: { courses: PublishedCourse[]; popularCourses?: boolean }) {
   const { locale, t } = useLanguage();
   const copy = publicExperienceCopy[locale];
   const home = copy.home;
@@ -52,13 +53,15 @@ export function PublicHome({ courses }: { courses: PublishedCourse[] }) {
         </figure>
       </section>
 
+      <div className={styles.wrap}><LearningPathExplorer /></div>
+
       <section id="subjects" className={`${styles.wrap} ${styles.section}`} aria-labelledby="subjects-title">
         <header className={styles.sectionHeading}><div><p className={styles.eyebrow}>{home.subjectsEyebrow}</p><h2 id="subjects-title">{home.subjectsTitle}</h2><p>{home.subjectsCopy}</p></div><Link className={styles.quiet} href="/learn">{home.allCourses}<ArrowUpRight aria-hidden="true" size={18} /></Link></header>
         <div className={styles.subjectGrid}>{copy.subjects.map((subject, index) => { const Icon = subjectIcons[index]; return <Link className={styles.subject} href={`/learn?category=${encodeURIComponent(subject.category)}`} key={subject.category}><span className={styles.subjectIcon}><Icon aria-hidden="true" size={24} /></span><div><h3>{subject.title}</h3><p>{subject.copy}</p></div><ArrowUpRight aria-hidden="true" size={19} /></Link>; })}</div>
       </section>
 
       {courses.length > 0 && <section className={`${styles.wrap} ${styles.section} ${styles.courseShelf}`} aria-labelledby="home-courses-title">
-        <header className={styles.sectionHeading}><div><p className={styles.eyebrow}>{home.latestEyebrow}</p><h2 id="home-courses-title">{home.latestTitle}</h2><p>{home.latestCopy}</p></div></header>
+        <header className={styles.sectionHeading}><div><p className={styles.eyebrow}>{popularCourses ? home.popularEyebrow : home.latestEyebrow}</p><h2 id="home-courses-title">{popularCourses ? home.popularTitle : home.latestTitle}</h2><p>{popularCourses ? home.popularCopy : home.latestCopy}</p></div></header>
         <div className="course-grid public-published-course-grid">{courses.map((course, index) => <PublishedCourseCard course={course} index={index} key={course.id} />)}</div>
       </section>}
 
