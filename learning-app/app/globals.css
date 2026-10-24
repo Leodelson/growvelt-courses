@@ -120,7 +120,8 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 .text-link { color: var(--purple); font-size: 14px; font-weight: 700; }
 .button { display: inline-flex; justify-content: center; align-items: center; min-height: 46px; padding: 0 19px; border: 1px solid transparent; border-radius: 10px; font-size: 14px; font-weight: 750; transition: transform .2s ease, background .2s ease, border-color .2s ease; }
 .button:hover { transform: translateY(-1px); }
-.button-primary { background: var(--purple); color: white; box-shadow: 0 8px 20px color-mix(in srgb, var(--purple) 24%, transparent); }
+.button-primary { background: var(--purple); color: var(--surface); box-shadow: 0 8px 20px color-mix(in srgb, var(--purple) 24%, transparent); }
+:root[data-theme="dark"] .button-primary { color: #21142f; }
 .button-primary:hover { background: var(--purple-deep); }
 .button-secondary { border-color: var(--line); background: var(--surface); color: var(--ink); }
 .button-small { min-height: 38px; padding-inline: 14px; background: var(--ink); color: var(--canvas); }
