@@ -90,13 +90,13 @@ export async function POST(request: Request) {
     if (input.action === "preview") return json({html:renderEmailCenterMessage(document,document.personalized ? "Alex" : "there"),exampleName:document.personalized,subject:document.subject});
     if (typeof input.id !== "string" || !emailUuid.test(input.id) || !Number.isSafeInteger(input.revision) || Number(input.revision)<0) return json({error:"Check the draft ID and revision."},400);
     const {data,error} = await createAdminClient().rpc("save_learning_email_center_draft",{p_actor:actor.id,p_id:input.id,p_revision:input.revision,p_document:document});
-    if (error) return json({error:error.code === "40001" ? "This draft changed. Reload it before saving." : "Draft could not be saved. Keep your text and try again."},error.code === "40001" ? 409 : 503);
+    if (error) return json({error:["PT409","40001"].includes(error.code) ? "This draft changed. Reload it before saving." : "Draft could not be saved. Keep your text and try again."},["PT409","40001"].includes(error.code) ? 409 : 503);
     return json(data,201);
   }
   if (input.action === "review") {
     if (typeof input.id !== "string" || !emailUuid.test(input.id) || !Number.isSafeInteger(input.revision) || Number(input.revision)<1) return json({error:"Save a draft before reviewing."},400);
     const {data,error} = await createAdminClient().rpc("review_learning_email_center_draft",{p_actor:actor.id,p_id:input.id,p_revision:input.revision});
-    if (error) return json({error:error.code === "40001" ? "This draft changed. Reload and review again." : error.code === "22023" ? "No eligible recipients, unknown selected accounts, or recipient limit exceeded. Marketing requires explicit marketing opt-in." : "Recipients could not be checked. No messages were sent."},error.code === "40001" ? 409 : error.code === "22023" ? 400 : 503);
+    if (error) return json({error:["PT409","40001"].includes(error.code) ? "This draft changed. Reload and review again." : error.code === "22023" ? "No eligible recipients, unknown selected accounts, or recipient limit exceeded. Marketing requires explicit marketing opt-in." : "Recipients could not be checked. No messages were sent."},["PT409","40001"].includes(error.code) ? 409 : error.code === "22023" ? 400 : 503);
     return json(data);
   }
   return json({error:"Choose preview, save or review. Legacy sending is disabled."},400);

@@ -2,6 +2,7 @@ import "server-only";
 import { emailUuid, parseEmailDocument, senderChoices, type EmailDocument } from "./email-center";
 import { renderEmailCenterMessage } from "./email-center-render";
 import { legacyEmailCenterSender } from "./email-center-legacy";
+import { withoutMobileEmailBorderFix } from "./email-dark-compatibility";
 import { readEmailCenterProviderUsage } from "./email-center-provider-usage";
 import { LEARNING_EMAIL_SEGMENT_ID, type CompleteProviderContacts } from "./email-center-audience";
 import { setTimeout as delay } from "node:timers/promises";
@@ -132,9 +133,10 @@ export function createEmailCenterResendTransport(options: TransportOptions) {
       // Already-prepared/queued campaigns keep their exact original HTML. Do
       // not edit, recreate or quarantine them merely because new email CSS ships.
       const identity = from(document.sender);
+      const html = renderEmailCenterMessage(document, "there");
       return data.name === operation && data.segment_id === LEARNING_EMAIL_SEGMENT_ID
         && data.subject === document.subject && !data.topic_id
-        && (data.from === identity && data.html === renderEmailCenterMessage(document, "there")
+        && (data.from === identity && (data.html === html || data.html === withoutMobileEmailBorderFix(html))
           || data.from === legacyEmailCenterSender(document.sender, identity)
             && data.html === renderEmailCenterMessage(document, "there", undefined, true));
     },

@@ -14,7 +14,7 @@ export function loadEmail(name) {
   if (cache.has(name)) return cache.get(name);
   const mod = { exports: {} };
   vm.runInNewContext(ts.transpileModule(readFileSync(new URL(`../app/lib/email/${name}.ts`,import.meta.url),"utf8"),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText,
-    { exports:mod.exports, URL, require:id=>id==="server-only" ? {} : id.endsWith("site-urls.mjs") ? {learningAbsoluteUrl:path=>`https://www.growvelt.com${path}`} : id.startsWith("./") ? loadEmail(id.slice(2)) : require(id) });
+    { exports:mod.exports, URL, Buffer, console, require:id=>id==="server-only" ? {} : id.endsWith("site-urls.mjs") ? {learningAbsoluteUrl:path=>`https://www.growvelt.com${path}`} : id.startsWith("./") ? loadEmail(id.slice(2)) : require(id) });
   cache.set(name,mod.exports); return mod.exports;
 }
 const {prepareMobileDarkEmailHtml:prepare}=loadEmail("email-dark-compatibility");
@@ -45,6 +45,7 @@ for (const input of [sampleEmail,{...sampleEmail,title:"Learning news",details:[
   assert.match(updated,/@media screen and \(max-width:600px\)/);
   assert.match(updated,/u \+ \.gvl-gmail-compat/);
   assert.match(updated,/background-image:linear-gradient\(#17181b,#17181b\)!important/);
+  assert.match(updated,/@media screen and \(max-width:600px\)\{u \+ \.gvl-gmail-compat table,u \+ \.gvl-gmail-compat td\{border-color:transparent!important;/);
   assert.equal(prepare(updated),updated,"idempotent output cannot nest text blends");
   for(const node of elements(updated).filter(node=>node.name==="img")) {
     let parent=node.parent;
@@ -86,6 +87,7 @@ const document={...emptyEmailDocument,subject:"Learning news",message:"Your next
 const transport=createEmailCenterResendTransport({senders:{learning:"no-reply@growvelt.com"},verifiedDomains:["growvelt.com"],request:async()=>assert.fail("Network forbidden")});
 const remote={name:operation,segment_id:loadEmail("email-center-audience").LEARNING_EMAIL_SEGMENT_ID,from:"Growvelt <no-reply@growvelt.com>",subject:document.subject};
 assert.equal(transport.matchesBroadcast({...remote,html:renderEmailCenterMessage(document,"there")},document,operation),true);
+assert.equal(transport.matchesBroadcast({...remote,html:loadEmail("email-dark-compatibility").withoutMobileEmailBorderFix(renderEmailCenterMessage(document,"there"))},document,operation),true,"pre-border-fix payloads remain exactly recoverable");
 assert.equal(transport.matchesBroadcast({...remote,from:"Growvelt Learning <no-reply@growvelt.com>",html:renderEmailCenterMessage(document,"there",undefined,true)},document,operation),true,"old prepared/queued sender and HTML remain recoverable");
 assert.equal(transport.matchesBroadcast({...remote,html:renderEmailCenterMessage(document,"there",undefined,true)+"tampered"},document,operation),false);
 const inboxOnly={...document,subject:"INBOX ONLY SUBJECT",headline:""};

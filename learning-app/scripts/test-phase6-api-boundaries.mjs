@@ -17,6 +17,9 @@ let clientCalls = 0;
 let adminCalls = 0;
 let intakeError = null;
 let supportError = null;
+let scheduledAlerts = 0;
+let alertDrains = 0;
+let pendingCourse = null;
 const operations = [];
 const providerCalls = [];
 
@@ -43,7 +46,7 @@ function client() {
         insert(value) { operation.insert = value; return query; },
         eq(key, value) { operation.filters.push([key, value]); return query; },
         is() { return query; }, or() { return query; }, order() { return query; }, limit() { return query; },
-        maybeSingle: async () => ({ data: null, error: null }),
+        maybeSingle: async () => ({ data: table === "learning_courses" ? pendingCourse : null, error: null }),
         single: async () => ({ data: { id: noticeId }, error: null }),
         then: (resolve, reject) => Promise.resolve(result).then(resolve, reject),
       };
@@ -57,8 +60,8 @@ function load(path, mocks = {}) {
   const compiled = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true } }).outputText;
   const moduleValue = { exports: {} };
   vm.runInNewContext(compiled, {
-    module: moduleValue, exports: moduleValue.exports, URL, Request, Response, Headers, FormData, AbortSignal, TextDecoder, console,
-    process: { env: { TURNSTILE_SECRET_KEY: "local-test-value" } },
+    module: moduleValue, exports: moduleValue.exports, URL, Request, Response, Headers, FormData, AbortSignal, TextDecoder, Buffer, console,
+    process: { env: { TURNSTILE_SECRET_KEY: "local-test-value", CRON_SECRET: "local-cron-secret" } },
     fetch: async (...args) => { providerCalls.push(args); throw new Error("Provider access forbidden in this suite"); },
     require: id => id in mocks ? mocks[id] : id in shared ? shared[id] : require(id),
   }, { filename: fileURLToPath(new URL(path, root)) });
@@ -68,6 +71,7 @@ function load(path, mocks = {}) {
 const shared = {};
 shared["@/app/lib/security/request-origin"] = load("app/lib/security/request-origin.ts");
 shared["@/app/lib/security/json-body"] = load("app/lib/security/json-body.ts");
+shared["@/app/lib/email/admin-submission-runtime"] = {scheduleAdminSubmissionAlerts(){scheduledAlerts++;},async drainAdminSubmissionAlerts(){alertDrains++;return{state:"checked",accepted:0};}};
 shared["@/app/lib/email/email-center"] = load("app/lib/email/email-center.ts");
 shared["@/app/lib/email/email-center-authorization"] = load("app/lib/email/email-center-authorization.ts", {"server-only":{}});
 shared["@/app/lib/email/email-center-render"] = { renderEmailCenterMessage: () => "fixture email preview" };
@@ -118,6 +122,7 @@ const routes = [
   ["app/api/auth/verify-turnstile/route.ts", ["POST"]],
   ["app/api/instructor/payout-profile/route.ts", ["POST", "DELETE"]],
   ["app/api/payments/paystack/initialize/route.ts", ["POST"]],
+  ["app/api/instructor/courses/[courseId]/notify-submission/route.ts", ["POST"]],
 ];
 const handlers = new Map(routes.map(([path]) => [path, load(path)]));
 const context = { params: Promise.resolve({ id: noticeId, workspaceId: "1" }) };
@@ -273,5 +278,25 @@ for (const [path, method] of [["app/api/learning/notifications/route.ts", "PATCH
   Object.defineProperty(signedOut, "body", { get() { throw new Error("must not parse before authentication"); } });
   assert.equal((await handlers.get(path)[method](signedOut, context)).status, 401, `${path}: signed-out requests are denied before parsing`);
 }
+const courseAlerts = handlers.get("app/api/instructor/courses/[courseId]/notify-submission/route.ts");
+const courseContext = {params:Promise.resolve({courseId:"1"})};
+const beforeAlerts = scheduledAlerts;
+assert.equal((await courseAlerts.POST(request("POST"), courseContext)).status,401);
+assert.equal((await courseAlerts.POST(request("POST"),{params:Promise.resolve({courseId:"NaN"})})).status,400);
+actor={id:userId,role:"instructor"};
+assert.equal((await courseAlerts.POST(request("POST"),courseContext)).status,404);
+assert.equal(scheduledAlerts,beforeAlerts);
+pendingCourse={id:1};before=operations.length;
+assert.equal((await courseAlerts.POST(request("POST"),courseContext)).status,202);
+assert.equal(scheduledAlerts,beforeAlerts+1);
+assert.deepEqual(operations[before].filters,[["id",1],["instructor_id",userId],["status","pending_review"]]);
+assert.ok(!operations[before].update&&!operations[before].insert,"notification scheduling cannot submit/approve a course");
+const alertCron=load("app/api/internal/admin-submission-alerts/route.ts");
+for(const authorization of [null,"Bearer wrong","Bearer local-cron-secret-extra"]){
+  assert.equal((await alertCron.GET(new Request(hosts[0]+"/api/internal/admin-submission-alerts",{headers:authorization?{authorization}:{}}))).status,401);
+}
+assert.equal(alertDrains,0);
+assert.equal((await alertCron.GET(new Request(hosts[0]+"/api/internal/admin-submission-alerts",{headers:{authorization:"Bearer local-cron-secret"}}))).status,200);
+assert.equal(alertDrains,1);
 assert.equal(providerCalls.length, 0, "no email, CAPTCHA, activity, or payment provider was called");
-console.log("PASS 14 mutation handlers: origin denial; bounded public and authenticated JSON (including exact limits and maximum escaped valid fields); Email Center roles; notification/preference ownership; support identity/permission/error boundaries; assignment permissions; signed-out denial. All clients mocked.");
+console.log("PASS mutation boundaries plus admin-alert scheduling: origin/auth/ownership gates, bounded JSON, role checks, cron-secret denial, exact scheduling and no course mutation. All providers mocked.");

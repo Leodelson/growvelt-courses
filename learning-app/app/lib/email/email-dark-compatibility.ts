@@ -6,6 +6,14 @@ import render from "dom-serializer";
 const inlineTags = new Set(["a", "span", "strong", "b", "em", "i", "u", "s", "small", "br", "code", "sup", "sub"]);
 const structuralTags = new Set(["table", "thead", "tbody", "tfoot", "tr", "ul", "ol"]);
 const skipTags = new Set(["img", "style", "script", "head", "title", "svg", "picture"]);
+const mobileBorderCss = "@media screen and (max-width:600px){u + .gvl-gmail-compat table,u + .gvl-gmail-compat td{border-color:transparent!important;}}";
+const mobileBorderStyle = `<style data-gvl-mobile-border="1">${mobileBorderCss}</style>`;
+
+// Compare exact already-approved provider payloads from the previous release.
+// This does not normalize or accept arbitrary provider-side content changes.
+export function withoutMobileEmailBorderFix(html: string) {
+  return html.replace(mobileBorderStyle, "");
+}
 
 function addClass(element: Element, value: string) {
   element.attribs.class = [element.attribs.class, value].filter(Boolean).join(" ");
@@ -59,7 +67,8 @@ function protectText(element: Element) {
 
 /** Final pass for trusted, escaped email documents, NOT an HTML sanitizer.
  * Adapted from Growvelt Careers' owner-tested iPhone Gmail fix. No content,
- * border colours, desktop palette, action URLs or provider settings change.
+ * desktop palette, action URLs or provider settings change. Narrow Gmail
+ * borders are transparent so auto-darkening cannot turn them bright white.
  */
 export function prepareMobileDarkEmailHtml(html: string): string {
   let prefix = "GVLEARNINGAUTHTOKEN";
@@ -70,7 +79,14 @@ export function prepareMobileDarkEmailHtml(html: string): string {
   const document = parseDocument(shielded);
   const elements = findAll(isTag, document.children);
   const body = elements.find(node => node.name === "body"), head = elements.find(node => node.name === "head");
-  if (!body || !head || body.attribs["data-gvl-mobile-email"] === "1") return html;
+  if (!body || !head) return html;
+  const finish = () => render(document, { encodeEntities: "utf8" }).replace(new RegExp(`${prefix}(\\d+)END`, "g"), (_match, index: string) => tokens[Number(index)]);
+  const addBorderStyle = () => appendChild(head, new Element("style", { "data-gvl-mobile-border": "1" }, [new Text(mobileBorderCss)]));
+  if (body.attribs["data-gvl-mobile-email"] === "1") {
+    if (elements.some(element => element.name === "style" && element.attribs["data-gvl-mobile-border"] === "1")) return html;
+    addBorderStyle();
+    return finish();
+  }
   body.attribs["data-gvl-mobile-email"] = "1";
   addClass(body, "gvl-gmail-compat");
   const backgrounds = new Map<string, string>(), rules: string[] = [];
@@ -99,5 +115,6 @@ u + .gvl-gmail-compat .gvl-d a{text-decoration:underline!important;}
 }`;
   const style = new Element("style", { "data-gvl-mobile-compat": "1" }, [new Text(css)]);
   appendChild(head, style);
-  return render(document, { encodeEntities: "utf8" }).replace(new RegExp(`${prefix}(\\d+)END`, "g"), (_match, index: string) => tokens[Number(index)]);
+  addBorderStyle();
+  return finish();
 }

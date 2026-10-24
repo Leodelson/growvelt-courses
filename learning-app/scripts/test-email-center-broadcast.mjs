@@ -61,9 +61,13 @@ try {
     create table profiles(id uuid primary key,account_type text);create table instructor_profiles(user_id uuid,approval_status text);
     create table learning_company_workspaces(id bigint primary key,status text);create table learning_company_memberships(user_id uuid,workspace_id bigint,status text,role text);
     create table learning_email_preferences(user_id uuid primary key references auth.users,marketing_opt_in boolean not null default false,changed_at timestamptz default now(),unsubscribe_token uuid not null unique default gen_random_uuid());`);
-  for(const file of ["20261107000000_add_learning_email_center_drafts.sql","20261108000000_add_learning_email_consent_and_budget_controls.sql","20261109000000_add_learning_email_broadcast_recovery.sql"]) await db.exec(readFileSync(new URL(`../supabase/migrations/${file}`,import.meta.url),"utf8"));
+  for(const file of ["20261107000000_add_learning_email_center_drafts.sql","20261108000000_add_learning_email_consent_and_budget_controls.sql","20261109000000_add_learning_email_broadcast_recovery.sql","20261111000000_fix_email_center_conflict_retry_codes.sql"]) await db.exec(readFileSync(new URL(`../supabase/migrations/${file}`,import.meta.url),"utf8"));
+  const repaired=await db.query("select proname,prosrc,prosecdef,proconfig,has_function_privilege('anon',p.oid,'execute') anon,has_function_privilege('authenticated',p.oid,'execute') authenticated,has_function_privilege('service_role',p.oid,'execute') service from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and prosrc like '%''PT409''%'");
+  assert.equal(repaired.rows.length,8,"all eight Email Center functions repaired");
+  for(const row of repaired.rows){assert.ok(!row.prosrc.includes("'40001'"));assert.equal(row.prosecdef,true);assert.equal(row.anon,false);assert.equal(row.authenticated,false);assert.equal(row.service,true);}
   const query=async(sql,args=[]) => (await db.query(sql,args)).rows;
   await query("insert into auth.users(id,email,email_confirmed_at) values($1,'nduleonardc@gmail.com',now()),($2,'learner@example.invalid',now()),($3,'other@example.invalid',now())",[operator,learner,foreign]);
+  await assert.rejects(db.query("select review_learning_email_center_draft($1,$2,999)",[operator,"99999999-0000-4000-8000-000000000001"]),error=>error.code==="PT409","stale review exits with a permanent HTTP conflict, never a retriable serialization failure");
   await query("insert into profiles(id,account_type) values($1,'learner'),($2,'learner')",[learner,foreign]);
   await query("select set_learning_email_preference($1,true)",[learner]);
   const names={read_learning_email_center_review:["p_actor","p_id","p_revision"],start_learning_email_broadcast:["p_actor","p_id","p_revision","p_holder"],advance_learning_email_broadcast:["p_actor","p_id","p_expected","p_next","p_provider_id","p_provider_status"]};

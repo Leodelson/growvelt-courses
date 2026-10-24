@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { isSameOriginRequest } from "@/app/lib/security/request-origin";
 import { createClient } from "@/app/lib/supabase/server";
+import { scheduleAdminSubmissionAlerts } from "@/app/lib/email/admin-submission-runtime";
+export const maxDuration=60;
 
 export async function POST(request: Request, { params }: { params: Promise<{ organizationId: string }> }) {
   if (!isSameOriginRequest(request)) return NextResponse.json({ code: "invalid_origin" }, { status: 403 });
@@ -16,5 +18,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ org
   if (!user) return NextResponse.json({ code: "unauthorized" }, { status: 401 });
   const { data, error } = await supabase.rpc("submit_own_learning_provider_organization_verification", { p_organization_id: organizationId, p_legal_name: legalName, p_contact_email: contactEmail, p_website_url: websiteUrl || null, p_verification_statement: statement });
   if (error) return NextResponse.json({ code: error.code === "42501" ? "owner_required" : error.code === "P0001" ? "verification_unavailable" : error.code === "22023" ? "invalid_verification" : "verification_unavailable" }, { status: error.code === "42501" ? 403 : error.code === "22023" ? 400 : 409 });
+  scheduleAdminSubmissionAlerts();
   return NextResponse.json({ verification: (data as unknown[] | null)?.[0] ?? null }, { status: 201 });
 }

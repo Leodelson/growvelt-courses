@@ -2,8 +2,10 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/app/lib/supabase/server";
 import { isSameOriginRequest } from "@/app/lib/security/request-origin";
 import { JsonBodyError, readBoundedJsonObject } from "@/app/lib/security/json-body";
+import { scheduleAdminSubmissionAlerts } from "@/app/lib/email/admin-submission-runtime";
 
 const topics = new Set(["courses", "billing", "teaching", "organizations", "account", "other"]);
+export const maxDuration=60;
 
 export async function GET() {
   const supabase = await createClient();
@@ -40,5 +42,6 @@ export async function POST(request: Request) {
   if (!topics.has(topic) || subject.length < 5 || subject.length > 160 || message.length < 20 || message.length > 5000) return NextResponse.json({ error: "Check the topic, subject, and message." }, { status: 400 });
   const { data, error } = await supabase.rpc("create_learning_support_case", { p_topic: topic, p_subject: subject, p_message: message });
   if (error) return NextResponse.json({ error: error.code === "22023" ? "Please review your message or wait before opening another request." : "We could not open your support request." }, { status: error.code === "22023" ? 429 : 503 });
+  scheduleAdminSubmissionAlerts();
   return NextResponse.json({ id: data }, { status: 201, headers: { "Cache-Control": "no-store" } });
 }

@@ -2,9 +2,11 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/app/lib/supabase/server";
 import { isSameOriginRequest } from "@/app/lib/security/request-origin";
 import { JsonBodyError, readBoundedJson } from "@/app/lib/security/json-body";
+import { scheduleAdminSubmissionAlerts } from "@/app/lib/email/admin-submission-runtime";
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const inquiryKinds = new Set(["contact", "partnership"]);
+export const maxDuration=60;
 
 function field(value: unknown, maxLength: number) {
   return typeof value === "string" ? value.trim().slice(0, maxLength) : "";
@@ -55,5 +57,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: "We couldn’t send your message right now. Please try again or use one of the direct support channels." }, { status: 500 });
   }
 
+  scheduleAdminSubmissionAlerts();
   return NextResponse.json({ message: kind === "partnership" ? "Thanks. Your partnership request has been received." : "Thanks. Your message has been sent to Growvelt." }, { status: 201 });
 }

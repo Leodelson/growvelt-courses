@@ -77,6 +77,7 @@ export function CourseSubmissionForm({ courseId }: { courseId: number }) {
 
     setShowConfirmation(false);
     setFeedback({ variant: "success", message: text.success });
+    void fetch(`/api/instructor/courses/${courseId}/notify-submission`,{method:"POST",credentials:"same-origin"}).catch(()=>undefined);
     router.refresh();
   }
 

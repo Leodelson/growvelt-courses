@@ -2,9 +2,11 @@ import { NextResponse } from "next/server";
 import { isSameOriginRequest } from "@/app/lib/security/request-origin";
 import { createAdminClient } from "@/app/lib/supabase/admin";
 import { createClient } from "@/app/lib/supabase/server";
+import { scheduleAdminSubmissionAlerts } from "@/app/lib/email/admin-submission-runtime";
 
 type ApplicationBody = { country?: unknown; phone?: unknown; headline?: unknown; expertise?: unknown; yearsExperience?: unknown; teachingExperience?: unknown; bio?: unknown; motivation?: unknown; portfolioUrl?: unknown };
 const asText = (value: unknown) => typeof value === "string" ? value.trim() : "";
+export const maxDuration=60;
 
 export async function GET() {
   const supabase = await createClient();
@@ -35,5 +37,6 @@ export async function POST(request: Request) {
   if (!user) return NextResponse.json({ code: "unauthorized" }, { status: 401 });
   const { data, error } = await supabase.rpc("submit_own_instructor_application", { p_country: country, p_phone: phone || null, p_headline: headline, p_expertise: expertise, p_years_experience: yearsExperience, p_teaching_experience: teachingExperience, p_bio: bio, p_motivation: motivation, p_portfolio_url: portfolioUrl || null });
   if (error) { console.error("instructor.application_submit_failed", { userId: user.id, code: error.code }); return NextResponse.json({ code: error.code === "42501" ? "unauthorized" : error.code === "22023" ? "invalid_application" : "application_unavailable" }, { status: error.code === "42501" ? 401 : error.code === "22023" ? 400 : 503 }); }
+  scheduleAdminSubmissionAlerts();
   return NextResponse.json({ application: (data as unknown[] | null)?.[0] }, { status: 201 });
 }
