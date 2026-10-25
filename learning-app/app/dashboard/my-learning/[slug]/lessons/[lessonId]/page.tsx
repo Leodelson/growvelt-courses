@@ -193,47 +193,81 @@ export default async function EnrolledLessonPage({ params }: { params: Promise<{
             : text.later;
 
   return (
-    <section className={styles.lessonPage}>
-      <header className={styles.courseHeader}>
-        <div className={styles.headerTop}>
-          <Link className={styles.backLink} href={courseHref}>
-            <ArrowLeft size={17} strokeWidth={1.9} aria-hidden="true" />
-            <span>{text.back}</span>
-          </Link>
-          <span className={styles.headerCourseTitle}>{snapshot.course.title}</span>
-        </div>
-        <div className={styles.headerMain}>
-          <div className={styles.headingText}>
-            <p className={styles.courseEyebrow}>
-              {activeModule?.title ?? text.courseContent}
-              <span aria-hidden="true"> · </span>
-              {lessonType}
-            </p>
-            <h1>{current.title}</h1>
-          </div>
-          <div className={styles.progressBlock}>
-            <div className={styles.progressLabels}>
-              <span>{text.progress}</span>
-              <strong>{course.completedLessons} {text.of} {course.totalLessons} {text.lessonsLabel}</strong>
+    <section className={`${styles.lessonPage} ${current.type === "video" ? styles.videoLessonPage : ""}`}>
+      <header className={`${styles.courseHeader} ${current.type === "video" ? styles.videoFirstHeader : ""}`}>
+        {current.type === "video" ? (
+          <div className={styles.videoHeaderRow}>
+            <div className={styles.videoBreadcrumbs}>
+              <Link className={styles.backLink} href={courseHref}>
+                <ArrowLeft size={17} strokeWidth={1.9} aria-hidden="true" />
+                <span>{text.back}</span>
+              </Link>
+              <span className={styles.breadcrumbSeparator} aria-hidden="true">/</span>
+              <span className={styles.headerCourseTitle}>{snapshot.course.title}</span>
+              <span className={styles.breadcrumbSeparator} aria-hidden="true">/</span>
+              <span className={styles.videoModuleTitle}>{activeModule?.title ?? text.courseContent}</span>
+              <a className={`${styles.jumpLink} ${styles.videoJumpLink}`} href="#lesson-content">{text.jump}</a>
             </div>
-            <div
-              className={styles.progressTrack}
-              role="progressbar"
-              aria-label={text.progress}
-              aria-valuenow={progressPercent}
-              aria-valuemin={0}
-              aria-valuemax={100}
-            >
-              <span style={{ width: `${progressPercent}%` }} />
+            <div className={styles.videoProgressBlock}>
+              <div className={styles.progressLabels}>
+                <span>{text.progress}</span>
+                <strong>{course.completedLessons} {text.of} {course.totalLessons} {text.lessonsLabel}</strong>
+              </div>
+              <div
+                className={styles.progressTrack}
+                role="progressbar"
+                aria-label={text.progress}
+                aria-valuenow={progressPercent}
+                aria-valuemin={0}
+                aria-valuemax={100}
+              >
+                <span style={{ width: `${progressPercent}%` }} />
+              </div>
             </div>
           </div>
-        </div>
-        <a className={styles.jumpLink} href="#lesson-content">{text.jump}</a>
+        ) : (
+          <>
+            <div className={styles.headerTop}>
+              <Link className={styles.backLink} href={courseHref}>
+                <ArrowLeft size={17} strokeWidth={1.9} aria-hidden="true" />
+                <span>{text.back}</span>
+              </Link>
+              <span className={styles.headerCourseTitle}>{snapshot.course.title}</span>
+            </div>
+            <div className={styles.headerMain}>
+              <div className={styles.headingText}>
+                <p className={styles.courseEyebrow}>
+                  {activeModule?.title ?? text.courseContent}
+                  <span aria-hidden="true"> · </span>
+                  {lessonType}
+                </p>
+                <h1>{current.title}</h1>
+              </div>
+              <div className={styles.progressBlock}>
+                <div className={styles.progressLabels}>
+                  <span>{text.progress}</span>
+                  <strong>{course.completedLessons} {text.of} {course.totalLessons} {text.lessonsLabel}</strong>
+                </div>
+                <div
+                  className={styles.progressTrack}
+                  role="progressbar"
+                  aria-label={text.progress}
+                  aria-valuenow={progressPercent}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                >
+                  <span style={{ width: `${progressPercent}%` }} />
+                </div>
+              </div>
+            </div>
+            <a className={styles.jumpLink} href="#lesson-content">{text.jump}</a>
+          </>
+        )}
       </header>
 
       <div className={styles.lessonLayout}>
         <article id="lesson-content" tabIndex={-1} className={styles.lessonColumn}>
-          <section className={styles.lessonPanel} aria-label={current.title}>
+          <section className={`${styles.lessonPanel} ${current.type === "video" ? styles.videoFirstLessonPanel : ""}`} aria-label={current.title}>
             <div className={styles.lessonPanelHeading}>
               <span className={styles.lessonType}>
                 <LessonTypeIcon type={current.type} />
@@ -246,9 +280,17 @@ export default async function EnrolledLessonPage({ params }: { params: Promise<{
               ) : null}
             </div>
 
-            {current.type === "video"
-              ? current.videoProvider === "youtube" && current.videoReference
-                ? (
+            {current.type === "video" ? (
+              <div className={styles.videoStageGroup}>
+                <div className={styles.videoLessonHeading}>
+                  <p className={styles.courseEyebrow}>
+                    {activeModule?.title ?? text.courseContent}
+                    <span aria-hidden="true"> · </span>
+                    {lessonType}
+                  </p>
+                  <h1>{current.title}</h1>
+                </div>
+                {current.videoProvider === "youtube" && current.videoReference ? (
                   <div className={styles.videoFrame}>
                     <iframe
                       src={youtubeEmbed(current.videoReference)}
@@ -257,9 +299,9 @@ export default async function EnrolledLessonPage({ params }: { params: Promise<{
                       allowFullScreen
                     />
                   </div>
-                )
-                : <p className={styles.lessonMessage}>{text.videoUnavailable}</p>
-              : current.type === "text"
+                ) : <p className={styles.lessonMessage}>{text.videoUnavailable}</p>}
+              </div>
+            ) : current.type === "text"
                 ? <div className={styles.textContent}>{current.textContent || text.textUnavailable}</div>
                 : current.type === "quiz" && quiz
                   ? <div className={styles.quizContent}><QuizPlayer quiz={quiz} slug={slug} lessonId={current.id} nextHref={nextHref} courseHref={courseHref} /></div>
