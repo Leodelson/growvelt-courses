@@ -29,6 +29,7 @@ function client() {
     auth: { getUser: async () => ({ data: { user: actor }, error: null }) },
     async rpc(name, args) {
       operations.push({ rpc: name, args });
+      if (managementCases.some(item => item.rpc === name)) return { data: [], error: workspaceError };
       if (name === "submit_public_learning_inquiry") return { data: [], error: intakeError };
       if (["submit_own_instructor_application", "create_own_learning_provider_organization", "create_own_learning_company_workspace"].includes(name)) return { data: [], error: workspaceError };
       if (name === "is_growvelt_learning_admin") return { data: actor?.role === "admin", error: null };
@@ -71,6 +72,8 @@ function load(path, mocks = {}) {
 }
 
 const shared = {};
+shared["@/app/lib/email/instructor-notifications"] = { sendOrganizationInvitationEmail: async () => { throw new Error("Unexpected invitation email"); } };
+shared["@/app/lib/email/company-notifications"] = { sendCompanyInvitationEmail: async () => { throw new Error("Unexpected invitation email"); } };
 shared["@/app/lib/security/request-origin"] = load("app/lib/security/request-origin.ts");
 shared["@/app/lib/security/json-body"] = load("app/lib/security/json-body.ts");
 shared["@/app/lib/email/admin-submission-runtime"] = {scheduleAdminSubmissionAlerts(){scheduledAlerts++;},async drainAdminSubmissionAlerts(){alertDrains++;return{state:"checked",accepted:0};}};
@@ -111,6 +114,12 @@ for (const host of hosts) {
   }
 }
 
+const managementCases = [
+  {path:"app/api/instructor/organizations/[organizationId]/profile/route.ts",limit:32768,rpc:"update_own_learning_provider_organization_profile",status:201,payload:{headline:"A course provider",description:"A".repeat(80),contactEmail:"test@example.invalid"}},
+  {path:"app/api/instructor/organizations/[organizationId]/members/[memberId]/revoke/route.ts",limit:4096,rpc:"revoke_own_learning_provider_organization_member",status:200,payload:{reason:"Membership ended"}},
+  {path:"app/api/instructor/organizations/[organizationId]/invitations/route.ts",limit:4096,rpc:"create_learning_provider_organization_invitation",status:201,payload:{email:"test@example.invalid",role:"instructor"}},
+  {path:"app/api/company/workspaces/[workspaceId]/invitations/route.ts",limit:4096,rpc:"create_learning_company_invitation",status:201,payload:{email:"test@example.invalid",role:"member"}},
+];
 const routes = [
   ["app/api/learning/admin/emails/route.ts", ["POST"]],
   ["app/api/learning/support/route.ts", ["POST"]],
@@ -128,9 +137,10 @@ const routes = [
   ["app/api/instructor/application/route.ts", ["POST"]],
   ["app/api/instructor/organizations/route.ts", ["POST"]],
   ["app/api/company/workspaces/route.ts", ["POST"]],
+  ...managementCases.map(({path}) => [path,["POST"]]),
 ];
 const handlers = new Map(routes.map(([path]) => [path, load(path)]));
-const context = { params: Promise.resolve({ id: noticeId, workspaceId: "1" }) };
+const context = { params: Promise.resolve({ id: noticeId, workspaceId: "1", organizationId: "1", memberId: otherId }) };
 const request = (method, headers = { Origin: hosts[0] }, body = {}) => new Request(hosts[0] + "/api/local-fixture", { method, headers: { "Content-Type": "application/json", ...headers }, body: JSON.stringify(body) });
 
 for (const path of ["app/api/inquiries/route.ts", "app/api/newsletter/subscribe/route.ts", "app/api/auth/verify-turnstile/route.ts"]) {
@@ -144,6 +154,7 @@ for (const path of ["app/api/inquiries/route.ts", "app/api/newsletter/subscribe/
 
 actor = { id: userId, email: "admin@growvelt.com", email_confirmed_at:"2026-10-22", role: "admin" };
 const boundedRoutes = [
+  ...managementCases.map(({path,limit}) => [path,"POST",limit]),
   ["app/api/learning/admin/emails/route.ts", "POST", 32768],
   ["app/api/learning/support/route.ts", "POST", 32768],
   ["app/api/learning/support/[id]/route.ts", "POST", 32768],
@@ -334,6 +345,34 @@ assert.equal((await ownApplication.GET()).status,200);
 assert.deepEqual(operations[before].filters,[["user_id",userId]],"privileged application lookup is bound to verified session");
 actor = null;
 const courseAlerts = handlers.get("app/api/instructor/courses/[courseId]/notify-submission/route.ts");
+for (const item of managementCases) {
+  const handler = handlers.get(item.path);
+  actor = null;
+  const denied = request("POST");
+  Object.defineProperty(denied,"body",{get(){throw new Error("must authenticate before reading management body");}});
+  before = operations.length;
+  assert.equal((await handler.POST(denied,context)).status,401);
+  assert.equal(operations.length,before);
+  actor = {id:userId,role:"learner"};
+  workspaceError = {code:"42501"};
+  const beforePrivileged = adminCalls;
+  assert.equal((await handler.POST(request("POST",undefined,item.payload),context)).status,403);
+  assert.equal(adminCalls,beforePrivileged,"permission denial must not load email context with privileged access");
+  workspaceError = null;
+  before = operations.length;
+  assert.equal((await handler.POST(request("POST",undefined,{...item.payload,userId:noticeId,ownerId:noticeId}),context)).status,item.status);
+  assert.equal(operations[before].rpc,item.rpc);
+  assert.ok(!JSON.stringify(operations[before].args).includes(noticeId),"caller cannot override session owner");
+  before = operations.length;
+  assert.equal((await handler.POST(request("POST",undefined,item.payload),{params:Promise.resolve({organizationId:"0",workspaceId:"0",memberId:otherId})})).status,400);
+  assert.equal(operations.length,before);
+}
+for (const [index,payload] of [[0,{headline:"界".repeat(160),description:"界".repeat(2400),contactEmail:"test@example.invalid",websiteUrl:"x".repeat(400),linkedinUrl:"x".repeat(400),instagramUrl:"x".repeat(400)}],[1,{reason:"界".repeat(500)}]]) {
+  const item=managementCases[index];
+  const raw=JSON.stringify(payload).replace(/界/g,"\\u754c");
+  assert.equal((await handlers.get(item.path).POST(new Request(hosts[0]+"/api/local-fixture",{method:"POST",headers:{Origin:hosts[0],"Content-Type":"application/json"},body:raw}),context)).status,item.status);
+}
+actor = null;
 const courseContext = {params:Promise.resolve({courseId:"1"})};
 const beforeAlerts = scheduledAlerts;
 assert.equal((await courseAlerts.POST(request("POST"), courseContext)).status,401);

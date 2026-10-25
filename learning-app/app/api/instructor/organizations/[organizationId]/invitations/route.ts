@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { JsonBodyError, readBoundedJsonObject } from "@/app/lib/security/json-body";
 import { sendOrganizationInvitationEmail } from "@/app/lib/email/instructor-notifications";
 import { isSameOriginRequest } from "@/app/lib/security/request-origin";
 import { createAdminClient } from "@/app/lib/supabase/admin";
@@ -28,13 +29,18 @@ export async function GET(request: Request, { params }: { params: Promise<{ orga
 export async function POST(request: Request, { params }: { params: Promise<{ organizationId: string }> }) {
   if (!isSameOriginRequest(request)) return NextResponse.json({ code: "invalid_origin" }, { status: 403 });
   const organizationId = Number((await params).organizationId);
-  const body = await request.json().catch(() => null) as { email?: unknown; role?: unknown } | null;
-  const email = typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
-  const role = body?.role === "admin" || body?.role === "instructor" ? body.role : "";
-  if (!Number.isSafeInteger(organizationId) || organizationId <= 0 || !/^\S+@\S+\.\S+$/.test(email) || !role) return NextResponse.json({ code: "invalid_invitation" }, { status: 400 });
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ code: "unauthorized" }, { status: 401 });
+  let body: Record<string, unknown>;
+  try { body = await readBoundedJsonObject(request, 4 * 1024); }
+  catch (error) {
+    if (!(error instanceof JsonBodyError)) throw error;
+    return NextResponse.json({ code: "invalid_invitation" }, { status: error.status, headers: { "Cache-Control": "private, no-store" } });
+  }
+  const email = typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
+  const role = body?.role === "admin" || body?.role === "instructor" ? body.role : "";
+  if (!Number.isSafeInteger(organizationId) || organizationId <= 0 || !/^\S+@\S+\.\S+$/.test(email) || !role) return NextResponse.json({ code: "invalid_invitation" }, { status: 400 });
   const { data, error } = await supabase.rpc("create_learning_provider_organization_invitation", { p_organization_id: organizationId, p_invited_email: email, p_role: role });
   if (error) return NextResponse.json({ code: invitationErrorCode(error) }, { status: error.code === "42501" ? 403 : error.code === "P0002" ? 404 : 409 });
   const invitation = (data as Array<{ invitation_id: number; invited_email: string; role: "admin" | "instructor" }> | null)?.[0];

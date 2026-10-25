@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { JsonBodyError, readBoundedJsonObject } from "@/app/lib/security/json-body";
 import { isSameOriginRequest } from "@/app/lib/security/request-origin";
 import { createClient } from "@/app/lib/supabase/server";
 
@@ -6,7 +7,15 @@ export async function POST(request: Request, { params }: { params: Promise<{ org
   if (!isSameOriginRequest(request)) return NextResponse.json({ code: "invalid_origin" }, { status: 403 });
 
   const organizationId = Number((await params).organizationId);
-  const body = await request.json().catch(() => null) as Record<string, unknown> | null;
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ code: "unauthorized" }, { status: 401 });
+  let body: Record<string, unknown>;
+  try { body = await readBoundedJsonObject(request, 32 * 1024); }
+  catch (error) {
+    if (!(error instanceof JsonBodyError)) throw error;
+    return NextResponse.json({ code: "invalid_profile" }, { status: error.status, headers: { "Cache-Control": "private, no-store" } });
+  }
   const value = (key: string) => typeof body?.[key] === "string" ? body[key].trim() : "";
   const headline = value("headline");
   const description = value("description");
@@ -18,10 +27,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ org
   if (!Number.isSafeInteger(organizationId) || organizationId < 1 || headline.length < 8 || headline.length > 160 || description.length < 80 || description.length > 2400 || contactEmail.length < 5 || contactEmail.length > 320 || websiteUrl.length > 400 || linkedinUrl.length > 400 || instagramUrl.length > 400) {
     return NextResponse.json({ code: "invalid_profile" }, { status: 400 });
   }
-
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ code: "unauthorized" }, { status: 401 });
 
   const { data, error } = await supabase.rpc("update_own_learning_provider_organization_profile", {
     p_organization_id: organizationId,
