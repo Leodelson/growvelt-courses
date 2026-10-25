@@ -50,6 +50,7 @@ const copy = {
     next: "Next lesson",
     completedCourse: "View completed course",
     upNext: "Up next",
+    aboutCourse: "About this course",
   },
   fr: {
     back: "Retour au cours",
@@ -79,6 +80,7 @@ const copy = {
     next: "Leçon suivante",
     completedCourse: "Voir le cours terminé",
     upNext: "À suivre",
+    aboutCourse: "À propos de ce cours",
   },
   es: {
     back: "Volver al curso",
@@ -108,6 +110,7 @@ const copy = {
     next: "Siguiente lección",
     completedCourse: "Ver curso completado",
     upNext: "A continuación",
+    aboutCourse: "Sobre este curso",
   },
 } as const;
 
@@ -157,6 +160,7 @@ export default async function EnrolledLessonPage({ params }: { params: Promise<{
     ? course.modules.find((module) => module.lessons.some((lesson) => lesson.id === nextLesson.id))
     : null;
   const progressPercent = Math.min(100, Math.max(0, Math.round(course.progressPercent)));
+  const courseDescription = course.description?.trim() || course.summary?.trim() || null;
   const lessonType = current.type === "video"
     ? text.videoLesson
     : current.type === "text"
@@ -303,61 +307,70 @@ export default async function EnrolledLessonPage({ params }: { params: Promise<{
           ) : null}
         </article>
 
-        <aside className={styles.courseOutline} aria-labelledby="course-content-title">
-          <div className={styles.outlineHeader}>
-            <div>
-              <p className={styles.outlineEyebrow}>{text.courseContent}</p>
-              <h2 id="course-content-title">{snapshot.course.title}</h2>
-              <p className={styles.outlineCounts}>{snapshot.modules.length} {text.modulesLabel}<span aria-hidden="true"> · </span>{course.totalLessons} {text.lessonsLabel}</p>
+        <div className={styles.courseSidebar}>
+          <aside className={styles.courseOutline} aria-labelledby="course-content-title">
+            <div className={styles.outlineHeader}>
+              <div>
+                <p className={styles.outlineEyebrow}>{text.courseContent}</p>
+                <h2 id="course-content-title">{snapshot.course.title}</h2>
+                <p className={styles.outlineCounts}>{snapshot.modules.length} {text.modulesLabel}<span aria-hidden="true"> · </span>{course.totalLessons} {text.lessonsLabel}</p>
+              </div>
+              <span className={styles.progressPercent}>{progressPercent}%</span>
             </div>
-            <span className={styles.progressPercent}>{progressPercent}%</span>
-          </div>
 
-          {snapshot.modules.map((module) => {
-            const completedInModule = module.lessons.filter((lesson) => lesson.completed).length;
-            return (
-              <section className={styles.moduleSection} key={module.id} aria-label={module.title}>
-                <div className={styles.moduleHeading}>
-                  <h3>{module.title}</h3>
-                  <span>{completedInModule}/{module.lessons.length}</span>
-                </div>
-                <ol className={styles.lessonList}>
-                  {module.lessons.map((lesson) => {
-                    const className = [
-                      styles.lessonRow,
-                      lesson.current ? styles.currentLesson : "",
-                      lesson.completed ? styles.completedLesson : "",
-                      lesson.type === "project" ? styles.unavailableLesson : "",
-                    ].filter(Boolean).join(" ");
+            {snapshot.modules.map((module) => {
+              const completedInModule = module.lessons.filter((lesson) => lesson.completed).length;
+              return (
+                <section className={styles.moduleSection} key={module.id} aria-label={module.title}>
+                  <div className={styles.moduleHeading}>
+                    <h3>{module.title}</h3>
+                    <span>{completedInModule}/{module.lessons.length}</span>
+                  </div>
+                  <ol className={styles.lessonList}>
+                    {module.lessons.map((lesson) => {
+                      const className = [
+                        styles.lessonRow,
+                        lesson.current ? styles.currentLesson : "",
+                        lesson.completed ? styles.completedLesson : "",
+                        lesson.type === "project" ? styles.unavailableLesson : "",
+                      ].filter(Boolean).join(" ");
 
-                    return (
-                      <li key={lesson.id}>
-                        {lesson.type === "project" ? (
-                          <div className={className} aria-disabled="true">
-                            <span className={styles.lessonTypeIcon}><LockKeyhole size={16} aria-hidden="true" /></span>
-                            <span className={styles.lessonDetails}>
-                              <span className={styles.lessonTitle}>{lesson.title}</span>
-                              <small>{text.later}</small>
-                            </span>
-                          </div>
-                        ) : (
-                          <Link className={className} href={`${courseHref}/lessons/${lesson.id}`} aria-current={lesson.current ? "page" : undefined}>
-                            <span className={styles.lessonTypeIcon}><LessonTypeIcon type={lesson.type} /></span>
-                            <span className={styles.lessonDetails}>
-                              <span className={styles.lessonTitle}>{lesson.title}</span>
-                              <small>{navLabel(lesson)}</small>
-                            </span>
-                            {lesson.completed ? <CheckCircle2 className={styles.lessonStatusIcon} size={16} aria-label={text.completed} /> : null}
-                          </Link>
-                        )}
-                      </li>
-                    );
-                  })}
-                </ol>
-              </section>
-            );
-          })}
-        </aside>
+                      return (
+                        <li key={lesson.id}>
+                          {lesson.type === "project" ? (
+                            <div className={className} aria-disabled="true">
+                              <span className={styles.lessonTypeIcon}><LockKeyhole size={16} aria-hidden="true" /></span>
+                              <span className={styles.lessonDetails}>
+                                <span className={styles.lessonTitle}>{lesson.title}</span>
+                                <small>{text.later}</small>
+                              </span>
+                            </div>
+                          ) : (
+                            <Link className={className} href={`${courseHref}/lessons/${lesson.id}`} aria-current={lesson.current ? "page" : undefined}>
+                              <span className={styles.lessonTypeIcon}><LessonTypeIcon type={lesson.type} /></span>
+                              <span className={styles.lessonDetails}>
+                                <span className={styles.lessonTitle}>{lesson.title}</span>
+                                <small>{navLabel(lesson)}</small>
+                              </span>
+                              {lesson.completed ? <CheckCircle2 className={styles.lessonStatusIcon} size={16} aria-label={text.completed} /> : null}
+                            </Link>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ol>
+                </section>
+              );
+            })}
+          </aside>
+
+          {courseDescription ? (
+            <section className={styles.courseAbout} aria-labelledby="course-about-title">
+              <h2 id="course-about-title">{text.aboutCourse}</h2>
+              <p>{courseDescription}</p>
+            </section>
+          ) : null}
+        </div>
       </div>
     </section>
   );
