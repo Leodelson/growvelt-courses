@@ -29,6 +29,7 @@ function client() {
     auth: { getUser: async () => ({ data: { user: actor }, error: null }) },
     async rpc(name, args) {
       operations.push({ rpc: name, args });
+      if (invitationActions.some(item => item.rpc === name)) return { data: [{invitation_id:1}], error: workspaceError };
       if (managementCases.some(item => item.rpc === name)) return { data: [], error: workspaceError };
       if (name === "submit_public_learning_inquiry") return { data: [], error: intakeError };
       if (["submit_own_instructor_application", "create_own_learning_provider_organization", "create_own_learning_company_workspace"].includes(name)) return { data: [], error: workspaceError };
@@ -114,6 +115,15 @@ for (const host of hosts) {
   }
 }
 
+const invitationActions = [
+  {path:"app/api/company/invitations/[invitationId]/accept/route.ts",rpc:"respond_to_learning_company_invitation",args:{p_invitation_id:1,p_response:"accepted"},denied:409},
+  {path:"app/api/company/invitations/[invitationId]/decline/route.ts",rpc:"respond_to_learning_company_invitation",args:{p_invitation_id:1,p_response:"declined"},denied:409},
+  {path:"app/api/company/workspaces/[workspaceId]/invitations/[invitationId]/cancel/route.ts",rpc:"cancel_learning_company_invitation",args:{p_workspace_id:1,p_invitation_id:1},denied:403},
+  {path:"app/api/company/workspaces/[workspaceId]/members/[memberId]/remove/route.ts",rpc:"remove_learning_company_member",args:{p_workspace_id:1,p_member_id:otherId},denied:403},
+  {path:"app/api/instructor/organization-invitations/[invitationId]/accept/route.ts",rpc:"accept_own_learning_provider_organization_invitation",args:{p_invitation_id:1},denied:409},
+  {path:"app/api/instructor/organization-invitations/[invitationId]/decline/route.ts",rpc:"decline_own_learning_provider_organization_invitation",args:{p_invitation_id:1},denied:409},
+  {path:"app/api/instructor/organizations/[organizationId]/invitations/[invitationId]/cancel/route.ts",rpc:"cancel_own_learning_provider_organization_invitation",args:{p_organization_id:1,p_invitation_id:1},denied:403},
+];
 const managementCases = [
   {path:"app/api/instructor/organizations/[organizationId]/profile/route.ts",limit:32768,rpc:"update_own_learning_provider_organization_profile",status:201,payload:{headline:"A course provider",description:"A".repeat(80),contactEmail:"test@example.invalid"}},
   {path:"app/api/instructor/organizations/[organizationId]/members/[memberId]/revoke/route.ts",limit:4096,rpc:"revoke_own_learning_provider_organization_member",status:200,payload:{reason:"Membership ended"}},
@@ -138,9 +148,10 @@ const routes = [
   ["app/api/instructor/organizations/route.ts", ["POST"]],
   ["app/api/company/workspaces/route.ts", ["POST"]],
   ...managementCases.map(({path}) => [path,["POST"]]),
+  ...invitationActions.map(({path}) => [path,["POST"]]),
 ];
 const handlers = new Map(routes.map(([path]) => [path, load(path)]));
-const context = { params: Promise.resolve({ id: noticeId, workspaceId: "1", organizationId: "1", memberId: otherId }) };
+const context = { params: Promise.resolve({ id: noticeId, workspaceId: "1", organizationId: "1", invitationId: "1", memberId: otherId }) };
 const request = (method, headers = { Origin: hosts[0] }, body = {}) => new Request(hosts[0] + "/api/local-fixture", { method, headers: { "Content-Type": "application/json", ...headers }, body: JSON.stringify(body) });
 
 for (const path of ["app/api/inquiries/route.ts", "app/api/newsletter/subscribe/route.ts", "app/api/auth/verify-turnstile/route.ts"]) {
@@ -374,6 +385,37 @@ for (const [index,payload] of [[0,{headline:"界".repeat(160),description:"界".
 }
 actor = null;
 const courseContext = {params:Promise.resolve({courseId:"1"})};
+for (const item of invitationActions) {
+  const handler=handlers.get(item.path);
+  actor=null;
+  before=operations.length;
+  assert.equal((await handler.POST(request("POST"),context)).status,401);
+  assert.equal(operations.length,before);
+  actor={id:userId,role:"learner"};
+  workspaceError={code:"42501"};
+  const privilegedBefore=adminCalls;
+  assert.equal((await handler.POST(request("POST"),context)).status,item.denied);
+  assert.equal(adminCalls,privilegedBefore,"denied invitation action cannot fetch privileged notification context");
+  workspaceError=null;
+  before=operations.length;
+  const actionRequest=request("POST",undefined,{userId:noticeId,invitationId:99,workspaceId:99,role:"owner",response:"accepted"});
+  Object.defineProperty(actionRequest,"body",{get(){throw new Error("bodyless invitation action must not read caller JSON");}});
+  assert.equal((await handler.POST(actionRequest,context)).status,200);
+  assert.equal(operations[before].rpc,item.rpc);
+  assert.deepEqual(JSON.parse(JSON.stringify(operations[before].args)),item.args,"route params and fixed response are authoritative");
+  if(item.rpc==="accept_own_learning_provider_organization_invitation") {
+    assert.deepEqual(operations[before+1].filters,[["id",1],["invited_user_id",userId]],"acceptance email context is scoped to verified invitee");
+  }
+  for(const key of ["workspaceId","organizationId","invitationId","memberId"].filter(key=>item.path.includes(`[${key}]`))) {
+    for(const invalid of key==="memberId"?["-".repeat(36),"a".repeat(36),"invalid"]:["0","-1","1.5","NaN","9007199254740992"]) {
+      const params={...(await context.params),[key]:invalid};
+      const snapshot=[clientCalls,adminCalls,operations.length];
+      assert.equal((await handler.POST(request("POST"),{params:Promise.resolve(params)})).status,400,`${item.path}: reject ${key}=${invalid}`);
+      assert.deepEqual([clientCalls,adminCalls,operations.length],snapshot);
+    }
+  }
+}
+actor=null;
 const beforeAlerts = scheduledAlerts;
 assert.equal((await courseAlerts.POST(request("POST"), courseContext)).status,401);
 assert.equal((await courseAlerts.POST(request("POST"),{params:Promise.resolve({courseId:"NaN"})})).status,400);
