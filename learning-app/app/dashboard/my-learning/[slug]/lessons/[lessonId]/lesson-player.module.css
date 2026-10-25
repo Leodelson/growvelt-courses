@@ -170,11 +170,7 @@
   display: grid;
   align-content: start;
   gap: 16px;
-  max-height: calc(100dvh - 112px);
   min-width: 0;
-  overflow-y: auto;
-  scrollbar-color: color-mix(in srgb, var(--muted) 42%, transparent) transparent;
-  scrollbar-width: thin;
 }
 
 .lessonColumn {
@@ -429,8 +425,14 @@
 .courseOutline {
   display: grid;
   gap: 18px;
+  max-height: min(760px, calc(100dvh - 112px));
   min-width: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 21px;
+  scrollbar-color: color-mix(in srgb, var(--muted) 42%, transparent) transparent;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
 }
 
 .courseAbout {
@@ -628,12 +630,12 @@ a.lessonRow:hover {
 
   .courseSidebar {
     position: static;
-    max-height: none;
     overflow: visible;
   }
 
   .courseOutline {
     position: static;
+    max-height: min(64dvh, 680px);
   }
 
   .lessonList {
@@ -767,6 +769,7 @@ a.lessonRow:hover {
 
   .courseOutline {
     gap: 15px;
+    max-height: min(58dvh, 560px);
     padding: 17px;
     border-radius: 18px;
   }

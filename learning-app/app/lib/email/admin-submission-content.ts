@@ -28,7 +28,7 @@ export async function readAdminSubmission(database:Pick<SupabaseClient,"from">,a
   const fields=Object.entries(row).filter(([key])=>labels[key]).map(([key,data])=>({label:labels[key],value:value(data)}));
   if(alert.actor_id){const profile=await database.from("profiles").select("full_name,email").eq("id",alert.actor_id).maybeSingle();if(profile.error)throw new Error("Applicant identity unavailable");if(profile.data)fields.unshift({label:"Submitted by",value:`${profile.data.full_name||"Growvelt user"} (${profile.data.email||"email unavailable"})`});}
   if(alert.kind==="inquiry")title=row.inquiry_type==="partnership"?"New partnership request":"New contact request";
-  if(alert.kind==="support"&&row.conversation_id){const thread=await database.from("learning_support_conversations").select("subject,topic").eq("id",row.conversation_id).maybeSingle();if(thread.error)throw new Error("Support thread unavailable");if(thread.data)fields.unshift({label:"Subject",value:thread.data.subject},{label:"Topic",value:thread.data.topic});path=`/dashboard/support/${row.conversation_id}`;}
+  if(alert.kind==="support"&&row.conversation_id){const thread=await database.from("learning_support_conversations").select("subject,topic").eq("id",row.conversation_id).maybeSingle();if(thread.error)throw new Error("Support thread unavailable");if(thread.data){fields.unshift({label:"Subject",value:thread.data.subject},{label:"Topic",value:thread.data.topic});if(thread.data.subject.startsWith("Lesson report:"))title="New lesson quality report";}path=`/dashboard/support/${row.conversation_id}`;}
   return{title,fields,path};
 }
 export function renderAdminSubmission(content:SubmissionContent){

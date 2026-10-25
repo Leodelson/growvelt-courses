@@ -16,7 +16,9 @@ import { QuizPlayer } from "@/app/components/learning/quiz-player";
 import { getRequestLocale } from "@/app/lib/i18n-server";
 import { getOwnEnrolledLearningCourse } from "@/app/lib/learning/enrollments";
 import { getOwnEnrolledLessonSnapshot } from "@/app/lib/learning/lesson-player";
+import { getOwnLearningLessonReaction } from "@/app/lib/learning/lesson-reactions";
 import { getOwnEnrolledQuizSnapshot } from "@/app/lib/learning/quiz";
+import { LessonFeedback } from "@/app/components/learning/lesson-feedback";
 import styles from "./lesson-player.module.css";
 
 export const metadata = { title: "Lesson" };
@@ -139,9 +141,10 @@ export default async function EnrolledLessonPage({ params }: { params: Promise<{
 
   if (!slug || slug.length > 220 || !Number.isSafeInteger(parsedLessonId) || parsedLessonId < 1) notFound();
 
-  const [snapshot, course] = await Promise.all([
+  const [snapshot, course, initialReaction] = await Promise.all([
     getOwnEnrolledLessonSnapshot(slug, parsedLessonId),
     getOwnEnrolledLearningCourse(slug),
+    getOwnLearningLessonReaction(parsedLessonId),
   ]);
   if (!snapshot || !course || snapshot.course.id !== course.id) notFound();
 
@@ -305,6 +308,8 @@ export default async function EnrolledLessonPage({ params }: { params: Promise<{
               <span className={styles.completedCourseAction}>{text.completedCourse}<ArrowRight size={16} aria-hidden="true" /></span>
             </Link>
           ) : null}
+
+          <LessonFeedback lessonId={current.id} courseSlug={snapshot.course.slug} initialReaction={initialReaction} />
         </article>
 
         <div className={styles.courseSidebar}>
