@@ -1,0 +1,776 @@
+.lessonPage {
+  --lesson-card-radius: 22px;
+  display: grid;
+  gap: 24px;
+  width: min(1360px, calc(100% - 48px));
+  min-width: 0;
+  margin-inline: auto;
+  padding-block: 0 48px !important;
+  container-type: inline-size;
+}
+
+.courseHeader {
+  display: grid;
+  gap: 22px;
+  min-width: 0;
+  padding: clamp(22px, 3.2vw, 36px);
+  border: 1px solid color-mix(in srgb, var(--purple) 18%, var(--line));
+  border-radius: var(--lesson-card-radius);
+  background:
+    radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--purple) 12%, transparent), transparent 36%),
+    var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.headerTop,
+.headerMain,
+.progressLabels,
+.lessonPanelHeading,
+.lessonActions,
+.upNext,
+.outlineHeader,
+.moduleHeading,
+.lessonRow,
+.completedCourseAction {
+  display: flex;
+  align-items: center;
+}
+
+.headerTop {
+  justify-content: space-between;
+  gap: 18px;
+  min-width: 0;
+}
+
+.backLink {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  color: var(--ink-soft);
+  font-size: 13px;
+  font-weight: 750;
+  transition: color var(--dur) var(--ease), border-color var(--dur) var(--ease), background var(--dur) var(--ease);
+}
+
+.backLink:hover {
+  border-color: color-mix(in srgb, var(--purple) 48%, var(--line));
+  background: var(--surface-muted);
+  color: var(--purple);
+}
+
+.headerCourseTitle {
+  overflow: hidden;
+  max-width: 58%;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.headerMain {
+  justify-content: space-between;
+  gap: clamp(24px, 5vw, 72px);
+  min-width: 0;
+}
+
+.headingText {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.courseEyebrow,
+.outlineEyebrow,
+.upNextEyebrow {
+  margin: 0 0 9px;
+  color: var(--purple);
+  font-size: 11px;
+  font-weight: 850;
+  letter-spacing: .12em;
+  line-height: 1.45;
+  text-transform: uppercase;
+}
+
+.courseEyebrow {
+  overflow-wrap: anywhere;
+}
+
+.headingText h1 {
+  max-width: 860px;
+  margin: 0;
+  font-size: clamp(32px, 4vw, 54px);
+  line-height: 1.08;
+  overflow-wrap: anywhere;
+}
+
+.progressBlock {
+  display: grid;
+  flex: 0 1 310px;
+  gap: 10px;
+  min-width: 225px;
+}
+
+.progressLabels {
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.progressLabels strong {
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 800;
+  text-align: right;
+}
+
+.progressTrack {
+  height: 9px;
+  overflow: hidden;
+  border-radius: var(--r-pill);
+  background: var(--surface-sunken);
+}
+
+.progressTrack span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--purple), color-mix(in srgb, var(--purple) 68%, #f28c00));
+  transition: width .35s var(--ease);
+}
+
+.jumpLink {
+  justify-self: start;
+  color: var(--purple);
+  font-size: 12px;
+  font-weight: 750;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--purple) 45%, transparent);
+  text-underline-offset: 3px;
+}
+
+.lessonLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(290px, 350px);
+  gap: 22px;
+  align-items: start;
+  min-width: 0;
+}
+
+.lessonColumn {
+  display: grid;
+  gap: 18px;
+  min-width: 0;
+  scroll-margin-top: 90px;
+}
+
+.lessonColumn:focus {
+  outline: 0;
+}
+
+.lessonPanel,
+.courseOutline {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--lesson-card-radius);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.lessonPanel {
+  display: grid;
+  gap: 20px;
+  padding: clamp(18px, 2.4vw, 28px);
+}
+
+.lessonPanelHeading {
+  justify-content: space-between;
+  gap: 14px;
+  min-height: 24px;
+}
+
+.lessonType,
+.lessonDuration,
+.upNextType {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.lessonType {
+  color: var(--purple);
+  font-size: 12px;
+  font-weight: 850;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.lessonDuration {
+  flex: 0 0 auto;
+  padding: 5px 9px;
+  border-radius: var(--r-pill);
+  background: var(--surface-muted);
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.videoFrame {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
+  border-radius: 16px;
+  aspect-ratio: 16 / 9;
+  background: #09070e;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, .14);
+}
+
+.videoFrame iframe {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.textContent {
+  min-height: 160px;
+  padding: clamp(19px, 3vw, 32px);
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  background: var(--surface-muted);
+  color: var(--ink);
+  font-size: 16px;
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.lessonMessage,
+.completedMessage {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  margin: 0;
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: var(--surface-muted);
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 1.6;
+}
+
+.completedMessage {
+  align-items: center;
+  border-color: color-mix(in srgb, var(--success) 27%, var(--line));
+  background: color-mix(in srgb, var(--success) 8%, var(--surface));
+  color: var(--success);
+}
+
+.completedMessage svg {
+  flex: 0 0 auto;
+}
+
+.quizContent {
+  min-width: 0;
+  padding: clamp(17px, 2.4vw, 26px);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface-muted);
+}
+
+.lessonActions {
+  flex-wrap: wrap;
+  gap: 12px;
+  padding-top: 4px;
+}
+
+.lessonActions :global(.lesson-complete-action) {
+  display: flex;
+  min-width: 0;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.lessonActions :global(.lesson-complete-action .button),
+.previousLink,
+.upNextAction {
+  min-height: 46px;
+  white-space: nowrap;
+}
+
+.lessonActions :global(.lesson-complete-state) {
+  margin: 0;
+  padding: 10px 13px;
+  border: 1px solid color-mix(in srgb, var(--success) 25%, var(--line));
+  border-radius: var(--r-sm);
+  background: color-mix(in srgb, var(--success) 8%, var(--surface));
+  color: var(--success);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.previousLink {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.upNext {
+  gap: 16px;
+  min-width: 0;
+  padding: 19px 20px;
+  border: 1px solid color-mix(in srgb, var(--purple) 25%, var(--line));
+  border-radius: 18px;
+  background:
+    linear-gradient(110deg, color-mix(in srgb, var(--purple) 8%, var(--surface)), var(--surface) 68%);
+  box-shadow: var(--shadow-xs);
+}
+
+.upNextIcon {
+  display: grid;
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--purple) 22%, transparent);
+  border-radius: 13px;
+  background: var(--purple-soft);
+  color: var(--purple);
+}
+
+.upNextDetails {
+  display: grid;
+  flex: 1 1 auto;
+  gap: 4px;
+  min-width: 0;
+}
+
+.upNextEyebrow {
+  margin: 0;
+  font-size: 10px;
+}
+
+.upNextDetails h2 {
+  margin: 0;
+  font-size: clamp(16px, 1.7vw, 20px);
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.upNextType {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.upNextAction {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 9px;
+}
+
+.completedCourseLink {
+  color: inherit;
+  transition: border-color var(--dur) var(--ease), transform var(--dur) var(--ease);
+}
+
+.completedCourseLink:hover {
+  transform: translateY(-1px);
+  border-color: var(--purple);
+}
+
+.completedCourseText {
+  flex: 1 1 auto;
+  min-width: 0;
+  color: var(--muted);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.completedCourseAction {
+  flex: 0 0 auto;
+  gap: 8px;
+  color: var(--purple);
+  font-size: 13px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.courseOutline {
+  position: sticky;
+  top: 92px;
+  display: grid;
+  gap: 18px;
+  max-height: calc(100dvh - 112px);
+  overflow: auto;
+  padding: 21px;
+  scrollbar-color: color-mix(in srgb, var(--muted) 42%, transparent) transparent;
+  scrollbar-width: thin;
+}
+
+.outlineHeader {
+  justify-content: space-between;
+  gap: 14px;
+  min-width: 0;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.outlineHeader > div {
+  min-width: 0;
+}
+
+.outlineEyebrow {
+  margin-bottom: 7px;
+}
+
+.outlineHeader h2 {
+  margin: 0 0 7px;
+  font-size: 18px;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.outlineCounts {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.progressPercent {
+  display: grid;
+  flex: 0 0 46px;
+  width: 46px;
+  height: 46px;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--purple) 28%, var(--line));
+  border-radius: 50%;
+  background: var(--purple-soft);
+  color: var(--purple);
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.moduleSection {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.moduleHeading {
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+  padding-inline: 3px;
+}
+
+.moduleHeading h3 {
+  min-width: 0;
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.moduleHeading > span {
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 750;
+}
+
+.lessonList {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lessonRow {
+  gap: 10px;
+  min-width: 0;
+  padding: 10px 9px;
+  border: 1px solid transparent;
+  border-radius: 11px;
+  color: var(--ink);
+  transition: border-color var(--dur) var(--ease), background var(--dur) var(--ease);
+}
+
+a.lessonRow:hover {
+  border-color: var(--line);
+  background: var(--surface-muted);
+}
+
+.currentLesson {
+  border-color: color-mix(in srgb, var(--purple) 35%, var(--line));
+  background: color-mix(in srgb, var(--purple) 9%, var(--surface));
+}
+
+.lessonTypeIcon {
+  display: grid;
+  flex: 0 0 32px;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border-radius: 10px;
+  background: var(--surface-muted);
+  color: var(--muted);
+}
+
+.currentLesson .lessonTypeIcon {
+  background: var(--purple-soft);
+  color: var(--purple);
+}
+
+.completedLesson .lessonTypeIcon {
+  color: var(--success);
+}
+
+.lessonDetails {
+  display: grid;
+  flex: 1 1 auto;
+  gap: 2px;
+  min-width: 0;
+}
+
+.lessonTitle {
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.lessonDetails small {
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.35;
+}
+
+.currentLesson .lessonTitle,
+.currentLesson .lessonDetails small {
+  color: var(--purple);
+}
+
+.lessonStatusIcon {
+  flex: 0 0 auto;
+  color: var(--success);
+}
+
+.unavailableLesson {
+  opacity: .75;
+}
+
+.unavailableLesson .lessonTypeIcon {
+  color: var(--muted);
+}
+
+@container (max-width: 980px) {
+  .lessonLayout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .courseOutline {
+    position: static;
+    max-height: none;
+  }
+
+  .lessonList {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@container (max-width: 680px) {
+  .lessonPage {
+    width: calc(100% - 28px);
+    gap: 15px;
+    padding-block: 0 32px !important;
+  }
+
+  .courseHeader {
+    gap: 18px;
+    padding: 20px;
+    border-radius: 18px;
+  }
+
+  .headerTop {
+    align-items: flex-start;
+  }
+
+  .headerCourseTitle {
+    max-width: 48%;
+    padding-top: 10px;
+    font-size: 11px;
+  }
+
+  .headerMain {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 17px;
+  }
+
+  .headingText h1 {
+    font-size: clamp(30px, 9vw, 42px);
+  }
+
+  .progressBlock {
+    flex-basis: auto;
+    min-width: 0;
+  }
+
+  .lessonLayout {
+    gap: 15px;
+  }
+
+  .lessonColumn {
+    gap: 14px;
+  }
+
+  .lessonPanel {
+    gap: 15px;
+    padding: 15px;
+    border-radius: 18px;
+  }
+
+  .videoFrame {
+    margin-inline: -1px;
+    width: calc(100% + 2px);
+    border-radius: 12px;
+  }
+
+  .textContent,
+  .quizContent {
+    padding: 16px;
+    border-radius: 12px;
+    font-size: 15px;
+  }
+
+  .quizContent :global(.quiz-actions) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .quizContent :global(.quiz-actions .button) {
+    width: 100%;
+    max-width: 100%;
+    padding-inline: 11px;
+    font-size: clamp(11px, 3vw, 14px);
+    white-space: nowrap;
+  }
+
+  .lessonActions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: stretch;
+  }
+
+  .lessonActions :global(.lesson-complete-action),
+  .lessonActions :global(.lesson-complete-action .button),
+  .lessonActions .previousLink {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .lessonActions :global(.lesson-complete-action) {
+    display: grid;
+  }
+
+  .lessonActions :global(.lesson-complete-action .button),
+  .lessonActions .previousLink {
+    justify-content: center;
+    white-space: nowrap;
+  }
+
+  .upNext {
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr);
+    gap: 12px;
+    padding: 15px;
+    border-radius: 15px;
+  }
+
+  .upNextAction {
+    grid-column: 1 / -1;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .completedCourseText {
+    font-size: 12px;
+  }
+
+  .completedCourseAction {
+    grid-column: 2;
+    font-size: 12px;
+  }
+
+  .courseOutline {
+    gap: 15px;
+    padding: 17px;
+    border-radius: 18px;
+  }
+
+  .lessonList {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@container (max-width: 360px) {
+  .lessonPage {
+    width: calc(100% - 20px);
+  }
+
+  .courseHeader {
+    padding: 16px;
+  }
+
+  .headerTop {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .headerCourseTitle {
+    max-width: 100%;
+    padding: 0 2px;
+  }
+
+  .lessonPanel {
+    padding: 12px;
+  }
+
+  .progressLabels {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .progressLabels strong {
+    text-align: left;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .progressTrack span,
+  .backLink,
+  .lessonRow,
+  .completedCourseLink {
+    transition: none;
+  }
+}
