@@ -17,6 +17,7 @@ let clientCalls = 0;
 let adminCalls = 0;
 let intakeError = null;
 let supportError = null;
+let workspaceError = null;
 let scheduledAlerts = 0;
 let alertDrains = 0;
 let pendingCourse = null;
@@ -29,6 +30,7 @@ function client() {
     async rpc(name, args) {
       operations.push({ rpc: name, args });
       if (name === "submit_public_learning_inquiry") return { data: [], error: intakeError };
+      if (["submit_own_instructor_application", "create_own_learning_provider_organization", "create_own_learning_company_workspace"].includes(name)) return { data: [], error: workspaceError };
       if (name === "is_growvelt_learning_admin") return { data: actor?.role === "admin", error: null };
       if (name === "is_approved_growvelt_instructor") return { data: actor?.role === "instructor", error: null };
       if (["create_learning_support_case", "post_learning_support_message", "resolve_learning_support_case"].includes(name)) return { data: noticeId, error: supportError };
@@ -123,6 +125,9 @@ const routes = [
   ["app/api/instructor/payout-profile/route.ts", ["POST", "DELETE"]],
   ["app/api/payments/paystack/initialize/route.ts", ["POST"]],
   ["app/api/instructor/courses/[courseId]/notify-submission/route.ts", ["POST"]],
+  ["app/api/instructor/application/route.ts", ["POST"]],
+  ["app/api/instructor/organizations/route.ts", ["POST"]],
+  ["app/api/company/workspaces/route.ts", ["POST"]],
 ];
 const handlers = new Map(routes.map(([path]) => [path, load(path)]));
 const context = { params: Promise.resolve({ id: noticeId, workspaceId: "1" }) };
@@ -144,6 +149,9 @@ const boundedRoutes = [
   ["app/api/learning/support/[id]/route.ts", "POST", 32768],
   ["app/api/learning/notifications/route.ts", "PATCH", 1024],
   ["app/api/learning/email/preferences/route.ts", "POST", 1024],
+  ["app/api/instructor/application/route.ts", "POST", 65536],
+  ["app/api/instructor/organizations/route.ts", "POST", 4096],
+  ["app/api/company/workspaces/route.ts", "POST", 4096],
 ];
 for (const [path, method, limit] of boundedRoutes) {
   for (const [type, body, status] of [
@@ -278,6 +286,53 @@ for (const [path, method] of [["app/api/learning/notifications/route.ts", "PATCH
   Object.defineProperty(signedOut, "body", { get() { throw new Error("must not parse before authentication"); } });
   assert.equal((await handlers.get(path)[method](signedOut, context)).status, 401, `${path}: signed-out requests are denied before parsing`);
 }
+// Session ownership remains authoritative, even when callers submit another
+// user's ID or request an approved/admin role in otherwise valid form JSON.
+const applicationBody = { country: "NG", phone: "123456789", headline: "Course instructor", expertise: ["Software"], yearsExperience: 5, teachingExperience: "Teaching experience", bio: "Instructor biography", motivation: "Help learners build skills", portfolioUrl: "https://example.invalid/portfolio", userId: otherId, approval_status: "approved", role: "admin" };
+const creationCases = [
+  ["app/api/instructor/application/route.ts", applicationBody, "submit_own_instructor_application", 401],
+  ["app/api/instructor/organizations/route.ts", {name:"Example Academy",slug:"example-academy",ownerId:otherId,role:"admin"}, "create_own_learning_provider_organization", 403],
+  ["app/api/company/workspaces/route.ts", {name:"Example Team",slug:"example-team",ownerId:otherId,role:"admin"}, "create_own_learning_company_workspace", 401],
+];
+for (const [path, payload, rpc, deniedStatus] of creationCases) {
+  const handler = handlers.get(path);
+  actor = null;
+  const unauthenticated = request("POST");
+  Object.defineProperty(unauthenticated, "body", {get(){throw new Error("must not parse before authentication");}});
+  before = operations.length;
+  assert.equal((await handler.POST(unauthenticated)).status,401);
+  assert.equal(operations.length,before);
+  actor = {id:userId,role:"learner"};
+  workspaceError = {code:"42501"};
+  const alertsBefore = scheduledAlerts;
+  assert.equal((await handler.POST(request("POST",undefined,payload))).status,deniedStatus);
+  assert.equal(scheduledAlerts,alertsBefore,"denied submissions cannot schedule alerts");
+  workspaceError = null;
+  before = operations.length;
+  assert.equal((await handler.POST(request("POST",undefined,payload))).status,201);
+  assert.equal(operations.length,before+1);
+  assert.equal(operations[before].rpc,rpc);
+  assert.ok(!JSON.stringify(operations[before].args).includes(otherId));
+  assert.ok(!("role" in operations[before].args) && !("approval_status" in operations[before].args));
+}
+// Maximum form-length Unicode is accepted even when JSON escapes every character.
+const maximumApplication = {...applicationBody,country:"界".repeat(100),phone:"1".repeat(32),headline:"界".repeat(160),teachingExperience:"界".repeat(1500),bio:"界".repeat(2000),motivation:"界".repeat(1500),expertise:Array.from({length:12},(_,i)=>`Topic ${i}`)};
+const escaped = JSON.stringify(maximumApplication).replace(/界/g,"\\u754c");
+assert.equal((await handlers.get(creationCases[0][0]).POST(new Request(hosts[0]+"/api/local-fixture",{method:"POST",headers:{Origin:hosts[0],"Content-Type":"application/json"},body:escaped}))).status,201);
+for (const [path] of creationCases.slice(1)) {
+  const escapedName=JSON.stringify({name:"界".repeat(160),slug:"a".repeat(100)}).replace(/界/g,"\\u754c");
+  assert.equal((await handlers.get(path).POST(new Request(hosts[0]+"/api/local-fixture",{method:"POST",headers:{Origin:hosts[0],"Content-Type":"application/json"},body:escapedName}))).status,201);
+}
+actor = null;
+const ownApplication = handlers.get("app/api/instructor/application/route.ts");
+const adminBeforeApplication = adminCalls;
+assert.equal((await ownApplication.GET()).status,401);
+assert.equal(adminCalls,adminBeforeApplication);
+actor = {id:userId,role:"learner"};
+before = operations.length;
+assert.equal((await ownApplication.GET()).status,200);
+assert.deepEqual(operations[before].filters,[["user_id",userId]],"privileged application lookup is bound to verified session");
+actor = null;
 const courseAlerts = handlers.get("app/api/instructor/courses/[courseId]/notify-submission/route.ts");
 const courseContext = {params:Promise.resolve({courseId:"1"})};
 const beforeAlerts = scheduledAlerts;

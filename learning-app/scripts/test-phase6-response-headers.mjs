@@ -38,6 +38,7 @@ assert.match(unsubscribe.headers.get("cache-control"), /no-store/);
 const originDenials = [
   ...["/api/inquiries", "/api/newsletter/subscribe", "/api/learning/newsletter/subscribe", "/api/auth/verify-turnstile", "/api/company/workspaces/1/assignments", "/api/learning/support", "/api/learning/support/00000000-0000-4000-8000-000000000001", "/api/learning/admin/emails", "/api/learning/email/preferences"].map(path => [path, "POST"]),
   ["/api/learning/notifications", "PATCH"],
+  ...["/api/instructor/application", "/api/instructor/organizations", "/api/company/workspaces"].map(path => [path, "POST"]),
 ];
 for (const [path, method] of originDenials) {
   const response = await fetch(new URL(path, base), {
@@ -55,4 +56,4 @@ for (const path of ["/api/inquiries", "/api/newsletter/subscribe", "/api/learnin
     assert.equal(response.status, status, `${path}: bounded JSON rejection`);
   }
 }
-console.log("PASS local production HTTP headers, FAQ/callback/cache protections, ten sibling-origin denials, and public JSON rejection statuses including the Learning newsletter alias");
+console.log(`PASS local production HTTP headers, FAQ/callback/cache protections, ${originDenials.length} sibling-origin denials, and public JSON rejection statuses including the Learning newsletter alias`);
