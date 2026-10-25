@@ -974,6 +974,13 @@ a.lessonRow:hover {
   }
 }
 
+@media (max-width: 620px) {
+  .lessonPage {
+    width: calc(100% + 16px);
+    margin-inline: -8px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .progressTrack span,
   .backLink,
