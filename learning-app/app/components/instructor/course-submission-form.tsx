@@ -20,11 +20,11 @@ export function CourseSubmissionForm({ courseId }: { courseId: number }) {
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [isPending, setIsPending] = useState(false);
   const [feedback, setFeedback] = useState<SubmissionFeedback>(null);
-  const companyTestModeRequired = locale === "fr"
-    ? "Pour soumettre un brouillon payant, enregistrez-le comme cours personnel et activez « Réservé au mode test de l’apprentissage en entreprise » dans la section des tarifs. Il ne sera pas public et les paiements en direct resteront bloqués."
+  const paidCourseRules = locale === "fr"
+    ? "Les cours payants doivent être des cours personnels d’instructeur avec un prix NGN valide. Les cours payants appartenant à une organisation et les tarifs gratuits à durée limitée ne sont pas encore pris en charge."
     : locale === "es"
-      ? "Para enviar un borrador de pago, guárdalo como curso personal y activa « Solo para el modo de prueba de aprendizaje empresarial » en la sección de precios. No será público y los pagos reales seguirán bloqueados."
-      : "To submit a paid draft, save it as a personal course and enable Company Test Mode only in the pricing section. It will not be public, and live payments remain blocked.";
+      ? "Los cursos de pago deben ser cursos personales de instructor con un precio NGN válido. Aún no se admiten cursos de pago de organizaciones ni precios gratuitos por tiempo limitado."
+      : "Paid courses must be personal instructor courses with a valid NGN price. Organization-owned paid courses and limited-time-free pricing aren’t supported yet.";
   const curriculumHint = locale === "fr"
     ? "Ajoutez au moins un module, puis enregistrez une leçon valide à l’intérieur. Les types pris en charge sont Texte, Vidéo YouTube ou Quiz."
     : locale === "es"
@@ -58,9 +58,10 @@ export function CourseSubmissionForm({ courseId }: { courseId: number }) {
         setFeedback({ variant: "error", message: text.quizError });
         return;
       }
-      if (error.message.includes("Paid courses can be submitted only as personal Company Test Mode-only drafts")) {
+      if (error.message.includes("Paid courses must be personal instructor courses")
+        || error.message.includes("Paid courses must use a valid NGN price")) {
         setShowConfirmation(false);
-        setFeedback({ variant: "error", message: companyTestModeRequired });
+        setFeedback({ variant: "error", message: paidCourseRules });
         return;
       }
       if (error.message.includes("Add at least one module and one lesson")
