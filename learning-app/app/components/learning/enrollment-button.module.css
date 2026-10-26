@@ -29,3 +29,23 @@
   font-weight: 500;
   line-height: 1.5;
 }
+
+.legalCopy a {
+  color: var(--purple);
+  font-weight: 750;
+  text-decoration: underline;
+  text-decoration-color: currentColor;
+  text-underline-offset: .18em;
+  transition: color .16s ease, text-decoration-thickness .16s ease;
+}
+
+.legalCopy a:hover {
+  color: color-mix(in srgb, var(--purple) 76%, var(--ink));
+  text-decoration-thickness: 2px;
+}
+
+.legalCopy a:focus-visible {
+  border-radius: 2px;
+  outline: 2px solid var(--purple);
+  outline-offset: 3px;
+}

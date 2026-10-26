@@ -61,7 +61,7 @@ export function EnrollmentButton({ courseId, slug, isFree, isEnrolled, paidCheck
       <small>Any valid discount will be applied before you pay.</small>
     </label>}
     <ActionButton className="button button-primary" type="button" onClick={purchase} disabled={pending} isPending={pending} pendingLabel="Opening secure checkout…">Buy Course</ActionButton>
-    <p className="enrollment-unavailable">By continuing, you agree to the <Link href="/terms-of-service">Terms</Link> and <Link href="/refund-policy">Refund Policy</Link>.</p>
+    <p className={`enrollment-unavailable ${styles.legalCopy}`}>By continuing, you agree to the <Link href="/terms-of-service">Terms</Link> and <Link href="/refund-policy">Refund Policy</Link>.</p>
     {error && <InlineFeedback variant="error">{error}</InlineFeedback>}
   </div>;
   return <div className="enrollment-actions"><ActionButton className="button button-primary" type="button" onClick={enroll} disabled={pending} isPending={pending} pendingLabel="Enrolling…">Enroll free</ActionButton>{error && <InlineFeedback variant="error">{error}</InlineFeedback>}</div>;
