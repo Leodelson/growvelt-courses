@@ -8,7 +8,7 @@ import { InlineFeedback } from "@/app/components/ui/inline-feedback";
 import styles from "./enrollment-button.module.css";
 import { createClient } from "@/app/lib/supabase/browser";
 
-export function EnrollmentButton({ courseId, slug, isFree, isEnrolled, paidCheckoutEnabled = false, checkoutMode = "test", displayedPrice, testCouponCheckoutEnabled = false }: { courseId: number; slug: string; isFree: boolean; isEnrolled: boolean; paidCheckoutEnabled?: boolean; checkoutMode?: "test" | "live"; displayedPrice?: string; testCouponCheckoutEnabled?: boolean }) {
+export function EnrollmentButton({ courseId, slug, isFree, isEnrolled, paidCheckoutEnabled = false, checkoutMode = "test", testCouponCheckoutEnabled = false }: { courseId: number; slug: string; isFree: boolean; isEnrolled: boolean; paidCheckoutEnabled?: boolean; checkoutMode?: "test" | "live"; displayedPrice?: string; testCouponCheckoutEnabled?: boolean }) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -58,10 +58,10 @@ export function EnrollmentButton({ courseId, slug, isFree, isEnrolled, paidCheck
         placeholder="Enter coupon code"
         value={couponCode}
       />
-      <small>A valid discount and the final Test Mode amount will be shown by Paystack before you confirm.</small>
+      <small>Any valid discount will be applied before you pay.</small>
     </label>}
-    <ActionButton className="button button-primary" type="button" onClick={purchase} disabled={pending} isPending={pending} pendingLabel="Opening secure checkout…">Buy course · {checkoutMode === "live" ? "Live payment" : "Test mode"}</ActionButton>
-    <p className="enrollment-unavailable">{displayedPrice ? `${displayedPrice} is the final displayed course price before any eligible promotion. ` : ""}Paystack processes payment. By continuing, you agree to the <Link href="/terms-of-service">Terms</Link> and <Link href="/refund-policy">Refund Policy</Link>. {checkoutMode === "live" ? "This is a real payment; access is granted only after Growvelt verifies the payment event." : "No real money is accepted in this test checkout."}</p>
+    <ActionButton className="button button-primary" type="button" onClick={purchase} disabled={pending} isPending={pending} pendingLabel="Opening secure checkout…">Buy Course</ActionButton>
+    <p className="enrollment-unavailable">By continuing, you agree to the <Link href="/terms-of-service">Terms</Link> and <Link href="/refund-policy">Refund Policy</Link>.</p>
     {error && <InlineFeedback variant="error">{error}</InlineFeedback>}
   </div>;
   return <div className="enrollment-actions"><ActionButton className="button button-primary" type="button" onClick={enroll} disabled={pending} isPending={pending} pendingLabel="Enrolling…">Enroll free</ActionButton>{error && <InlineFeedback variant="error">{error}</InlineFeedback>}</div>;

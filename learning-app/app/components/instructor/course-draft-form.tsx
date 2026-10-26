@@ -59,10 +59,10 @@ export function CourseDraftForm({ mode, courseId, initialValues = defaultValues,
   const isEditable = status === "draft";
   const [companyTestModeOnly, setCompanyTestModeOnly] = useState(initialValues.company_test_mode_only ?? false);
   const companyTestModeText = locale === "fr"
-    ? { label: "Réservé au mode test de l’apprentissage en entreprise", help: "Visible uniquement aux gestionnaires d’entreprise pour les achats Paystack en mode Test. Jamais listé publiquement et les paiements en direct restent bloqués.", saveError: "Les détails du brouillon ont été enregistrés, mais le paramètre Company Test Mode n’a pas pu être enregistré. Réessayez." }
+    ? { label: "Accès réservé aux responsables d’entreprise", help: "Ce cours restera absent du catalogue public et sera accessible uniquement aux responsables d’entreprise.", saveError: "Le brouillon a été enregistré, mais le paramètre d’accès réservé aux responsables d’entreprise n’a pas pu l’être. Réessayez." }
     : locale === "es"
-      ? { label: "Solo para el modo de prueba de aprendizaje empresarial", help: "Solo visible para los administradores de empresa para compras de prueba de Paystack. Nunca aparece públicamente y los pagos reales permanecen bloqueados.", saveError: "Se guardaron los detalles del borrador, pero no se pudo guardar la configuración de prueba de empresa. Inténtalo de nuevo." }
-      : { label: "Company Test Mode only", help: "Visible only to company managers for Paystack Test Mode purchases. Never listed publicly; live payment remains blocked.", saveError: "Draft details were saved, but the Company Test Mode setting was not. Please save again." };
+      ? { label: "Acceso solo para responsables de empresa", help: "Este curso no aparecerá en el catálogo público y solo será accesible para responsables de empresa.", saveError: "Se guardó el borrador, pero no se pudo guardar la configuración de acceso para responsables de empresa. Inténtalo de nuevo." }
+      : { label: "Company managers only", help: "This course stays out of the public catalog and is accessible only to company managers.", saveError: "Draft saved, but the company-manager access setting was not. Please try again." };
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
