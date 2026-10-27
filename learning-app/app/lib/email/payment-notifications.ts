@@ -1,10 +1,23 @@
-import { getLearningOrigin } from "@/app/lib/site-urls.mjs";
+import { getLearningOrigin, learningAbsoluteUrl } from "@/app/lib/site-urls.mjs";
 import "server-only";
 import { createAdminClient } from "@/app/lib/supabase/admin";
 import { renderGrowveltEmail } from "@/app/lib/email/growvelt-email-template";
 
 type NoticeType = "payment_access_ready" | "payment_attention" | "refund_requested" | "refund_processed" | "refund_attention" | "access_revoked" | "operator_dispute" | "operator_reconciliation";
 type NoticeInput = { key: string; type: NoticeType; recipient: string; subject: string; heading: string; message: string; orderId?: number; caseId?: number };
+
+function paymentNotificationAction(type: NoticeType) {
+  if (type === "payment_access_ready") {
+    return { label: "My Courses", href: learningAbsoluteUrl("/dashboard/my-learning") };
+  }
+  if (type.startsWith("refund_")) {
+    return { label: "Contact refund support", href: "mailto:refund@growvelt.com" };
+  }
+  if (type === "payment_attention" || type === "access_revoked") {
+    return { label: "Contact support", href: "mailto:support@growvelt.com" };
+  }
+  return { label: "Open Payment Operations", href: learningAbsoluteUrl("/dashboard/admin/payments") };
+}
 
 export async function sendPaymentNotification(input: NoticeInput) {
  try {
@@ -25,7 +38,7 @@ export async function sendPaymentNotification(input: NoticeInput) {
     const response = await fetch("https://api.resend.com/emails", {
       method: "POST", headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json", "Idempotency-Key": input.key },
       body: JSON.stringify({ from: "Growvelt <no-reply@growvelt.com>", to: [input.recipient], reply_to: input.type.startsWith("refund_") ? "refund@growvelt.com" : "support@growvelt.com", subject: input.subject,
-        html: renderGrowveltEmail({ baseUrl: getLearningOrigin(), greeting: "there", title: input.heading, paragraphs: [input.message], reason: "You received this email because of activity on your Growvelt account." }),
+        html: renderGrowveltEmail({ baseUrl: getLearningOrigin(), greeting: "there", title: input.heading, paragraphs: [input.message], primaryAction: paymentNotificationAction(input.type), reason: "You received this email because of activity on your Growvelt account." }),
       }), signal: AbortSignal.timeout(15000),
     });
     const body = await response.json().catch(() => null) as { id?: string } | null;

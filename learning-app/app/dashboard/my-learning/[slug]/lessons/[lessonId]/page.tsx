@@ -19,13 +19,16 @@ import { getOwnEnrolledLessonSnapshot } from "@/app/lib/learning/lesson-player";
 import { getOwnLearningLessonReaction } from "@/app/lib/learning/lesson-reactions";
 import { getOwnEnrolledQuizSnapshot } from "@/app/lib/learning/quiz";
 import { LessonFeedback } from "@/app/components/learning/lesson-feedback";
+import { EnrolledCourseRating } from "@/app/components/learning/enrolled-course-rating";
+import { CertificateIssueButton } from "@/app/components/learning/certificate-issue-button";
+import { createClient } from "@/app/lib/supabase/server";
 import styles from "./lesson-player.module.css";
 
 export const metadata = { title: "Lesson" };
 
 const copy = {
   en: {
-    back: "Back to course",
+    back: "Back to My Courses",
     jump: "Skip to lesson content",
     courseContent: "Course content",
     lessonsLabel: "lessons",
@@ -47,15 +50,16 @@ const copy = {
     videoUnavailable: "This video reference is unavailable.",
     textUnavailable: "This lesson content is unavailable.",
     typeUnavailable: "This lesson type is not available in the player yet.",
-    courseCompleted: "Course completed. Your certificate is available from the course page.",
+    courseCompleted: "Course completed.",
     previous: "Previous lesson",
     next: "Next lesson",
-    completedCourse: "View completed course",
+    completedCourse: "Back to My Courses",
+    viewCertificate: "View certificate",
     upNext: "Up next",
     aboutCourse: "About this course",
   },
   fr: {
-    back: "Retour au cours",
+    back: "Retour à Mes cours",
     jump: "Passer au contenu de la leçon",
     courseContent: "Contenu du cours",
     lessonsLabel: "leçons",
@@ -77,15 +81,16 @@ const copy = {
     videoUnavailable: "Cette référence vidéo n’est pas disponible.",
     textUnavailable: "Le contenu de cette leçon n’est pas disponible.",
     typeUnavailable: "Ce type de leçon n’est pas encore disponible dans le lecteur.",
-    courseCompleted: "Cours terminé. Votre certificat est disponible depuis la page du cours.",
+    courseCompleted: "Cours terminé.",
     previous: "Leçon précédente",
     next: "Leçon suivante",
-    completedCourse: "Voir le cours terminé",
+    completedCourse: "Retour à Mes cours",
+    viewCertificate: "Voir le certificat",
     upNext: "À suivre",
     aboutCourse: "À propos de ce cours",
   },
   es: {
-    back: "Volver al curso",
+    back: "Volver a Mis cursos",
     jump: "Ir al contenido de la lección",
     courseContent: "Contenido del curso",
     lessonsLabel: "lecciones",
@@ -107,10 +112,11 @@ const copy = {
     videoUnavailable: "Esta referencia de vídeo no está disponible.",
     textUnavailable: "El contenido de esta lección no está disponible.",
     typeUnavailable: "Este tipo de lección aún no está disponible en el reproductor.",
-    courseCompleted: "Curso completado. Tu certificado está disponible en la página del curso.",
+    courseCompleted: "Curso completado.",
     previous: "Lección anterior",
     next: "Siguiente lección",
-    completedCourse: "Ver curso completado",
+    completedCourse: "Volver a Mis cursos",
+    viewCertificate: "Ver certificado",
     upNext: "A continuación",
     aboutCourse: "Sobre este curso",
   },
@@ -153,6 +159,11 @@ export default async function EnrolledLessonPage({ params }: { params: Promise<{
   if (current.type === "quiz" && !quiz) notFound();
 
   const courseHref = `/dashboard/my-learning/${encodeURIComponent(snapshot.course.slug)}`;
+  const myCoursesHref = "/dashboard/my-learning";
+  const { data: certificateRows } = course.enrollmentStatus === "completed"
+    ? await (await createClient()).rpc("get_own_learning_certificate_state", { p_course_id: course.id })
+    : { data: [] };
+  const certificate = certificateRows?.[0] as { is_eligible: boolean; certificate_code: string | null } | undefined;
   const navigableLessons = course.modules.flatMap((module) => module.lessons.filter((lesson) => lesson.type !== "project"));
   const index = navigableLessons.findIndex((lesson) => lesson.id === current.id);
   const previousId = index > 0 ? navigableLessons[index - 1].id : null;
@@ -198,7 +209,7 @@ export default async function EnrolledLessonPage({ params }: { params: Promise<{
         {current.type === "video" ? (
           <div className={styles.videoHeaderRow}>
             <div className={styles.videoBreadcrumbs}>
-              <Link className={styles.backLink} href={courseHref}>
+              <Link className={styles.backLink} href={myCoursesHref}>
                 <ArrowLeft size={17} strokeWidth={1.9} aria-hidden="true" />
                 <span>{text.back}</span>
               </Link>
@@ -228,7 +239,7 @@ export default async function EnrolledLessonPage({ params }: { params: Promise<{
         ) : (
           <>
             <div className={styles.headerTop}>
-              <Link className={styles.backLink} href={courseHref}>
+              <Link className={styles.backLink} href={myCoursesHref}>
                 <ArrowLeft size={17} strokeWidth={1.9} aria-hidden="true" />
                 <span>{text.back}</span>
               </Link>
@@ -304,7 +315,7 @@ export default async function EnrolledLessonPage({ params }: { params: Promise<{
             ) : current.type === "text"
                 ? <div className={styles.textContent}>{current.textContent || text.textUnavailable}</div>
                 : current.type === "quiz" && quiz
-                  ? <div className={styles.quizContent}><QuizPlayer quiz={quiz} slug={slug} lessonId={current.id} nextHref={nextHref} courseHref={courseHref} /></div>
+                  ? <div className={styles.quizContent}><QuizPlayer quiz={quiz} slug={slug} lessonId={current.id} nextHref={nextHref} courseHref={myCoursesHref} /></div>
                   : <p className={styles.lessonMessage}>{text.typeUnavailable}</p>}
 
             {course.enrollmentStatus === "completed" && (
@@ -313,6 +324,16 @@ export default async function EnrolledLessonPage({ params }: { params: Promise<{
                 <span>{text.courseCompleted}</span>
               </p>
             )}
+
+            {course.enrollmentStatus === "completed" && (certificate?.certificate_code || certificate?.is_eligible) ? (
+              <div className={styles.lessonActions}>
+                {certificate.certificate_code ? (
+                  <Link className="button button-secondary" href={`/dashboard/certificates/${encodeURIComponent(certificate.certificate_code)}`}>
+                    {text.viewCertificate}
+                  </Link>
+                ) : certificate.is_eligible ? <CertificateIssueButton courseId={course.id} /> : null}
+              </div>
+            ) : null}
 
             {(current.type === "video" || current.type === "text") && (
               <div className={styles.lessonActions}>
@@ -344,7 +365,7 @@ export default async function EnrolledLessonPage({ params }: { params: Promise<{
               </Link>
             </section>
           ) : course.enrollmentStatus === "completed" ? (
-            <Link className={`${styles.upNext} ${styles.completedCourseLink}`} href={courseHref}>
+            <Link className={`${styles.upNext} ${styles.completedCourseLink}`} href={myCoursesHref}>
               <span className={styles.upNextIcon}><CheckCircle2 size={20} aria-hidden="true" /></span>
               <span className={styles.completedCourseText}>{text.courseCompleted}</span>
               <span className={styles.completedCourseAction}>{text.completedCourse}<ArrowRight size={16} aria-hidden="true" /></span>
@@ -352,6 +373,7 @@ export default async function EnrolledLessonPage({ params }: { params: Promise<{
           ) : null}
 
           <LessonFeedback lessonId={current.id} courseSlug={snapshot.course.slug} initialReaction={initialReaction} />
+          <EnrolledCourseRating courseId={course.id} />
         </article>
 
         <div className={styles.courseSidebar}>
