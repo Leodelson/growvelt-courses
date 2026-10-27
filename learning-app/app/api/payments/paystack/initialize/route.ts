@@ -95,6 +95,7 @@ async function recoverPriorCheckout(input: {
           key: `payment-ready:provider-api:${result.event_id}`,
           type: "payment_access_ready",
           recipient: context.email,
+          greeting: context.firstName ?? "there",
           subject: "Your Growvelt course is ready",
           heading: "Payment confirmed, access is ready",
           message: `Growvelt confirmed your payment for ${context.courseTitle}. The course is now available in My Courses.`,

@@ -4,7 +4,7 @@ import { createAdminClient } from "@/app/lib/supabase/admin";
 import { renderGrowveltEmail } from "@/app/lib/email/growvelt-email-template";
 
 type NoticeType = "payment_access_ready" | "payment_attention" | "refund_requested" | "refund_processed" | "refund_attention" | "access_revoked" | "operator_dispute" | "operator_reconciliation";
-type NoticeInput = { key: string; type: NoticeType; recipient: string; subject: string; heading: string; message: string; orderId?: number; caseId?: number };
+type NoticeInput = { key: string; type: NoticeType; recipient: string; subject: string; heading: string; message: string; greeting?: string; orderId?: number; caseId?: number };
 
 function paymentNotificationAction(type: NoticeType) {
   if (type === "payment_access_ready") {
@@ -38,7 +38,7 @@ export async function sendPaymentNotification(input: NoticeInput) {
     const response = await fetch("https://api.resend.com/emails", {
       method: "POST", headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json", "Idempotency-Key": input.key },
       body: JSON.stringify({ from: "Growvelt <no-reply@growvelt.com>", to: [input.recipient], reply_to: input.type.startsWith("refund_") ? "refund@growvelt.com" : "support@growvelt.com", subject: input.subject,
-        html: renderGrowveltEmail({ baseUrl: getLearningOrigin(), greeting: "there", title: input.heading, paragraphs: [input.message], primaryAction: paymentNotificationAction(input.type), reason: "You received this email because of activity on your Growvelt account." }),
+        html: renderGrowveltEmail({ baseUrl: getLearningOrigin(), greeting: input.greeting?.trim() || "there", title: input.heading, paragraphs: [input.message], primaryAction: paymentNotificationAction(input.type), reason: "You received this email because of activity on your Growvelt account." }),
       }), signal: AbortSignal.timeout(15000),
     });
     const body = await response.json().catch(() => null) as { id?: string } | null;
@@ -58,8 +58,9 @@ export async function getOrderNotificationContext(reference: string) {
     const admin = createAdminClient();
     const { data: order } = await admin.from("learning_orders").select("id,learner_id,course_title_snapshot").eq("order_reference", reference).maybeSingle();
     if (!order?.learner_id) return null;
-    const { data: profile } = await admin.from("profiles").select("email").eq("id", order.learner_id).maybeSingle();
-    return profile?.email ? { orderId: Number(order.id), email: profile.email, courseTitle: order.course_title_snapshot } : null;
+    const { data: profile } = await admin.from("profiles").select("email,full_name").eq("id", order.learner_id).maybeSingle();
+    const firstName = profile?.full_name?.trim().split(/\s+/)[0] || null;
+    return profile?.email ? { orderId: Number(order.id), email: profile.email, firstName, courseTitle: order.course_title_snapshot } : null;
   } catch { console.error("payment.notification_context_unavailable", { reference }); return null; }
 }
 
