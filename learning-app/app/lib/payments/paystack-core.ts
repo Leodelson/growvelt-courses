@@ -52,6 +52,16 @@ export function parsePaystackVerifiedAmounts(data: Record<string, unknown>): Pay
 
 export type PaystackDomain = "test" | "live";
 
+export type PaystackCheckoutRecoveryState = "paid" | "pending" | "cooldown" | "recoverable";
+
+export function classifyPaystackCheckoutRecovery(status: string, initializedAt: string, now = Date.now()): PaystackCheckoutRecoveryState {
+  if (status === "success") return "paid";
+  if (status !== "failed" && status !== "abandoned") return "pending";
+  const initializedTime = Date.parse(initializedAt);
+  if (!Number.isFinite(initializedTime) || now - initializedTime < 30 * 60 * 1000) return "cooldown";
+  return "recoverable";
+}
+
 type ChargeSuccess = {
   eventId: string;
   reference: string;

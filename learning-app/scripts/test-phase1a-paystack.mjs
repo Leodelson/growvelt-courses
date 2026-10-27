@@ -10,11 +10,13 @@ const {
   parsePaystackVerifiedAmounts,
   parsePaystackTestChargeSuccess,
   parsePaystackTestRefundEvent,
+  classifyPaystackCheckoutRecovery,
   verifyPaystackSignature,
 } = await import("../app/lib/payments/paystack-core.ts");
 const { resolvePaystackCallbackReference } = await import("../app/lib/payments/paystack-callback.ts");
 const reconciliationRoute = await readFile(new URL("../app/api/payments/paystack/reconcile/route.ts", import.meta.url), "utf8");
 const reconciliationMigration = await readFile(new URL("../supabase/migrations/20261020000000_add_learner_verified_payment_reconciliation.sql", import.meta.url), "utf8");
+const initializeRoute = await readFile(new URL("../app/api/payments/paystack/initialize/route.ts", import.meta.url), "utf8");
 
 const reference = `GL-${"A".repeat(32)}`;
 const event = {
@@ -61,6 +63,13 @@ assert.equal(parsePaystackVerifiedAmounts({ amount: 4975, requested_amount: 4900
 assert.equal(parsePaystackVerifiedAmounts({ amount: 4975, requested_amount: 4900 }), null);
 assert.equal(parsePaystackVerifiedAmounts({ amount: 4900, requested_amount: 5000, fees: 0 }), null);
 
+const recoveryNow = Date.parse("2026-10-27T12:00:00.000Z");
+assert.equal(classifyPaystackCheckoutRecovery("success", "2026-10-27T11:59:59.000Z", recoveryNow), "paid");
+assert.equal(classifyPaystackCheckoutRecovery("pending", "2026-10-27T10:00:00.000Z", recoveryNow), "pending");
+assert.equal(classifyPaystackCheckoutRecovery("failed", "2026-10-27T11:30:01.000Z", recoveryNow), "cooldown");
+assert.equal(classifyPaystackCheckoutRecovery("abandoned", "2026-10-27T11:30:00.000Z", recoveryNow), "recoverable");
+assert.equal(classifyPaystackCheckoutRecovery("failed", "not-a-date", recoveryNow), "cooldown");
+
 const refundEvent = { event: "refund.processed", data: { id: 740001, transaction_reference: reference, refund_reference: "refund-740001", amount: "250000", currency: "NGN", domain: "test", status: "processed" } };
 const parsedRefund = parsePaystackTestRefundEvent(refundEvent);
 assert.equal(parsedRefund?.transactionReference, reference);
@@ -93,5 +102,8 @@ assert.match(reconciliationMigration, /o\.learner_id=p_learner_id/);
 assert.match(reconciliationMigration, /p_amount_minor - p_requested_amount_minor <> p_fees_minor/);
 assert.match(reconciliationMigration, /from public,anon,authenticated/);
 assert.match(reconciliationMigration, /to postgres,service_role/);
+assert.match(initializeRoute, /verifyPaystackTransaction\(order\.order_reference, domain\)/);
+assert.match(initializeRoute, /classifyPaystackCheckoutRecovery\(verified\.status, attempt\.initialized_at\)/);
+assert.match(initializeRoute, /fail_paystack_live_learning_attempt/);
 
-console.log("PASS Paystack signature, fee-aware amount validation, learner-owned reconciliation boundaries, and callback normalization tests");
+console.log("PASS Paystack signature, fee-aware amount validation, learner-owned reconciliation, checkout retry recovery guardrails, and callback normalization tests");

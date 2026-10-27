@@ -2,11 +2,132 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/app/lib/supabase/server";
 import { createAdminClient } from "@/app/lib/supabase/admin";
 import { isSameOriginRequest } from "@/app/lib/security/request-origin";
-import { getPaystackConfig, getPaystackTestConfig, initializePaystackLiveTransaction, initializePaystackTestTransaction } from "@/app/lib/payments/paystack";
+import { classifyPaystackCheckoutRecovery, getPaystackConfig, getPaystackTestConfig, initializePaystackLiveTransaction, initializePaystackTestTransaction, verifyPaystackTransaction } from "@/app/lib/payments/paystack";
 import type { PaystackConfiguration } from "@/app/lib/payments/paystack-config";
 import { paystackCallbackForRequest } from "@/app/lib/payments/paystack-config";
+import { getOrderNotificationContext, sendPaymentNotification } from "@/app/lib/email/payment-notifications";
 
 type OrderRow = { order_id: number; order_reference: string; payment_attempt_id: number; amount_minor: number; currency: string };
+type ActiveOrderRow = { id: number; order_reference: string; status: string };
+type ActiveAttemptRow = { status: string; paystack_domain: string | null; initialized_at: string };
+
+const PAYSTACK_ORDER_REFERENCE = /^GL-[A-F0-9]{32}$/;
+
+async function recoverPriorCheckout(input: {
+  admin: ReturnType<typeof createAdminClient>;
+  learnerId: string;
+  courseId: number;
+}) {
+  const { data: existingOrder, error: orderError } = await input.admin
+    .from("learning_orders")
+    .select("id, order_reference, status")
+    .eq("learner_id", input.learnerId)
+    .eq("course_id", input.courseId)
+    .in("status", ["created", "payment_pending"])
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (orderError || !existingOrder || !PAYSTACK_ORDER_REFERENCE.test(existingOrder.order_reference)) {
+    return { kind: "unavailable" as const };
+  }
+
+  const order = existingOrder as ActiveOrderRow;
+  const { data: existingAttempt, error: attemptError } = await input.admin
+    .from("learning_payment_attempts")
+    .select("status, paystack_domain, initialized_at")
+    .eq("order_id", order.id)
+    .eq("provider", "paystack")
+    .order("id", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (attemptError || !existingAttempt) return { kind: "unavailable" as const };
+  const attempt = existingAttempt as ActiveAttemptRow;
+  if (!["initialized", "pending"].includes(attempt.status)) return { kind: "unavailable" as const };
+
+  // Legacy attempts without an explicit domain are test-domain records. Verify
+  // the exact existing attempt's domain; never infer it from the current mode.
+  const domain = attempt.paystack_domain === "live" ? "live" : "test";
+  let verified: Awaited<ReturnType<typeof verifyPaystackTransaction>>;
+  try {
+    verified = await verifyPaystackTransaction(order.order_reference, domain);
+  } catch {
+    return { kind: "unavailable" as const };
+  }
+
+  const recoveryState = classifyPaystackCheckoutRecovery(verified.status, attempt.initialized_at);
+  if (recoveryState === "paid") {
+    const payload = {
+      transaction_id: verified.transactionId,
+      reference: verified.reference,
+      amount: verified.requestedAmountMinor,
+      requested_amount: verified.requestedAmountMinor,
+      charged_amount: verified.amountMinor,
+      fees: verified.feesMinor,
+      currency: verified.currency,
+      domain: verified.domain,
+      status: verified.status,
+      paid_at: verified.paidAt,
+    };
+    const { data, error } = await input.admin.rpc("reconcile_own_paystack_learning_payment", {
+      p_learner_id: input.learnerId,
+      p_reference: order.order_reference,
+      p_provider_transaction_id: verified.transactionId,
+      p_amount_minor: verified.amountMinor,
+      p_requested_amount_minor: verified.requestedAmountMinor,
+      p_fees_minor: verified.feesMinor,
+      p_currency: verified.currency,
+      p_domain: verified.domain,
+      p_payload: payload,
+    });
+    if (error) return { kind: "unavailable" as const };
+
+    const result = (data as Array<{ outcome?: string; event_id?: number }> | null)?.[0];
+    const outcome = result?.outcome ?? "unknown";
+    if (!["paid_and_enrolled", "already_paid", "already_processed"].includes(outcome)) {
+      return { kind: "unavailable" as const };
+    }
+    if (outcome === "paid_and_enrolled" && result?.event_id) {
+      try {
+        const context = await getOrderNotificationContext(order.order_reference);
+        if (context) await sendPaymentNotification({
+          key: `payment-ready:provider-api:${result.event_id}`,
+          type: "payment_access_ready",
+          recipient: context.email,
+          subject: "Your Growvelt course is ready",
+          heading: "Payment confirmed, access is ready",
+          message: `Growvelt confirmed your payment for ${context.courseTitle}. The course is now available in My Courses.`,
+          orderId: context.orderId,
+        });
+      } catch (error) {
+        console.error("payment.access_notification_failed", {
+          reference: order.order_reference,
+          eventId: result.event_id,
+          message: error instanceof Error ? error.message : "Unknown error",
+        });
+      }
+    }
+    return { kind: "paid" as const, outcome };
+  }
+
+  if (recoveryState === "pending") return { kind: "unavailable" as const };
+  if (recoveryState === "cooldown") {
+    return { kind: "waiting" as const };
+  }
+
+  const failureFunction = domain === "live"
+    ? "fail_paystack_live_learning_attempt"
+    : "fail_paystack_test_learning_attempt";
+  const { error: failureError } = await input.admin.rpc(failureFunction, {
+    p_order_reference: order.order_reference,
+    p_failure_code: `provider_${verified.status}`,
+    p_failure_message: verified.status === "abandoned"
+      ? "Paystack verified that checkout was abandoned."
+      : "Paystack verified that checkout failed.",
+  });
+  return failureError ? { kind: "unavailable" as const } : { kind: "released" as const };
+}
 
 export async function POST(request: Request) {
   if (!isSameOriginRequest(request)) return NextResponse.json({ code: "invalid_origin", message: "This request was not accepted." }, { status: 403 });
@@ -54,11 +175,32 @@ export async function POST(request: Request) {
   const initializeArgs = couponCode
     ? { p_learner_id: user.id, p_course_id: courseId, p_coupon_code: couponCode, p_reservation_key: body?.checkoutKey as string }
     : { p_learner_id: user.id, p_course_id: courseId };
-  const { data, error } = await admin.rpc(initializeFunction, initializeArgs);
-  const order = (data as OrderRow[] | null)?.[0];
+  let { data, error } = await admin.rpc(initializeFunction, initializeArgs);
+  let order = (data as OrderRow[] | null)?.[0];
   if (error || !order) {
     const duplicate = error?.code === "23505";
-    return NextResponse.json({ code: duplicate ? "purchase_exists" : "purchase_unavailable", message: duplicate ? "You already have access or a purchase in progress." : "This course cannot be purchased right now." }, { status: duplicate ? 409 : 400 });
+    if (duplicate && !couponCode) {
+      const recovery = await recoverPriorCheckout({ admin, learnerId: user.id, courseId });
+      if (recovery.kind === "paid") {
+        return NextResponse.json({ outcome: recovery.outcome, message: "Your payment is verified. Updating your course access." });
+      }
+      if (recovery.kind === "waiting") {
+        return NextResponse.json({ code: "purchase_pending", message: "Your previous checkout is still within its safety window. If its Paystack page is open, continue there; otherwise try again in a little while. We won’t start another payment yet." }, { status: 409 });
+      }
+      if (recovery.kind === "released") {
+        ({ data, error } = await admin.rpc(initializeFunction, initializeArgs));
+        order = (data as OrderRow[] | null)?.[0];
+        if (!error && order) {
+          // Continue with the newly created attempt below.
+        } else {
+          return NextResponse.json({ code: "purchase_pending", message: "Your previous checkout is being resolved. Please check again shortly; no second payment was started." }, { status: 409 });
+        }
+      } else {
+        return NextResponse.json({ code: "purchase_pending", message: "We couldn’t confirm the status of your previous checkout. Please don’t pay again yet; try checking again shortly." }, { status: 409 });
+      }
+    } else {
+      return NextResponse.json({ code: duplicate ? "purchase_exists" : "purchase_unavailable", message: duplicate ? "You already have access or a purchase in progress." : "This course cannot be purchased right now." }, { status: duplicate ? 409 : 400 });
+    }
   }
   try {
     const callback = new URL(configuration.callbackUrl); callback.searchParams.set("reference", order.order_reference);

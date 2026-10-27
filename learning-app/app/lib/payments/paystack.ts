@@ -8,6 +8,7 @@ import type { CompanyLiveTransferLookup } from "@/app/lib/payments/company-trans
 import type { PaystackDomain } from "@/app/lib/payments/paystack-core";
 
 export {
+  classifyPaystackCheckoutRecovery,
   digestPaystackPayload,
   isTrustedPaystackAuthorizationUrl,
   isPaystackCompanyReversalEvent,
