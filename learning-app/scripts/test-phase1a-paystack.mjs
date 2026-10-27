@@ -8,6 +8,7 @@ const {
   digestPaystackPayload,
   isTrustedPaystackAuthorizationUrl,
   parsePaystackVerifiedAmounts,
+  parsePaystackVerifiedTransaction,
   parsePaystackTestChargeSuccess,
   parsePaystackTestRefundEvent,
   classifyPaystackCheckoutRecovery,
@@ -62,6 +63,48 @@ assert.deepEqual(parsePaystackVerifiedAmounts({ amount: 4900 }), {
 assert.equal(parsePaystackVerifiedAmounts({ amount: 4975, requested_amount: 4900, fees: 74 }), null);
 assert.equal(parsePaystackVerifiedAmounts({ amount: 4975, requested_amount: 4900 }), null);
 assert.equal(parsePaystackVerifiedAmounts({ amount: 4900, requested_amount: 5000, fees: 0 }), null);
+
+const abandonedVerification = parsePaystackVerifiedTransaction({
+  id: 123456,
+  reference,
+  domain: "live",
+  status: "abandoned",
+  currency: null,
+}, reference, "live");
+assert.equal(abandonedVerification.ok, true);
+assert.equal(abandonedVerification.transaction.status, "abandoned");
+assert.equal(abandonedVerification.transaction.amountMinor, null);
+assert.equal(parsePaystackVerifiedTransaction({
+  id: 123456,
+  reference,
+  domain: "live",
+  status: "failed",
+  amount: 100,
+  requested_amount: 100,
+  currency: "NGN",
+}, reference, "live").ok, true);
+assert.equal(parsePaystackVerifiedTransaction({
+  id: 123456,
+  reference,
+  domain: "live",
+  status: "success",
+  amount: 100,
+  requested_amount: 120,
+  fees: 0,
+  currency: "NGN",
+}, reference, "live").ok, false);
+assert.deepEqual(parsePaystackVerifiedTransaction({
+  id: 123456,
+  reference: `GL-${"B".repeat(32)}`,
+  domain: "live",
+  status: "abandoned",
+}, reference, "live"), { ok: false, reason: "reference_mismatch" });
+assert.deepEqual(parsePaystackVerifiedTransaction({
+  id: 123456,
+  reference,
+  domain: "test",
+  status: "abandoned",
+}, reference, "live"), { ok: false, reason: "domain_mismatch" });
 
 const recoveryNow = Date.parse("2026-10-27T12:00:00.000Z");
 assert.equal(classifyPaystackCheckoutRecovery("success", "2026-10-27T11:59:59.000Z", recoveryNow), "paid");

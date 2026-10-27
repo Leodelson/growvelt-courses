@@ -57,7 +57,7 @@ async function recoverPriorCheckout(input: {
   }
 
   const recoveryState = classifyPaystackCheckoutRecovery(verified.status, attempt.initialized_at);
-  if (recoveryState === "paid") {
+  if (verified.status === "success") {
     const payload = {
       transaction_id: verified.transactionId,
       reference: verified.reference,

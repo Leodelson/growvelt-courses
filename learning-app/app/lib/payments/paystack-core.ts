@@ -52,6 +52,119 @@ export function parsePaystackVerifiedAmounts(data: Record<string, unknown>): Pay
 
 export type PaystackDomain = "test" | "live";
 
+export type PaystackVerifiedTransactionStatus =
+  | "success"
+  | "abandoned"
+  | "failed"
+  | "ongoing"
+  | "pending"
+  | "processing"
+  | "queued"
+  | "reversed"
+  | "unknown";
+
+type PaystackVerifiedTransactionBase = {
+  reference: string;
+  transactionId: string;
+  domain: PaystackDomain;
+  paidAt: string | null;
+};
+
+export type PaystackVerifiedTransaction =
+  | (PaystackVerifiedTransactionBase & {
+      status: "success";
+      amountMinor: number;
+      requestedAmountMinor: number;
+      feesMinor: number | null;
+      currency: "NGN";
+    })
+  | (PaystackVerifiedTransactionBase & {
+      status: Exclude<PaystackVerifiedTransactionStatus, "success">;
+      amountMinor: number | null;
+      requestedAmountMinor: number | null;
+      feesMinor: number | null;
+      currency: string | null;
+    });
+
+export type PaystackVerifiedTransactionParseResult =
+  | { ok: true; transaction: PaystackVerifiedTransaction }
+  | {
+      ok: false;
+      reason:
+        | "reference_mismatch"
+        | "invalid_transaction_id"
+        | "domain_mismatch"
+        | "missing_status"
+        | "success_currency_mismatch"
+        | "success_amount_mismatch";
+    };
+
+/**
+ * Validate the identity and domain of every verification result. A successful
+ * payment additionally requires complete, fee-consistent NGN amounts. Failed
+ * or abandoned attempts do not require charge amounts to be usable in order
+ * to safely release a stale checkout after the cooldown.
+ */
+export function parsePaystackVerifiedTransaction(
+  data: Record<string, unknown>,
+  reference: string,
+  expectedDomain: PaystackDomain,
+): PaystackVerifiedTransactionParseResult {
+  if (data.reference !== reference) return { ok: false, reason: "reference_mismatch" };
+  if (data.domain !== expectedDomain) return { ok: false, reason: "domain_mismatch" };
+
+  const transactionId = typeof data.id === "number" && Number.isSafeInteger(data.id) && data.id > 0
+    ? String(data.id)
+    : typeof data.id === "string" && /^\d+$/.test(data.id) && Number(data.id) > 0
+      ? data.id
+      : "";
+  if (!transactionId) return { ok: false, reason: "invalid_transaction_id" };
+
+  const rawStatus = typeof data.status === "string" ? data.status.trim().toLowerCase() : "";
+  if (!rawStatus) return { ok: false, reason: "missing_status" };
+  const knownStatuses: PaystackVerifiedTransactionStatus[] = [
+    "success", "abandoned", "failed", "ongoing", "pending", "processing", "queued", "reversed",
+  ];
+  const status: PaystackVerifiedTransactionStatus = knownStatuses.includes(rawStatus as PaystackVerifiedTransactionStatus)
+    ? rawStatus as PaystackVerifiedTransactionStatus
+    : "unknown";
+  const paidAt = typeof data.paid_at === "string" ? data.paid_at : null;
+
+  if (status === "success") {
+    if (data.currency !== "NGN") return { ok: false, reason: "success_currency_mismatch" };
+    const amounts = parsePaystackVerifiedAmounts(data);
+    if (!amounts) return { ok: false, reason: "success_amount_mismatch" };
+    return {
+      ok: true,
+      transaction: {
+        reference,
+        transactionId,
+        ...amounts,
+        currency: "NGN",
+        domain: expectedDomain,
+        status,
+        paidAt,
+      },
+    };
+  }
+
+  const amounts = parsePaystackVerifiedAmounts(data);
+  return {
+    ok: true,
+    transaction: {
+      reference,
+      transactionId,
+      amountMinor: amounts?.amountMinor ?? null,
+      requestedAmountMinor: amounts?.requestedAmountMinor ?? null,
+      feesMinor: amounts?.feesMinor ?? null,
+      currency: typeof data.currency === "string" ? data.currency : null,
+      domain: expectedDomain,
+      status,
+      paidAt,
+    },
+  };
+}
+
 export type PaystackCheckoutRecoveryState = "paid" | "pending" | "cooldown" | "recoverable";
 
 export function classifyPaystackCheckoutRecovery(status: string, initializedAt: string, now = Date.now()): PaystackCheckoutRecoveryState {

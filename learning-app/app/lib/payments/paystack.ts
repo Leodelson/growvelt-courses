@@ -1,5 +1,5 @@
 import "server-only";
-import { isTrustedPaystackAuthorizationUrl, parsePaystackVerifiedAmounts, parseVerifiedPaystackCompanyDispute, parseVerifiedPaystackCompanyRefund } from "@/app/lib/payments/paystack-core";
+import { isTrustedPaystackAuthorizationUrl, parsePaystackVerifiedAmounts, parsePaystackVerifiedTransaction, parseVerifiedPaystackCompanyDispute, parseVerifiedPaystackCompanyRefund } from "@/app/lib/payments/paystack-core";
 import { resolvePaystackConfiguration } from "@/app/lib/payments/paystack-config";
 import { verifyCompanySettlementEvidence } from "@/app/lib/payments/company-settlement-core";
 import { verifyCompanyLiveTransferEvidence } from "@/app/lib/payments/company-transfer-core";
@@ -249,10 +249,16 @@ export async function verifyPaystackTransaction(reference: string, expectedDomai
   });
   const result = await response.json().catch(() => null) as { status?: unknown; message?: unknown; data?: Record<string, unknown> } | null;
   const data = result?.data;
-  const transactionId = typeof data?.id === "number" && Number.isSafeInteger(data.id) ? String(data.id) : typeof data?.id === "string" && /^\d+$/.test(data.id) ? data.id : "";
-  const amounts = data ? parsePaystackVerifiedAmounts(data) : null;
-  if (!response.ok || result?.status !== true || !data || data.reference !== reference || !transactionId || !amounts || data.currency !== "NGN" || data.domain !== expectedDomain || typeof data.status !== "string") throw new Error(typeof result?.message === "string" ? result.message : "Paystack verification failed.");
-  return { reference, transactionId, ...amounts, currency: "NGN" as const, domain: expectedDomain, status: data.status, paidAt: typeof data.paid_at === "string" ? data.paid_at : null };
+  if (!response.ok || result?.status !== true || !data) {
+    throw new Error("Paystack verification response was inconclusive.");
+  }
+  const parsed = parsePaystackVerifiedTransaction(data, reference, expectedDomain);
+  if (!parsed.ok) {
+    // Keep only a stable reason code in logs; the provider message can be
+    // misleading (for example, “Verification successful” on invalid data).
+    throw new Error(`Paystack verification response was inconclusive (${parsed.reason}).`);
+  }
+  return parsed.transaction;
 }
 
 export type PaystackRefund = {
