@@ -167,6 +167,28 @@ export function parsePaystackVerifiedTransaction(
 
 export type PaystackCheckoutRecoveryState = "paid" | "pending" | "cooldown" | "recoverable";
 
+export type PaystackVerificationFailureKind = "not_found" | "configuration" | "temporary" | "inconclusive";
+
+export class PaystackVerificationError extends Error {
+  readonly kind: PaystackVerificationFailureKind;
+
+  constructor(kind: PaystackVerificationFailureKind) {
+    super("Paystack transaction verification could not be completed.");
+    this.name = "PaystackVerificationError";
+    this.kind = kind;
+  }
+}
+
+export function classifyPaystackVerificationFailure(input: { httpStatus: number; providerMessage: string | null }): PaystackVerificationFailureKind {
+  if (input.httpStatus === 401 || input.httpStatus === 403) return "configuration";
+  const message = input.providerMessage?.trim().toLowerCase().replace(/[.!?]+$/, "") ?? "";
+  if (input.httpStatus === 404 && ["transaction reference not found", "reference not found", "transaction not found"].includes(message)) {
+    return "not_found";
+  }
+  if (input.httpStatus === 408 || input.httpStatus === 429 || input.httpStatus >= 500) return "temporary";
+  return "inconclusive";
+}
+
 export function classifyPaystackCheckoutRecovery(status: string, initializedAt: string, now = Date.now()): PaystackCheckoutRecoveryState {
   if (status === "success") return "paid";
   if (status !== "failed" && status !== "abandoned") return "pending";

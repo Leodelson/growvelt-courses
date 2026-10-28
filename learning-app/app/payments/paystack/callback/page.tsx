@@ -22,7 +22,7 @@ export default async function PaystackCallbackPage({ searchParams }: { searchPar
     return <main className="payment-callback-page"><section className="auth-card payment-callback-card">
       <p className="eyebrow">SUBSCRIPTION PAYMENT STATUS</p>
       <h1>{complete ? "Your subscription access is ready." : "We’re confirming your subscription payment."}</h1>
-      <p>{!user ? "Sign in to view this subscription payment." : complete ? `${status?.plan_name} is active through ${new Date(status.paid_through).toLocaleDateString("en-NG")}. Included courses are available in My Courses.` : status ? "We’ll keep checking for Paystack’s signed, independently verified confirmation. Please don’t pay again." : "We couldn’t find this subscription payment for the signed-in account."}</p>
+      <p>{!user ? "Sign in to view this subscription payment." : complete ? `${status?.plan_name} is active through ${new Date(status.paid_through).toLocaleDateString("en-NG")}. Included courses are available in My Courses.` : status ? "We’ll keep checking for verified payment confirmation. Please don’t pay again." : "We couldn’t find this subscription payment for the signed-in account."}</p>
       {user && status && !complete ? <SubscriptionPaymentReturnCheck key={reference} complete={complete} reference={reference} /> : null}
       <div className="auth-actions">
         {!user ? <Link className="button button-primary" href={`/sign-in?next=${encodeURIComponent(`/payments/paystack/callback?reference=${reference}`)}`}>Sign in</Link> : null}
@@ -36,7 +36,7 @@ export default async function PaystackCallbackPage({ searchParams }: { searchPar
     return <main className="payment-callback-page"><section className="auth-card payment-callback-card">
       <p className="eyebrow">PAYMENT STATUS</p>
       <h1>{complete ? "Company course purchase confirmed." : "We’re confirming your company payment."}</h1>
-      <p>{!user ? "Sign in to view this company payment." : !purchase ? "This company payment is not available to your account." : complete ? `${purchase.seatCount} employee${purchase.seatCount === 1 ? "" : "s"} now have access to ${purchase.courseTitle}.` : "Your payment is being checked against Paystack. Please do not pay again."}</p>
+      <p>{!user ? "Sign in to view this company payment." : !purchase ? "This company payment is not available to your account." : complete ? `${purchase.seatCount} employee${purchase.seatCount === 1 ? "" : "s"} now have access to ${purchase.courseTitle}.` : "Your payment is being verified. Please do not pay again."}</p>
       {user && purchase && !complete && <CompanyPaymentReturnCheck reference={reference} />}
       <div className="auth-actions">
         {!user ? <Link className="button button-primary" href={`/sign-in?next=${encodeURIComponent(`/payments/paystack/callback?reference=${reference}`)}`}>Sign in</Link> : null}
@@ -49,7 +49,7 @@ export default async function PaystackCallbackPage({ searchParams }: { searchPar
   const complete = status?.order_status === "paid" && status.entitlement_active;
   return <main className="payment-callback-page"><section className="auth-card payment-callback-card">
     <p className="eyebrow">PAYMENT STATUS</p><h1>{complete ? "Course access is ready." : "We’re confirming your payment."}</h1>
-    <p>{!user ? "Sign in to view this payment status." : complete ? "Growvelt verified the payment and added the course to My Courses." : status ? "We’ll keep checking for Paystack’s verified confirmation. Your course will appear in My Courses once it’s confirmed." : "We couldn’t find this payment for the signed-in account."}</p>
+    <p>{!user ? "Sign in to view this payment status." : complete ? "Growvelt verified the payment and added the course to My Courses." : status ? "We’ll keep checking for verified payment confirmation. Your course will appear in My Courses once it’s confirmed." : "We couldn’t find this payment for the signed-in account."}</p>
     {user && status && !complete && reference ? <LearnerPaymentReturnCheck key={reference} complete={complete} reference={reference} /> : null}
     <div className="auth-actions">
       {!user ? <Link className="button button-primary" href={`/sign-in?next=${encodeURIComponent(reference ? `/payments/paystack/callback?reference=${reference}` : "/payments/paystack/callback")}`}>Sign in</Link> : complete && status?.course_slug ? <Link className="button button-primary" href={`/dashboard/my-learning/${encodeURIComponent(status.course_slug)}`}>Open course</Link> : null}

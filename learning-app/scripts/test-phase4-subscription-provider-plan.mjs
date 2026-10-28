@@ -56,11 +56,11 @@ assert.ok(action.indexOf("claim_own_learning_subscription_plan_provisioning")
 assert.ok(action.indexOf("createPaystackTestSubscriptionPlan(")
   < action.indexOf("record_own_learning_subscription_plan_provisioning"), "provider result must be recorded only after creation");
 assert.match(action, /outcome === "provider_rejected"/);
-assert.match(action, /Do not retry; an admin must reconcile it first/);
+assert.match(action, /Do not retry; an administrator must review it first/);
 
 const page = await readFile(new URL("../app/dashboard/instructor/subscriptions/page.tsx", import.meta.url), "utf8");
 assert.match(page, /Check setup status/);
-assert.match(page, /Retry Test Mode plan setup/);
+assert.match(page, /Retry preview setup/);
 assert.match(page, /canCreateTestPlans && plan\.status === "draft"/);
 
 console.log("PASS subscription plan request validation, Test Mode response checks, default-off gates, and claim-before-provider instructor action");

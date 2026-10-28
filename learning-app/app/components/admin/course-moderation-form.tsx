@@ -19,11 +19,11 @@ export function CourseModerationForm({ courseId, companyTestModeOnly = false }: 
   const [isPending, setIsPending] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const testModeReviewCopy = locale === "fr"
-    ? "Ce cours payant sera disponible uniquement pour les achats d’entreprise en mode Test Paystack. Il ne sera pas listé publiquement et aucun paiement en direct ne sera autorisé."
+    ? "Ce cours payant est réservé à l’aperçu des achats d’entreprise. Il ne sera pas listé publiquement et aucun paiement réel ne sera autorisé."
     : locale === "es"
-      ? "Este curso de pago solo estará disponible para compras empresariales en modo de prueba de Paystack. No aparecerá públicamente y no se permitirán pagos reales."
-      : "This paid course will be available only for company purchases in Paystack Test Mode. It will not be publicly listed, and live checkout is blocked.";
-  const testModeBadge = locale === "fr" ? "Réservé au mode Test Paystack" : locale === "es" ? "Solo modo de prueba de Paystack" : "Paystack Test Mode only";
+      ? "Este curso de pago está reservado para la vista previa de compras de empresas. No aparecerá públicamente ni permitirá pagos reales."
+      : "This paid course is restricted to the company-purchase preview. It will not be listed publicly or allow real-money purchases.";
+  const testModeBadge = locale === "fr" ? "Aperçu réservé aux entreprises" : locale === "es" ? "Vista previa para empresas" : "Company purchase preview only";
 
   function requestDecision(nextDecision: Decision) {
     if (isPending) return;

@@ -5,7 +5,7 @@ import { buildPaystackTestPlanRequest, buildPaystackTestSubscriptionCheckoutRequ
 export class PaystackTestPlanCreateError extends Error {
   constructor(readonly disposition: "rejected" | "ambiguous") {
     super(disposition === "rejected"
-      ? "Paystack rejected the Test Mode plan request."
+      ? "Paystack rejected the Sandbox Mode plan request."
       : "Paystack plan creation could not be confirmed.");
     this.name = "PaystackTestPlanCreateError";
   }
@@ -18,7 +18,7 @@ export class PaystackTestSubscriptionCheckoutError extends Error {
     readonly providerMessage?: string | null,
   ) {
     super(disposition === "rejected"
-      ? "Paystack rejected the Test Mode subscription checkout."
+      ? "Paystack rejected the Sandbox Mode subscription checkout."
       : "Paystack subscription checkout could not be confirmed.");
     this.name = "PaystackTestSubscriptionCheckoutError";
   }
@@ -36,7 +36,7 @@ export async function initializePaystackTestSubscriptionCheckout(input: {
   if (process.env.GROWVELT_LEARNING_SUBSCRIPTIONS_ENABLED !== "true"
     || process.env.GROWVELT_LEARNING_SUBSCRIPTION_TEST_CHECKOUT_ENABLED !== "true"
     || process.env.GROWVELT_LEARNING_SUBSCRIPTION_TEST_LIFECYCLE_ENABLED !== "true") {
-    throw new Error("Test subscription checkout is disabled.");
+    throw new Error("Sandbox subscription checkout is disabled.");
   }
   const { secretKey } = getPaystackTestConfig(true);
   const body = buildPaystackTestSubscriptionCheckoutRequest(input);
@@ -75,7 +75,7 @@ export async function createPaystackTestSubscriptionPlan(input: {
 }) {
   if (process.env.GROWVELT_LEARNING_SUBSCRIPTIONS_ENABLED !== "true"
     || process.env.GROWVELT_LEARNING_SUBSCRIPTION_TEST_PLAN_CREATION_ENABLED !== "true") {
-    throw new Error("Test subscription plan creation is disabled.");
+    throw new Error("Sandbox subscription plan creation is disabled.");
   }
 
   const { secretKey } = getPaystackTestConfig(false);
@@ -105,7 +105,7 @@ export async function createPaystackTestSubscriptionPlan(input: {
 /** Requests a hosted management link for one existing Test Mode subscription. */
 export async function getPaystackTestSubscriptionManagementLink(subscriptionCode: string) {
   if (!/^SUB_[A-Za-z0-9]{8,100}$/.test(subscriptionCode)) {
-    throw new Error("A valid Test Mode subscription is required.");
+    throw new Error("A valid Sandbox Mode subscription is required.");
   }
   const { secretKey } = getPaystackTestConfig(false);
   let response: Response;
@@ -138,7 +138,7 @@ export async function findPaystackTestSubscriptionCode(input: {
   const email = input.email.trim().toLowerCase();
   if (!email || !/^PLN_[A-Za-z0-9]{8,100}$/.test(input.planCode)
     || !Number.isSafeInteger(input.amountMinor) || input.amountMinor <= 0) {
-    throw new Error("A matching Test Mode subscription could not be confirmed.");
+    throw new Error("A matching Sandbox Mode subscription could not be confirmed.");
   }
 
   const { secretKey } = getPaystackTestConfig(false);

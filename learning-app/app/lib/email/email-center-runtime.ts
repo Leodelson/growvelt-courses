@@ -39,7 +39,7 @@ export async function checkEmailCenterRecipients(database: Pick<SupabaseClient, 
   if (!release.enabled) throw new Error("The approved email release is not activated.");
   const { data, error } = await database.rpc("read_learning_email_center_review", { p_actor: actor, p_id: id, p_revision: revision });
   if (error || !data || !Array.isArray(data.targets) || !data.targets.length || data.targets.length > release.maxRecipients
-    || release.mode === "controlled-test" && data.targets.some((target: { email: string }) => !release.emails.includes(target?.email))) throw new Error("Recipients exceed the approved release limit or controlled-test allowlist. No email was sent.");
+    || release.mode === "controlled-test" && data.targets.some((target: { email: string }) => !release.emails.includes(target?.email))) throw new Error("Recipients exceed the approved release limit or recipient allowlist. No email was sent.");
   const mode = data.document?.mode;
   if (!["marketing", "transactional"].includes(mode) || mode === "transactional" && data.targets.length > 10
     || data.targets.some((target: { email: string; confirmed: boolean; marketingOptIn: boolean }) =>

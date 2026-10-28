@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/app/lib/supabase/server";
 import { createAdminClient } from "@/app/lib/supabase/admin";
 import { isSameOriginRequest } from "@/app/lib/security/request-origin";
-import { classifyPaystackCheckoutRecovery, getPaystackConfig, getPaystackTestConfig, initializePaystackLiveTransaction, initializePaystackTestTransaction, verifyPaystackTransaction } from "@/app/lib/payments/paystack";
+import { classifyPaystackCheckoutRecovery, getPaystackConfig, getPaystackTestConfig, initializePaystackLiveTransaction, initializePaystackTestTransaction, PaystackVerificationError, verifyPaystackTransaction } from "@/app/lib/payments/paystack";
 import type { PaystackConfiguration } from "@/app/lib/payments/paystack-config";
 import { paystackCallbackForRequest } from "@/app/lib/payments/paystack-config";
 import { getOrderNotificationContext, sendPaymentNotification } from "@/app/lib/email/payment-notifications";
@@ -52,8 +52,11 @@ async function recoverPriorCheckout(input: {
   let verified: Awaited<ReturnType<typeof verifyPaystackTransaction>>;
   try {
     verified = await verifyPaystackTransaction(order.order_reference, domain);
-  } catch {
-    return { kind: "unavailable" as const };
+  } catch (error) {
+    return {
+      kind: "verification_failed" as const,
+      reason: error instanceof PaystackVerificationError ? error.kind : "inconclusive" as const,
+    };
   }
 
   const recoveryState = classifyPaystackCheckoutRecovery(verified.status, attempt.initialized_at);
@@ -155,7 +158,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ code: "invalid_checkout", message: "Enter a valid coupon code." }, { status: 400 });
   }
   if (couponCode && (configuration.mode !== "test" || process.env.PAYMENTS_TEST_COUPONS_ENABLED !== "true")) {
-    return NextResponse.json({ code: "coupon_checkout_disabled", message: "Test-mode coupons are not available right now." }, { status: 503 });
+    return NextResponse.json({ code: "coupon_checkout_disabled", message: "Coupon checkout is not available right now." }, { status: 503 });
   }
   if (couponCode && (typeof body?.checkoutKey !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(body.checkoutKey))) {
     return NextResponse.json({ code: "invalid_checkout", message: "Refresh the page and try checkout again." }, { status: 400 });
@@ -164,7 +167,7 @@ export async function POST(request: Request) {
     const { data: eligibilityData, error: eligibilityError } = await supabase.rpc("get_own_paystack_test_fixture_eligibility", { p_course_id: courseId });
     const eligible = (eligibilityData as { eligible?: unknown }[] | null)?.[0]?.eligible === true;
     if (eligibilityError || !eligible) {
-      return NextResponse.json({ code: "fixture_not_eligible", message: "This controlled test checkout is not available for this account." }, { status: 403 });
+      return NextResponse.json({ code: "fixture_not_eligible", message: "This purchase option is not available for this account." }, { status: 403 });
     }
   }
   const admin = createAdminClient();
@@ -186,7 +189,7 @@ export async function POST(request: Request) {
         return NextResponse.json({ outcome: recovery.outcome, message: "Your payment is verified. Updating your course access." });
       }
       if (recovery.kind === "waiting") {
-        return NextResponse.json({ code: "purchase_pending", message: "Your previous checkout is still within its safety window. If its Paystack page is open, continue there; otherwise try again in a little while. We won’t start another payment yet." }, { status: 409 });
+        return NextResponse.json({ code: "purchase_pending", message: "Your previous checkout was confirmed as failed or abandoned. To help prevent a duplicate charge, please try again 30 minutes after you started checkout. We haven’t started another payment. If 30 minutes have already passed and you still see this message, contact support." }, { status: 409 });
       }
       if (recovery.kind === "released") {
         ({ data, error } = await admin.rpc(initializeFunction, initializeArgs));
@@ -196,8 +199,16 @@ export async function POST(request: Request) {
         } else {
           return NextResponse.json({ code: "purchase_pending", message: "Your previous checkout is being resolved. Please check again shortly; no second payment was started." }, { status: 409 });
         }
+      } else if (recovery.kind === "verification_failed") {
+        const messages = {
+          not_found: "We couldn’t find a record of your previous checkout in the payment account currently checked. This can happen if the wrong payment account was used. No new payment has been started; please contact support so we can confirm it before you retry.",
+          configuration: "We couldn’t confirm the payment account for your previous checkout. No new payment has been started; please contact support before trying again.",
+          temporary: "Payment verification is temporarily unavailable. No new payment has been started. Please wait a few minutes and try again; if this continues, contact support.",
+          inconclusive: "We couldn’t safely confirm your previous checkout. No new payment has been started. Please contact support before trying again.",
+        } as const;
+        return NextResponse.json({ code: "purchase_verification_failed", reason: recovery.reason, message: messages[recovery.reason] }, { status: 409 });
       } else {
-        return NextResponse.json({ code: "purchase_pending", message: "We couldn’t confirm the status of your previous checkout. Please don’t pay again yet; try checking again shortly." }, { status: 409 });
+        return NextResponse.json({ code: "purchase_pending", message: "Your previous checkout is being resolved. Please check again shortly; no second payment was started." }, { status: 409 });
       }
     } else {
       return NextResponse.json({ code: duplicate ? "purchase_exists" : "purchase_unavailable", message: duplicate ? "You already have access or a purchase in progress." : "This course cannot be purchased right now." }, { status: duplicate ? 409 : 400 });

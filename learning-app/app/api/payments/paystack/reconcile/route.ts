@@ -20,7 +20,7 @@ export async function POST(request: Request) {
     const configuration = getPaystackConfig(false);
     const verified = await verifyPaystackTransaction(reference, configuration.mode);
     if (verified.status !== "success") {
-      return NextResponse.json({ code: "pending", message: "Paystack has not confirmed a successful payment yet. No payment was repeated." }, { status: 409 });
+      return NextResponse.json({ code: "pending", message: "Growvelt has not confirmed a successful payment yet. No new payment was started." }, { status: 409 });
     }
 
     const payload = {

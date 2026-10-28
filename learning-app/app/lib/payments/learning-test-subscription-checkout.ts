@@ -28,21 +28,21 @@ export async function handleLearningTestSubscriptionCheckout(
 ) {
   if (!isSameOriginRequest(request)) return NextResponse.json({ code: "invalid_origin" }, { status: 403 });
   if (!canStartTestSubscriptionCheckout()) {
-    return NextResponse.json({ code: "subscription_checkout_disabled", message: "Test Mode subscriptions are not available right now." }, { status: 503 });
+    return NextResponse.json({ code: "subscription_checkout_disabled", message: "Monthly subscriptions are not available right now." }, { status: 503 });
   }
 
   let callbackUrl: string;
   try {
     callbackUrl = paystackCallbackForRequest(request.url, getPaystackTestConfig(true).callbackUrl);
   } catch {
-    return NextResponse.json({ code: "subscription_checkout_disabled", message: "Test Mode subscriptions are not available right now." }, { status: 503 });
+    return NextResponse.json({ code: "subscription_checkout_disabled", message: "Monthly subscriptions are not available right now." }, { status: 503 });
   }
 
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user?.id || !user.email) return NextResponse.json({ code: "not_signed_in", message: "Sign in before starting a subscription." }, { status: 401 });
   if (options.privateTestOnly && !canUsePrivateTestSubscriptionCheckout(user.email)) {
-    return NextResponse.json({ code: "not_found", message: "This private Test Mode checkout is unavailable." }, { status: 404 });
+    return NextResponse.json({ code: "not_found", message: "This private subscription preview is unavailable." }, { status: 404 });
   }
 
   const body = await request.json().catch(() => null) as { planId?: unknown; requestId?: unknown } | null;
@@ -66,16 +66,16 @@ export async function handleLearningTestSubscriptionCheckout(
   if (privatePlanError) {
     if (options.privateTestOnly) {
       console.error("subscription.private_test_plan_lookup_failed", { learnerId: user.id, code: privatePlanError.code });
-      return NextResponse.json({ code: "subscription_checkout_unavailable", message: "Private Test Mode checkout is not ready in this environment." }, { status: 503 });
+      return NextResponse.json({ code: "subscription_checkout_unavailable", message: "Private subscription preview is not available in this environment." }, { status: 503 });
     }
     // Older databases still reject Company Test Mode-only courses in the
     // reservation function, while ordinary public plans remain usable.
   } else if (options.privateTestOnly) {
     if (!privatePlan || privatePlan.plan_id !== body.planId) {
-      return NextResponse.json({ code: "not_found", message: "This private Test Mode checkout is unavailable." }, { status: 404 });
+      return NextResponse.json({ code: "not_found", message: "This private subscription preview is unavailable." }, { status: 404 });
     }
   } else if (privatePlan?.plan_id === body.planId) {
-    return NextResponse.json({ code: "not_found", message: "This private Test Mode checkout is unavailable." }, { status: 404 });
+    return NextResponse.json({ code: "not_found", message: "This private subscription preview is unavailable." }, { status: 404 });
   }
 
   const { data, error } = await admin.rpc("begin_own_learning_test_subscription_checkout", {
@@ -140,7 +140,7 @@ export async function handleLearningTestSubscriptionCheckout(
     return NextResponse.json({
       code: outcome === "rejected" ? "provider_rejected" : "provider_outcome_uncertain",
       message: outcome === "rejected"
-        ? "Paystack did not start this checkout. You can safely try again."
+        ? "The checkout was not started. You can safely try again."
         : "We could not confirm whether checkout started. Please do not pay again; this attempt is held for review.",
     }, { status: outcome === "rejected" ? 502 : 503 });
   }

@@ -59,7 +59,7 @@ export async function createOwnSubscriptionPlan(
   }
 
   revalidatePath("/dashboard/instructor/subscriptions");
-  return { status: "success", message: "Draft plan saved. No Paystack plan was created and no learner was charged.", planId: data };
+  return { status: "success", message: "Draft plan saved. No recurring plan was started and no learner was charged.", planId: data };
 }
 
 export async function provisionOwnTestSubscriptionPlan(
@@ -67,7 +67,7 @@ export async function provisionOwnTestSubscriptionPlan(
   formData: FormData,
 ): Promise<SubscriptionPlanProvisionActionState> {
   if (!canProvisionTestSubscriptionPlans()) {
-    return { status: "error", message: "Test Mode plan creation is disabled in this environment." };
+    return { status: "error", message: "Private plan preview setup is not available in this environment." };
   }
   const planId = String(formData.get("plan_id") ?? "").trim();
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(planId)) {
@@ -76,7 +76,7 @@ export async function provisionOwnTestSubscriptionPlan(
 
   // Fail before claiming a draft if the server does not have a valid Test key.
   try { getPaystackTestConfig(false); } catch {
-    return { status: "error", message: "Paystack Test Mode is not configured; no plan was submitted." };
+    return { status: "error", message: "Private plan preview setup is unavailable; no plan was submitted." };
   }
 
   const supabase = await createClient();
@@ -90,30 +90,30 @@ export async function provisionOwnTestSubscriptionPlan(
   }
   let admin;
   try { admin = createAdminClient(); } catch {
-    return { status: "error", message: "Secure server-side plan recording is unavailable; no Paystack plan was submitted." };
+    return { status: "error", message: "Secure plan recording is unavailable; no plan was submitted." };
   }
   const { data: claimData, error: claimError } = await supabase.rpc(
     "claim_own_learning_subscription_plan_provisioning", { p_plan_id: planId },
   );
   const claim = firstRow(claimData);
   if (claimError || !claim) {
-    return { status: "error", message: "We couldn’t reserve this draft. No Paystack plan was submitted." };
+    return { status: "error", message: "We couldn’t reserve this draft. No plan was submitted." };
   }
 
   const claimState = claim.provisioning_state;
   if (claimState === "recorded") {
     revalidatePath("/dashboard/instructor/subscriptions");
-    return { status: "success", message: "The Test Mode plan is already set up. No duplicate plan was created." };
+    return { status: "success", message: "The private preview is already prepared. No duplicate plan was created." };
   }
   if (claimState === "in_progress") {
     return { status: "notice", message: "This plan is already being processed. Wait for it to refresh; do not submit it again." };
   }
   if (claimState === "needs_reconciliation") {
     revalidatePath("/dashboard/instructor/subscriptions");
-    return { status: "notice", message: "Paystack’s response for this plan is uncertain. Do not retry; an admin must reconcile it first." };
+    return { status: "notice", message: "The setup result is uncertain. Do not retry; an administrator must review it first." };
   }
   if (claimState !== "claimed") {
-    return { status: "error", message: "This draft cannot be submitted for Test Mode plan setup." };
+    return { status: "error", message: "This draft cannot be submitted for private preview setup." };
   }
 
   const amountValue = claim.amount_minor;
@@ -124,7 +124,7 @@ export async function provisionOwnTestSubscriptionPlan(
       p_plan_id: planId, p_instructor_id: user.id, p_outcome: "ambiguous",
     });
     revalidatePath("/dashboard/instructor/subscriptions");
-    return { status: "notice", message: "The saved draft needs review before it can be sent to Paystack. Do not retry." };
+    return { status: "notice", message: "The saved draft needs review before setup can continue. Do not retry." };
   }
 
   let createdPlan;
@@ -144,10 +144,10 @@ export async function provisionOwnTestSubscriptionPlan(
     if (finishError) console.error("subscription.test_plan_failure_record_failed", { planId, code: finishError.code });
     if (outcome === "provider_rejected" && !finishError) {
       revalidatePath("/dashboard/instructor/subscriptions");
-      return { status: "error", message: "Paystack rejected this Test Mode plan request. No plan was created; you can safely try again." };
+      return { status: "error", message: "The preview setup was rejected. No plan was created; you can safely try again." };
     }
     if (!finishError) revalidatePath("/dashboard/instructor/subscriptions");
-    return { status: "notice", message: "Paystack may have received this request, but confirmation is uncertain. Do not retry; an admin must reconcile it first." };
+    return { status: "notice", message: "Setup confirmation is uncertain. Do not retry; an administrator must review it first." };
   }
 
   const { data: recorded, error: recordError } = await admin.rpc(
@@ -160,13 +160,13 @@ export async function provisionOwnTestSubscriptionPlan(
     });
     if (!finishError && finalState === "recorded") {
       revalidatePath("/dashboard/instructor/subscriptions");
-      return { status: "success", message: "The Test Mode plan was recorded. This does not start a learner subscription or charge anyone." };
+      return { status: "success", message: "The private preview plan was recorded. This does not start a learner subscription or charge anyone." };
     }
     if (recordError) console.error("subscription.test_plan_record_failed", { planId, code: recordError.code, reconciliationRecorded: !finishError });
     if (!finishError) revalidatePath("/dashboard/instructor/subscriptions");
-    return { status: "notice", message: "Paystack created a Test Mode plan, but Growvelt could not confirm the record. Do not retry; an admin must reconcile it first." };
+    return { status: "notice", message: "The plan may have been created, but Growvelt could not confirm the record. Do not retry; an administrator must review it first." };
   }
 
   revalidatePath("/dashboard/instructor/subscriptions");
-  return { status: "success", message: "Test Mode plan created and recorded. This does not start a learner subscription or charge anyone." };
+  return { status: "success", message: "Private preview plan created and recorded. This does not start a learner subscription or charge anyone." };
 }

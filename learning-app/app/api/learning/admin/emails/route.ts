@@ -37,7 +37,7 @@ export async function GET() {
     deliveryEnabled:release.enabled,releaseMode:release.mode,marketingRecipientLimit:release.maxRecipients,
     deliveryNotice:(release.mode === "admin-live" && release.enabled
       ? `Admin-approved broadcasts allow up to ${release.maxRecipients} opted-in Growvelt accounts. Account/support messages retain their separate short-lived quota approval. `
-      : "Only the approved controlled-test allowlist can receive messages. ") + "Preparing never sends; final release approval expires after 15 minutes. Unknown outcomes are reconciled, never blindly retried. Bell and push remain separate and disabled.",
+      : "Only recipients on the approved allowlist can receive messages. ") + "Preparing never sends; final release approval expires after 15 minutes. Unknown outcomes are reconciled, never blindly retried. Bell and push remain separate and disabled.",
   });
 }
 export async function POST(request: Request) {

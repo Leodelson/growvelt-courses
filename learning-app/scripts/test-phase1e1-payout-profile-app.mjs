@@ -32,8 +32,9 @@ assert.match(migration, /grant execute on function public\.get_own_learning_inst
 assert.doesNotMatch(migration, /grant execute on function public\.create_learning_instructor_paystack_test_payout_profile\([^\n]+\) to authenticated/);
 assert.match(migration, /account_last4/);
 assert.doesNotMatch(migration, /account_number text|account_number varchar/);
-assert.match(instructorPage, /Test-mode recipient/);
-assert.match(instructorPage, /does not reserve earnings, start a transfer/);
+assert.match(instructorPage, /Saved payout destination/);
+assert.match(instructorPage, /Instructor payouts are not currently available/);
+assert.doesNotMatch(instructorPage, /Paystack|Sandbox Mode|Test Mode/);
 assert.match(adminPage, /Recipient readiness/);
 assert.match(navigation, /dashboard\/instructor\/payout-profile/);
 

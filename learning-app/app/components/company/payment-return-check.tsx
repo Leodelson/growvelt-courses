@@ -25,7 +25,7 @@ export function CompanyPaymentReturnCheck({ reference }: { reference: string }) 
   }, [reference, router]);
   useEffect(() => { void check(); }, [check]);
   return <div className="payment-return-check" role="status">
-    <p>{checking ? "Checking this company payment with Paystack…" : message}</p>
+    <p>{checking ? "Checking your company payment confirmation…" : message}</p>
     {!checking && message && <button className="button button-primary" type="button" onClick={() => void check()}>Check payment again</button>}
   </div>;
 }

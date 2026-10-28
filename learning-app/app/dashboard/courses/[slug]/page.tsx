@@ -74,10 +74,10 @@ export default async function PublishedCourseDetailPage({ params }: { params: Pr
         <div className="published-course-save"><SaveCourseButton courseId={course.id} authenticated isSaved={savedCourseIds.includes(course.id)} /><span>Save course</span></div>
         <p className="eyebrow">Course access</p>
         <strong>{pricing}</strong>
-        <h2>{enrollment.isEnrolled ? "You’re enrolled" : course.isFree ? "Start learning for free" : paidCheckoutEnabled ? "Purchase this course securely" : "Paid access is coming later"}</h2>
-        <p>{enrollment.isEnrolled ? "Open My Courses to continue lessons, complete quizzes, and follow your saved course progress." : course.isFree ? "Enroll to access the lesson player, complete text and video lessons, take quizzes, and track your progress." : paidCheckoutEnabled ? checkoutMode === "live" ? "Complete a real Paystack payment. Access is granted only after Growvelt verifies the payment event." : "Complete a Paystack test-mode checkout. Access is granted only after Growvelt verifies the payment event." : "Growvelt has not enabled paid enrollment or checkout yet."}</p>
+        <h2>{enrollment.isEnrolled ? "You’re enrolled" : course.isFree ? "Start learning for free" : paidCheckoutEnabled ? "Purchase this course securely" : "Paid enrollment unavailable"}</h2>
+        <p>{enrollment.isEnrolled ? "Open My Courses to continue lessons, complete quizzes, and follow your saved course progress." : course.isFree ? "Enroll to access the lesson player, complete text and video lessons, take quizzes, and track your progress." : paidCheckoutEnabled ? "Complete secure checkout. Access is granted only after Growvelt confirms your payment." : "Paid enrollment is not available for this course."}</p>
         <EnrollmentButton courseId={course.id} slug={course.slug} isFree={course.isFree} isEnrolled={enrollment.isEnrolled} paidCheckoutEnabled={paidCheckoutEnabled} checkoutMode={checkoutMode ?? "test"} displayedPrice={pricing} testCouponCheckoutEnabled={checkoutMode === "test" && process.env.PAYMENTS_TEST_COUPONS_ENABLED === "true"} />
-        {subscriptionPlans.length > 0 ? <section className="subscription-plan-offers" aria-label="Optional Test Mode subscriptions">
+        {subscriptionPlans.length > 0 ? <section className="subscription-plan-offers" aria-label="Private monthly plan previews">
           <p className="eyebrow">More ways to learn</p>
           {subscriptionPlans.map((plan) => <SubscriptionPlanPurchase key={plan.plan_id} plan={plan} />)}
         </section> : null}

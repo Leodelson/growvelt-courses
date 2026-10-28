@@ -19,9 +19,9 @@ export function ProvisionSubscriptionTestPlanButton({ planId, label }: { planId:
   return <div className={styles.provisionBox}>
     <form action={formAction}>
       <input type="hidden" name="plan_id" value={planId} />
-      <ActionSubmitButton label={label} pendingLabel="Checking Test Mode setup…" />
+      <ActionSubmitButton label={label} pendingLabel="Preparing preview…" />
     </form>
-    <p>Only sends a plan to Paystack Test Mode after a safe database claim. It does not charge a learner or enable subscription checkout.</p>
+    <p>This prepares plan details for a private preview. It does not charge learners or enable subscription checkout.</p>
     {state.message && <p className={`${styles.feedback} ${state.status === "error" ? styles.error : state.status === "success" ? styles.success : styles.notice}`} role="status">{state.message}</p>}
   </div>;
 }

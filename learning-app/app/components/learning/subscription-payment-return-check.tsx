@@ -22,7 +22,7 @@ export function SubscriptionPaymentReturnCheck({ complete, reference }: { comple
     if (checkingRef.current) return "skipped";
     checkingRef.current = true;
     setChecking(true);
-    setMessage("Checking this payment with Paystack. Please don’t pay again.");
+    setMessage("Checking your payment confirmation. Please don’t pay again.");
     try {
       const response = await fetch(`/api/payments/paystack/subscriptions/status?reference=${encodeURIComponent(reference)}`, { cache: "no-store" });
       const result = await response.json().catch(() => null) as {
@@ -48,8 +48,8 @@ export function SubscriptionPaymentReturnCheck({ complete, reference }: { comple
       } else {
         setOutcome("pending");
         setMessage(automaticChecksStopped
-          ? "Paystack hasn’t confirmed this payment yet. Please don’t pay again; use Check again to recheck this same payment."
-          : "Paystack hasn’t confirmed this payment yet. We’ll check again automatically; please don’t pay again.");
+          ? "Growvelt hasn’t confirmed this payment yet. Please don’t pay again; use Check again to recheck this same payment."
+          : "Growvelt hasn’t confirmed this payment yet. We’ll check again automatically; please don’t pay again.");
         return "pending";
       }
     } catch {
@@ -72,7 +72,7 @@ export function SubscriptionPaymentReturnCheck({ complete, reference }: { comple
     const stopAutomaticChecks = () => {
       setAutomaticChecksStopped(true);
       setOutcome("pending");
-      setMessage("We still haven’t received Paystack’s verified confirmation. Please don’t pay again; use Check again to recheck this same payment.");
+      setMessage("We still haven’t confirmed this payment. Please don’t pay again; use Check again to recheck this same payment.");
     };
 
     const poll = async () => {
@@ -98,7 +98,7 @@ export function SubscriptionPaymentReturnCheck({ complete, reference }: { comple
   return <div className="payment-return-check" data-payment-outcome={outcome} role="status" aria-live="polite" aria-busy={checking}>
     <p className="payment-return-check-message">
       {checking && <span className="payment-return-spinner" aria-hidden="true" />}
-      {message ?? "Still waiting for Paystack’s verified confirmation. We’ll keep checking automatically; please don’t pay again."}
+      {message ?? "Still waiting for payment confirmation. We’ll keep checking automatically; please don’t pay again."}
     </p>
     <div className="payment-callback-actions">
       <button className="button button-primary" type="button" onClick={() => void checkNow()} disabled={checking}>{checking ? "Checking…" : "Check again"}</button>

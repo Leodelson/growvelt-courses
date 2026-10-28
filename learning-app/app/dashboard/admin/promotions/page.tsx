@@ -61,7 +61,7 @@ export default async function AdminPromotionsPage({
     && process.env.PAYMENTS_TEST_COUPONS_ENABLED === "true";
   const queryValue = (key: string) => Array.isArray(query[key]) ? query[key]?.[0] : query[key];
   const error = queryValue("error");
-  const successMessage = queryValue("created") ? "Coupon created. It can only be redeemed when the Test Mode fixture and coupon feature gates are satisfied."
+  const successMessage = queryValue("created") ? "Coupon created. It can only be redeemed when the Sandbox Mode fixture and coupon feature gates are satisfied."
     : queryValue("disabled") ? "Coupon disabled. Existing payment behavior is unchanged."
     : queryValue("campaignCreated") ? "Featured campaign scheduled. It will appear on Explore during its selected dates."
     : queryValue("campaignDisabled") ? "Featured campaign disabled. Its record is retained for the admin history."
@@ -84,14 +84,14 @@ export default async function AdminPromotionsPage({
 
     <OperationsSummary items={[{label:"Live campaigns",value:campaignError?", ":campaigns.filter(item=>item.campaign_state==="live").length,detail:"Live state in the loaded schedule"},{label:"Enabled coupon codes",value:couponsError?", ":coupons.filter(item=>item.active).length,detail:"Enabled does not mean currently redeemable"},{label:"Recorded redemptions",value:couponsError?", ":coupons.reduce((sum,item)=>sum+item.redeemed_count,0),detail:"Across the loaded coupon register"}]} note="Editorial campaigns and coupons are separate. An enabled code must still meet its date, course, learner and checkout restrictions." />
     <aside className={styles.safety}>
-      <strong>{testCouponCheckoutActive ? "Test Mode coupon checkout enabled" : "Test Mode coupon checkout disabled"}</strong>
-      <p>{testCouponCheckoutActive ? "Only the assigned tester can redeem a code on its active fixture course. No Live or company purchase uses coupons." : "Checkout needs Test Mode, learner checkout, and the explicit coupon feature flag. Company purchases, organization courses, private company test courses, subscriptions, and Live payments remain excluded."} Coupon terms cannot be edited after creation; disable a code and issue a new one instead.</p>
+      <strong>{testCouponCheckoutActive ? "Sandbox Mode coupon checkout enabled" : "Sandbox Mode coupon checkout disabled"}</strong>
+      <p>{testCouponCheckoutActive ? "Only the assigned tester can redeem a code on its active fixture course. No Live or company purchase uses coupons." : "Checkout needs Sandbox Mode, learner checkout, and the explicit coupon feature flag. Company purchases, organization courses, private company sandbox courses, subscriptions, and Live payments remain excluded."} Coupon terms cannot be edited after creation; disable a code and issue a new one instead.</p>
     </aside>
 
     <ActionFeedback message={errorMessage ?? successMessage} kind={errorMessage ? "error" : "success"} />
 
     <section id="campaign-create" className={styles.panel}>
-      <header><p className="eyebrow">Editorial merchandising · No placement fee</p><h2>Schedule a featured campaign</h2><p>Choose up to six published courses with an instructor or provider organization and a display window. The campaign appears on public and dashboard Explore pages only during that window. Company-only courses and Paystack test fixtures are excluded.</p></header>
+      <header><p className="eyebrow">Editorial merchandising · No placement fee</p><h2>Schedule a featured campaign</h2><p>Choose up to six published courses with an instructor or provider organization and a display window. The campaign appears on public and dashboard Explore pages only during that window. Company-only courses and Paystack sandbox fixtures are excluded.</p></header>
       {editorialCoursesError ? <p className={styles.error}>Eligible published courses could not be loaded. Try again later.</p> : editorialCourses.length === 0 ? <p className={styles.muted}>There are no eligible published courses with an instructor or provider organization to feature yet.</p> : <form action={createLearningCampaignAction} className={styles.form}>
         <label>Campaign title<input name="campaignTitle" required minLength={3} maxLength={80} placeholder="Featured learning" /></label>
         <label className={styles.courseField}>Short message<textarea name="campaignMessage" required minLength={3} maxLength={240} rows={3} placeholder="A short introduction to this collection of courses." /></label>
@@ -116,7 +116,7 @@ export default async function AdminPromotionsPage({
 
     <section id="coupon-create" className={styles.panel}>
       <header><p className="eyebrow">Administrator-issued</p><h2>Create coupon</h2><p>Choose one or more eligible courses. Learner use is limited to one redemption per account.</p></header>
-      {coursesError ? <p className={styles.error}>Eligible courses could not be loaded. Try again later.</p> : courses.length === 0 ? <p className={styles.muted}>There are no eligible published paid courses or active Test Mode fixtures yet.</p> : <form action={createLearningCouponAction} className={styles.form}>
+      {coursesError ? <p className={styles.error}>Eligible courses could not be loaded. Try again later.</p> : courses.length === 0 ? <p className={styles.muted}>There are no eligible published paid courses or active Sandbox Mode fixtures yet.</p> : <form action={createLearningCouponAction} className={styles.form}>
         <label>Coupon code<input name="code" required minLength={4} maxLength={24} pattern="[A-Za-z0-9][A-Za-z0-9_-]{3,23}" autoCapitalize="characters" autoComplete="off" placeholder="WELCOME10" /></label>
         <label>Discount type<select name="discountKind" defaultValue="fixed"><option value="fixed">Fixed amount (NGN)</option><option value="percentage">Percentage</option></select></label>
         <label>Discount value<input name="discountValue" type="number" min="0.01" step="0.01" required /><small>Enter NGN for fixed discounts, or a percentage from 0.01 to 100.</small></label>

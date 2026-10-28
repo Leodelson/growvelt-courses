@@ -31,7 +31,7 @@ export function LearnerPaymentReturnCheck({ complete, reference }: { complete: b
       if (response.ok && ["paid_and_enrolled", "already_paid", "already_processed"].includes(result?.outcome ?? "")) {
         setCheckMessage("Payment verified. Updating your course access…");
       } else if (result?.code === "pending") {
-        setCheckMessage("Paystack has not confirmed this payment yet. No payment was repeated.");
+        setCheckMessage("Growvelt has not confirmed this payment yet. No new payment was started.");
       } else {
         setCheckMessage(result?.message ?? "We couldn’t confirm the payment just now. Please don’t pay again; try checking again shortly.");
       }
@@ -73,10 +73,10 @@ export function LearnerPaymentReturnCheck({ complete, reference }: { complete: b
       <p className="payment-return-check-message">
         {(checking || (!timedOut && !checkMessage)) && <span className="payment-return-spinner" aria-hidden="true" />}
         {checkMessage ?? (timedOut
-          ? "We’re still waiting for Paystack’s verified confirmation. You can check again; please don’t pay again."
+          ? "We’re still waiting for Growvelt to confirm this payment. You can check again; please don’t pay again."
           : checking
-            ? "Checking Paystack’s verified confirmation…"
-            : "Checking for Paystack’s verified confirmation. Please don’t pay again.")}
+            ? "Checking your payment confirmation…"
+            : "Checking your payment confirmation. Please don’t pay again.")}
       </p>
       <div className="payment-callback-actions">
         <button className="button button-primary" type="button" onClick={() => void checkNow()} disabled={checking}>

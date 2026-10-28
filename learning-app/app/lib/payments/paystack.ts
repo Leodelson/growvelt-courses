@@ -1,5 +1,5 @@
 import "server-only";
-import { isTrustedPaystackAuthorizationUrl, parsePaystackVerifiedAmounts, parsePaystackVerifiedTransaction, parseVerifiedPaystackCompanyDispute, parseVerifiedPaystackCompanyRefund } from "@/app/lib/payments/paystack-core";
+import { classifyPaystackVerificationFailure, isTrustedPaystackAuthorizationUrl, parsePaystackVerifiedAmounts, parsePaystackVerifiedTransaction, parseVerifiedPaystackCompanyDispute, parseVerifiedPaystackCompanyRefund, PaystackVerificationError } from "@/app/lib/payments/paystack-core";
 import { resolvePaystackConfiguration } from "@/app/lib/payments/paystack-config";
 import { verifyCompanySettlementEvidence } from "@/app/lib/payments/company-settlement-core";
 import { verifyCompanyLiveTransferEvidence } from "@/app/lib/payments/company-transfer-core";
@@ -9,6 +9,7 @@ import type { PaystackDomain } from "@/app/lib/payments/paystack-core";
 
 export {
   classifyPaystackCheckoutRecovery,
+  classifyPaystackVerificationFailure,
   digestPaystackPayload,
   isTrustedPaystackAuthorizationUrl,
   isPaystackCompanyReversalEvent,
@@ -23,7 +24,9 @@ export {
   parsePaystackRefundEvent,
   parsePaystackTransferEvent,
   verifyPaystackSignature,
+  PaystackVerificationError,
 } from "@/app/lib/payments/paystack-core";
+export type { PaystackVerificationFailureKind } from "@/app/lib/payments/paystack-core";
 
 export type PaystackTestConfig = { secretKey: string; callbackUrl: string; checkoutEnabled: boolean; refundsEnabled: boolean };
 
@@ -241,22 +244,33 @@ export function verifyPaystackCompanyDispute(input: CompanyReversalLookup) {
 }
 
 export async function verifyPaystackTransaction(reference: string, expectedDomain: PaystackDomain) {
-  if (!/^GL-[A-F0-9]{32}$/.test(reference)) throw new Error("Invalid Growvelt payment reference.");
-  const config = getPaystackConfig(false);
-  if (config.mode !== expectedDomain) throw new Error("Paystack environment does not match this payment.");
-  const response = await fetch(`https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`, {
-    headers: { Authorization: `Bearer ${config.secretKey}` }, cache: "no-store", signal: AbortSignal.timeout(15000),
-  });
+  if (!/^GL-[A-F0-9]{32}$/.test(reference)) throw new PaystackVerificationError("inconclusive");
+  let config: ReturnType<typeof getPaystackConfig>;
+  try {
+    config = getPaystackConfig(false);
+  } catch {
+    throw new PaystackVerificationError("configuration");
+  }
+  if (config.mode !== expectedDomain) throw new PaystackVerificationError("configuration");
+  let response: Response;
+  try {
+    response = await fetch(`https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`, {
+      headers: { Authorization: `Bearer ${config.secretKey}` }, cache: "no-store", signal: AbortSignal.timeout(15000),
+    });
+  } catch {
+    throw new PaystackVerificationError("temporary");
+  }
   const result = await response.json().catch(() => null) as { status?: unknown; message?: unknown; data?: Record<string, unknown> } | null;
   const data = result?.data;
   if (!response.ok || result?.status !== true || !data) {
-    throw new Error("Paystack verification response was inconclusive.");
+    const providerMessage = typeof result?.message === "string" ? result.message : null;
+    throw new PaystackVerificationError(classifyPaystackVerificationFailure({ httpStatus: response.status, providerMessage }));
   }
   const parsed = parsePaystackVerifiedTransaction(data, reference, expectedDomain);
   if (!parsed.ok) {
     // Keep only a stable reason code in logs; the provider message can be
     // misleading (for example, “Verification successful” on invalid data).
-    throw new Error(`Paystack verification response was inconclusive (${parsed.reason}).`);
+    throw new PaystackVerificationError(parsed.reason === "domain_mismatch" ? "configuration" : "inconclusive");
   }
   return parsed.transaction;
 }

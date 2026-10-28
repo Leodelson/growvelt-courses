@@ -12,6 +12,7 @@ const {
   parsePaystackTestChargeSuccess,
   parsePaystackTestRefundEvent,
   classifyPaystackCheckoutRecovery,
+  classifyPaystackVerificationFailure,
   verifyPaystackSignature,
 } = await import("../app/lib/payments/paystack-core.ts");
 const { resolvePaystackCallbackReference } = await import("../app/lib/payments/paystack-callback.ts");
@@ -113,6 +114,14 @@ assert.equal(classifyPaystackCheckoutRecovery("failed", "2026-10-27T11:30:01.000
 assert.equal(classifyPaystackCheckoutRecovery("abandoned", "2026-10-27T11:30:00.000Z", recoveryNow), "recoverable");
 assert.equal(classifyPaystackCheckoutRecovery("failed", "not-a-date", recoveryNow), "cooldown");
 
+assert.equal(classifyPaystackVerificationFailure({ httpStatus: 404, providerMessage: "Transaction reference not found" }), "not_found");
+assert.equal(classifyPaystackVerificationFailure({ httpStatus: 404, providerMessage: "Resource not found" }), "inconclusive");
+assert.equal(classifyPaystackVerificationFailure({ httpStatus: 401, providerMessage: "Invalid key" }), "configuration");
+assert.equal(classifyPaystackVerificationFailure({ httpStatus: 403, providerMessage: "Access denied" }), "configuration");
+assert.equal(classifyPaystackVerificationFailure({ httpStatus: 429, providerMessage: "Rate limit exceeded" }), "temporary");
+assert.equal(classifyPaystackVerificationFailure({ httpStatus: 503, providerMessage: "Service unavailable" }), "temporary");
+assert.equal(classifyPaystackVerificationFailure({ httpStatus: 200, providerMessage: "Transaction reference not found" }), "inconclusive");
+
 const refundEvent = { event: "refund.processed", data: { id: 740001, transaction_reference: reference, refund_reference: "refund-740001", amount: "250000", currency: "NGN", domain: "test", status: "processed" } };
 const parsedRefund = parsePaystackTestRefundEvent(refundEvent);
 assert.equal(parsedRefund?.transactionReference, reference);
@@ -148,5 +157,8 @@ assert.match(reconciliationMigration, /to postgres,service_role/);
 assert.match(initializeRoute, /verifyPaystackTransaction\(order\.order_reference, domain\)/);
 assert.match(initializeRoute, /classifyPaystackCheckoutRecovery\(verified\.status, attempt\.initialized_at\)/);
 assert.match(initializeRoute, /fail_paystack_live_learning_attempt/);
+assert.match(initializeRoute, /try again 30 minutes after you started checkout/i);
+assert.match(initializeRoute, /purchase_verification_failed/);
+assert.match(initializeRoute, /wrong payment account was used/i);
 
 console.log("PASS Paystack signature, fee-aware amount validation, learner-owned reconciliation, checkout retry recovery guardrails, and callback normalization tests");

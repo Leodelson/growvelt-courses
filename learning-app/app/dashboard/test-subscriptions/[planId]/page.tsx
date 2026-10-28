@@ -4,7 +4,7 @@ import { createAdminClient } from "@/app/lib/supabase/admin";
 import { createClient } from "@/app/lib/supabase/server";
 import { canStartTestSubscriptionCheckout, canUsePrivateTestSubscriptionCheckout } from "@/app/lib/subscriptions/feature";
 
-export const metadata = { title: "Private Test Mode subscription" };
+export const metadata = { title: "Private subscription preview" };
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -38,9 +38,9 @@ export default async function PrivateTestSubscriptionPage({
 
   return <section className="published-course-page section-shell">
     <header className="published-course-hero">
-      <p className="eyebrow">Private learner test · Test Mode</p>
-      <h1>Subscription checkout test</h1>
-      <p className="published-course-summary">This private test offer is available only to the configured test learner. It does not appear in Explore and cannot start a live payment.</p>
+      <p className="eyebrow">Private learner preview</p>
+      <h1>Subscription plan preview</h1>
+      <p className="published-course-summary">This private offer is available only to an approved learner. It does not appear in Explore and cannot start a real subscription purchase.</p>
     </header>
     <div className="published-course-layout">
       <article className="published-course-content">

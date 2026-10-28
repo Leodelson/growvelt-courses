@@ -43,7 +43,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ wor
     const { data: testModeOnly, error: testModeError } = await admin.rpc("is_learning_company_purchase_test_only", { p_purchase_id: purchaseId });
     if (testModeError || testModeOnly === true) {
       console.error("company_learning.live_checkout_test_only_course_blocked", { purchaseId, code: testModeError?.code ?? null });
-      return NextResponse.json({ code: "checkout_disabled", message: "This company course is restricted to Test Mode checkout." }, { status: 503 });
+      return NextResponse.json({ code: "checkout_disabled", message: "This course is not available for company purchase." }, { status: 503 });
     }
     // An environment flag cannot attest that company sales, refunds and
     // instructor liabilities have a working database implementation.

@@ -106,7 +106,7 @@ export function buildPaystackTestSubscriptionCheckoutRequest(input: {
     || !UUID_PATTERN.test(input.subscriptionId) || !UUID_PATTERN.test(input.invoiceId)
     || !["https:", ...(localHttpAllowed ? ["http:"] : [])].includes(callbackUrl.protocol)
     || callbackUrl.username || callbackUrl.password) {
-    throw new Error("A valid Test Mode subscription checkout is required.");
+    throw new Error("A valid Sandbox Mode subscription checkout is required.");
   }
 
   return {

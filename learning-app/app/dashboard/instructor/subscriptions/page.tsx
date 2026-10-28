@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { isApprovedInstructor } from "@/app/lib/instructor/authorization";
 import { getOwnInstructorSubscriptionPlanData } from "@/app/lib/instructor/subscription-plans";
@@ -26,9 +27,9 @@ export default async function InstructorSubscriptionPlansPage() {
 
   return <section className={`instructor-earnings-page section-shell ${workbench.page}`}>
     <header className="instructor-earnings-hero">
-      <p className="eyebrow">Instructor subscriptions · Test Mode preparation</p>
+      <p className="eyebrow">Instructor subscriptions · Private setup</p>
       <h1>Build a monthly plan for your courses.</h1>
-      <p>Plans begin as private drafts. Subscription checkout, recurring Paystack charges, and learner access are not enabled by this screen.</p>
+      <p>Plans begin as private drafts. Monthly subscription checkout and learner access are not currently available.</p>
     </header>
 
     {!available ? <section className={styles.unavailable} role="status">
@@ -41,29 +42,29 @@ export default async function InstructorSubscriptionPlansPage() {
         <header className={styles.panelHeader}>
           <p className="eyebrow">Your plans</p>
           <h2 id="subscription-plan-list-title">Your subscription plans</h2>
-          <p>Only you can view your plans. Saving a draft does not contact Paystack; Test Mode setup creates provider plan metadata only and does not change learner access or purchase records.</p>
+          <p>Only you can view your plans. Saving a draft or preparing its private preview does not charge learners or change course access.</p>
         </header>
-        {plans.length ? <div className={styles.planList}><WorkbenchList metricLabel="Monthly price, highest first" statuses={{not_started:"Draft setup",recorded:"Test plan ready",claimed:"Setup in progress",failed:"Test plan request rejected",needs_reconciliation:"Review required",disabled:"Disabled"}} items={plans.map((plan) => {
+        {plans.length ? <div className={styles.planList}><WorkbenchList metricLabel="Monthly price, highest first" statuses={{not_started:"Draft setup",recorded:"Preview ready",claimed:"Setup in progress",failed:"Preview setup failed",needs_reconciliation:"Review required",disabled:"Disabled"}} items={plans.map((plan) => {
           const provision = provisionByPlanId.get(plan.plan_id);
           const isCompanyTestModePlan = plan.course_ids.some((courseId) =>
             courses.find((course) => course.course_id === courseId)?.company_test_mode_only === true);
           const provisionState = provision?.provisioning_state ?? "not_started";
-          const statusLabel = provisionState === "recorded" ? "Test plan ready"
+          const statusLabel = provisionState === "recorded" ? "Preview ready"
             : provisionState === "needs_reconciliation" ? "Review required"
               : provisionState === "claimed" ? "Setup in progress"
-                : provisionState === "failed" ? "Test plan request rejected"
+                : provisionState === "failed" ? "Preview setup failed"
                   : plan.status.replace("_", " ");
           return {id:plan.plan_id,title:plan.name,status:plan.status==="disabled"?"disabled":provisionState,keywords:plan.course_titles.join(" "),metric:plan.amount_minor,content:<article className={styles.planCard}>
           <div className={styles.planHeading}><div><span className={styles.status}>{statusLabel}</span><h3>{plan.name}</h3></div><strong>{formatPrice(plan.amount_minor)}<small> / month</small></strong></div>
           {plan.description && <p>{plan.description}</p>}
           <ul aria-label="Included courses">{plan.course_titles.map((title, index) => <li key={`${plan.plan_id}-${plan.course_ids[index]}`}>{title}</li>)}</ul>
-          {isCompanyTestModePlan && <p className={styles.notice} role="note">This plan contains a Company Test Mode-only course. It stays out of public catalog and subscription listings.</p>}
+          {isCompanyTestModePlan && <p className={styles.notice} role="note">This plan contains an organization-only course and remains private, outside public catalog and subscription listings.</p>}
           {isCompanyTestModePlan && provisionState === "recorded" && plan.status === "active" && <p className={styles.notice} role="note">
-            Private learner Test Mode link (share it with the configured test learner): <code>/dashboard/test-subscriptions/{plan.plan_id}</code>
+            Private subscription preview link (share only with the approved learner): <Link href={"/dashboard/test-subscriptions/" + plan.plan_id}>Open private preview</Link>
           </p>}
           {canCreateTestPlans && plan.status === "draft" && ["not_started", "failed"].includes(provisionState)
-            && <ProvisionSubscriptionTestPlanButton planId={plan.plan_id} label={provisionState === "failed" ? "Retry Test Mode plan setup" : "Create Test Mode plan"} />}
-          {provisionState === "needs_reconciliation" && <p className={styles.notice} role="status">Do not retry this plan. Paystack may have created it; admin reconciliation is required before another attempt.</p>}
+            && <ProvisionSubscriptionTestPlanButton planId={plan.plan_id} label={provisionState === "failed" ? "Retry preview setup" : "Prepare private preview"} />}
+          {provisionState === "needs_reconciliation" && <p className={styles.notice} role="status">Do not retry this plan. A previous setup may have completed; administrator review is required before another attempt.</p>}
           {provisionState === "claimed" && <>
             <p className={styles.notice} role="status">Setup is already in progress. Do not submit it again while the request is being processed.</p>
             {canCreateTestPlans && <ProvisionSubscriptionTestPlanButton planId={plan.plan_id} label="Check setup status" />}
