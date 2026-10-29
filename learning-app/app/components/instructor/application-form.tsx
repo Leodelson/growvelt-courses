@@ -1,13 +1,22 @@
 "use client";
 
+import Link from "next/link";
 import { FormEvent, useRef, useState } from "react";
 import { ActionButton } from "@/app/components/ui/action-button";
 import { InlineFeedback } from "@/app/components/ui/inline-feedback";
 import type { InstructorApplicationIdentity } from "@/app/lib/instructor/application";
 import { useLanguage } from "@/app/components/language-provider";
+import styles from "./application-form.module.css";
+
+const applicationLegalCopy = {
+  en: { intro: "By submitting, you agree to the ", terms: "Terms of Service", middle: " and acknowledge the ", privacy: "Privacy Policy" },
+  fr: { intro: "En soumettant votre candidature, vous acceptez les ", terms: "Conditions d’utilisation", middle: " et reconnaissez avoir pris connaissance de la ", privacy: "Politique de confidentialité" },
+  es: { intro: "Al enviar tu solicitud, aceptas los ", terms: "Términos de servicio", middle: " y reconoces haber leído la ", privacy: "Política de privacidad" },
+};
 
 export function InstructorApplicationForm({ identity }: { identity: InstructorApplicationIdentity }) {
-  const { t } = useLanguage();
+  const { locale, t } = useLanguage();
+  const legal = applicationLegalCopy[locale];
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const pendingRef = useRef(false);
@@ -70,6 +79,7 @@ export function InstructorApplicationForm({ identity }: { identity: InstructorAp
     <label>{t("teach.motivation")}<textarea name="motivation" required maxLength={1500} rows={5} placeholder="Tell us what you want learners to gain from the courses you would create." disabled={busy} /></label>
     <label>{t("teach.portfolio")} <span>({t("teach.optional")})</span><input name="portfolio_url" type="url" maxLength={500} inputMode="url" placeholder="https://" disabled={busy} /><small>{t("teach.portfolioNote")}</small></label>
     <p className="instructor-form-note">{t("teach.formNote")}</p>
+    <p className={styles.legalCopy}>{legal.intro}<Link href="/terms-of-service" target="_blank" rel="noopener noreferrer">{legal.terms}</Link>{legal.middle}<Link href="/privacy-policy" target="_blank" rel="noopener noreferrer">{legal.privacy}</Link>.</p>
     {message && <InlineFeedback variant="error">{message}</InlineFeedback>}
     <ActionButton className="button button-primary" type="submit" isPending={busy} pendingLabel={t("teach.submitting")}>{t("teach.submit")}</ActionButton>
   </form>;
