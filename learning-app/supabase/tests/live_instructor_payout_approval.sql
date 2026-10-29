@@ -24,6 +24,7 @@ declare admin_id uuid:='77777777-7777-4777-8777-777777777771';
         course_id bigint; order_key bigint; allocation_key bigint; earning_key bigint;
         reservation_key bigint; payout_item_key bigint; repeated_id bigint; test_order_id bigint;
         before_ledger bigint; after_ledger bigint; rejected boolean;
+        receipt_key bigint; outcome_key text;
 begin
   if has_function_privilege('authenticated','public.approve_learning_instructor_live_payout_item(bigint,text,uuid)','execute') then
     raise exception 'Browser role can approve a Live payout';
@@ -76,6 +77,35 @@ begin
   begin perform public.approve_learning_instructor_live_payout_item(reservation_key,'payout-live-approval:'||reservation_key::text,instructor_id);
   exception when insufficient_privilege then rejected:=true; end;
   if not rejected then raise exception 'Instructor approved own payout'; end if;
+
+  -- A Test-domain receipt for a Live item must never settle the earning.
+  select provider_event_id into receipt_key from public.receive_paystack_test_transfer_provider_event(
+    'provider_api','test-cross-domain-'||payout_item_key::text,repeat('a',64),
+    'lpi-live-reservation-'||reservation_key::text,'777001','TRF_testcrossdomain','succeeded',7500,'NGN',admin_id);
+  select outcome into outcome_key from public.process_learning_instructor_payout_provider_event(receipt_key);
+  if outcome_key<>'conflict' or exists(select 1 from public.learning_instructor_payout_settlements where payout_item_id=payout_item_key) then
+    raise exception 'Cross-domain provider event settled a Live item';
+  end if;
+
+  -- Rollback-only simulation of a previously submitted provider transfer.
+  update public.learning_instructor_payout_items
+    set status='submitting',initiated_by=admin_id,initiated_at=now()
+    where id=payout_item_key;
+  select provider_event_id into receipt_key from public.receive_paystack_live_transfer_provider_event(
+    'provider_api','live-success-'||payout_item_key::text,repeat('b',64),
+    'lpi-live-reservation-'||reservation_key::text,'777002','TRF_livesuccess','succeeded',7500,'NGN',admin_id);
+  select outcome into outcome_key from public.process_learning_instructor_payout_provider_event(receipt_key);
+  if outcome_key<>'settled' or not exists(select 1 from public.learning_instructor_payout_settlements settlement
+    where settlement.payout_item_id=payout_item_key and settlement.amount_minor=7500)
+    or not exists(select 1 from public.learning_instructor_earnings earning
+      where earning.id=earning_key and earning.status='paid') then
+    raise exception 'Authoritative Live transfer outcome did not settle once';
+  end if;
+  select outcome into outcome_key from public.process_learning_instructor_payout_provider_event(receipt_key);
+  select count(*) into after_ledger from public.learning_ledger_transactions ledger where ledger.order_id=order_key;
+  if outcome_key<>'already_processed' or after_ledger<>before_ledger+1 then
+    raise exception 'Live transfer outcome was not exactly once';
+  end if;
 
   test_order_id:=pg_temp.live_approval_order(course_id,'test');
   allocation_key:=public.allocate_learning_order_commercial_terms(test_order_id,null);

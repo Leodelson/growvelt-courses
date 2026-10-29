@@ -56,7 +56,7 @@ export type InstructorPayoutProfile = {
 };
 
 export type InstructorPayoutCandidate = { reservation_id: number; reservation_reference: string; instructor_name: string | null; instructor_email: string | null; amount_minor: number; currency: "NGN"; eligible: boolean };
-export type InstructorPayoutItem = { payout_item_id: number; reservation_id: number; reservation_reference: string; payout_item_reference: string; instructor_name: string | null; instructor_email: string | null; amount_minor: number; currency: "NGN"; status: string; provider_status: string | null; provider_transfer_code: string | null; provider_domain: "test"; approved_at: string; initiated_at: string | null };
+export type InstructorPayoutItem = { payout_item_id: number; reservation_id: number; reservation_reference: string; payout_item_reference: string; instructor_name: string | null; instructor_email: string | null; amount_minor: number; currency: "NGN"; status: string; provider_status: string | null; provider_transfer_code: string | null; provider_domain: "test" | "live"; approved_at: string; initiated_at: string | null };
 export type InstructorPayoutReconciliationFinding = { finding_id: number; provider_event_id: number | null; payout_item_reference: string | null; finding_type: string; status: "open" | "resolved"; detail: string; created_at: string };
 
 export async function listCommercialOperations(operatorId: string) {

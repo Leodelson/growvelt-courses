@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/app/lib/supabase/admin";
-import { digestPaystackPayload, getPaystackConfig, isPaystackCompanyReversalEvent, parsePaystackChargeSuccess, parsePaystackCompanyChargeSuccess, parsePaystackCompanyReversalNotice, parsePaystackDisputeEvent, parsePaystackRefundEvent, parsePaystackTestTransferEvent, verifyPaystackCompanyTransaction, verifyPaystackSignature, verifyPaystackTestSubscriptionTransaction, verifyPaystackTransaction } from "@/app/lib/payments/paystack";
+import { digestPaystackPayload, getPaystackConfig, isPaystackCompanyReversalEvent, parsePaystackChargeSuccess, parsePaystackCompanyChargeSuccess, parsePaystackCompanyReversalNotice, parsePaystackDisputeEvent, parsePaystackRefundEvent, parsePaystackTestTransferEvent, parsePaystackTransferEvent, verifyPaystackCompanyTransaction, verifyPaystackSignature, verifyPaystackTestSubscriptionTransaction, verifyPaystackTransaction } from "@/app/lib/payments/paystack";
 import { getOrderNotificationContext, paymentOperationsRecipient, sendPaymentNotification } from "@/app/lib/email/payment-notifications";
 import { recordCompanyPaymentManualReview } from "@/app/lib/company/payment-exceptions";
 import { parsePaystackTestSubscriptionWebhook, type PaystackTestSubscriptionWebhookEvent } from "@/app/lib/payments/paystack-subscription-core";
@@ -268,10 +268,15 @@ export async function POST(request: Request) {
     const subscriptionEvent = parsePaystackTestSubscriptionWebhook(payload);
     if (subscriptionEvent) return handleTestSubscriptionWebhook(subscriptionEvent, payload, rawBody);
   }
-  const transfer = config.mode === "test" ? parsePaystackTestTransferEvent(payload) : null;
+  const parsedTransfer = config.mode === "test" ? parsePaystackTestTransferEvent(payload)
+    : process.env.LEARNING_LIVE_PAYOUT_RECONCILIATION_ENABLED === "true" ? parsePaystackTransferEvent(payload, "live") : null;
+  // Do not claim unrelated Live business transfers as instructor payouts.
+  const transfer = parsedTransfer?.domain === "live" && !/^lpi-live-reservation-[0-9]+$/.test(parsedTransfer.reference)
+    ? null : parsedTransfer;
   if (transfer) {
     const admin = createAdminClient();
-    const { data, error } = await admin.rpc("receive_paystack_test_transfer_provider_event", {
+    const rpc = transfer.domain === "live" ? "receive_paystack_live_transfer_provider_event" : "receive_paystack_test_transfer_provider_event";
+    const { data, error } = await admin.rpc(rpc, {
       p_provenance: "provider_webhook", p_provider_event_id: transfer.eventId, p_payload_digest: digestPaystackPayload(rawBody), p_reference: transfer.reference,
       p_transfer_id: transfer.transferId, p_transfer_code: transfer.transferCode, p_status: transfer.status,
       p_amount_minor: transfer.amountMinor, p_currency: transfer.currency, p_actor_user_id: null,

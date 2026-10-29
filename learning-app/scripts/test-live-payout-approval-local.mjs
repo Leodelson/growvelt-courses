@@ -26,6 +26,7 @@ if (target !== `/${name}|running|55432`) throw new Error(`Refusing unexpected lo
 const migrations = [
   ["20261114000000_add_instructor_live_payout_profile_setup.sql", "public.create_learning_instructor_paystack_live_payout_profile(uuid,text,text,text,text,text,text,uuid)"],
   ["20261115000000_add_instructor_live_payout_approval.sql", "public.approve_learning_instructor_live_payout_item(bigint,text,uuid)"],
+  ["20261116000000_add_instructor_live_payout_event_receipts.sql", "public.receive_paystack_live_transfer_provider_event(text,text,text,text,text,text,text,bigint,text,uuid)"],
 ];
 for (const [file, procedure] of migrations) {
   const exists = await run(["exec", "-i", name, "psql", "-X", "-A", "-t", "-v", "ON_ERROR_STOP=1", "-U", "postgres", "-d", "postgres"], `select to_regprocedure('${procedure}') is not null;`);
