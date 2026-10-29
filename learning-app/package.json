@@ -51,6 +51,7 @@
     "test:payments:instructor-earnings-release:app": "node scripts/test-phase1c2b-release-operations-app.mjs",
     "test:payments:payout-profile:app": "node scripts/test-phase1e1-payout-profile-app.mjs",
     "test:payments:payout-profile:local": "node scripts/test-phase1e1-payout-profile-local.mjs",
+    "test:payments:payout-live-profile:local": "node scripts/test-live-payout-profile-migration.mjs",
     "test:payments:earnings-reservation:app": "node scripts/test-phase1e2-earnings-reservation-app.mjs",
     "test:payments:earnings-reservation:local": "node scripts/test-phase1e2-earnings-reservation-local.mjs",
     "test:payments:payout-test-transfer:app": "node scripts/test-phase1e3-payout-test-transfer-app.mjs",

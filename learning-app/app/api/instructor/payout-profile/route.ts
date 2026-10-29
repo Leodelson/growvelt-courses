@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/app/lib/supabase/admin";
-import { createPaystackTestTransferRecipient, resolvePaystackTestAccount } from "@/app/lib/payments/paystack";
+import { createPaystackLiveTransferRecipient, createPaystackTestTransferRecipient, resolvePaystackLiveAccount, resolvePaystackTestAccount } from "@/app/lib/payments/paystack";
 import { isSameOriginRequest } from "@/app/lib/security/request-origin";
 import { createClient } from "@/app/lib/supabase/server";
 
 type ProfileResult = {
   payout_profile_id: number;
   status: "active" | "disabled";
-  provider_domain: "test";
+  provider_domain: "test" | "live";
   recipient_code: string;
   bank_name: string;
   account_name: string;
@@ -38,14 +38,24 @@ export async function POST(request: Request) {
   if (!isSameOriginRequest(request)) return NextResponse.json({ code: "invalid_origin" }, { status: 403 });
   const auth = await requireApprovedInstructor();
   if ("response" in auth) return auth.response;
-  const body = await request.json().catch(() => null) as { accountNumber?: unknown; bankCode?: unknown } | null;
+  const body = await request.json().catch(() => null) as { accountNumber?: unknown; bankCode?: unknown; domain?: unknown } | null;
   const accountNumber = typeof body?.accountNumber === "string" ? body.accountNumber.trim() : "";
   const bankCode = typeof body?.bankCode === "string" ? body.bankCode.trim() : "";
+  const domain = body?.domain === "live" ? "live" : body?.domain === undefined || body?.domain === "test" ? "test" : null;
+  if (!domain) return NextResponse.json({ code: "invalid_domain" }, { status: 400 });
+  if (domain === "live" && process.env.LEARNING_LIVE_PAYOUT_PROFILE_SETUP_ENABLED !== "true") {
+    return NextResponse.json({ code: "live_payout_setup_disabled" }, { status: 503 });
+  }
   if (!/^\d{10}$/.test(accountNumber) || !/^[A-Za-z0-9_-]{2,32}$/.test(bankCode)) return NextResponse.json({ code: "invalid_account_details" }, { status: 400 });
   try {
-    const resolved = await resolvePaystackTestAccount({ accountNumber, bankCode });
-    const recipient = await createPaystackTestTransferRecipient({ accountNumber, bankCode, accountName: resolved.accountName });
-    const { data, error } = await createAdminClient().rpc("create_learning_instructor_paystack_test_payout_profile", {
+    const resolved = domain === "live"
+      ? await resolvePaystackLiveAccount({ accountNumber, bankCode })
+      : await resolvePaystackTestAccount({ accountNumber, bankCode });
+    const recipient = domain === "live"
+      ? await createPaystackLiveTransferRecipient({ accountNumber, bankCode, accountName: resolved.accountName })
+      : await createPaystackTestTransferRecipient({ accountNumber, bankCode, accountName: resolved.accountName });
+    const rpc = domain === "live" ? "create_learning_instructor_paystack_live_payout_profile" : "create_learning_instructor_paystack_test_payout_profile";
+    const { data, error } = await createAdminClient().rpc(rpc, {
       p_instructor_id: auth.user.id,
       p_recipient_code: recipient.recipientCode,
       p_provider_recipient_id: recipient.providerRecipientId,
@@ -57,7 +67,7 @@ export async function POST(request: Request) {
     });
     if (error) throw error;
     const profile = (data as ProfileResult[] | null)?.[0];
-    if (!profile) throw new Error("Profile was not created.");
+    if (!profile || profile.provider_domain !== domain || profile.account_last4 !== recipient.accountLast4) throw new Error("Profile was not created safely.");
     return NextResponse.json({ profile: { ...profile, accountNumber: undefined } }, { status: 201 });
   } catch (error) {
     // Provider responses are intentionally not copied to logs; they could
@@ -71,7 +81,13 @@ export async function DELETE(request: Request) {
   if (!isSameOriginRequest(request)) return NextResponse.json({ code: "invalid_origin" }, { status: 403 });
   const auth = await requireApprovedInstructor();
   if ("response" in auth) return auth.response;
-  const { data, error } = await createAdminClient().rpc("disable_own_learning_instructor_paystack_test_payout_profile", { p_instructor_id: auth.user.id, p_actor_user_id: auth.user.id });
+  const domain = new URL(request.url).searchParams.get("domain") ?? "test";
+  if (domain !== "test" && domain !== "live") return NextResponse.json({ code: "invalid_domain" }, { status: 400 });
+  if (domain === "live" && process.env.LEARNING_LIVE_PAYOUT_PROFILE_SETUP_ENABLED !== "true") {
+    return NextResponse.json({ code: "live_payout_setup_disabled" }, { status: 503 });
+  }
+  const rpc = domain === "live" ? "disable_own_learning_instructor_paystack_live_payout_profile" : "disable_own_learning_instructor_paystack_test_payout_profile";
+  const { data, error } = await createAdminClient().rpc(rpc, { p_instructor_id: auth.user.id, p_actor_user_id: auth.user.id });
   if (error) return NextResponse.json({ code: "profile_unavailable" }, { status: 503 });
   return NextResponse.json({ status: data === true ? "disabled" : "unchanged" });
 }

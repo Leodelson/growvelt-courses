@@ -477,6 +477,57 @@ export async function createPaystackTestTransferRecipient(input: { accountNumber
   return { recipientCode, providerRecipientId: recipientId, bankCode, bankName, accountName, accountLast4: input.accountNumber.slice(-4), currency: "NGN", domain: "test" };
 }
 
+export type PaystackLiveTransferRecipient = Omit<PaystackTestTransferRecipient, "domain"> & { domain: "live" };
+
+/** Live recipient setup is non-financial. This function never initiates a transfer. */
+export async function resolvePaystackLiveAccount(input: { accountNumber: string; bankCode: string }): Promise<PaystackTestResolvedAccount> {
+  requirePaystackNubanInput(input);
+  const { secretKey } = getPaystackLiveConfig(false);
+  const query = new URLSearchParams({ account_number: input.accountNumber, bank_code: input.bankCode });
+  const response = await fetch(`https://api.paystack.co/bank/resolve?${query.toString()}`, {
+    headers: { Authorization: `Bearer ${secretKey}` }, cache: "no-store", signal: AbortSignal.timeout(15000),
+  });
+  const result = await response.json().catch(() => null) as { status?: unknown; data?: Record<string, unknown> } | null;
+  const data = result?.data;
+  const accountName = typeof data?.account_name === "string" ? data.account_name.trim() : "";
+  const returnedAccountNumber = typeof data?.account_number === "string" ? data.account_number.trim() : "";
+  if (!response.ok || result?.status !== true || !accountName || returnedAccountNumber !== input.accountNumber) {
+    throw new Error("Live bank account validation failed.");
+  }
+  return { accountName, accountNumber: input.accountNumber, bankCode: input.bankCode };
+}
+
+export async function createPaystackLiveTransferRecipient(input: { accountNumber: string; bankCode: string; accountName: string }): Promise<PaystackLiveTransferRecipient> {
+  requirePaystackNubanInput(input);
+  if (!input.accountName.trim() || input.accountName.length > 200) throw new Error("Invalid resolved account name.");
+  const { secretKey } = getPaystackLiveConfig(false);
+  const response = await fetch("https://api.paystack.co/transferrecipient", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${secretKey}`, "Content-Type": "application/json" },
+    cache: "no-store",
+    body: JSON.stringify({ type: "nuban", name: input.accountName.trim(), account_number: input.accountNumber,
+      bank_code: input.bankCode, currency: "NGN", metadata: { product: "growvelt_learning", environment: "live" } }),
+    signal: AbortSignal.timeout(15000),
+  });
+  const result = await response.json().catch(() => null) as { status?: unknown; data?: Record<string, unknown> } | null;
+  const data = result?.data;
+  const recipientCode = typeof data?.recipient_code === "string" ? data.recipient_code : "";
+  const recipientId = typeof data?.id === "number" && Number.isSafeInteger(data.id) ? String(data.id)
+    : typeof data?.id === "string" && /^\d+$/.test(data.id) ? data.id : "";
+  const details = data?.details && typeof data.details === "object" ? data.details as Record<string, unknown> : {};
+  const returnedAccountNumber = typeof details.account_number === "string" ? details.account_number : "";
+  const bankCode = typeof details.bank_code === "string" ? details.bank_code : "";
+  const bankName = typeof details.bank_name === "string" ? details.bank_name.trim() : "";
+  const accountName = typeof details.account_name === "string" ? details.account_name.trim() : "";
+  if (!response.ok || result?.status !== true || !/^RCP_[A-Za-z0-9]+$/.test(recipientCode) || !recipientId
+    || data?.domain !== "live" || data?.currency !== "NGN" || returnedAccountNumber !== input.accountNumber
+    || bankCode !== input.bankCode || !bankName || !accountName || accountName !== input.accountName.trim()) {
+    throw new Error("Live transfer recipient validation failed.");
+  }
+  return { recipientCode, providerRecipientId: recipientId, bankCode, bankName, accountName,
+    accountLast4: input.accountNumber.slice(-4), currency: "NGN", domain: "live" };
+}
+
 export type PaystackTestTransfer = { transferId: string; transferCode: string | null; reference: string; status: string; amountMinor: number; currency: "NGN"; domain: "test" };
 
 /** Server-only: the caller supplies only values loaded from the authoritative payout item. */
