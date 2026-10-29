@@ -35,8 +35,9 @@ export async function POST(request: Request) {
   if (refundCase.status !== "requested") return NextResponse.json({ outcome: refundCase.status, caseId: refundCase.case_id });
   const markSubmittingFunction = mode === "live" ? "mark_paystack_live_refund_submitting" : "mark_paystack_test_refund_submitting";
   const recordSubmissionFunction = mode === "live" ? "record_paystack_live_refund_submission" : "record_paystack_test_refund_submission";
-  const { error: submittingError } = await admin.rpc(markSubmittingFunction, { p_case_id: refundCase.case_id, p_operator_id: user.id });
+  const { data: submissionState, error: submittingError } = await admin.rpc(markSubmittingFunction, { p_case_id: refundCase.case_id, p_operator_id: user.id });
   if (submittingError) return NextResponse.json({ code: "submission_failed" }, { status: 500 });
+  if (submissionState !== "submitting") return NextResponse.json({ code: "refund_already_submitting", message: "This refund is already being submitted. Check its status before taking another action." }, { status: 409 });
   let providerRefund;
   try {
     const createRefund = mode === "live" ? createPaystackLiveFullRefund : createPaystackTestFullRefund;
