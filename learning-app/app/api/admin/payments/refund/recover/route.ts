@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { isSameOriginRequest } from "@/app/lib/security/request-origin";
 import { createClient } from "@/app/lib/supabase/server";
 import { createAdminClient } from "@/app/lib/supabase/admin";
-import { getPaystackConfig, verifyPaystackLiveRefund, verifyPaystackTestRefund } from "@/app/lib/payments/paystack";
+import { findPaystackRefundIdForTransaction, getPaystackConfig, verifyPaystackLiveRefund, verifyPaystackTestRefund } from "@/app/lib/payments/paystack";
 import { getOrderNotificationContext, sendPaymentNotification } from "@/app/lib/email/payment-notifications";
 
 export async function POST(request: Request) {
@@ -19,8 +19,35 @@ export async function POST(request: Request) {
     const admin = createAdminClient();
     const lookupFunction = mode === "live" ? "get_learning_live_refund_case_for_recovery" : "get_learning_test_refund_case_for_recovery";
     const { data: targets, error: targetError } = await admin.rpc(lookupFunction, { p_operator_id: user.id, p_case_id: caseId });
-    const target = (targets as Array<{ order_reference: string; provider_case_id: string; provider_transaction_id: string }> | null)?.[0];
-    if (targetError || !target) return NextResponse.json({ code: "refund_not_recoverable" }, { status: 409 });
+    if (targetError) throw targetError;
+    let target = (targets as Array<{ order_reference: string; provider_case_id: string; provider_transaction_id: string }> | null)?.[0];
+    if (!target) {
+      // The ordinary recovery RPC intentionally excludes cases without a provider ID.
+      // Investigate only a previously submitted, uncertain case; never create a refund here.
+      const { data: refundCase, error: caseError } = await admin.from("learning_payment_cases")
+        .select("order_id,payment_attempt_id,status,provider_case_id,provider_transaction_id,amount_minor,currency,requested_at,updated_at")
+        .eq("id", caseId).eq("case_type", "refund").maybeSingle();
+      if (caseError) throw caseError;
+      if (!refundCase || !["needs_attention", "submitting"].includes(refundCase.status) || refundCase.provider_case_id !== null
+        || !/^\d+$/.test(String(refundCase.provider_transaction_id)) || refundCase.currency !== "NGN")
+        return NextResponse.json({ code: "refund_not_recoverable" }, { status: 409 });
+      if (refundCase.status === "submitting") {
+        const updatedAt = Date.parse(refundCase.updated_at);
+        if (!Number.isFinite(updatedAt) || Date.now() - updatedAt < 15 * 60_000)
+          return NextResponse.json({ code: "refund_still_submitting", message: "The refund request may still be processing. Check again after 15 minutes; do not submit another refund." }, { status: 409 });
+      }
+      const [{ data: attempt, error: attemptError }, { data: order, error: orderError }] = await Promise.all([
+        admin.from("learning_payment_attempts").select("paystack_domain").eq("id", refundCase.payment_attempt_id).single(),
+        admin.from("learning_orders").select("order_reference").eq("id", refundCase.order_id).single(),
+      ]);
+      if (attemptError || orderError) throw attemptError ?? orderError;
+      if (!attempt || !order || (mode === "live" ? attempt.paystack_domain !== "live" : attempt.paystack_domain === "live"))
+        return NextResponse.json({ code: "refund_not_recoverable" }, { status: 409 });
+      const refundId = await findPaystackRefundIdForTransaction({ transactionId: refundCase.provider_transaction_id,
+        amountMinor: refundCase.amount_minor, domain: mode, requestedAt: refundCase.requested_at });
+      if (!refundId) return NextResponse.json({ code: "refund_not_found", message: "No matching refund was found. Do not submit another refund; continue manual review." }, { status: 409 });
+      target = { order_reference: order.order_reference, provider_case_id: refundId, provider_transaction_id: refundCase.provider_transaction_id };
+    }
     const verifyRefund = mode === "live" ? verifyPaystackLiveRefund : verifyPaystackTestRefund;
     const verified = await verifyRefund({ refundId: target.provider_case_id, transactionReference: target.order_reference, transactionId: target.provider_transaction_id });
     const receiveFunction = mode === "live" ? "receive_paystack_live_verified_refund" : "receive_paystack_test_verified_refund";

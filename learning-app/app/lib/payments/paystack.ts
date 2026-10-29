@@ -341,6 +341,37 @@ export async function verifyPaystackLiveRefund(input: { refundId: string; transa
   return parsePaystackRefund(result.data, "live", { transactionReference: input.transactionReference, transactionId: input.transactionId });
 }
 
+/** Read-only investigation for a refund whose initiation response was lost. Never authorizes a second POST. */
+export async function findPaystackRefundIdForTransaction(input: { transactionId: string; amountMinor: number; domain: PaystackDomain; requestedAt: string }) {
+  if (!/^\d+$/.test(input.transactionId) || !Number.isSafeInteger(input.amountMinor) || input.amountMinor <= 0) throw new Error("Invalid refund lookup target.");
+  const requestedAt = Date.parse(input.requestedAt);
+  if (!Number.isFinite(requestedAt)) throw new Error("Refund lookup time is unavailable.");
+  const { secretKey } = input.domain === "live" ? getPaystackLiveConfig(false) : getPaystackTestConfig(false);
+  const url = new URL("https://api.paystack.co/refund");
+  url.searchParams.set("transaction", input.transactionId);
+  url.searchParams.set("perPage", "100");
+  url.searchParams.set("page", "1");
+  const response = await fetch(url, { headers: { Authorization: `Bearer ${secretKey}` }, cache: "no-store", signal: AbortSignal.timeout(15000) });
+  const result = await response.json().catch(() => null) as { status?: unknown; data?: unknown; meta?: { pageCount?: unknown } } | null;
+  if (!response.ok || result?.status !== true || !Array.isArray(result.data)) throw new Error("Refund lookup was inconclusive.");
+  // Do not treat a truncated list as an authoritative absence or unique match.
+  if (result.data.length >= 100 || (result.meta?.pageCount !== undefined && result.meta.pageCount !== 1)
+    || (result.meta?.pageCount === undefined && result.data.length >= 50)) throw new Error("Refund lookup requires manual review.");
+  const candidates = result.data.filter((entry: unknown) => {
+    if (!entry || typeof entry !== "object") return false;
+    const refund = entry as Record<string, unknown>;
+    const createdAt = Date.parse(String(refund.createdAt ?? refund.created_at ?? ""));
+    return String(refund.transaction) === input.transactionId && refund.amount === input.amountMinor
+      && refund.currency === "NGN" && refund.domain === input.domain && Number.isFinite(createdAt)
+      && createdAt >= requestedAt - 60_000 && /^\d+$/.test(String(refund.id));
+  }) as Array<Record<string, unknown>>;
+  // A returned but unverifiable row could be another refund for this transaction.
+  // Do not mistake it for an authoritative absence or a unique match.
+  if (candidates.length !== result.data.length) throw new Error("Refund lookup contains unverifiable records; manual review required.");
+  if (candidates.length > 1) throw new Error("Multiple matching refunds require manual review.");
+  return candidates.length === 1 ? String(candidates[0].id) : null;
+}
+
 export type PaystackDispute = { id: string; transactionReference: string; amountMinor: number; currency: "NGN"; domain: PaystackDomain; status: string; resolution: string | null; category: string | null; reason: string | null; deadline: string | null; payload: Record<string, unknown> };
 export type PaystackTestDispute = PaystackDispute & { domain: "test" };
 
