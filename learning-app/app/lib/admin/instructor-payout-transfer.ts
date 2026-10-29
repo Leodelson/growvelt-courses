@@ -16,6 +16,22 @@ export async function approveInstructorTestPayout(reservationId: number, actorUs
   return item;
 }
 
+/** Records admin approval only; there is intentionally no Live transfer writer here. */
+export async function approveInstructorLivePayout(reservationId: number, actorUserId: string) {
+  if (process.env.LEARNING_LIVE_PAYOUT_APPROVAL_ENABLED !== "true") throw new Error("Live payout approval is disabled.");
+  const { data, error } = await createAdminClient().rpc("approve_learning_instructor_live_payout_item", {
+    p_reservation_id: reservationId,
+    p_idempotency_key: `payout-live-approval:${reservationId}`,
+    p_actor_user_id: actorUserId,
+  });
+  if (error) throw new Error("Live payout approval could not be completed safely.");
+  const item = (data as Array<{ payout_item_id?: number; status?: string; payout_item_reference?: string }> | null)?.[0];
+  if (!item?.payout_item_id || !item.payout_item_reference?.startsWith("lpi-live-reservation-") || item.status !== "approved") {
+    throw new Error("Live payout approval could not be completed safely.");
+  }
+  return item;
+}
+
 export async function submitInstructorTestPayout(payoutItemId: number, actorUserId: string) {
   const admin = createAdminClient();
   const { data, error } = await admin.rpc("begin_learning_instructor_test_transfer", { p_payout_item_id: payoutItemId, p_actor_user_id: actorUserId });
