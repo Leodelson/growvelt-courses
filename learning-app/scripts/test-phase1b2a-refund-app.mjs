@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import { PaystackRefundFundingError, throwIfRefundFundingRejected } from "../app/lib/payments/refund-initiation-error.ts";
 
 async function source(path) {
   return readFile(new URL(`../${path}`, import.meta.url), "utf8");
@@ -10,6 +11,14 @@ const recover = await source("app/api/admin/payments/refund/recover/route.ts");
 const provider = await source("app/lib/payments/paystack.ts");
 const configuration = await source("app/lib/payments/paystack-config.ts");
 const webhook = await source("app/api/payments/paystack/webhook/route.ts");
+
+for (const message of ["Insufficient balance to process refund", "Insufficient balance to fulfill this refund. Please top up."]) {
+  assert.throws(() => throwIfRefundFundingRejected({ status: false, message }), PaystackRefundFundingError);
+}
+assert.throws(() => throwIfRefundFundingRejected({ status: "false", message: "Insufficient balance to process refund" }), PaystackRefundFundingError);
+for (const result of [null, { status: false, message: "Provider request timed out" }, { status: true, message: "Insufficient balance to process refund" }, { status: false, message: "Insufficient balance to process refund", data: { id: 1 } }]) {
+  assert.doesNotThrow(() => throwIfRefundFundingRejected(result));
+}
 
 for (const route of [initiate, recover]) {
   assert.match(route, /isSameOriginRequest/);
@@ -28,7 +37,10 @@ assert.match(initiate, /confirmation !== reference/);
 assert.match(initiate, /request_paystack_test_full_refund/);
 assert.doesNotMatch(initiate, /amount_minor\s*:\s*body/);
 assert.match(initiate, /p_provider_status: "needs-attention"/);
-assert.doesNotMatch(initiate, /p_provider_status: "failed"/);
+assert.match(initiate, /error instanceof PaystackRefundFundingError/);
+assert.match(initiate, /p_provider_status: "failed"/);
+assert.match(initiate, /recordedStatus !== "failed"/);
+assert.match(initiate, /refund_funding_unavailable/);
 assert.match(recover, /get_learning_test_refund_case_for_recovery/);
 assert.match(recover, /get_learning_live_refund_case_for_recovery/);
 assert.match(recover, /findPaystackRefundIdForTransaction/);
@@ -42,6 +54,7 @@ assert.doesNotMatch(recover, /requirePaystackTestRefundsEnabled/);
 assert.doesNotMatch(recover, /body\?\.providerCaseId/);
 assert.doesNotMatch(recover, /body\?\.reference/);
 assert.match(provider, /resolvePaystackConfiguration/);
+assert.equal((provider.match(/throwIfRefundFundingRejected\(result\);/g) ?? []).length, 2);
 assert.match(configuration, /PAYMENTS_REFUNDS_ENABLED === "true"/);
 const refundInitiation = provider.slice(provider.indexOf("export async function createPaystackTestFullRefund"), provider.indexOf("export async function verifyPaystackTestRefund"));
 assert.match(refundInitiation, /body: JSON\.stringify\(\{ transaction: input\.transactionId, merchant_note:/);

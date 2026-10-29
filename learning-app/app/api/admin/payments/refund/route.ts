@@ -4,6 +4,7 @@ import { isSameOriginRequest } from "@/app/lib/security/request-origin";
 import { createClient } from "@/app/lib/supabase/server";
 import { createAdminClient } from "@/app/lib/supabase/admin";
 import { createPaystackLiveFullRefund, createPaystackTestFullRefund, getPaystackConfig, requirePaystackLiveRefundsEnabled, requirePaystackTestRefundsEnabled } from "@/app/lib/payments/paystack";
+import { PaystackRefundFundingError } from "@/app/lib/payments/refund-initiation-error";
 import { getOrderNotificationContext, sendPaymentNotification } from "@/app/lib/email/payment-notifications";
 
 export async function POST(request: Request) {
@@ -44,6 +45,15 @@ export async function POST(request: Request) {
     providerRefund = await createRefund({ transactionId: refundCase.provider_transaction_id, transactionReference: reference, note });
   }
   catch (error) {
+    if (error instanceof PaystackRefundFundingError) {
+      const { data: recordedStatus, error: recordError } = await admin.rpc(recordSubmissionFunction, { p_case_id: refundCase.case_id, p_provider_case_id: null, p_provider_status: "failed", p_provider_reference: null, p_operator_id: user.id });
+      if (recordError || recordedStatus !== "failed") {
+        console.error("refund.funding_rejection_record_failed", { reference, caseId: refundCase.case_id, code: recordError?.code ?? "unexpected_case_status" });
+        return NextResponse.json({ code: "refund_status_uncertain", message: "The refund could not be recorded safely. Review the case before another action." }, { status: 502 });
+      }
+      console.warn("refund.funding_unavailable", { reference, caseId: refundCase.case_id });
+      return NextResponse.json({ code: "refund_funding_unavailable", message: "The refund was not started because the payment account has insufficient available funds. The learner has not been refunded." }, { status: 409 });
+    }
     await admin.rpc(recordSubmissionFunction, { p_case_id: refundCase.case_id, p_provider_case_id: null, p_provider_status: "needs-attention", p_provider_reference: null, p_operator_id: user.id });
     console.error("refund.initiation_uncertain", { provider: "paystack", reference, caseId: refundCase.case_id, operatorId: user.id, message: error instanceof Error ? error.message : "Unknown error" });
     return NextResponse.json({ code: "refund_status_uncertain", message: "The refund request needs verification before another action." }, { status: 502 });

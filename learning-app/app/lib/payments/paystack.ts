@@ -1,4 +1,5 @@
 import "server-only";
+import { throwIfRefundFundingRejected } from "@/app/lib/payments/refund-initiation-error";
 import { classifyPaystackVerificationFailure, isTrustedPaystackAuthorizationUrl, parsePaystackVerifiedAmounts, parsePaystackVerifiedTransaction, parseVerifiedPaystackCompanyDispute, parseVerifiedPaystackCompanyRefund, PaystackVerificationError } from "@/app/lib/payments/paystack-core";
 import { resolvePaystackConfiguration } from "@/app/lib/payments/paystack-config";
 import { verifyCompanySettlementEvidence } from "@/app/lib/payments/company-settlement-core";
@@ -310,6 +311,7 @@ export async function createPaystackTestFullRefund(input: { transactionId: strin
   const { secretKey } = requirePaystackTestRefundsEnabled();
   const response = await fetch("https://api.paystack.co/refund", { method: "POST", headers: { Authorization: `Bearer ${secretKey}`, "Content-Type": "application/json" }, cache: "no-store", body: JSON.stringify({ transaction: input.transactionId, merchant_note: input.note, customer_note: "Growvelt course refund" }), signal: AbortSignal.timeout(15000) });
   const result = await response.json().catch(() => null) as { status?: unknown; message?: unknown; data?: Record<string, unknown> } | null;
+  throwIfRefundFundingRejected(result);
   if (!response.ok || result?.status !== true || !result.data) throw new Error(typeof result?.message === "string" ? result.message : "Paystack refund initiation failed.");
   return parsePaystackRefund(result.data, "test", { transactionReference: input.transactionReference, transactionId: input.transactionId }) as PaystackTestRefund;
 }
@@ -328,6 +330,7 @@ export async function createPaystackLiveFullRefund(input: { transactionId: strin
   const { secretKey } = requirePaystackLiveRefundsEnabled();
   const response = await fetch("https://api.paystack.co/refund", { method: "POST", headers: { Authorization: `Bearer ${secretKey}`, "Content-Type": "application/json" }, cache: "no-store", body: JSON.stringify({ transaction: input.transactionId, merchant_note: input.note, customer_note: "Growvelt course refund" }), signal: AbortSignal.timeout(15000) });
   const result = await response.json().catch(() => null) as { status?: unknown; message?: unknown; data?: Record<string, unknown> } | null;
+  throwIfRefundFundingRejected(result);
   if (!response.ok || result?.status !== true || !result.data) throw new Error(typeof result?.message === "string" ? result.message : "Paystack refund initiation failed.");
   return parsePaystackRefund(result.data, "live", { transactionReference: input.transactionReference, transactionId: input.transactionId });
 }
