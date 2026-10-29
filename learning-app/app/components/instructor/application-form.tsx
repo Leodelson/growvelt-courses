@@ -68,15 +68,15 @@ export function InstructorApplicationForm({ identity }: { identity: InstructorAp
       <small>{t("teach.accountNote")}</small>
     </div>
     <div className="instructor-form-grid">
-      <label>{t("teach.country")}<input name="country" required maxLength={100} autoComplete="country-name" placeholder="e.g. Nigeria" disabled={busy} /></label>
+      <label><span className="field-label">{t("teach.country")} <span className="required-mark" aria-hidden="true">*</span></span><input name="country" required maxLength={100} autoComplete="country-name" placeholder="e.g. Nigeria" disabled={busy} /></label>
       <label>{t("teach.phone")} <span>({t("teach.optional")})</span><input name="phone" type="tel" maxLength={32} autoComplete="tel" placeholder="e.g. +234 800 000 0000" disabled={busy} /></label>
     </div>
-    <label>{t("teach.headline")}<input name="headline" required maxLength={160} placeholder="e.g. Data analyst and practical SQL educator" disabled={busy} /></label>
-    <label>{t("teach.expertise")}<input name="expertise" required placeholder="e.g. SQL, data analysis, Power BI" disabled={busy} /><small>{t("teach.expertiseNote")}</small></label>
-    <label>{t("teach.years")}<input name="years_experience" required type="number" min="0" max="60" step="1" inputMode="numeric" placeholder="e.g. 6" disabled={busy} /></label>
-    <label>{t("teach.experience")}<textarea name="teaching_experience" required maxLength={1500} rows={4} placeholder="Describe any teaching, mentoring, workshop, or training experience you have." disabled={busy} /></label>
-    <label>{t("teach.bio")}<textarea name="bio" required maxLength={2000} rows={6} placeholder="Share the practical experience you bring and the learners you are well placed to help." disabled={busy} /></label>
-    <label>{t("teach.motivation")}<textarea name="motivation" required maxLength={1500} rows={5} placeholder="Tell us what you want learners to gain from the courses you would create." disabled={busy} /></label>
+    <label><span className="field-label">{t("teach.headline")} <span className="required-mark" aria-hidden="true">*</span></span><input name="headline" required maxLength={160} placeholder="e.g. Data analyst and practical SQL educator" disabled={busy} /></label>
+    <label><span className="field-label">{t("teach.expertise")} <span className="required-mark" aria-hidden="true">*</span></span><input name="expertise" required placeholder="e.g. SQL, data analysis, Power BI" disabled={busy} /><small>{t("teach.expertiseNote")}</small></label>
+    <label><span className="field-label">{t("teach.years")} <span className="required-mark" aria-hidden="true">*</span></span><input name="years_experience" required type="number" min="0" max="60" step="1" inputMode="numeric" placeholder="e.g. 6" disabled={busy} /></label>
+    <label><span className="field-label">{t("teach.experience")} <span className="required-mark" aria-hidden="true">*</span></span><textarea name="teaching_experience" required maxLength={1500} rows={4} placeholder="Describe any teaching, mentoring, workshop, or training experience you have." disabled={busy} /></label>
+    <label><span className="field-label">{t("teach.bio")} <span className="required-mark" aria-hidden="true">*</span></span><textarea name="bio" required maxLength={2000} rows={6} placeholder="Share the practical experience you bring and the learners you are well placed to help." disabled={busy} /></label>
+    <label><span className="field-label">{t("teach.motivation")} <span className="required-mark" aria-hidden="true">*</span></span><textarea name="motivation" required maxLength={1500} rows={5} placeholder="Tell us what you want learners to gain from the courses you would create." disabled={busy} /></label>
     <label>{t("teach.portfolio")} <span>({t("teach.optional")})</span><input name="portfolio_url" type="url" maxLength={500} inputMode="url" placeholder="https://" disabled={busy} /><small>{t("teach.portfolioNote")}</small></label>
     <p className="instructor-form-note">{t("teach.formNote")}</p>
     <p className={styles.legalCopy}>{legal.intro}<Link href="/terms-of-service" target="_blank" rel="noopener noreferrer">{legal.terms}</Link>{legal.middle}<Link href="/privacy-policy" target="_blank" rel="noopener noreferrer">{legal.privacy}</Link>.</p>

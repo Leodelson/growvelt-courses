@@ -88,15 +88,15 @@ export function PublicInquiryForm({ kind }: PublicInquiryFormProps) {
       <form onSubmit={submit} noValidate>
         <div className="public-inquiry-grid">
           <label>
-            {text.name}
+            <span className="field-label">{text.name} <span className="required-mark" aria-hidden="true">*</span></span>
             <input name="name" type="text" autoComplete="name" maxLength={160} disabled={pending} required />
           </label>
           <label>
-            {text.email}
+            <span className="field-label">{text.email} <span className="required-mark" aria-hidden="true">*</span></span>
             <input name="email" type="email" autoComplete="email" maxLength={254} disabled={pending} required />
           </label>
           <label>
-            {kind === "partnership" ? text.organization : `${text.organization} (${text.optional})`}
+            {kind === "partnership" ? <span className="field-label">{text.organization} <span className="required-mark" aria-hidden="true">*</span></span> : `${text.organization} (${text.optional})`}
             <input name="organization" type="text" autoComplete="organization" maxLength={160} disabled={pending} required={kind === "partnership"} />
           </label>
           <label>
@@ -105,14 +105,14 @@ export function PublicInquiryForm({ kind }: PublicInquiryFormProps) {
           </label>
         </div>
         <label>
-          {copy.subjectLabel}
+          <span className="field-label">{copy.subjectLabel} <span className="required-mark" aria-hidden="true">*</span></span>
           <select name="subject" defaultValue="" disabled={pending} required>
             <option value="" disabled>{text.select}</option>
             {copy.subjectOptions.map((option) => <option value={option} key={option}>{option}</option>)}
           </select>
         </label>
         <label>
-          {kind === "partnership" ? text.partnerMessage : text.contactMessage}
+          <span className="field-label">{kind === "partnership" ? text.partnerMessage : text.contactMessage} <span className="required-mark" aria-hidden="true">*</span></span>
           <textarea name="message" rows={7} maxLength={5000} disabled={pending} required />
         </label>
         <label className="public-inquiry-honeypot" aria-hidden="true">

@@ -61,8 +61,8 @@ export function ProfileSettingsForm({
 
   return (
     <form className="profile-inline-editor" onSubmit={save}>
-      <label htmlFor="profile-display-name">{t("profile.displayName")}</label>
-      <input id="profile-display-name" name="full_name" defaultValue={fullName} maxLength={160} autoFocus disabled={busy} />
+      <label htmlFor="profile-display-name">{t("profile.displayName")} <span className="required-mark" aria-hidden="true">*</span></label>
+      <input id="profile-display-name" name="full_name" defaultValue={fullName} maxLength={160} autoFocus disabled={busy} required />
       <small>{email}</small>
       {errorMessage && <InlineFeedback variant="error">{errorMessage}</InlineFeedback>}
       <div>
