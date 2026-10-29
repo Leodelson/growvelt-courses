@@ -26,7 +26,7 @@ export function NewsletterForm() {
 
   return (
     <form onSubmit={submit} aria-describedby="newsletter-note" noValidate>
-      <label className="sr-only" htmlFor="footer-newsletter-email">{t("footer.emailAddress")}</label>
+      <label className="growvelt-footer-subscribe-label" htmlFor="footer-newsletter-email">{t("footer.emailAddress")} <span className="required-mark" aria-hidden="true">*</span></label>
       <div className="growvelt-footer-subscribe-row">
         <input id="footer-newsletter-email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder={t("footer.emailPlaceholder")} autoComplete="email" disabled={pending} required />
         <button type="submit" disabled={pending}>{pending ? t("footer.subscribing") : t("footer.subscribe")}</button>

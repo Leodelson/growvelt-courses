@@ -1250,6 +1250,8 @@ p { color: var(--muted); line-height: 1.65; }
 .growvelt-footer-newsletter h3 { margin: 0; color: #fff; font-size: 20px; }
 .growvelt-footer-newsletter p { margin: 0; color: rgba(255,255,255,.84); font-size: 15px; line-height: 1.65; }
 .growvelt-footer-newsletter form { min-width: 0; }
+.growvelt-footer-subscribe-label { display: inline-block; margin-bottom: 8px; color: #fff; font-size: 13px; font-weight: 750; }
+.growvelt-footer-subscribe-label .required-mark { color: #ff9aad !important; }
 .growvelt-footer-subscribe-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(108px, auto); gap: 10px; min-width: 0; }
 .growvelt-footer-subscribe-row input { min-width: 0; width: 100%; height: 46px; padding: 0 16px; border: 1px solid rgba(255,255,255,.35); border-radius: 999px; background: #fff; color: #24202e; font: inherit; }
 .growvelt-footer-subscribe-row button { min-width: 108px; padding: 0 16px; border: 0; border-radius: 999px; background: #ff6a00; color: #17101f; font: inherit; font-weight: 850; }
