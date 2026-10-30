@@ -53,6 +53,7 @@
     "test:payments:payout-profile:local": "node scripts/test-phase1e1-payout-profile-local.mjs",
     "test:payments:payout-live-profile:local": "node scripts/test-live-payout-profile-migration.mjs",
     "test:payments:payout-live-approval:app": "node scripts/test-live-payout-approval-app.mjs",
+    "test:payments:payout-live-provider:contract": "node scripts/test-live-payout-provider-contract.mjs",
     "test:payments:payout-live-approval:local": "node scripts/test-live-payout-approval-local.mjs",
     "test:payments:earnings-reservation:app": "node scripts/test-phase1e2-earnings-reservation-app.mjs",
     "test:payments:earnings-reservation:local": "node scripts/test-phase1e2-earnings-reservation-local.mjs",

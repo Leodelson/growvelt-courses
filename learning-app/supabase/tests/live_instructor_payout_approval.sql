@@ -174,6 +174,42 @@ begin
   exception when invalid_parameter_value then rejected:=true; end;
   if not rejected then raise exception 'Unknown Live transfer could be reinitiated'; end if;
 
+  -- Pending evidence must not settle; a later authoritative failure can
+  -- release only the still-eligible reserved earning, exactly once.
+  order_key:=pg_temp.live_approval_order(course_id,'live');
+  allocation_key:=public.allocate_learning_order_commercial_terms(order_key,null);
+  perform public.release_matured_learning_instructor_earnings(100,null);
+  select earning.id into earning_key from public.learning_instructor_earnings earning where earning.allocation_id=allocation_key;
+  select reservation_id into reservation_key from public.reserve_learning_instructor_earning(
+    earning_key,instructor_id,'live-approval:reservation:failed',admin_id);
+  select payout_item_id into payout_item_key from public.approve_learning_instructor_live_payout_item(
+    reservation_key,'payout-live-approval:'||reservation_key::text,admin_id);
+  perform public.begin_learning_instructor_live_transfer(payout_item_key,admin_id);
+  perform public.record_learning_instructor_live_transfer_submission(
+    payout_item_key,'777004','TRF_livefailed','pending',admin_id);
+  select count(*) into before_ledger from public.learning_ledger_transactions ledger where ledger.order_id=order_key;
+  select provider_event_id into receipt_key from public.receive_paystack_live_transfer_provider_event(
+    'provider_api','live-pending-'||payout_item_key::text,repeat('c',64),
+    'lpi-live-reservation-'||reservation_key::text,'777004','TRF_livefailed','pending',7500,'NGN',admin_id);
+  select outcome into outcome_key from public.process_learning_instructor_payout_provider_event(receipt_key);
+  if outcome_key<>'recorded' or exists(select 1 from public.learning_instructor_payout_settlements
+    where payout_item_id=payout_item_key) or not exists(select 1 from public.learning_instructor_earnings
+    where id=earning_key and status='reserved') then
+    raise exception 'Pending Live evidence incorrectly settled or released earnings';
+  end if;
+  select provider_event_id into receipt_key from public.receive_paystack_live_transfer_provider_event(
+    'provider_api','live-failed-'||payout_item_key::text,repeat('d',64),
+    'lpi-live-reservation-'||reservation_key::text,'777004','TRF_livefailed','failed',7500,'NGN',admin_id);
+  select outcome into outcome_key from public.process_learning_instructor_payout_provider_event(receipt_key);
+  select count(*) into after_ledger from public.learning_ledger_transactions ledger where ledger.order_id=order_key;
+  if outcome_key<>'released' or after_ledger<>before_ledger
+    or not exists(select 1 from public.learning_instructor_earnings where id=earning_key and status='available')
+    or exists(select 1 from public.learning_instructor_payout_settlements where payout_item_id=payout_item_key) then
+    raise exception 'Failed Live transfer did not safely release its reservation';
+  end if;
+  select outcome into outcome_key from public.process_learning_instructor_payout_provider_event(receipt_key);
+  if outcome_key<>'already_processed' then raise exception 'Failed Live evidence was not idempotent'; end if;
+
   -- A financial case arriving after provider initiation blocks OTP completion.
   order_key:=pg_temp.live_approval_order(course_id,'live');
   allocation_key:=public.allocate_learning_order_commercial_terms(order_key,null);
