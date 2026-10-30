@@ -43,24 +43,22 @@ export default async function PaymentOperationsPage({ searchParams }: { searchPa
         <div className="admin-row-meta">
           <time dateTime={item.created_at}>{reviewDate(item.created_at, "en", undefined, true)}</time>
           <PaymentActionsMenu orderReference={item.order_reference}>
-            <div className="payment-actions-panel">
-              <PaymentRecoveryButton reference={item.order_reference} actionsEnabled={actionsEnabled} />
-              <PaymentRefundControl
-                reference={item.order_reference}
-                orderStatus={item.order_status}
-                enabled={refundsEnabled}
-                refundEligible={item.refundEligibleInCurrentMode}
-                actionsEnabled={actionsEnabled}
-                existingCase={refundByOrder.has(item.order_id) ? {
-                  caseId: refundByOrder.get(item.order_id)!.case_id,
-                  status: refundByOrder.get(item.order_id)!.status,
-                  providerStatus: refundByOrder.get(item.order_id)!.provider_status,
-                  providerCaseId: refundByOrder.get(item.order_id)!.provider_case_id,
-                  providerReference: refundByOrder.get(item.order_id)!.provider_case_reference,
-                  events: refundEventsByCase.get(refundByOrder.get(item.order_id)!.case_id) ?? [],
-                } : undefined}
-              />
-            </div>
+            <PaymentRecoveryButton reference={item.order_reference} actionsEnabled={actionsEnabled} />
+            <PaymentRefundControl
+              reference={item.order_reference}
+              orderStatus={item.order_status}
+              enabled={refundsEnabled}
+              refundEligible={item.refundEligibleInCurrentMode}
+              actionsEnabled={actionsEnabled}
+              existingCase={refundByOrder.has(item.order_id) ? {
+                caseId: refundByOrder.get(item.order_id)!.case_id,
+                status: refundByOrder.get(item.order_id)!.status,
+                providerStatus: refundByOrder.get(item.order_id)!.provider_status,
+                providerCaseId: refundByOrder.get(item.order_id)!.provider_case_id,
+                providerReference: refundByOrder.get(item.order_id)!.provider_case_reference,
+                events: refundEventsByCase.get(refundByOrder.get(item.order_id)!.case_id) ?? [],
+              } : undefined}
+            />
           </PaymentActionsMenu>
           {disputeByOrder.has(item.order_id) ? <PaymentDisputeSummary dispute={{
             caseId: disputeByOrder.get(item.order_id)!.case_id,
