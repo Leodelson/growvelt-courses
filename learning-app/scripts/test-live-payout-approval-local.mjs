@@ -28,6 +28,7 @@ const migrations = [
   ["20261115000000_add_instructor_live_payout_approval.sql", "public.approve_learning_instructor_live_payout_item(bigint,text,uuid)"],
   ["20261116000000_add_instructor_live_payout_event_receipts.sql", "public.receive_paystack_live_transfer_provider_event(text,text,text,text,text,text,text,bigint,text,uuid)"],
   ["20261117000000_add_instructor_live_transfer_submission_gate.sql", "public.begin_learning_instructor_live_transfer(bigint,uuid)"],
+  ["20261118000000_add_instructor_live_payout_otp_attempt.sql", "public.begin_learning_instructor_live_otp_finalization(bigint,uuid)"],
 ];
 for (const [file, procedure] of migrations) {
   const exists = await run(["exec", "-i", name, "psql", "-X", "-A", "-t", "-v", "ON_ERROR_STOP=1", "-U", "postgres", "-d", "postgres"], `select to_regprocedure('${procedure}') is not null;`);

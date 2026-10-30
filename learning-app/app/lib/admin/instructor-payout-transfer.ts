@@ -1,6 +1,6 @@
 import "server-only";
 import { createAdminClient } from "@/app/lib/supabase/admin";
-import { initiatePaystackLiveTransfer, initiatePaystackTestTransfer, verifyPaystackTestTransfer } from "@/app/lib/payments/paystack";
+import { finalizePaystackLiveTransfer, initiatePaystackLiveTransfer, initiatePaystackTestTransfer, verifyPaystackLiveTransfer, verifyPaystackTestTransfer } from "@/app/lib/payments/paystack";
 import { digestPaystackPayload } from "@/app/lib/payments/paystack-core";
 
 function idempotencyKey(reservationId: number) {
@@ -78,6 +78,82 @@ export async function submitInstructorLivePayout(payoutItemId: number, actorUser
     p_transfer_code: transfer.transferCode, p_provider_status: transfer.status, p_actor_user_id: actorUserId,
   });
   if (persistError) throw new Error("Live transfer identity could not be recorded; verify before further action.");
+  return { status: transfer.status };
+}
+
+/** The supplied OTP is used once and is neither stored nor logged. An unclear
+ * result freezes this attempt for read-only verification, never a blind retry. */
+export async function finalizeInstructorLivePayoutOtp(payoutItemId: number, otp: string, actorUserId: string) {
+  if (process.env.LEARNING_LIVE_PAYOUT_SUBMISSION_ENABLED !== "true"
+    || process.env.LEARNING_LIVE_PAYOUT_OTP_ENABLED !== "true" || !/^\d{6}$/.test(otp)) {
+    throw new Error("Live OTP finalization is unavailable.");
+  }
+  const admin = createAdminClient();
+  const { data, error } = await admin.rpc("begin_learning_instructor_live_otp_finalization", {
+    p_payout_item_id: payoutItemId, p_actor_user_id: actorUserId,
+  });
+  const attempt = (data as Array<{ attempt_id?: number; payout_item_reference?: string; transfer_code?: string;
+    transfer_id?: string; amount_minor?: number; currency?: string }> | null)?.[0];
+  if (error || !attempt?.attempt_id || !attempt.payout_item_reference?.match(/^lpi-live-reservation-[0-9]+$/)
+    || !attempt.transfer_code || !attempt.transfer_id || !Number.isSafeInteger(attempt.amount_minor)
+    || attempt.currency !== "NGN") throw new Error("Live OTP finalization is unavailable.");
+  try {
+    await finalizePaystackLiveTransfer({ transferCode: attempt.transfer_code, transferId: attempt.transfer_id,
+      reference: attempt.payout_item_reference, amountMinor: attempt.amount_minor!, otp });
+  } catch {
+    await admin.rpc("complete_learning_instructor_live_otp_finalization", {
+      p_attempt_id: attempt.attempt_id, p_outcome: "needs_attention", p_actor_user_id: actorUserId,
+    });
+    throw new Error("Live transfer status requires verification; do not submit another OTP.");
+  }
+  const { error: persistError } = await admin.rpc("complete_learning_instructor_live_otp_finalization", {
+    p_attempt_id: attempt.attempt_id, p_outcome: "submitted", p_actor_user_id: actorUserId,
+  });
+  if (persistError) throw new Error("OTP response could not be recorded; verify the transfer reference.");
+  return { status: "awaiting_provider_outcome" as const };
+}
+
+/** Read-only provider lookup followed by the existing durable receipt/finalizer.
+ * OTP, abandoned and other nonstandard outcomes remain manually reviewable. */
+export async function recoverInstructorLivePayout(payoutItemId: number, actorUserId: string) {
+  if (process.env.LEARNING_LIVE_PAYOUT_RECONCILIATION_ENABLED !== "true") {
+    throw new Error("Live payout recovery is disabled.");
+  }
+  const admin = createAdminClient();
+  const { data, error } = await admin.rpc("get_learning_instructor_live_transfer_for_recovery", {
+    p_payout_item_id: payoutItemId, p_actor_user_id: actorUserId,
+  });
+  const item = (data as Array<{ payout_item_id?: number; payout_item_reference?: string; amount_minor?: number;
+    currency?: string; provider_transfer_id?: string | null; provider_transfer_code?: string | null }> | null)?.[0];
+  if (error || !item?.payout_item_id || !item.payout_item_reference?.match(/^lpi-live-reservation-[0-9]+$/)
+    || !Number.isSafeInteger(item.amount_minor) || item.currency !== "NGN") {
+    throw new Error("Live transfer recovery is unavailable.");
+  }
+  const transfer = await verifyPaystackLiveTransfer(item.payout_item_reference);
+  if (transfer.amountMinor !== item.amount_minor || transfer.currency !== item.currency || transfer.domain !== "live"
+    || (item.provider_transfer_id && item.provider_transfer_id !== transfer.transferId)
+    || (item.provider_transfer_code && item.provider_transfer_code !== transfer.transferCode)) {
+    throw new Error("Provider transfer does not match the Live payout item.");
+  }
+  if (!["succeeded","failed","reversed","pending"].includes(transfer.status)) {
+    return { status: "needs_attention" as const };
+  }
+  const identity = `provider-api:${transfer.reference}:${transfer.status}:${transfer.transferId}`;
+  const { data: received, error: receiptError } = await admin.rpc("receive_paystack_live_transfer_provider_event", {
+    p_provenance: "provider_api", p_provider_event_id: identity,
+    p_payload_digest: digestPaystackPayload(JSON.stringify(transfer)),
+    p_reference: transfer.reference, p_transfer_id: transfer.transferId, p_transfer_code: transfer.transferCode,
+    p_status: transfer.status, p_amount_minor: transfer.amountMinor, p_currency: transfer.currency,
+    p_actor_user_id: actorUserId,
+  });
+  const receipt = (received as Array<{ provider_event_id?: number; outcome?: string }> | null)?.[0];
+  if (receiptError || !receipt?.provider_event_id || receipt.outcome === "duplicate_conflict") {
+    throw new Error("Live transfer evidence could not be received safely.");
+  }
+  const { error: processError } = await admin.rpc("process_learning_instructor_payout_provider_event", {
+    p_provider_event_id: receipt.provider_event_id,
+  });
+  if (processError) throw new Error("Live transfer evidence is retained for reconciliation.");
   return { status: transfer.status };
 }
 

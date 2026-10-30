@@ -24,7 +24,7 @@ declare admin_id uuid:='77777777-7777-4777-8777-777777777771';
         course_id bigint; order_key bigint; allocation_key bigint; earning_key bigint;
         reservation_key bigint; payout_item_key bigint; repeated_id bigint; test_order_id bigint;
         before_ledger bigint; after_ledger bigint; rejected boolean;
-        receipt_key bigint; outcome_key text;
+        receipt_key bigint; outcome_key text; otp_attempt_key bigint;
 begin
   if has_function_privilege('authenticated','public.approve_learning_instructor_live_payout_item(bigint,text,uuid)','execute') then
     raise exception 'Browser role can approve a Live payout';
@@ -95,6 +95,21 @@ begin
   begin perform public.mark_learning_instructor_live_transfer_recovery_required(payout_item_key,admin_id);
   exception when invalid_parameter_value then rejected:=true; end;
   if not rejected then raise exception 'Known Live transfer was incorrectly marked unknown'; end if;
+  select attempt_id into otp_attempt_key from public.begin_learning_instructor_live_otp_finalization(payout_item_key,admin_id);
+  if otp_attempt_key is null or exists(select 1 from information_schema.columns
+    where table_schema='public' and table_name='learning_instructor_payout_live_otp_attempts'
+      and column_name ilike '%otp%code%') then
+    raise exception 'OTP attempt was not safely recorded';
+  end if;
+  rejected:=false;
+  begin perform public.begin_learning_instructor_live_otp_finalization(payout_item_key,admin_id);
+  exception when invalid_parameter_value then rejected:=true; end;
+  if not rejected then raise exception 'Duplicate OTP finalization attempt was allowed'; end if;
+  perform public.complete_learning_instructor_live_otp_finalization(otp_attempt_key,'submitted',admin_id);
+  rejected:=false;
+  begin perform public.complete_learning_instructor_live_otp_finalization(otp_attempt_key,'submitted',admin_id);
+  exception when invalid_parameter_value then rejected:=true; end;
+  if not rejected then raise exception 'OTP finalization outcome was mutable'; end if;
 
   -- A Test-domain receipt for a Live item must never settle the earning.
   select provider_event_id into receipt_key from public.receive_paystack_test_transfer_provider_event(
@@ -146,6 +161,28 @@ begin
   begin perform public.begin_learning_instructor_live_transfer(payout_item_key,admin_id);
   exception when invalid_parameter_value then rejected:=true; end;
   if not rejected then raise exception 'Unknown Live transfer could be reinitiated'; end if;
+
+  -- A financial case arriving after provider initiation blocks OTP completion.
+  order_key:=pg_temp.live_approval_order(course_id,'live');
+  allocation_key:=public.allocate_learning_order_commercial_terms(order_key,null);
+  perform public.release_matured_learning_instructor_earnings(100,null);
+  select earning.id into earning_key from public.learning_instructor_earnings earning where earning.allocation_id=allocation_key;
+  select reservation_id into reservation_key from public.reserve_learning_instructor_earning(
+    earning_key,instructor_id,'live-approval:reservation:otp-blocked',admin_id);
+  select payout_item_id into payout_item_key from public.approve_learning_instructor_live_payout_item(
+    reservation_key,'payout-live-approval:'||reservation_key::text,admin_id);
+  perform public.begin_learning_instructor_live_transfer(payout_item_key,admin_id);
+  perform public.record_learning_instructor_live_transfer_submission(
+    payout_item_key,'777003','TRF_otprefundblocked','otp',admin_id);
+  insert into public.learning_payment_cases(order_id,case_type,status,amount_minor,currency,provider,provider_case_id,provider_status)
+    values(order_key,'refund','needs_attention',10000,'NGN','paystack','live-otp-blocked-fixture','processing');
+  rejected:=false;
+  begin perform public.begin_learning_instructor_live_otp_finalization(payout_item_key,admin_id);
+  exception when invalid_parameter_value then rejected:=true; end;
+  if not rejected or exists(select 1 from public.learning_instructor_payout_live_otp_attempts attempt
+    where attempt.payout_item_id=payout_item_key) then
+    raise exception 'OTP finalization ignored active refund protection';
+  end if;
 
   test_order_id:=pg_temp.live_approval_order(course_id,'test');
   allocation_key:=public.allocate_learning_order_commercial_terms(test_order_id,null);

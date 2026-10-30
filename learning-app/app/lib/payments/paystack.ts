@@ -593,3 +593,58 @@ export async function initiatePaystackLiveTransfer(input: { recipientCode: strin
   }
   return { transferId, transferCode, reference: input.reference, status: data.status, amountMinor: amount, currency: "NGN", domain: "live" };
 }
+
+export async function finalizePaystackLiveTransfer(input: { transferCode: string; transferId: string; reference: string; amountMinor: number; otp: string }) {
+  if (!/^TRF_[A-Za-z0-9]+$/.test(input.transferCode) || !/^\d+$/.test(input.transferId)
+    || !/^lpi-live-reservation-[0-9]+$/.test(input.reference) || !Number.isSafeInteger(input.amountMinor)
+    || input.amountMinor <= 0 || !/^\d{6}$/.test(input.otp)) throw new Error("Invalid Live transfer finalization input.");
+  const { secretKey } = getPaystackLiveConfig(false);
+  const response = await fetch("https://api.paystack.co/transfer/finalize_transfer", {
+    method: "POST", headers: { Authorization: `Bearer ${secretKey}`, "Content-Type": "application/json" }, cache: "no-store",
+    body: JSON.stringify({ transfer_code: input.transferCode, otp: input.otp }), signal: AbortSignal.timeout(15000),
+  });
+  const result = await response.json().catch(() => null) as { status?: unknown; data?: Record<string, unknown> } | null;
+  const data = result?.data;
+  const transferId = typeof data?.id === "number" && Number.isSafeInteger(data.id) ? String(data.id)
+    : typeof data?.id === "string" && /^\d+$/.test(data.id) ? data.id : "";
+  const amount = typeof data?.amount === "number" ? data.amount
+    : typeof data?.amount === "string" && /^\d+$/.test(data.amount) ? Number(data.amount) : NaN;
+  if (!response.ok || result?.status !== true || transferId !== input.transferId
+    || data?.transfer_code !== input.transferCode || data?.reference !== input.reference
+    || amount !== input.amountMinor || data?.currency !== "NGN" || data?.domain !== "live"
+    || (data?.status !== "pending" && data?.status !== "success")) {
+    throw new Error("Live OTP finalization is inconclusive; verify the transfer reference.");
+  }
+  // Even an immediate success response is not local settlement evidence.
+  return { status: data.status as "pending" | "success" };
+}
+
+export type PaystackLiveTransferVerification = { transferId: string; transferCode: string | null;
+  reference: string; status: "succeeded" | "failed" | "reversed" | "pending" | "otp" | "abandoned" | "blocked" | "rejected" | "received";
+  amountMinor: number; currency: "NGN"; domain: "live" };
+
+/** Read-only recovery; never treats OTP or a queued transfer as paid. */
+export async function verifyPaystackLiveTransfer(reference: string): Promise<PaystackLiveTransferVerification> {
+  if (!/^lpi-live-reservation-[0-9]+$/.test(reference)) throw new Error("Invalid Live transfer reference.");
+  const { secretKey } = getPaystackLiveConfig(false);
+  const response = await fetch(`https://api.paystack.co/transfer/verify/${encodeURIComponent(reference)}`, {
+    headers: { Authorization: `Bearer ${secretKey}` }, cache: "no-store", signal: AbortSignal.timeout(15000),
+  });
+  const result = await response.json().catch(() => null) as { status?: unknown; data?: Record<string, unknown> } | null;
+  const data = result?.data;
+  const transferId = typeof data?.id === "number" && Number.isSafeInteger(data.id) ? String(data.id)
+    : typeof data?.id === "string" && /^\d+$/.test(data.id) ? data.id : "";
+  const transferCode = typeof data?.transfer_code === "string" && /^TRF_[A-Za-z0-9]+$/.test(data.transfer_code)
+    ? data.transfer_code : null;
+  const amount = typeof data?.amount === "number" ? data.amount
+    : typeof data?.amount === "string" && /^\d+$/.test(data.amount) ? Number(data.amount) : NaN;
+  const rawStatus = data?.status;
+  const status = rawStatus === "success" ? "succeeded" : rawStatus;
+  if (!response.ok || result?.status !== true || !transferId || data?.reference !== reference
+    || !Number.isSafeInteger(amount) || amount <= 0 || data?.currency !== "NGN" || data?.domain !== "live"
+    || !["succeeded","failed","reversed","pending","otp","abandoned","blocked","rejected","received"].includes(String(status))) {
+    throw new Error("Live transfer verification is inconclusive.");
+  }
+  return { transferId, transferCode, reference, status: status as PaystackLiveTransferVerification["status"],
+    amountMinor: amount, currency: "NGN", domain: "live" };
+}

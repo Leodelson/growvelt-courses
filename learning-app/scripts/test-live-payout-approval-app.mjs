@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
-const [route, operations, migration, sandboxRoute, sandboxOperations, liveReceipts, webhook, adminPage, liveSubmission, liveSubmissionRoute, paystack] = await Promise.all([
+const [route, operations, migration, sandboxRoute, sandboxOperations, liveReceipts, webhook, adminPage, liveSubmission, liveSubmissionRoute, paystack, otpMigration, otpRoute, recoveryRoute] = await Promise.all([
   readFile("app/api/admin/commercial/payout-items/approve/route.ts", "utf8"),
   readFile("app/lib/admin/instructor-payout-transfer.ts", "utf8"),
   readFile("supabase/migrations/20261115000000_add_instructor_live_payout_approval.sql", "utf8"),
@@ -13,6 +13,9 @@ const [route, operations, migration, sandboxRoute, sandboxOperations, liveReceip
   readFile("supabase/migrations/20261117000000_add_instructor_live_transfer_submission_gate.sql", "utf8"),
   readFile("app/api/admin/commercial/payout-items/submit-live/route.ts", "utf8"),
   readFile("app/lib/payments/paystack.ts", "utf8"),
+  readFile("supabase/migrations/20261118000000_add_instructor_live_payout_otp_attempt.sql", "utf8"),
+  readFile("app/api/admin/commercial/payout-items/finalize-live-otp/route.ts", "utf8"),
+  readFile("app/api/admin/commercial/payout-items/recover-live/route.ts", "utf8"),
 ]);
 assert.match(route, /isSameOriginRequest\(request\)/);
 assert.match(route, /is_growvelt_learning_admin/);
@@ -53,4 +56,22 @@ assert.doesNotMatch(liveSubmissionRoute, /amountMinor|recipientCode|secretKey|ot
 assert.match(paystack, /getPaystackLiveConfig\(false\)/);
 assert.match(paystack, /data\?\.domain !== "live"/);
 assert.match(paystack, /data\?\.status !== "otp" && data\?\.status !== "pending"/);
-console.log("PASS gated Live payout approval, submission and reconciliation boundaries");
+assert.match(paystack, /finalizePaystackLiveTransfer/);
+assert.match(paystack, /transfer\/finalize_transfer/);
+assert.match(paystack, /verifyPaystackLiveTransfer/);
+assert.match(otpMigration, /payout_item_id bigint not null unique/);
+assert.match(otpMigration, /status in \('started','submitted','needs_attention'\)/);
+assert.match(otpMigration, /item\.initiated_at < now\(\)-interval '25 minutes'/);
+assert.match(otpMigration, /Active financial protection blocks Live OTP finalization/);
+assert.doesNotMatch(otpMigration, /otp (text|varchar|character)/i);
+assert.match(otpRoute, /LEARNING_LIVE_PAYOUT_OTP_ENABLED !== "true"/);
+assert.match(otpRoute, /isSameOriginRequest/);
+assert.match(otpRoute, /is_growvelt_learning_admin/);
+assert.match(otpRoute, /raw\.length > 1024/);
+assert.doesNotMatch(otpRoute, /console\.|logger\./);
+assert.match(recoveryRoute, /LEARNING_LIVE_PAYOUT_RECONCILIATION_ENABLED !== "true"/);
+assert.match(recoveryRoute, /isSameOriginRequest/);
+assert.match(recoveryRoute, /is_growvelt_learning_admin/);
+assert.match(operations, /verifyPaystackLiveTransfer\(item\.payout_item_reference\)/);
+assert.match(operations, /receive_paystack_live_transfer_provider_event/);
+console.log("PASS gated Live payout approval, submission, OTP and reconciliation boundaries");
