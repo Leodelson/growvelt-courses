@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { isSameOriginRequest } from "@/app/lib/security/request-origin";
 import { createClient } from "@/app/lib/supabase/server";
 import { createAdminClient } from "@/app/lib/supabase/admin";
-import { findPaystackRefundIdForTransaction, getPaystackConfig, verifyPaystackLiveRefund, verifyPaystackTestRefund } from "@/app/lib/payments/paystack";
+import { findPaystackRefundIdForTransaction, getPaystackConfig, verifyPaystackLiveRefund, verifyPaystackTestRefund, verifyPaystackTransaction } from "@/app/lib/payments/paystack";
 import { getOrderNotificationContext, sendPaymentNotification } from "@/app/lib/email/payment-notifications";
 
 export async function POST(request: Request) {
@@ -43,9 +43,26 @@ export async function POST(request: Request) {
       if (attemptError || orderError) throw attemptError ?? orderError;
       if (!attempt || !order || (mode === "live" ? attempt.paystack_domain !== "live" : attempt.paystack_domain === "live"))
         return NextResponse.json({ code: "refund_not_recoverable" }, { status: 409 });
+      let expectedRefundMinor = refundCase.amount_minor;
+      if (mode === "live") {
+        const charge = await verifyPaystackTransaction(order.order_reference, "live");
+        if (charge.status !== "success" || charge.transactionId !== refundCase.provider_transaction_id
+          || charge.requestedAmountMinor !== refundCase.amount_minor || charge.amountMinor < refundCase.amount_minor)
+          return NextResponse.json({ code: "refund_charge_mismatch", message: "The original payment could not be matched safely. Continue manual review." }, { status: 409 });
+        expectedRefundMinor = charge.amountMinor;
+      }
       const refundId = await findPaystackRefundIdForTransaction({ transactionId: refundCase.provider_transaction_id,
-        amountMinor: refundCase.amount_minor, domain: mode, requestedAt: refundCase.requested_at });
-      if (!refundId) return NextResponse.json({ code: "refund_not_found", message: "No matching refund was found. Do not submit another refund; continue manual review." }, { status: 409 });
+        amountMinor: expectedRefundMinor, domain: mode, requestedAt: refundCase.requested_at });
+      if (!refundId) {
+        if (mode === "live" && refundCase.status === "needs_attention") {
+          const { data: outcome, error: closeError } = await admin.rpc("close_unsubmitted_paystack_live_refund_case", {
+            p_case_id: caseId, p_operator_id: user.id,
+          });
+          if (closeError) return NextResponse.json({ code: "refund_case_requires_review", message: "No provider refund attempt was found, but this case cannot yet be closed safely. Continue manual review." }, { status: 409 });
+          return NextResponse.json({ outcome, message: "No provider refund attempt was found. This case was closed; a new refund may be requested after review." });
+        }
+        return NextResponse.json({ code: "refund_not_found", message: "No matching refund was found. Do not submit another refund; continue manual review." }, { status: 409 });
+      }
       target = { order_reference: order.order_reference, provider_case_id: refundId, provider_transaction_id: refundCase.provider_transaction_id };
     }
     const verifyRefund = mode === "live" ? verifyPaystackLiveRefund : verifyPaystackTestRefund;

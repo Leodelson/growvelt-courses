@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { isSameOriginRequest } from "@/app/lib/security/request-origin";
 import { createClient } from "@/app/lib/supabase/server";
 import { createAdminClient } from "@/app/lib/supabase/admin";
-import { createPaystackLiveFullRefund, createPaystackTestFullRefund, getPaystackConfig, requirePaystackLiveRefundsEnabled, requirePaystackTestRefundsEnabled } from "@/app/lib/payments/paystack";
+import { createPaystackLiveFullRefund, createPaystackTestFullRefund, getPaystackConfig, requirePaystackLiveRefundsEnabled, requirePaystackTestRefundsEnabled, verifyPaystackTransaction } from "@/app/lib/payments/paystack";
 import { PaystackRefundFundingError } from "@/app/lib/payments/refund-initiation-error";
 import { getOrderNotificationContext, sendPaymentNotification } from "@/app/lib/email/payment-notifications";
 
@@ -28,12 +28,32 @@ export async function POST(request: Request) {
   const idempotencyKey = typeof body?.idempotencyKey === "string" && /^[0-9a-f-]{36}$/i.test(body.idempotencyKey) ? body.idempotencyKey : randomUUID();
   if (!/^GL-[A-F0-9]{32}$/.test(reference) || confirmation !== reference || !/^[a-z][a-z0-9_]{1,60}$/.test(reasonCode) || note.length < 3 || note.length > 2000) return NextResponse.json({ code: "invalid_request" }, { status: 400 });
   const admin = createAdminClient();
+  let liveCharge: Awaited<ReturnType<typeof verifyPaystackTransaction>> | null = null;
+  if (mode === "live") {
+    // Verify the entire amount the learner paid before creating a case or
+    // contacting the refund endpoint. The course's commercial price can be lower.
+    try {
+      const [{ data: order, error: orderError }, verified] = await Promise.all([
+        admin.from("learning_orders").select("id,gross_amount_minor,currency").eq("order_reference", reference).single(),
+        verifyPaystackTransaction(reference, "live"),
+      ]);
+      if (orderError || !order || verified.status !== "success" || verified.currency !== "NGN"
+        || verified.requestedAmountMinor !== order.gross_amount_minor
+        || verified.amountMinor < order.gross_amount_minor) throw new Error("Live charge evidence does not match the order.");
+      liveCharge = verified;
+    } catch {
+      return NextResponse.json({ code: "refund_charge_unverified", message: "The original payment could not be verified safely. No refund was started." }, { status: 409 });
+    }
+  }
   const requestFunction = mode === "live" ? "request_paystack_live_full_refund" : "request_paystack_test_full_refund";
   const { data: requested, error: requestError } = await admin.rpc(requestFunction, { p_order_reference: reference, p_operator_id: user.id, p_idempotency_key: idempotencyKey, p_confirmation: confirmation, p_reason_code: reasonCode, p_operator_note: note });
   if (requestError) return NextResponse.json({ code: "refund_not_eligible", message: "This order is not eligible for a new full refund." }, { status: 409 });
   const refundCase = (requested as Array<{ case_id: number; status: string; amount_minor: number; currency: string; provider_transaction_id: string }> | null)?.[0];
   if (!refundCase) return NextResponse.json({ code: "case_creation_failed" }, { status: 500 });
   if (refundCase.status !== "requested") return NextResponse.json({ outcome: refundCase.status, caseId: refundCase.case_id });
+  if (liveCharge && (liveCharge.transactionId !== refundCase.provider_transaction_id
+    || liveCharge.requestedAmountMinor !== refundCase.amount_minor))
+    return NextResponse.json({ code: "refund_charge_mismatch", message: "The original payment does not match the refund case. No refund was started." }, { status: 409 });
   const markSubmittingFunction = mode === "live" ? "mark_paystack_live_refund_submitting" : "mark_paystack_test_refund_submitting";
   const recordSubmissionFunction = mode === "live" ? "record_paystack_live_refund_submission" : "record_paystack_test_refund_submission";
   const { data: submissionState, error: submittingError } = await admin.rpc(markSubmittingFunction, { p_case_id: refundCase.case_id, p_operator_id: user.id });
@@ -41,8 +61,9 @@ export async function POST(request: Request) {
   if (submissionState !== "submitting") return NextResponse.json({ code: "refund_already_submitting", message: "This refund is already being submitted. Check its status before taking another action." }, { status: 409 });
   let providerRefund;
   try {
-    const createRefund = mode === "live" ? createPaystackLiveFullRefund : createPaystackTestFullRefund;
-    providerRefund = await createRefund({ transactionId: refundCase.provider_transaction_id, transactionReference: reference, note });
+    providerRefund = liveCharge
+      ? await createPaystackLiveFullRefund({ transactionId: refundCase.provider_transaction_id, transactionReference: reference, amountMinor: liveCharge.amountMinor, note })
+      : await createPaystackTestFullRefund({ transactionId: refundCase.provider_transaction_id, transactionReference: reference, note });
   }
   catch (error) {
     if (error instanceof PaystackRefundFundingError) {
@@ -57,6 +78,10 @@ export async function POST(request: Request) {
     await admin.rpc(recordSubmissionFunction, { p_case_id: refundCase.case_id, p_provider_case_id: null, p_provider_status: "needs-attention", p_provider_reference: null, p_operator_id: user.id });
     console.error("refund.initiation_uncertain", { provider: "paystack", reference, caseId: refundCase.case_id, operatorId: user.id, message: error instanceof Error ? error.message : "Unknown error" });
     return NextResponse.json({ code: "refund_status_uncertain", message: "The refund request needs verification before another action." }, { status: 502 });
+  }
+  if (liveCharge && providerRefund.amountMinor !== liveCharge.amountMinor) {
+    await admin.rpc(recordSubmissionFunction, { p_case_id: refundCase.case_id, p_provider_case_id: providerRefund.id, p_provider_status: "needs-attention", p_provider_reference: providerRefund.reference, p_operator_id: user.id });
+    return NextResponse.json({ code: "refund_amount_uncertain", message: "The refund was submitted, but its amount needs manual verification. Do not submit another refund." }, { status: 202 });
   }
   const { error: submissionError } = await admin.rpc(recordSubmissionFunction, { p_case_id: refundCase.case_id, p_provider_case_id: providerRefund.id, p_provider_status: providerRefund.status, p_provider_reference: providerRefund.reference, p_operator_id: user.id });
   if (submissionError) {
