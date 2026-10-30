@@ -11,7 +11,9 @@ export function PaymentActionsMenu({
   children: ReactNode;
 }) {
   const [open, setOpen] = useState(false);
+  const [placement, setPlacement] = useState<"top" | "bottom">("bottom");
   const menuRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const panelId = `payment-actions-${orderReference}`;
 
@@ -43,8 +45,30 @@ export function PaymentActionsMenu({
     return () => row?.classList.remove("payment-actions-row-open");
   }, [open]);
 
+  useEffect(() => {
+    if (!open) return;
+    const updatePlacement = () => {
+      const trigger = triggerRef.current?.getBoundingClientRect();
+      const panel = panelRef.current;
+      if (!trigger || !panel) return;
+      const spaceBelow = window.innerHeight - trigger.bottom - 8;
+      const spaceAbove = trigger.top - 8;
+      setPlacement(panel.offsetHeight > spaceBelow && spaceAbove > spaceBelow ? "top" : "bottom");
+    };
+    updatePlacement();
+    const observer = new ResizeObserver(updatePlacement);
+    if (panelRef.current) observer.observe(panelRef.current);
+    window.addEventListener("resize", updatePlacement);
+    window.addEventListener("scroll", updatePlacement, true);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", updatePlacement);
+      window.removeEventListener("scroll", updatePlacement, true);
+    };
+  }, [open]);
+
   return (
-    <div ref={menuRef} className="payment-actions-menu">
+    <div ref={menuRef} className="payment-actions-menu" data-placement={placement}>
       <button
         ref={triggerRef}
         type="button"
@@ -57,7 +81,7 @@ export function PaymentActionsMenu({
       >
         <EllipsisVertical size={20} aria-hidden="true" />
       </button>
-      <div id={panelId} className="payment-actions-panel" hidden={!open}>
+      <div ref={panelRef} id={panelId} className="payment-actions-panel" hidden={!open}>
         {children}
       </div>
     </div>
