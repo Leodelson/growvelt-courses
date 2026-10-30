@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
-const [route, operations, migration, sandboxRoute, sandboxOperations, liveReceipts, webhook, adminPage, liveSubmission, liveSubmissionRoute, paystack, otpMigration, otpRoute, recoveryRoute] = await Promise.all([
+const [route, operations, migration, sandboxRoute, sandboxOperations, liveReceipts, webhook, adminPage, liveSubmission, liveSubmissionRoute, paystack, otpMigration, otpRoute, recoveryRoute, liveCandidates, liveControl, commercialOperations] = await Promise.all([
   readFile("app/api/admin/commercial/payout-items/approve/route.ts", "utf8"),
   readFile("app/lib/admin/instructor-payout-transfer.ts", "utf8"),
   readFile("supabase/migrations/20261115000000_add_instructor_live_payout_approval.sql", "utf8"),
@@ -16,6 +16,9 @@ const [route, operations, migration, sandboxRoute, sandboxOperations, liveReceip
   readFile("supabase/migrations/20261118000000_add_instructor_live_payout_otp_attempt.sql", "utf8"),
   readFile("app/api/admin/commercial/payout-items/finalize-live-otp/route.ts", "utf8"),
   readFile("app/api/admin/commercial/payout-items/recover-live/route.ts", "utf8"),
+  readFile("supabase/migrations/20261119000000_list_instructor_live_payout_candidates.sql", "utf8"),
+  readFile("app/components/admin/commercial-live-payout-control.tsx", "utf8"),
+  readFile("app/lib/admin/commercial-operations.ts", "utf8"),
 ]);
 assert.match(route, /isSameOriginRequest\(request\)/);
 assert.match(route, /is_growvelt_learning_admin/);
@@ -74,4 +77,16 @@ assert.match(recoveryRoute, /isSameOriginRequest/);
 assert.match(recoveryRoute, /is_growvelt_learning_admin/);
 assert.match(operations, /verifyPaystackLiveTransfer\(item\.payout_item_reference\)/);
 assert.match(operations, /receive_paystack_live_transfer_provider_event/);
+assert.match(liveCandidates, /capability='admin' and c.status='active'/);
+assert.match(liveCandidates, /attempt.paystack_domain='live'/);
+assert.match(liveCandidates, /profile.provider_domain='live'/);
+assert.match(liveCandidates, /learning_payment_cases payment_case/);
+assert.match(commercialOperations, /LEARNING_LIVE_PAYOUT_APPROVAL_ENABLED !== "true"/);
+assert.match(adminPage, /CommercialLivePayoutControl action="approve"/);
+assert.match(adminPage, /CommercialLivePayoutControl action="submit"/);
+assert.match(adminPage, /CommercialLivePayoutControl action="otp"/);
+assert.match(adminPage, /CommercialLivePayoutControl action="recover"/);
+assert.match(liveControl, /confirmation === reference/);
+assert.match(liveControl, /otpRef.current.value = ""/);
+assert.doesNotMatch(liveControl, /localStorage|sessionStorage|console\./);
 console.log("PASS gated Live payout approval, submission, OTP and reconciliation boundaries");

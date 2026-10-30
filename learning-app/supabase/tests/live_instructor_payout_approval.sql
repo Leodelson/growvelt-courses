@@ -50,6 +50,14 @@ begin
   select earning.id into earning_key from public.learning_instructor_earnings earning where earning.allocation_id=allocation_key;
   select reservation_id into reservation_key from public.reserve_learning_instructor_earning(
     earning_key,instructor_id,'live-approval:reservation:1',admin_id);
+  if not exists(select 1 from public.list_learning_instructor_live_payout_candidates(admin_id,100) candidate
+    where candidate.reservation_id=reservation_key and candidate.amount_minor=7500) then
+    raise exception 'Eligible Live reservation was not listed for administrator';
+  end if;
+  rejected:=false;
+  begin perform public.list_learning_instructor_live_payout_candidates(instructor_id,100);
+  exception when insufficient_privilege then rejected:=true; end;
+  if not rejected then raise exception 'Instructor viewed Live payout candidates'; end if;
   select count(*) into before_ledger from public.learning_ledger_transactions ledger where ledger.order_id=order_key;
   select payout_item_id into payout_item_key from public.approve_learning_instructor_live_payout_item(
     reservation_key,'payout-live-approval:'||reservation_key::text,admin_id);
@@ -58,6 +66,10 @@ begin
   select count(*) into after_ledger from public.learning_ledger_transactions ledger where ledger.order_id=order_key;
   if payout_item_key is null or repeated_id<>payout_item_key or before_ledger<>after_ledger then
     raise exception 'Live approval is not idempotent or created a ledger movement';
+  end if;
+  if exists(select 1 from public.list_learning_instructor_live_payout_candidates(admin_id,100) candidate
+    where candidate.reservation_id=reservation_key) then
+    raise exception 'Approved Live reservation remained a candidate';
   end if;
   if not exists(select 1 from public.learning_instructor_payout_items item
     join public.learning_instructor_payout_profiles profile on profile.id=item.payout_profile_id
