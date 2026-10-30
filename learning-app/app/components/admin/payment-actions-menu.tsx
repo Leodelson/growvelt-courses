@@ -12,6 +12,7 @@ export function PaymentActionsMenu({
 }) {
   const [open, setOpen] = useState(false);
   const [placement, setPlacement] = useState<"top" | "bottom">("bottom");
+  const [horizontalOffset, setHorizontalOffset] = useState(0);
   const menuRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -54,6 +55,12 @@ export function PaymentActionsMenu({
       const spaceBelow = window.innerHeight - trigger.bottom - 8;
       const spaceAbove = trigger.top - 8;
       setPlacement(panel.offsetHeight > spaceBelow && spaceAbove > spaceBelow ? "top" : "bottom");
+      const naturalLeft = trigger.right - panel.offsetWidth;
+      const safeLeft = Math.min(
+        Math.max(16, naturalLeft),
+        Math.max(16, window.innerWidth - panel.offsetWidth - 16),
+      );
+      setHorizontalOffset(safeLeft - naturalLeft);
     };
     updatePlacement();
     const observer = new ResizeObserver(updatePlacement);
@@ -81,7 +88,13 @@ export function PaymentActionsMenu({
       >
         <EllipsisVertical size={20} aria-hidden="true" />
       </button>
-      <div ref={panelRef} id={panelId} className="payment-actions-panel" hidden={!open}>
+      <div
+        ref={panelRef}
+        id={panelId}
+        className="payment-actions-panel"
+        hidden={!open}
+        style={{ transform: `translateX(${horizontalOffset}px)` }}
+      >
         {children}
       </div>
     </div>
