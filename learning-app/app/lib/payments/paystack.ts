@@ -325,10 +325,11 @@ export async function verifyPaystackTestRefund(input: { refundId: string; transa
   return parsePaystackRefund(result.data, "test", { transactionReference: input.transactionReference, transactionId: input.transactionId }) as PaystackTestRefund;
 }
 
-export async function createPaystackLiveFullRefund(input: { transactionId: string; transactionReference: string; note: string }) {
-  if (!/^\d+$/.test(input.transactionId) || !/^GL-[A-F0-9]{32}$/.test(input.transactionReference)) throw new Error("Invalid refund target.");
+export async function createPaystackLiveFullRefund(input: { transactionId: string; transactionReference: string; amountMinor: number; note: string }) {
+  if (!/^\d+$/.test(input.transactionId) || !/^GL-[A-F0-9]{32}$/.test(input.transactionReference)
+    || !Number.isSafeInteger(input.amountMinor) || input.amountMinor <= 0) throw new Error("Invalid refund target.");
   const { secretKey } = requirePaystackLiveRefundsEnabled();
-  const response = await fetch("https://api.paystack.co/refund", { method: "POST", headers: { Authorization: `Bearer ${secretKey}`, "Content-Type": "application/json" }, cache: "no-store", body: JSON.stringify({ transaction: input.transactionId, merchant_note: input.note, customer_note: "Growvelt course refund" }), signal: AbortSignal.timeout(15000) });
+  const response = await fetch("https://api.paystack.co/refund", { method: "POST", headers: { Authorization: `Bearer ${secretKey}`, "Content-Type": "application/json" }, cache: "no-store", body: JSON.stringify({ transaction: input.transactionId, amount: input.amountMinor, merchant_note: input.note, customer_note: "Growvelt course refund" }), signal: AbortSignal.timeout(15000) });
   const result = await response.json().catch(() => null) as { status?: unknown; message?: unknown; data?: Record<string, unknown> } | null;
   throwIfRefundFundingRejected(result);
   if (!response.ok || result?.status !== true || !result.data) throw new Error(typeof result?.message === "string" ? result.message : "Paystack refund initiation failed.");
@@ -358,13 +359,18 @@ export async function findPaystackRefundIdForTransaction(input: { transactionId:
   const result = await response.json().catch(() => null) as { status?: unknown; data?: unknown; meta?: { pageCount?: unknown } } | null;
   if (!response.ok || result?.status !== true || !Array.isArray(result.data)) throw new Error("Refund lookup was inconclusive.");
   // Do not treat a truncated list as an authoritative absence or unique match.
-  if (result.data.length >= 100 || (result.meta?.pageCount !== undefined && result.meta.pageCount !== 1)
+  const pageCount = result.meta?.pageCount;
+  const emptyResult = result.data.length === 0;
+  if (result.data.length >= 100 || (pageCount !== undefined && pageCount !== 1 && !(pageCount === 0 && emptyResult))
     || (result.meta?.pageCount === undefined && result.data.length >= 50)) throw new Error("Refund lookup requires manual review.");
   const candidates = result.data.filter((entry: unknown) => {
     if (!entry || typeof entry !== "object") return false;
     const refund = entry as Record<string, unknown>;
     const createdAt = Date.parse(String(refund.createdAt ?? refund.created_at ?? ""));
-    return String(refund.transaction) === input.transactionId && refund.amount === input.amountMinor
+    const transaction = refund.transaction && typeof refund.transaction === "object"
+      ? (refund.transaction as Record<string, unknown>).id : refund.transaction;
+    const amount = typeof refund.amount === "string" && /^\d+$/.test(refund.amount) ? Number(refund.amount) : refund.amount;
+    return String(transaction) === input.transactionId && amount === input.amountMinor
       && refund.currency === "NGN" && refund.domain === input.domain && Number.isFinite(createdAt)
       && createdAt >= requestedAt - 60_000 && /^\d+$/.test(String(refund.id));
   }) as Array<Record<string, unknown>>;
