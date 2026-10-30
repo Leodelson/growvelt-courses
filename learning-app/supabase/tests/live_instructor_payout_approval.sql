@@ -78,6 +78,24 @@ begin
   exception when insufficient_privilege then rejected:=true; end;
   if not rejected then raise exception 'Instructor approved own payout'; end if;
 
+  -- The Live writer uses only the approved identity, and a second submission
+  -- cannot initiate another transfer even while the first is awaiting OTP.
+  perform public.begin_learning_instructor_live_transfer(payout_item_key,admin_id);
+  rejected:=false;
+  begin perform public.begin_learning_instructor_live_transfer(payout_item_key,admin_id);
+  exception when invalid_parameter_value then rejected:=true; end;
+  if not rejected then raise exception 'Duplicate Live transfer submission was allowed'; end if;
+  perform public.record_learning_instructor_live_transfer_submission(
+    payout_item_key,'777002','TRF_livesuccess','otp',admin_id);
+  if not exists(select 1 from public.learning_instructor_payout_items item where item.id=payout_item_key
+    and item.status='pending' and item.provider_status='otp' and item.provider_transfer_id='777002') then
+    raise exception 'OTP-required Live transfer was treated as completed';
+  end if;
+  rejected:=false;
+  begin perform public.mark_learning_instructor_live_transfer_recovery_required(payout_item_key,admin_id);
+  exception when invalid_parameter_value then rejected:=true; end;
+  if not rejected then raise exception 'Known Live transfer was incorrectly marked unknown'; end if;
+
   -- A Test-domain receipt for a Live item must never settle the earning.
   select provider_event_id into receipt_key from public.receive_paystack_test_transfer_provider_event(
     'provider_api','test-cross-domain-'||payout_item_key::text,repeat('a',64),
@@ -87,10 +105,7 @@ begin
     raise exception 'Cross-domain provider event settled a Live item';
   end if;
 
-  -- Rollback-only simulation of a previously submitted provider transfer.
-  update public.learning_instructor_payout_items
-    set status='submitting',initiated_by=admin_id,initiated_at=now()
-    where id=payout_item_key;
+  -- Rollback-only simulation of a later authoritative provider success.
   select provider_event_id into receipt_key from public.receive_paystack_live_transfer_provider_event(
     'provider_api','live-success-'||payout_item_key::text,repeat('b',64),
     'lpi-live-reservation-'||reservation_key::text,'777002','TRF_livesuccess','succeeded',7500,'NGN',admin_id);
@@ -106,6 +121,31 @@ begin
   if outcome_key<>'already_processed' or after_ledger<>before_ledger+1 then
     raise exception 'Live transfer outcome was not exactly once';
   end if;
+
+  -- A timed-out provider request freezes the same item for verification;
+  -- neither a second admin click nor an instructor can start another transfer.
+  order_key:=pg_temp.live_approval_order(course_id,'live');
+  allocation_key:=public.allocate_learning_order_commercial_terms(order_key,null);
+  perform public.release_matured_learning_instructor_earnings(100,null);
+  select earning.id into earning_key from public.learning_instructor_earnings earning where earning.allocation_id=allocation_key;
+  select reservation_id into reservation_key from public.reserve_learning_instructor_earning(
+    earning_key,instructor_id,'live-approval:reservation:unknown',admin_id);
+  select payout_item_id into payout_item_key from public.approve_learning_instructor_live_payout_item(
+    reservation_key,'payout-live-approval:'||reservation_key::text,admin_id);
+  rejected:=false;
+  begin perform public.begin_learning_instructor_live_transfer(payout_item_key,instructor_id);
+  exception when insufficient_privilege then rejected:=true; end;
+  if not rejected then raise exception 'Instructor could start a Live transfer'; end if;
+  perform public.begin_learning_instructor_live_transfer(payout_item_key,admin_id);
+  perform public.mark_learning_instructor_live_transfer_recovery_required(payout_item_key,admin_id);
+  if not exists(select 1 from public.get_learning_instructor_live_transfer_for_recovery(payout_item_key,admin_id)
+    where status='recovery_required' and provider_transfer_id is null) then
+    raise exception 'Unknown Live submission was not retained for recovery';
+  end if;
+  rejected:=false;
+  begin perform public.begin_learning_instructor_live_transfer(payout_item_key,admin_id);
+  exception when invalid_parameter_value then rejected:=true; end;
+  if not rejected then raise exception 'Unknown Live transfer could be reinitiated'; end if;
 
   test_order_id:=pg_temp.live_approval_order(course_id,'test');
   allocation_key:=public.allocate_learning_order_commercial_terms(test_order_id,null);

@@ -1,6 +1,6 @@
 import "server-only";
 import { createAdminClient } from "@/app/lib/supabase/admin";
-import { initiatePaystackTestTransfer, verifyPaystackTestTransfer } from "@/app/lib/payments/paystack";
+import { initiatePaystackLiveTransfer, initiatePaystackTestTransfer, verifyPaystackTestTransfer } from "@/app/lib/payments/paystack";
 import { digestPaystackPayload } from "@/app/lib/payments/paystack-core";
 
 function idempotencyKey(reservationId: number) {
@@ -48,6 +48,37 @@ export async function submitInstructorTestPayout(payoutItemId: number, actorUser
   const { error: persistError } = await admin.rpc("record_learning_instructor_test_transfer_submission", { p_payout_item_id: item.payout_item_id, p_transfer_id: transfer.transferId, p_transfer_code: transfer.transferCode, p_provider_status: transfer.status, p_actor_user_id: actorUserId });
   if (persistError) throw new Error("Payout transfer receipt could not be recorded; provider verification is required before any retry.");
   return { status: "pending" as const };
+}
+
+/** One Live initiation attempt per approved item. Unknown outcomes are frozen
+ * for read-only provider verification, never automatically resent. */
+export async function submitInstructorLivePayout(payoutItemId: number, actorUserId: string) {
+  if (process.env.LEARNING_LIVE_PAYOUT_SUBMISSION_ENABLED !== "true") throw new Error("Live payout submission is disabled.");
+  const admin = createAdminClient();
+  const { data, error } = await admin.rpc("begin_learning_instructor_live_transfer", {
+    p_payout_item_id: payoutItemId, p_actor_user_id: actorUserId,
+  });
+  const item = (data as Array<{ payout_item_id?: number; payout_item_reference?: string; recipient_code?: string; amount_minor?: number; currency?: string }> | null)?.[0];
+  if (error || !item?.payout_item_id || !item.payout_item_reference?.match(/^lpi-live-reservation-[0-9]+$/)
+    || !item.recipient_code || !Number.isSafeInteger(item.amount_minor) || item.currency !== "NGN") {
+    throw new Error("Live payout is not eligible for submission.");
+  }
+  let transfer;
+  try {
+    transfer = await initiatePaystackLiveTransfer({ recipientCode: item.recipient_code,
+      amountMinor: item.amount_minor!, reference: item.payout_item_reference });
+  } catch {
+    await admin.rpc("mark_learning_instructor_live_transfer_recovery_required", {
+      p_payout_item_id: item.payout_item_id, p_actor_user_id: actorUserId,
+    });
+    throw new Error("Live transfer status is unknown. Verify its reference before further action.");
+  }
+  const { error: persistError } = await admin.rpc("record_learning_instructor_live_transfer_submission", {
+    p_payout_item_id: item.payout_item_id, p_transfer_id: transfer.transferId,
+    p_transfer_code: transfer.transferCode, p_provider_status: transfer.status, p_actor_user_id: actorUserId,
+  });
+  if (persistError) throw new Error("Live transfer identity could not be recorded; verify before further action.");
+  return { status: transfer.status };
 }
 
 export async function recoverInstructorTestPayout(payoutItemId: number, actorUserId: string) {

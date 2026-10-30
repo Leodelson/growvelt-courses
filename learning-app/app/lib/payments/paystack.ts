@@ -562,3 +562,34 @@ export async function verifyPaystackTestTransfer(reference: string): Promise<Pay
   if (!response.ok || result?.status !== true || !transferId || data?.reference !== reference || !status || !Number.isSafeInteger(amount) || amount <= 0 || data?.currency !== "NGN" || data?.domain !== "test") throw new Error(typeof result?.message === "string" ? result.message : "Paystack Test transfer verification is inconclusive.");
   return { transferId, transferCode, reference, status, amountMinor: amount, currency: "NGN", domain: "test" };
 }
+
+export type PaystackLiveTransferSubmission = { transferId: string; transferCode: string; reference: string; status: "otp" | "pending"; amountMinor: number; currency: "NGN"; domain: "live" };
+
+/** A Live initiation is never settlement. The caller must persist its identity
+ * and wait for OTP completion plus an authoritative final outcome. */
+export async function initiatePaystackLiveTransfer(input: { recipientCode: string; amountMinor: number; reference: string }): Promise<PaystackLiveTransferSubmission> {
+  if (!/^RCP_[A-Za-z0-9]+$/.test(input.recipientCode) || !Number.isSafeInteger(input.amountMinor)
+    || input.amountMinor <= 0 || !/^lpi-live-reservation-[0-9]+$/.test(input.reference)) {
+    throw new Error("Invalid Live transfer identity.");
+  }
+  const { secretKey } = getPaystackLiveConfig(false);
+  const response = await fetch("https://api.paystack.co/transfer", {
+    method: "POST", headers: { Authorization: `Bearer ${secretKey}`, "Content-Type": "application/json" }, cache: "no-store",
+    body: JSON.stringify({ source: "balance", amount: input.amountMinor, recipient: input.recipientCode,
+      reference: input.reference, currency: "NGN", reason: "Growvelt instructor earnings" }), signal: AbortSignal.timeout(15000),
+  });
+  const result = await response.json().catch(() => null) as { status?: unknown; data?: Record<string, unknown> } | null;
+  const data = result?.data;
+  const transferId = typeof data?.id === "number" && Number.isSafeInteger(data.id) ? String(data.id)
+    : typeof data?.id === "string" && /^\d+$/.test(data.id) ? data.id : "";
+  const transferCode = typeof data?.transfer_code === "string" && /^TRF_[A-Za-z0-9]+$/.test(data.transfer_code)
+    ? data.transfer_code : "";
+  const amount = typeof data?.amount === "number" ? data.amount
+    : typeof data?.amount === "string" && /^\d+$/.test(data.amount) ? Number(data.amount) : NaN;
+  if (!response.ok || result?.status !== true || !transferId || !transferCode
+    || data?.reference !== input.reference || amount !== input.amountMinor || data?.currency !== "NGN"
+    || data?.domain !== "live" || (data?.status !== "otp" && data?.status !== "pending")) {
+    throw new Error("Live transfer initiation is inconclusive; verify the same reference before any retry.");
+  }
+  return { transferId, transferCode, reference: input.reference, status: data.status, amountMinor: amount, currency: "NGN", domain: "live" };
+}
