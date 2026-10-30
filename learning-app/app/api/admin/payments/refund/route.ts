@@ -89,6 +89,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ code: "refund_status_uncertain", message: "Paystack accepted the request, but Growvelt must reconcile its status." }, { status: 202 });
   }
   const context = await getOrderNotificationContext(reference);
-  if (context) await sendPaymentNotification({ key: `refund-requested:${refundCase.case_id}`, type: "refund_requested", recipient: context.email, subject: "Growvelt received your refund request", heading: "Your refund request was received", message: `Growvelt submitted the full-refund request for ${context.courseTitle}. A pending or processing status is not completion; we will notify you after authoritative Paystack confirmation.`, orderId: context.orderId, caseId: refundCase.case_id });
+  if (context) await sendPaymentNotification({ key: `refund-requested:${refundCase.case_id}`, type: "refund_requested", recipient: context.email, greeting: context.firstName ?? "there", subject: "Growvelt received your refund request", heading: "", message: `Your full-refund request for ${context.courseTitle} has been received. We will email you again when it has been reviewed and the refund status is confirmed.`, orderId: context.orderId, caseId: refundCase.case_id });
   return NextResponse.json({ outcome: providerRefund.status, caseId: refundCase.case_id });
 }

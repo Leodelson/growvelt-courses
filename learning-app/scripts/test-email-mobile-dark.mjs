@@ -53,6 +53,9 @@ for (const input of [sampleEmail,{...sampleEmail,title:"Learning news",details:[
   }
   assert.ok(Buffer.byteLength(updated)<80000,"normal emails keep ample room for Gmail's message clipping threshold");
 }
+const refundRequestEmail=renderGrowveltEmail({...sampleEmail,title:"",paragraphs:["Your full-refund request has been received."]});
+assert.match(refundRequestEmail,/Hello Ndu,/,"refund notifications keep the learner's personalized greeting");
+assert.doesNotMatch(refundRequestEmail,/<h1\b/,"an empty optional heading is omitted from the email body");
 assert.ok(Buffer.byteLength(renderGrowveltEmail({...sampleEmail,messageMarkdown:"- x\n".repeat(999).trim()}))<80000,"a maximum-length bullet message stays below the clipping safety budget");
 const templateFixture='<!doctype html><html><head><meta name="color-scheme" content="light only"></head><body bgcolor="#17181b"><table><tr><td><a href="{{ .ConfirmationURL }}">{{ .Token }}</a>{{ .TokenHash }} {{ .SiteURL }} {{ if .Email }}{{ .Email }}{{ end }} {{{RESEND_UNSUBSCRIBE_URL}}}</td></tr></table></body></html>';
 assert.deepEqual(tokens(prepare(templateFixture)),tokens(templateFixture));
