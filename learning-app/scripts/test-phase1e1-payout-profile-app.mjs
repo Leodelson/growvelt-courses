@@ -37,6 +37,8 @@ assert.doesNotMatch(migration, /grant execute on function public\.create_learnin
 assert.match(migration, /account_last4/);
 assert.doesNotMatch(migration, /account_number text|account_number varchar/);
 assert.match(instructorPage, /Saved payout destination/);
+assert.match(instructorPage, /provider_domain === "live"/);
+assert.match(instructorPage, /liveProfileSetupEnabled/);
 assert.match(instructorPage, /Instructor payouts are not currently available/);
 assert.doesNotMatch(instructorPage, /Paystack|Sandbox Mode|Test Mode/);
 assert.match(adminPage, /Recipient readiness/);
