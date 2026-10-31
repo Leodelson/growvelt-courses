@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { defaultAuthenticatedPath, getExplicitSafeNextPath, getSafeNextPath } from "@/app/lib/auth/redirect";
-import { internalLearningPath } from "@/app/lib/site-urls.mjs";
+import { internalLearningPath, legacyLearningPageRedirect } from "@/app/lib/site-urls.mjs";
 import { careersCompatibilityResponse, learningWwwSafetyBridgeResponse } from "@/app/lib/careers-compatibility.mjs";
 
 const protectedPrefixes = ["/dashboard", "/settings", "/teach/apply", "/teach/application", "/instructor", "/admin"];
@@ -19,6 +19,19 @@ export async function proxy(request: NextRequest) {
   const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
   const compatibility = careersCompatibilityResponse(request);
   if (compatibility) return compatibility;
+  const legacyPageDestination = legacyLearningPageRedirect(
+    request.url,
+    request.method,
+    request.headers.get("accept"),
+    undefined,
+    request.headers.get("host"),
+  );
+  if (legacyPageDestination) {
+    const response = NextResponse.redirect(new URL(legacyPageDestination), 307);
+    response.headers.set("Cache-Control", "private, no-store, max-age=0");
+    response.headers.set("Referrer-Policy", "no-referrer");
+    return response;
+  }
   const pathname = internalLearningPath(request.nextUrl.pathname);
   const passThrough = () => {
     if (pathname === request.nextUrl.pathname) return NextResponse.next({ request });
@@ -78,5 +91,6 @@ export const config = {
   // matching a family here does not authorize a redirect or backend access.
   matcher: [
     { source: "/:path*", has: [{ type: "host", value: "www\\.growvelt\\.com" }] },
+    { source: "/:path*", has: [{ type: "host", value: "learn\\.growvelt\\.com" }] },
     "/dashboard/:path*", "/learning/dashboard/:path*", "/auth", "/auth/callback", "/auth/reset", "/auth/forgot-password", "/api/auth/welcome", "/api/newsletter/subscribe", "/api/unsubscribe", "/api/alerts/unsubscribe", "/api/paystack/verify", "/unsubscribe", "/alerts/unsubscribe", "/unsubscribe-success", "/ref/:code", "/sw.js", "/pwa/launch.html", "/offline.html", "/manifest.webmanifest", "/site.webmanifest", "/jobs", "/jobs/:id", "/jobs/:id/apply/:path*", "/candidates/:id", "/companies/:id", "/employers", "/updates", "/get-started", "/get-started/results", "/post-job/success", "/career-assistant/:path*", "/settings/:path*", "/teach/apply/:path*", "/teach/application/:path*", "/instructor/:path*", "/admin/:path*", "/sign-in", "/sign-up"],
 };

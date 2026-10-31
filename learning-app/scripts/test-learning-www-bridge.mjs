@@ -6,7 +6,7 @@ import { readFileSync } from "node:fs";
 import ts from "typescript";
 import { AsyncLocalStorage } from "node:async_hooks";
 import * as compatibility from "../app/lib/careers-compatibility.mjs";
-import { internalLearningPath, getLearningOrigin, getCareersOrigin } from "../app/lib/site-urls.mjs";
+import { internalLearningPath, legacyLearningPageRedirect, getLearningOrigin, getCareersOrigin } from "../app/lib/site-urls.mjs";
 // Standalone Node tests lack Next's usual runtime global initialization.
 globalThis.AsyncLocalStorage ??= AsyncLocalStorage;
 const nextTesting = (await import("next/experimental/testing/server.js")).default;
@@ -88,7 +88,10 @@ function proxyHarness(env, allowNormal = false) {
     if (name === "@/app/lib/careers-compatibility.mjs") return {
       learningWwwSafetyBridgeResponse: req => bridge(req, env), careersCompatibilityResponse: req => careers(req, env),
     };
-    if (name === "@/app/lib/site-urls.mjs") return { internalLearningPath };
+    if (name === "@/app/lib/site-urls.mjs") return {
+      internalLearningPath,
+      legacyLearningPageRedirect: (url, method, accept) => legacyLearningPageRedirect(url, method, accept, env),
+    };
     if (name === "@/app/lib/auth/redirect") return { getSafeNextPath: value => value, getExplicitSafeNextPath: () => null, defaultAuthenticatedPath: "/dashboard" };
     throw new Error("Unexpected proxy dependency: " + name);
   };
@@ -98,13 +101,16 @@ function proxyHarness(env, allowNormal = false) {
 const guarded = proxyHarness(enabled);
 for (const path of [...fallbackPaths, ...oldPaths]) for (const method of ["GET", "HEAD", "POST"]) await guarded.proxy(request(path, method));
 assert.deepEqual(guarded.calls, { backend: 0, normal: 0, redirects: 0 });
-const hostMatcher = guarded.config.matcher.find(value => typeof value === "object");
-assert.equal(hostMatcher.source, "/:path*");
-assert.deepEqual(JSON.parse(JSON.stringify(hostMatcher.has)), [{ type: "host", value: "www\\.growvelt\\.com" }]);
+const wwwHostMatcher = guarded.config.matcher.find(value => typeof value === "object" && value.has?.some(condition => condition.type === "host" && condition.value.includes("www")));
+const learnHostMatcher = guarded.config.matcher.find(value => typeof value === "object" && value.has?.some(condition => condition.type === "host" && condition.value.includes("learn")));
+assert.equal(wwwHostMatcher.source, "/:path*");
+assert.deepEqual(JSON.parse(JSON.stringify(wwwHostMatcher.has)), [{ type: "host", value: "www\\.growvelt\\.com" }]);
+assert.deepEqual(JSON.parse(JSON.stringify(learnHostMatcher.has)), [{ type: "host", value: "learn\\.growvelt\\.com" }]);
 for (const path of fallbackPaths) assert.equal(doesProxyMatch({ config: guarded.config, nextConfig: {}, url: www + path }), true, "actual Next matcher must cover every www path");
-for (const host of ["learn.growvelt.com", "www.learn.growvelt.com", "www.growvelt.com.evil.invalid", "evil.invalid"]) {
+for (const host of ["www.learn.growvelt.com", "www.growvelt.com.evil.invalid", "evil.invalid"]) {
   assert.equal(doesProxyMatch({ config: guarded.config, nextConfig: {}, url: "https://" + host + "/unknown", headers: { "x-forwarded-host": "www.growvelt.com" } }), false);
 }
+assert.equal(doesProxyMatch({ config: guarded.config, nextConfig: {}, url: "https://learn.growvelt.com/unknown", headers: { "x-forwarded-host": "www.growvelt.com" } }), true, "redirect matcher covers exact Learn host");
 // Untrusted forwarded/Host header values never turn a trusted learn URL into www.
 for (const spoof of ["www.growvelt.com", "www.growvelt.com, learn.growvelt.com", "evil.invalid"]) {
   const req = new Request("https://learn.growvelt.com/", { headers: { host: spoof, "x-forwarded-host": spoof, forwarded: "host=" + spoof } });

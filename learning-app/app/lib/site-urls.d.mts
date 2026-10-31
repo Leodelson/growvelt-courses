@@ -3,6 +3,7 @@ export const legacyLearningOrigin: string;
 export const futureLearningOrigin: string;
 export function getLearningOrigin(env?: SiteEnvironment): string;
 export function getCareersOrigin(env?: SiteEnvironment): string;
+export function legacyLearningPageRedirect(requestUrl: string, method: string, accept?: string | null, env?: SiteEnvironment, requestHost?: string | null): string | null;
 export function internalLearningPath(pathname: string): string;
 export function learningPath(value: string, env?: SiteEnvironment): string;
 export function learningAbsoluteUrl(value?: string, env?: SiteEnvironment): string;

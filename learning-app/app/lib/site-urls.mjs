@@ -16,6 +16,7 @@ function environment() {
     NEXT_PUBLIC_LEARNING_SITE_URL: process.env.NEXT_PUBLIC_LEARNING_SITE_URL,
     NEXT_PUBLIC_CAREERS_SITE_URL: process.env.NEXT_PUBLIC_CAREERS_SITE_URL,
     NEXT_PUBLIC_LEARNING_DOMAIN_CUTOVER_ENABLED: process.env.NEXT_PUBLIC_LEARNING_DOMAIN_CUTOVER_ENABLED,
+    LEARNING_LEGACY_PAGE_REDIRECT_ENABLED: process.env.LEARNING_LEGACY_PAGE_REDIRECT_ENABLED,
   };
 }
 
@@ -42,6 +43,62 @@ export function getCareersOrigin(env = environment()) {
     throw new Error("The Growvelt cutover requires the explicit jobs.growvelt.com Careers origin.");
   }
   return origin;
+}
+
+const legacyLearningRedirectExemptPrefixes = [
+  "/api", "/auth", "/payments", "/dashboard", "/learning/dashboard", "/settings",
+  "/teach", "/instructor", "/admin", "/sign-in", "/sign-up", "/reset-password",
+  "/forgot-password", "/check-email", "/unsubscribe", "/alerts/unsubscribe", "/ref",
+  "/pwa", "/_next", "/.well-known",
+];
+const legacyLearningRedirectExemptPaths = new Set([
+  "/sw.js", "/site.webmanifest", "/manifest.webmanifest", "/offline.html",
+]);
+
+function isPathFamily(pathname, prefix) {
+  return pathname === prefix || pathname.startsWith(`${prefix}/`);
+}
+
+/**
+ * Return a temporary www destination for public document requests only.
+ * A separate server-only flag is required in addition to the coordinated
+ * host cutover, leaving Learn unchanged when this code is deployed dormant.
+ */
+export function legacyLearningPageRedirect(requestUrl, method, accept, env = environment(), requestHost = null) {
+  if (env.LEARNING_LEGACY_PAGE_REDIRECT_ENABLED !== "true") return null;
+
+  let request;
+  try {
+    request = new URL(requestUrl);
+    const headerHostname = requestHost ? new URL(`http://${requestHost}`).hostname.toLowerCase() : null;
+    const requestHostname = request.hostname.toLowerCase();
+    const localLoopbackRequest = ["127.0.0.1", "localhost", "::1"].includes(requestHostname) && headerHostname === "learn.growvelt.com";
+    if (requestHostname === "learn.growvelt.com") {
+      if (headerHostname && headerHostname !== "learn.growvelt.com") return null;
+    } else if (!localLoopbackRequest) {
+      return null;
+    }
+    if (!["GET", "HEAD"].includes(method)) return null;
+    if (getLearningOrigin(env) !== futureLearningOrigin || getCareersOrigin(env) !== "https://jobs.growvelt.com") return null;
+  } catch {
+    return null;
+  }
+
+  let pathname = request.pathname;
+  try {
+    pathname = decodeURIComponent(pathname);
+  } catch {
+    return null;
+  }
+  if (pathname.includes("\\") || pathname.includes("//") || legacyLearningRedirectExemptPaths.has(pathname)
+    || legacyLearningRedirectExemptPrefixes.some(prefix => isPathFamily(pathname, prefix))) return null;
+  if (pathname.split("/").at(-1)?.includes(".")) return null;
+  // Next client transitions request RSC payloads; redirect only document GETs.
+  if (method === "GET" && !String(accept ?? "").toLowerCase().includes("text/html")) return null;
+
+  // Do not forward legacy query strings that may contain one-time credentials
+  // or payment references. The route remains the same, but transient parameters do not.
+  return new URL(pathname, futureLearningOrigin).href;
 }
 
 export function internalLearningPath(pathname) {

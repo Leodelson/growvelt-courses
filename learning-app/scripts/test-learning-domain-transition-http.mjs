@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { readFileSync, existsSync } from "node:fs";
 import net from "node:net";
+import http from "node:http";
 import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
 import { careersPrivatePages } from "../app/lib/careers-compatibility.mjs";
@@ -28,6 +29,7 @@ Object.assign(env, {
   NEXT_PUBLIC_CAREERS_SITE_URL: mode === "future" ? "https://jobs.growvelt.com" : "https://www.growvelt.com",
   NEXT_PUBLIC_LEARNING_DOMAIN_CUTOVER_ENABLED: mode === "future" ? "true" : "false",
   LEARNING_WWW_SAFETY_BRIDGE_ENABLED: mode === "future" ? "true" : "false",
+  LEARNING_LEGACY_PAGE_REDIRECT_ENABLED: mode === "future" ? "true" : "false",
   GROWVELT_DOMAIN_TEST_MODE: mode, NODE_ENV: "production", NEXT_TELEMETRY_DISABLED: "1",
 });
 assert.equal(env.NEXT_PUBLIC_SUPABASE_URL, "");
@@ -41,7 +43,7 @@ async function command(args) {
   const code = await new Promise((resolve, reject) => { child.once("error", reject); child.once("exit", resolve); });
   assert.equal(code, 0, `next ${args.join(" ")}`);
 }
-if (!process.argv.includes("--skip-build")) await command(["build"]);
+if (!process.argv.includes("--skip-build")) await command(["build", ...(process.argv.includes("--webpack") ? ["--webpack"] : [])]);
 const reservation = net.createServer();
 await new Promise(resolve => reservation.listen(0, "127.0.0.1", resolve));
 const port = reservation.address().port;
@@ -57,6 +59,31 @@ const origin = `http://127.0.0.1:${port}`;
 async function request(path, options = {}) {
   return fetch(origin + path, { ...options, redirect: "manual", signal: AbortSignal.timeout(20000) });
 }
+async function requestLearn(path, options = {}) {
+  const headers = new Headers(options.headers);
+  headers.set("host", "learn.growvelt.com");
+  if (!headers.has("accept")) headers.set("accept", "text/html");
+  return new Promise((resolve, reject) => {
+    const req = http.request({
+      hostname: "127.0.0.1", port, path,
+      method: options.method ?? "GET",
+      headers: Object.fromEntries(headers.entries()),
+      signal: AbortSignal.timeout(20000),
+    }, response => {
+      response.resume();
+      response.on("end", () => {
+        const normalizedHeaders = new Headers();
+        for (const [name, value] of Object.entries(response.headers)) {
+          if (Array.isArray(value)) normalizedHeaders.set(name, value.join(", "));
+          else if (value !== undefined) normalizedHeaders.set(name, value);
+        }
+        resolve({ status: response.statusCode, headers: normalizedHeaders });
+      });
+    });
+    req.on("error", reject);
+    req.end(options.body);
+  });
+}
 try {
   for (let attempt = 0; ; attempt++) {
     if (server.exitCode !== null) throw new Error(logs);
@@ -71,6 +98,20 @@ try {
   const sitemap = await (await request("/sitemap.xml")).text();
   assert.ok(robots.includes(canonical + "/sitemap.xml"));
   assert.ok(sitemap.includes(canonical + "/learn"));
+  const learnHome = await requestLearn("/?token=SYNTHETIC_SECRET");
+  if (mode === "future") {
+    assert.equal(learnHome.status, 307);
+    assert.equal(learnHome.headers.get("location"), "https://www.growvelt.com/");
+    assert.match(learnHome.headers.get("cache-control"), /no-store/);
+    assert.equal(learnHome.headers.get("referrer-policy"), "no-referrer");
+  } else {
+    assert.equal(learnHome.status, 200, "the staged redirect gate defaults off in legacy mode");
+  }
+  for (const path of ["/auth/callback?code=once", "/payments/paystack/callback?reference=once", "/api/payments/paystack/webhook", "/dashboard/instructor/payout-profile", "/sw.js", "/site.webmanifest"]) {
+    const response = await requestLearn(path, path.includes("webhook") ? { method: "POST", body: "synthetic-no-signature" } : {});
+    const location = response.headers.get("location");
+    assert.ok(!location || new URL(location, origin).origin !== "https://www.growvelt.com", `${path} must retain its Learn-origin handling`);
+  }
   for (const path of ["/learning/dashboard", "/learning/dashboard/profile", "/learning/dashboard/settings"]) {
     const response = await request(path + "?tab=details");
     assert.equal(response.status, 307);
@@ -86,7 +127,7 @@ try {
       continue;
     }
     assert.equal(response.status, 307);
-    assert.equal(new URL(response.headers.get("location")).pathname, "/auth/error");
+    assert.equal(new URL(response.headers.get("location"), origin).pathname, "/auth/error");
     assert.match(response.headers.get("cache-control"), /no-store/);
   }
   const badNewsletter = await request("/api/learning/newsletter/subscribe", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: "invalid" }) });

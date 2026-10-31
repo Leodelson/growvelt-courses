@@ -33,6 +33,20 @@ for (const bad of ["https://jobs.growvelt.com", "https://evil.invalid", "http://
 assert.equal(urls.getLearningOrigin(current), "https://learn.growvelt.com");
 assert.equal(urls.getLearningOrigin(future), "https://www.growvelt.com");
 assert.throws(() => urls.getCareersOrigin({ NEXT_PUBLIC_LEARNING_SITE_URL: future.NEXT_PUBLIC_LEARNING_SITE_URL, NEXT_PUBLIC_LEARNING_DOMAIN_CUTOVER_ENABLED: "true" }));
+const redirectsEnabled = { ...future, LEARNING_LEGACY_PAGE_REDIRECT_ENABLED: "true" };
+assert.equal(urls.legacyLearningPageRedirect("https://learn.growvelt.com/", "GET", "text/html", redirectsEnabled), "https://www.growvelt.com/");
+assert.equal(urls.legacyLearningPageRedirect("https://learn.growvelt.com/catalog?token=private", "GET", "text/html", redirectsEnabled), "https://www.growvelt.com/catalog");
+assert.equal(urls.legacyLearningPageRedirect("https://learn.growvelt.com/", "GET", "text/html", future), null, "redirect remains off unless its server-only gate is set");
+assert.equal(urls.legacyLearningPageRedirect("https://learn.growvelt.com/", "GET", "text/html", { ...redirectsEnabled, NEXT_PUBLIC_LEARNING_DOMAIN_CUTOVER_ENABLED: "false" }), null);
+assert.equal(urls.legacyLearningPageRedirect("https://learn.growvelt.com/", "GET", "text/html", { ...redirectsEnabled, NEXT_PUBLIC_CAREERS_SITE_URL: "https://www.growvelt.com" }), null);
+assert.equal(urls.legacyLearningPageRedirect("https://www.growvelt.com/", "GET", "text/html", redirectsEnabled), null);
+assert.equal(urls.legacyLearningPageRedirect("https://learn.growvelt.com/", "POST", "text/html", redirectsEnabled), null);
+assert.equal(urls.legacyLearningPageRedirect("https://learn.growvelt.com/", "GET", "text/x-component", redirectsEnabled), null);
+for (const path of [
+  "/api/payments/paystack/webhook", "/auth/callback?code=fake", "/auth/learning/callback?code=fake",
+  "/payments/paystack/callback?reference=fake", "/dashboard/courses/example", "/settings/profile",
+  "/teach/apply", "/sw.js", "/site.webmanifest", "/offline.html", "/pwa/launch.html", "/robots.txt",
+]) assert.equal(urls.legacyLearningPageRedirect("https://learn.growvelt.com" + path, "GET", "text/html", redirectsEnabled), null, `${path} must stay on learn`);
 for (const disabled of [undefined, "", "false", "1", "TRUE"]) {
   const preparedOnly = { ...future, NEXT_PUBLIC_LEARNING_DOMAIN_CUTOVER_ENABLED: disabled };
   assert.equal(urls.getLearningOrigin(preparedOnly), "https://learn.growvelt.com");
@@ -103,8 +117,10 @@ for (const bad of ["https://jobs.growvelt.com/payments/paystack/callback", "http
 }
 
 const boundUrls = Object.fromEntries(Object.entries(urls).map(([key, value]) => [key,
-  ["learningPath", "getLearningOrigin", "getCareersOrigin", "learningAbsoluteUrl", "careersAbsoluteUrl", "legacyCareersCollision"].includes(key)
-    ? (...args) => value(...args, future) : value]));
+  key === "legacyLearningPageRedirect"
+    ? (url, method, accept, _env, requestHost) => value(url, method, accept, redirectsEnabled, requestHost)
+    : ["learningPath", "getLearningOrigin", "getCareersOrigin", "learningAbsoluteUrl", "careersAbsoluteUrl", "legacyCareersCollision"].includes(key)
+      ? (...args) => value(...args, future) : value]));
 const redirect = load("../app/lib/auth/redirect.ts", { "../site-urls.mjs": boundUrls });
 assert.equal(redirect.getSafeNextPath("/dashboard/profile?tab=details"), "/learning/dashboard/profile?tab=details");
 assert.equal(redirect.getSafeNextPath("/learning/dashboard"), "/learning/dashboard");
@@ -156,7 +172,21 @@ const learnEmailCenter = await proxy(new NextRequest("https://learn.growvelt.com
 assert.equal(learnEmailCenter.headers.get("x-middleware-next"), "1");
 const oldAuth = await proxy(new NextRequest("https://learn.growvelt.com/auth/callback?code=fake"));
 assert.equal(oldAuth.headers.get("x-middleware-next"), "1");
+{
+  const before = clientCalls;
+  const response = await proxy(new NextRequest("https://learn.growvelt.com/?token=private", { headers: { accept: "text/html" } }));
+  assert.equal(response.status, 307);
+  assert.equal(response.headers.get("location"), "https://www.growvelt.com/");
+  assert.match(response.headers.get("cache-control"), /no-store/);
+  assert.equal(response.headers.get("referrer-policy"), "no-referrer");
+  assert.equal(clientCalls, before, "legacy public redirect happens before Learning Auth/DB work");
+}
+for (const path of ["/api/payments/paystack/webhook", "/payments/paystack/callback?reference=fake", "/sw.js", "/site.webmanifest", "/dashboard/courses/example"]) {
+  const response = await proxy(new NextRequest("https://learn.growvelt.com" + path, { headers: { accept: "text/html" } }));
+  assert.notEqual(response.headers.get("location"), "https://www.growvelt.com" + new URL(path, "https://learn.growvelt.com").pathname, `${path} remains on learn`);
+}
 assert.ok(config.matcher.includes("/learning/dashboard/:path*"));
+assert.ok(config.matcher.some(value => typeof value === "object" && value.has?.some(condition => condition.type === "host" && condition.value.includes("learn"))));
 
 let exchanges = 0;
 const signInEvents = [];
