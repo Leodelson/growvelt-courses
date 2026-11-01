@@ -11,7 +11,7 @@
 .moreOperations > summary > span:first-child { display: grid; gap: 4px; }
 .moreOperations > summary strong { color: var(--ink); font-size: clamp(18px, 2.4vw, 23px); }
 .moreOperations > summary small { color: var(--muted); font-size: 13px; line-height: 1.5; }
-.chevron { color: var(--purple); font-size: 26px; line-height: 1; transition: transform .2s ease; }
+.chevron { flex: none; color: var(--purple); transition: transform .2s ease; }
 .moreOperations[open] .chevron { transform: rotate(180deg); }
 .moreOperationsBody { display: grid; gap: 18px; padding: 0 22px 22px; }
 
