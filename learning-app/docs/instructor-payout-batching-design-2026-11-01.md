@@ -1,6 +1,6 @@
 # Instructor payout batching — implementation boundary
 
-**Status:** approved policy direction; design under review. No migration or Live transfer has been applied by this document.
+**Status:** approved policy direction; design under review. The first read-only eligibility migration has been drafted and tested locally, but has not been applied to production. No Live transfer has been initiated by this workstream.
 
 ## Policy
 
@@ -24,6 +24,8 @@ The current `learning_instructor_earning_reservations` table has one unique `ear
 6. Show held, available-but-below-minimum, eligible-for-review, reserved, pending, paid, and reversed amounts distinctly. Add payout FAQ wording only when the policy is operational. Verify mobile layout and accessible status text.
 
 ## Required validation before deployment
+
+The first slice is `20261121000000_list_instructor_live_payout_batch_eligibility.sql`. It returns aggregate amounts and counts only; it deliberately does **not** return earning IDs or offer an approval action. The isolated PGlite fixture tests active and processed financial cases, Test-domain payments, held earnings, reversed allocations, prior reservations, below-threshold balances, active Live profiles, and administrator-only execution. A separately authorized detail view and authoritative database recheck are still required before any writer.
 
 - Fixture tests: two small eligible sales crossing the threshold; a single small sale below it; held and refunded sales excluded; duplicate approval/submit/webhook; concurrent approvals; changed recipient; active dispute at approval and immediately before transfer; provider timeout; OTP and no-OTP flows; success, failure, reversal, delayed success, and partial financial protection.
 - Database invariants: no earning belongs to two payouts; batch amount equals exact member sum; every successful member has one settlement and balanced ledger movement; failed batches cannot lose or duplicate liability; existing one-item records remain readable and reconcilable.
