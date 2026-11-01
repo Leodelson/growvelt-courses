@@ -1,0 +1,25 @@
+.page { gap: 20px; }
+
+.statusRow { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 22px; }
+.statusRow span { display: inline-flex; align-items: center; gap: 8px; padding: 9px 12px; border: 1px solid color-mix(in srgb, var(--purple) 24%, var(--line)); border-radius: 999px; background: var(--surface); color: var(--ink); font-size: 12px; font-weight: 750; }
+.statusRow span::before { content: ""; width: 7px; height: 7px; flex: none; border-radius: 50%; background: var(--purple); }
+.statusRow span:last-child::before { background: var(--muted); }
+
+.moreOperations { min-width: 0; border: 1px solid var(--line); border-radius: 20px; background: var(--surface); }
+.moreOperations > summary { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 22px 26px; cursor: pointer; list-style: none; }
+.moreOperations > summary::-webkit-details-marker { display: none; }
+.moreOperations > summary > span:first-child { display: grid; gap: 4px; }
+.moreOperations > summary strong { color: var(--ink); font-size: clamp(18px, 2.4vw, 23px); }
+.moreOperations > summary small { color: var(--muted); font-size: 13px; line-height: 1.5; }
+.chevron { color: var(--purple); font-size: 26px; line-height: 1; transition: transform .2s ease; }
+.moreOperations[open] .chevron { transform: rotate(180deg); }
+.moreOperationsBody { display: grid; gap: 18px; padding: 0 22px 22px; }
+
+.recordsHeading { display: flex; align-items: end; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding-top: 10px; }
+.recordsHeading h2 { margin: 4px 0 0; font-size: clamp(24px, 3vw, 32px); }
+.recordsHeading p:last-child { max-width: 360px; margin: 0; color: var(--muted); font-size: 13px; }
+
+@media (max-width: 700px) {
+  .moreOperations > summary { padding: 18px; }
+  .moreOperationsBody { padding: 0 14px 14px; }
+}

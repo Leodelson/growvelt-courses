@@ -122,8 +122,8 @@ export function CommercialLivePayoutBatchControl({ candidates, batches, findings
 
   return <div className="commercial-live-payout-batch-workspace">
     <section className="commercial-live-payout-batch-panel" aria-labelledby="live-batch-candidates-title">
-      <header><p className="eyebrow">Live payout batches</p><h3 id="live-batch-candidates-title">Review eligible earnings</h3>
-        <p>Select earnings for one instructor and one verified Live recipient. The total must be at least NGN 1,000. Approval reserves them; it does not send money. The list is bounded to 200 rows at a time.</p></header>
+      <header><p className="eyebrow">Step 1</p><h3 id="live-batch-candidates-title">Select eligible earnings</h3>
+        <p>Choose one instructor and recipient. Minimum batch: ₦1,000. Approval only reserves earnings.</p></header>
       {groups.length ? <div className="commercial-live-payout-batch-groups">{groups.map(([groupKey, rows]) => {
         const first = rows[0];
         const count = selected.filter(id => rows.some(row => row.earning_id === id)).length;
@@ -139,7 +139,7 @@ export function CommercialLivePayoutBatchControl({ candidates, batches, findings
             <strong>{money(row.amount_minor)}</strong>
           </label>)}</div>
         </section>;
-      })}</div> : <p className="admin-empty-copy">No eligible Live earnings currently meet the minimum batch amount.</p>}
+      })}</div> : <p className="admin-empty-copy">No batch is ready yet. Available earnings for one instructor must reach ₦1,000.</p>}
       {selected.length > 0 && <div className="commercial-live-payout-batch-confirmation">
         <p><strong>Selected total: {money(selectedAmount)}</strong> · {selected.length} earnings</p>
         {!oneRecipient && <p className="commercial-release-result is-error">Select earnings for only one instructor and recipient at a time.</p>}
@@ -156,8 +156,8 @@ export function CommercialLivePayoutBatchControl({ candidates, batches, findings
     </section>
 
     <section className="commercial-live-payout-batch-panel" aria-labelledby="live-batch-history-title">
-      <header><p className="eyebrow">Batch audit</p><h3 id="live-batch-history-title">Approved batch and provider history</h3>
-        <p>Submission, OTP confirmation and provider-status recovery are separate gated actions. Before initiating, the server checks available transfer balance against the payout plus a conservative fee allowance. A provider response alone is not proof of funds arriving in the recipient account.</p></header>
+      <header><p className="eyebrow">Step 2</p><h3 id="live-batch-history-title">Approved batches</h3>
+        <p>Transfer initiation is separate from approval. A submitted transfer is not yet a completed payout.</p></header>
       {batches.length ? <div className="commercial-live-payout-batch-groups">{batches.map(batch => {
         const allowSubmit = submissionEnabled && ["assembled", "failed"].includes(batch.status);
         const allowOtp = otpEnabled && batch.attempt_id !== null && batch.attempt_status === "pending" && batch.provider_status === "otp";
@@ -186,8 +186,7 @@ export function CommercialLivePayoutBatchControl({ candidates, batches, findings
     </section>
 
     <section className="commercial-live-payout-batch-panel" aria-labelledby="live-batch-findings-title">
-      <header><p className="eyebrow">Batch reconciliation</p><h3 id="live-batch-findings-title">Provider findings</h3>
-        <p>Recorded provider mismatches and deferred settlements remain visible here for controlled review.</p></header>
+      <header><p className="eyebrow">Follow-up</p><h3 id="live-batch-findings-title">Issues requiring review</h3></header>
       {findings.length ? <div className="commercial-live-payout-batch-groups">{findings.map(finding => <article className="commercial-live-payout-batch-history" key={finding.finding_id}>
         <div><strong>{finding.finding_type.replaceAll("_", " ")}</strong><span>{finding.attempt_reference ?? "No matched transfer attempt"}</span></div>
         <div><span>{finding.detail}</span></div>
