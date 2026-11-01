@@ -22,4 +22,7 @@
 @media (max-width: 700px) {
   .moreOperations > summary { padding: 18px; }
   .moreOperationsBody { padding: 0 14px 14px; }
+  .page :global(.commercial-release-control) > div { flex: 0 1 auto; }
+  .page :global(.commercial-release-control) > div:last-child { justify-items: stretch; }
+  .page :global(.commercial-release-control) .button { min-height: 46px; }
 }
