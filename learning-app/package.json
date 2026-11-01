@@ -56,6 +56,8 @@
     "test:payments:payout-batch-identity:local": "node scripts/test-live-payout-batch-identity.mjs",
     "test:payments:payout-batch-approval:local": "node scripts/test-live-payout-batch-approval.mjs",
     "test:payments:payout-batch-submission:local": "node scripts/test-live-payout-batch-submission.mjs",
+    "test:payments:payout-batch-reconciliation:local": "node scripts/test-live-payout-batch-reconciliation.mjs",
+    "test:payments:payout-batch:app": "node scripts/test-live-payout-batch-app.mjs",
     "test:payments:payout-live-approval:app": "node scripts/test-live-payout-approval-app.mjs",
     "test:payments:payout-live-provider:contract": "node scripts/test-live-payout-provider-contract.mjs",
     "test:payments:payout-live-approval:local": "node scripts/test-live-payout-approval-local.mjs",

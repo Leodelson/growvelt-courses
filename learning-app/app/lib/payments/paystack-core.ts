@@ -377,7 +377,10 @@ export function parsePaystackTransferEvent(value: unknown, expectedDomain: Payst
   const transferCode = typeof data.transfer_code === "string" && /^TRF_[A-Za-z0-9]+$/.test(data.transfer_code) ? data.transfer_code : null;
   const amount = typeof data.amount === "number" ? data.amount : typeof data.amount === "string" && /^\d+$/.test(data.amount) ? Number(data.amount) : NaN;
   const status = event.event === "transfer.success" ? "succeeded" : event.event === "transfer.failed" ? "failed" : "reversed";
-  if (!/^lpi-[a-z0-9_-]{12,50}$/.test(reference) || !transferId || !Number.isSafeInteger(amount) || amount <= 0 || data.currency !== "NGN" || data.domain !== expectedDomain) return null;
+  const isSupportedReference = expectedDomain === "test"
+    ? /^lpi-[a-z0-9_-]{12,50}$/.test(reference)
+    : /^lpi-live-reservation-[0-9]+$/.test(reference) || /^lpb-live-batch-[0-9]+-a[0-9]+$/.test(reference);
+  if (!isSupportedReference || !transferId || !Number.isSafeInteger(amount) || amount <= 0 || data.currency !== "NGN" || data.domain !== expectedDomain) return null;
   return { eventId: `${event.event}:${transferId}`, eventType: event.event as PaystackTransferEvent["eventType"], reference, transferId, transferCode, status, amountMinor: amount, currency: "NGN", domain: expectedDomain, payload: { transfer_id: transferId, transfer_code: transferCode, reference, amount, currency: "NGN", domain: expectedDomain, status } };
 }
 

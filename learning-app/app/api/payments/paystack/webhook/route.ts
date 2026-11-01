@@ -268,14 +268,22 @@ export async function POST(request: Request) {
     const subscriptionEvent = parsePaystackTestSubscriptionWebhook(payload);
     if (subscriptionEvent) return handleTestSubscriptionWebhook(subscriptionEvent, payload, rawBody);
   }
+  const livePayoutReconciliationEnabled = process.env.LEARNING_LIVE_PAYOUT_RECONCILIATION_ENABLED === "true";
+  const liveBatchReconciliationEnabled = process.env.LEARNING_LIVE_PAYOUT_BATCH_RECONCILIATION_ENABLED === "true";
   const parsedTransfer = config.mode === "test" ? parsePaystackTestTransferEvent(payload)
-    : process.env.LEARNING_LIVE_PAYOUT_RECONCILIATION_ENABLED === "true" ? parsePaystackTransferEvent(payload, "live") : null;
+    : livePayoutReconciliationEnabled || liveBatchReconciliationEnabled ? parsePaystackTransferEvent(payload, "live") : null;
   // Do not claim unrelated Live business transfers as instructor payouts.
-  const transfer = parsedTransfer?.domain === "live" && !/^lpi-live-reservation-[0-9]+$/.test(parsedTransfer.reference)
-    ? null : parsedTransfer;
+  const isLiveBatchTransfer = parsedTransfer?.domain === "live"
+    && /^lpb-live-batch-[0-9]+-a[0-9]+$/.test(parsedTransfer.reference);
+  const isLiveSingleTransfer = parsedTransfer?.domain === "live"
+    && /^lpi-live-reservation-[0-9]+$/.test(parsedTransfer.reference);
+  const transfer = parsedTransfer?.domain !== "live" ? parsedTransfer
+    : isLiveBatchTransfer ? liveBatchReconciliationEnabled ? parsedTransfer : null
+      : isLiveSingleTransfer && livePayoutReconciliationEnabled ? parsedTransfer : null;
   if (transfer) {
     const admin = createAdminClient();
-    const rpc = transfer.domain === "live" ? "receive_paystack_live_transfer_provider_event" : "receive_paystack_test_transfer_provider_event";
+    const rpc = isLiveBatchTransfer ? "receive_paystack_live_instructor_payout_batch_event"
+      : transfer.domain === "live" ? "receive_paystack_live_transfer_provider_event" : "receive_paystack_test_transfer_provider_event";
     const { data, error } = await admin.rpc(rpc, {
       p_provenance: "provider_webhook", p_provider_event_id: transfer.eventId, p_payload_digest: digestPaystackPayload(rawBody), p_reference: transfer.reference,
       p_transfer_id: transfer.transferId, p_transfer_code: transfer.transferCode, p_status: transfer.status,
@@ -285,7 +293,9 @@ export async function POST(request: Request) {
     const receipt = (data as Array<{ provider_event_id?: number; outcome?: string }> | null)?.[0];
     if (!receipt?.provider_event_id) return NextResponse.json({ code: "receipt_conflict" }, { status: 409 });
     if (receipt.outcome === "duplicate_conflict") return NextResponse.json({ received: true, processing: "conflict" });
-    const { error: processError } = await admin.rpc("process_learning_instructor_payout_provider_event", { p_provider_event_id: receipt.provider_event_id });
+    const processRpc = isLiveBatchTransfer ? "process_paystack_live_instructor_payout_batch_event"
+      : "process_learning_instructor_payout_provider_event";
+    const { error: processError } = await admin.rpc(processRpc, { p_provider_event_id: receipt.provider_event_id });
     if (processError) console.error("payout.transfer_webhook_processing_deferred", { provider: "paystack", reference: transfer.reference, code: processError.code });
     return NextResponse.json({ received: true, processing: processError ? "deferred" : "processed" });
   }

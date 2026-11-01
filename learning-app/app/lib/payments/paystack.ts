@@ -51,6 +51,32 @@ export function getPaystackLiveConfig(requireCheckout = false) {
   return config;
 }
 
+export class PaystackLiveBalancePreflightError extends Error {
+  constructor() { super("Live payout balance preflight failed."); this.name = "PaystackLiveBalancePreflightError"; }
+}
+
+/** Uses a deliberately conservative NGN fee allowance (₦100) for the
+ * documented top transfer-fee band plus applicable stamp duty. Paystack still
+ * performs its own authoritative funds check when the transfer is submitted. */
+export async function assertPaystackLiveBalanceCoversPayout(amountMinor: number) {
+  const feeAllowanceMinor = 10000;
+  if (!Number.isSafeInteger(amountMinor) || amountMinor < 100000) throw new PaystackLiveBalancePreflightError();
+  const { secretKey } = getPaystackLiveConfig(false);
+  let response: Response;
+  try {
+    response = await fetch("https://api.paystack.co/balance", {
+      headers: { Authorization: `Bearer ${secretKey}` }, cache: "no-store", signal: AbortSignal.timeout(15000),
+    });
+  } catch { throw new PaystackLiveBalancePreflightError(); }
+  const result = await response.json().catch(() => null) as { status?: unknown; data?: unknown } | null;
+  const balances = Array.isArray(result?.data) ? result.data as Array<Record<string, unknown>> : [];
+  const ngnRows = balances.filter(row => row.currency === "NGN");
+  const balance = ngnRows.length === 1 ? ngnRows[0].balance : null;
+  if (!response.ok || result?.status !== true || !Number.isSafeInteger(balance) || Number(balance) < 0
+    || Number(balance) < amountMinor + feeAllowanceMinor) throw new PaystackLiveBalancePreflightError();
+  return { requiredAmountMinor: amountMinor + feeAllowanceMinor };
+}
+
 export function requirePaystackTestRefundsEnabled() {
   const config = getPaystackTestConfig(false);
   if (!config.refundsEnabled) throw new Error("Paystack test refunds are disabled.");
@@ -570,6 +596,8 @@ export async function verifyPaystackTestTransfer(reference: string): Promise<Pay
 }
 
 export type PaystackLiveTransferSubmission = { transferId: string; transferCode: string; reference: string; status: "otp" | "pending"; amountMinor: number; currency: "NGN"; domain: "live" };
+const isSupportedLiveInstructorPayoutReference = (reference: string) =>
+  /^lpi-live-reservation-[0-9]+$/.test(reference) || /^lpb-live-batch-[0-9]+-a[0-9]+$/.test(reference);
 
 /** A Live initiation is never settlement. The caller must persist its identity
  * and wait for OTP completion plus an authoritative final outcome. */
@@ -600,9 +628,39 @@ export async function initiatePaystackLiveTransfer(input: { recipientCode: strin
   return { transferId, transferCode, reference: input.reference, status: data.status, amountMinor: amount, currency: "NGN", domain: "live" };
 }
 
+/** Batch submission uses the same single-transfer provider endpoint, with a
+ * distinct immutable batch reference and the agreed NGN 1,000 floor. */
+export async function initiatePaystackLivePayoutBatchTransfer(input: { recipientCode: string; amountMinor: number; reference: string }): Promise<PaystackLiveTransferSubmission> {
+  if (!/^RCP_[A-Za-z0-9]+$/.test(input.recipientCode) || !Number.isSafeInteger(input.amountMinor)
+    || input.amountMinor < 100000 || !/^lpb-live-batch-[0-9]+-a[0-9]+$/.test(input.reference)) {
+    throw new Error("Invalid Live payout batch identity.");
+  }
+  const { secretKey } = getPaystackLiveConfig(false);
+  const response = await fetch("https://api.paystack.co/transfer", {
+    method: "POST", headers: { Authorization: `Bearer ${secretKey}`, "Content-Type": "application/json" }, cache: "no-store",
+    body: JSON.stringify({ source: "balance", amount: input.amountMinor, recipient: input.recipientCode,
+      reference: input.reference, currency: "NGN", reason: "Growvelt instructor earnings" }), signal: AbortSignal.timeout(15000),
+  });
+  const result = await response.json().catch(() => null) as { status?: unknown; data?: Record<string, unknown> } | null;
+  const data = result?.data;
+  const transferId = typeof data?.id === "number" && Number.isSafeInteger(data.id) ? String(data.id)
+    : typeof data?.id === "string" && /^\d+$/.test(data.id) ? data.id : "";
+  const transferCode = typeof data?.transfer_code === "string" && /^TRF_[A-Za-z0-9]+$/.test(data.transfer_code)
+    ? data.transfer_code : "";
+  const amount = typeof data?.amount === "number" ? data.amount
+    : typeof data?.amount === "string" && /^\d+$/.test(data.amount) ? Number(data.amount) : NaN;
+  if (!response.ok || result?.status !== true || !transferId || !transferCode
+    || data?.reference !== input.reference || amount !== input.amountMinor || data?.currency !== "NGN"
+    || data?.domain !== "live" || (data?.status !== "otp" && data?.status !== "pending")) {
+    throw new Error("Live payout batch initiation is inconclusive; verify this exact reference before any retry.");
+  }
+  return { transferId, transferCode, reference: input.reference, status: data.status,
+    amountMinor: amount, currency: "NGN", domain: "live" };
+}
+
 export async function finalizePaystackLiveTransfer(input: { transferCode: string; transferId: string; reference: string; amountMinor: number; otp: string }) {
   if (!/^TRF_[A-Za-z0-9]+$/.test(input.transferCode) || !/^\d+$/.test(input.transferId)
-    || !/^lpi-live-reservation-[0-9]+$/.test(input.reference) || !Number.isSafeInteger(input.amountMinor)
+    || !isSupportedLiveInstructorPayoutReference(input.reference) || !Number.isSafeInteger(input.amountMinor)
     || input.amountMinor <= 0 || !/^\d{6}$/.test(input.otp)) throw new Error("Invalid Live transfer finalization input.");
   const { secretKey } = getPaystackLiveConfig(false);
   const response = await fetch("https://api.paystack.co/transfer/finalize_transfer", {
@@ -631,7 +689,7 @@ export type PaystackLiveTransferVerification = { transferId: string; transferCod
 
 /** Read-only recovery; never treats OTP or a queued transfer as paid. */
 export async function verifyPaystackLiveTransfer(reference: string): Promise<PaystackLiveTransferVerification> {
-  if (!/^lpi-live-reservation-[0-9]+$/.test(reference)) throw new Error("Invalid Live transfer reference.");
+  if (!isSupportedLiveInstructorPayoutReference(reference)) throw new Error("Invalid Live transfer reference.");
   const { secretKey } = getPaystackLiveConfig(false);
   const response = await fetch(`https://api.paystack.co/transfer/verify/${encodeURIComponent(reference)}`, {
     headers: { Authorization: `Bearer ${secretKey}` }, cache: "no-store", signal: AbortSignal.timeout(15000),
