@@ -6,6 +6,7 @@ import { LearningIcon } from "@/app/components/learning-icon";
 import { SubscriptionManagementNotice } from "@/app/components/learning/subscription-management-notice";
 import { SubscriptionWorkspace } from "@/app/components/learning/subscription-workspace";
 import { accountCopy, formatSubscriptionDate } from "@/app/lib/learning/account-workspace";
+import { resolvePaystackConfiguration } from "@/app/lib/payments/paystack-config";
 import styles from "@/app/components/learning/subscriptions.module.css";
 
 export const metadata = { title: "My subscriptions" };
@@ -18,6 +19,7 @@ const copy = {
     active: "Active", attention: "Payment needs attention", non_renewing: "Will not renew", cancelled: "Cancelled", completed: "Completed", expired: "Expired", pending: "Pending confirmation",
     paidThrough: "Access through", included: "Included courses", manage: "Manage subscription", manageCopy: "Use the secure subscription management page to update or cancel recurring billing. If you cancel, course access remains through the paid-through date.",
     noRenew: "Auto-renewal has been turned off. Your included course access remains available through the paid-through date.",
+    manageUnavailable: "Online management is not available for this subscription. Contact support if you need to change or cancel it.",
     error: "We could not open subscription management right now. Your subscription is unchanged; please try again later.",
     back: "Back to My Courses", end: "End of subscriptions",
   },
@@ -27,6 +29,7 @@ const copy = {
     active: "Actif", attention: "Paiement à vérifier", non_renewing: "Ne sera pas renouvelé", cancelled: "Annulé", completed: "Terminé", expired: "Expiré", pending: "Confirmation en attente",
     paidThrough: "Accès jusqu’au", included: "Cours inclus", manage: "Gérer l’abonnement", manageCopy: "Utilisez la page sécurisée de gestion de l’abonnement pour modifier ou annuler le paiement récurrent. En cas d’annulation, l’accès reste actif jusqu’à la fin de la période payée.",
     noRenew: "Le renouvellement automatique est désactivé. L’accès aux cours inclus reste disponible jusqu’à la fin de la période payée.",
+    manageUnavailable: "La gestion en ligne n’est pas disponible pour cet abonnement. Contactez l’assistance pour le modifier ou l’annuler.",
     error: "Impossible d’ouvrir la gestion de l’abonnement pour le moment. Votre abonnement n’a pas changé ; réessayez plus tard.",
     back: "Retour à Mes cours", end: "Fin des abonnements",
   },
@@ -36,6 +39,7 @@ const copy = {
     active: "Activa", attention: "El pago requiere atención", non_renewing: "No se renovará", cancelled: "Cancelada", completed: "Completada", expired: "Vencida", pending: "Confirmación pendiente",
     paidThrough: "Acceso hasta", included: "Cursos incluidos", manage: "Gestionar suscripción", manageCopy: "Usa la página segura de gestión de suscripciones para actualizar o cancelar el pago recurrente. Si cancelas, conservarás el acceso hasta la fecha pagada.",
     noRenew: "La renovación automática está desactivada. El acceso a los cursos incluidos sigue disponible hasta la fecha pagada.",
+    manageUnavailable: "La gestión en línea no está disponible para esta suscripción. Contacta con soporte si necesitas modificarla o cancelarla.",
     error: "No se pudo abrir la gestión de suscripciones ahora. La suscripción no ha cambiado; inténtalo más tarde.",
     back: "Volver a Mis cursos", end: "Fin de las suscripciones",
   },
@@ -46,6 +50,8 @@ export default async function LearnerSubscriptionsPage({ searchParams }: { searc
     listOwnLearningSubscriptions(), getRequestLocale(), searchParams,
   ]);
   const text = copy[locale];
+  let providerMode: "test" | "live" | null = null;
+  try { providerMode = resolvePaystackConfiguration(process.env).mode; } catch { /* Management stays unavailable. */ }
   const dateLocale = locale === "fr" ? "fr-FR" : locale === "es" ? "es-ES" : "en-NG";
   const formatDate = (value: string | null) => formatSubscriptionDate(value, dateLocale);
 
@@ -72,9 +78,11 @@ export default async function LearnerSubscriptionsPage({ searchParams }: { searc
         {paidThrough && <p className={styles.period}>{text.paidThrough}: <strong>{paidThrough}</strong></p>}
         {subscription.course_titles.length > 0 && <div className={styles.courses}><h3>{text.included}</h3><ul>{subscription.course_titles.map((title) => <li key={title}>{title}</li>)}</ul></div>}
         {subscription.subscription_status === "non_renewing" && <p className={styles.note} role="status">{text.noRenew}</p>}
-        {subscription.provider_management_available || ["active", "attention"].includes(subscription.subscription_status)
+        {subscription.provider_management_available && subscription.payment_domain === providerMode
           ? <div className={styles.manage}><Link prefetch={false} className="button button-primary" href={`/api/payments/paystack/subscriptions/manage?subscriptionId=${encodeURIComponent(subscription.subscription_id)}`}>{text.manage}</Link><p>{text.manageCopy}</p></div>
-          : null}
+          : ["active", "attention"].includes(subscription.subscription_status)
+            ? <div className={styles.manage}><p>{text.manageUnavailable} <Link href="/dashboard/support">{locale === "fr" ? "Contacter l’assistance" : locale === "es" ? "Contactar con soporte" : "Contact support"}</Link></p></div>
+            : null}
       </article> };
     })} /> : <EmptyState titleId="subscriptions-empty-title" icon="courses"
       title={text.emptyTitle} description={text.emptyCopy}

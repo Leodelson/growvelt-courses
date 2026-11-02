@@ -11,6 +11,7 @@ export type OwnLearningSubscription = {
   cancel_requested_at: string | null;
   course_titles: string[];
   provider_management_available: boolean;
+  payment_domain: "test" | "live";
 };
 
 export async function listOwnLearningSubscriptions(): Promise<OwnLearningSubscription[]> {
