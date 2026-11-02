@@ -5,9 +5,11 @@ import { EllipsisVertical } from "lucide-react";
 
 export function PaymentActionsMenu({
   orderReference,
+  entityLabel = "order",
   children,
 }: {
   orderReference: string;
+  entityLabel?: string;
   children: ReactNode;
 }) {
   const [open, setOpen] = useState(false);
@@ -80,10 +82,10 @@ export function PaymentActionsMenu({
         ref={triggerRef}
         type="button"
         className="payment-actions-trigger"
-        aria-label={`More actions for order ${orderReference}`}
+        aria-label={`More actions for ${entityLabel} ${orderReference}`}
         aria-expanded={open}
         aria-controls={panelId}
-        title="Order actions"
+        title={`${entityLabel} actions`}
         onClick={() => setOpen((current) => !current)}
       >
         <EllipsisVertical size={20} aria-hidden="true" />

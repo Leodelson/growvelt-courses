@@ -5,6 +5,18 @@ export type PaymentOperation = { order_id: number; order_reference: string; lear
 export type RefundCase = { case_id: number; order_id: number; order_reference: string; case_reference: string; status: string; amount_minor: number; currency: string; reason_code: string | null; operator_note: string | null; provider_case_id: string | null; provider_case_reference: string | null; provider_status: string | null; requested_at: string | null; provider_submitted_at: string | null; last_verified_at: string | null; action_required_at: string | null; processed_at: string | null; failed_at: string | null; failure_code: string | null; failure_message: string | null };
 export type RefundCaseEvent = { event_id: number; payment_case_id: number; event_type: string; normalized_status: string; provenance: string; note: string | null; created_at: string };
 export type DisputeCase = { case_id:number;order_id:number;order_reference:string;status:string;amount_minor:number;currency:string;provider_case_id:string;provider_status:string|null;provider_resolution:string|null;dispute_category:string|null;dispute_reason:string|null;response_deadline_at:string|null;action_required_at:string|null;opened_at:string;resolved_at:string|null };
+export type LiveSubscriptionRefundOperation = {
+  invoice_id: string; invoice_reference: string; subscription_id: string; learner_email: string | null;
+  plan_name: string; amount_minor: number; currency: string; invoice_status: string;
+  provider_transaction_id: string; provider_transaction_reference: string; paid_at: string | null; created_at: string;
+  refund_case_id: number | null; refund_case_reference: string | null; refund_status: string | null;
+  refund_provider_status: string | null; refund_provider_case_id: string | null;
+  refund_provider_case_reference: string | null; refund_requested_at: string | null;
+};
+export type LiveSubscriptionRefundCaseEvent = {
+  event_id: number; refund_case_id: number; event_type: string; from_status: string | null; to_status: string;
+  actor_user_id: string | null; provider_event_id: number | null; metadata: Record<string, unknown>; occurred_at: string;
+};
 
 export async function listPaymentOperations(operatorId: string, query?: string) {
   const admin = createAdminClient();
@@ -46,3 +58,23 @@ export async function listRefundCaseEvents(operatorId: string) {
 }
 
 export async function listDisputeCases(operatorId:string){const {data,error}=await createAdminClient().rpc("list_learning_dispute_cases",{p_operator_id:operatorId,p_order_id:null});if(error)throw new Error("Unable to load dispute cases.");return(data??[])as DisputeCase[];}
+
+export async function listLiveSubscriptionRefundOperations(operatorId: string, query?: string) {
+  const { data, error } = await createAdminClient().rpc("list_learning_live_subscription_refund_operations", {
+    p_operator_id: operatorId,
+    p_query: query?.trim() || null,
+    p_limit: 50,
+  });
+  if (error) throw new Error("Unable to load Live subscription refund operations.");
+  return (data ?? []) as LiveSubscriptionRefundOperation[];
+}
+
+export async function listLiveSubscriptionRefundCaseEvents(operatorId: string, caseIds: number[]) {
+  if (!caseIds.length) return [] as LiveSubscriptionRefundCaseEvent[];
+  const { data, error } = await createAdminClient().rpc("list_learning_live_subscription_refund_case_events", {
+    p_operator_id: operatorId,
+    p_case_ids: caseIds,
+  });
+  if (error) throw new Error("Unable to load subscription refund history.");
+  return (data ?? []) as LiveSubscriptionRefundCaseEvent[];
+}

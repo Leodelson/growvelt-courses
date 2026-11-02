@@ -64,4 +64,31 @@ export async function getOrderNotificationContext(reference: string) {
   } catch { console.error("payment.notification_context_unavailable", { reference }); return null; }
 }
 
+export async function getSubscriptionInvoiceNotificationContext(invoiceReference: string) {
+  try {
+    const admin = createAdminClient();
+    const { data: invoice } = await admin.from("learning_subscription_invoices")
+      .select("id,subscription_id,plan_name_snapshot,amount_minor,currency")
+      .eq("provider_reference", invoiceReference).maybeSingle();
+    if (!invoice?.subscription_id) return null;
+    const { data: subscription } = await admin.from("learning_subscriptions")
+      .select("learner_id").eq("id", invoice.subscription_id).maybeSingle();
+    if (!subscription?.learner_id) return null;
+    const { data: profile } = await admin.from("profiles")
+      .select("email,full_name").eq("id", subscription.learner_id).maybeSingle();
+    const firstName = profile?.full_name?.trim().split(/\s+/)[0] || null;
+    return profile?.email ? {
+      email: profile.email,
+      firstName,
+      invoiceId: invoice.id as string,
+      planName: invoice.plan_name_snapshot as string,
+      amountMinor: Number(invoice.amount_minor),
+      currency: invoice.currency as string,
+    } : null;
+  } catch {
+    console.error("subscription.payment_notification_context_unavailable", { invoiceReference });
+    return null;
+  }
+}
+
 export function paymentOperationsRecipient() { return process.env.PAYMENTS_OPERATIONS_EMAIL?.trim() || "support@growvelt.com"; }
