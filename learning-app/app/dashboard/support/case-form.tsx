@@ -30,8 +30,8 @@ export function SupportCaseForm() {
   }
   return <form className={styles.card} onSubmit={submit}><h2>Ask the Growvelt team</h2><p>For a course, payment, teaching, or organization question. Never include a password, card number, or secret key.</p>
     <label>Topic<select value={topic} onChange={(event) => setTopic(event.target.value)}>{topics.map(([value, label]) => <option value={value} key={value}>{label}</option>)}</select></label>
-    <label>Subject<input required minLength={5} maxLength={160} value={subject} onChange={(event) => setSubject(event.target.value)} /></label>
-    <label>What happened?<textarea required rows={7} minLength={20} maxLength={5000} value={message} onChange={(event) => setMessage(event.target.value)} /></label>
+    <label>Subject <span className="required-mark" aria-hidden="true">*</span><input required minLength={5} maxLength={160} value={subject} onChange={(event) => setSubject(event.target.value)} /></label>
+    <label>What happened? <span className="required-mark" aria-hidden="true">*</span><textarea required rows={7} minLength={20} maxLength={5000} value={message} onChange={(event) => setMessage(event.target.value)} /></label>
     {error && <p className={styles.error} role="alert">{error}</p>}
     <button className="button button-primary" disabled={busy} type="submit">{busy ? "Sending…" : "Send support request"}</button>
   </form>;

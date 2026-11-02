@@ -93,11 +93,11 @@ export default async function AdminPromotionsPage({
     <section id="campaign-create" className={styles.panel}>
       <header><p className="eyebrow">Editorial merchandising · No placement fee</p><h2>Schedule a featured campaign</h2><p>Choose up to six published courses with an instructor or provider organization and a display window. The campaign appears on public and dashboard Explore pages only during that window. Company-only courses and Paystack sandbox fixtures are excluded.</p></header>
       {editorialCoursesError ? <p className={styles.error}>Eligible published courses could not be loaded. Try again later.</p> : editorialCourses.length === 0 ? <p className={styles.muted}>There are no eligible published courses with an instructor or provider organization to feature yet.</p> : <form action={createLearningCampaignAction} className={styles.form}>
-        <label>Campaign title<input name="campaignTitle" required minLength={3} maxLength={80} placeholder="Featured learning" /></label>
-        <label className={styles.courseField}>Short message<textarea name="campaignMessage" required minLength={3} maxLength={240} rows={3} placeholder="A short introduction to this collection of courses." /></label>
-        <label>Starts (Africa/Lagos time)<input name="campaignStartsAt" type="datetime-local" required /></label>
-        <label>Ends (Africa/Lagos time)<input name="campaignEndsAt" type="datetime-local" required /></label>
-        <label className={styles.courseField}>Featured courses<select name="campaignCourseIds" required multiple size={Math.min(Math.max(editorialCourses.length, 3), 8)}>{editorialCourses.map((course) => <option value={course.course_id} key={course.course_id}>{course.title} · {course.is_free ? "Free" : `${course.price_currency || "NGN"} ${Number(course.price_amount ?? 0).toLocaleString("en-NG")}`}</option>)}</select><small>Choose one to six courses. Hold Ctrl (Windows) or Command (Mac) to choose more than one. A course must still be published and publicly eligible when the campaign is displayed.</small></label>
+        <label>Campaign title <span className="required-mark" aria-hidden="true">*</span><input name="campaignTitle" required minLength={3} maxLength={80} placeholder="Featured learning" /></label>
+        <label className={styles.courseField}>Short message <span className="required-mark" aria-hidden="true">*</span><textarea name="campaignMessage" required minLength={3} maxLength={240} rows={3} placeholder="A short introduction to this collection of courses." /></label>
+        <label>Starts (Africa/Lagos time) <span className="required-mark" aria-hidden="true">*</span><input name="campaignStartsAt" type="datetime-local" required /></label>
+        <label>Ends (Africa/Lagos time) <span className="required-mark" aria-hidden="true">*</span><input name="campaignEndsAt" type="datetime-local" required /></label>
+        <label className={styles.courseField}>Featured courses <span className="required-mark" aria-hidden="true">*</span><select name="campaignCourseIds" required multiple size={Math.min(Math.max(editorialCourses.length, 3), 8)}>{editorialCourses.map((course) => <option value={course.course_id} key={course.course_id}>{course.title} · {course.is_free ? "Free" : `${course.price_currency || "NGN"} ${Number(course.price_amount ?? 0).toLocaleString("en-NG")}`}</option>)}</select><small>Choose one to six courses. Hold Ctrl (Windows) or Command (Mac) to choose more than one. A course must still be published and publicly eligible when the campaign is displayed.</small></label>
         <ActionSubmitButton label="Schedule featured campaign" pendingLabel="Scheduling campaign…" />
       </form>}
     </section>
@@ -117,15 +117,15 @@ export default async function AdminPromotionsPage({
     <section id="coupon-create" className={styles.panel}>
       <header><p className="eyebrow">Administrator-issued</p><h2>Create coupon</h2><p>Choose one or more eligible courses. Learner use is limited to one redemption per account.</p></header>
       {coursesError ? <p className={styles.error}>Eligible courses could not be loaded. Try again later.</p> : courses.length === 0 ? <p className={styles.muted}>There are no eligible published paid courses or active Sandbox Mode fixtures yet.</p> : <form action={createLearningCouponAction} className={styles.form}>
-        <label>Coupon code<input name="code" required minLength={4} maxLength={24} pattern="[A-Za-z0-9][A-Za-z0-9_-]{3,23}" autoCapitalize="characters" autoComplete="off" placeholder="WELCOME10" /></label>
+        <label>Coupon code <span className="required-mark" aria-hidden="true">*</span><input name="code" required minLength={4} maxLength={24} pattern="[A-Za-z0-9][A-Za-z0-9_-]{3,23}" autoCapitalize="characters" autoComplete="off" placeholder="WELCOME10" /></label>
         <label>Discount type<select name="discountKind" defaultValue="fixed"><option value="fixed">Fixed amount (NGN)</option><option value="percentage">Percentage</option></select></label>
-        <label>Discount value<input name="discountValue" type="number" min="0.01" step="0.01" required /><small>Enter NGN for fixed discounts, or a percentage from 0.01 to 100.</small></label>
-        <label>Maximum discount (NGN)<input name="maxDiscount" type="number" min="0.01" step="0.01" required /></label>
-        <label>Minimum customer charge (NGN)<input name="minimumCharge" type="number" min="0.01" step="0.01" defaultValue="1" required /></label>
-        <label>Starts (Africa/Lagos time)<input name="startsAt" type="datetime-local" required /></label>
-        <label>Ends (Africa/Lagos time)<input name="endsAt" type="datetime-local" required /></label>
+        <label>Discount value <span className="required-mark" aria-hidden="true">*</span><input name="discountValue" type="number" min="0.01" step="0.01" required /><small>Enter NGN for fixed discounts, or a percentage from 0.01 to 100.</small></label>
+        <label>Maximum discount (NGN) <span className="required-mark" aria-hidden="true">*</span><input name="maxDiscount" type="number" min="0.01" step="0.01" required /></label>
+        <label>Minimum customer charge (NGN) <span className="required-mark" aria-hidden="true">*</span><input name="minimumCharge" type="number" min="0.01" step="0.01" defaultValue="1" required /></label>
+        <label>Starts (Africa/Lagos time) <span className="required-mark" aria-hidden="true">*</span><input name="startsAt" type="datetime-local" required /></label>
+        <label>Ends (Africa/Lagos time) <span className="required-mark" aria-hidden="true">*</span><input name="endsAt" type="datetime-local" required /></label>
         <label>Global redemption limit<input name="maxRedemptions" type="number" min="1" max="999999" step="1" placeholder="No fixed cap" /></label>
-        <label className={styles.courseField}>Eligible courses<select name="courseIds" required multiple size={Math.min(Math.max(courses.length, 3), 8)}>{courses.map((course) => <option value={course.course_id} key={course.course_id}>{course.title} · {money(Math.round(Number(course.price_amount) * 100))}</option>)}</select><small>Use Ctrl (Windows) or Command (Mac) to select multiple courses. Company-only courses and inactive fixtures are not shown.</small></label>
+        <label className={styles.courseField}>Eligible courses <span className="required-mark" aria-hidden="true">*</span><select name="courseIds" required multiple size={Math.min(Math.max(courses.length, 3), 8)}>{courses.map((course) => <option value={course.course_id} key={course.course_id}>{course.title} · {money(Math.round(Number(course.price_amount) * 100))}</option>)}</select><small>Use Ctrl (Windows) or Command (Mac) to select multiple courses. Company-only courses and inactive fixtures are not shown.</small></label>
         <ActionSubmitButton label="Create coupon" pendingLabel="Creating coupon…" />
       </form>}
     </section>

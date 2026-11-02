@@ -18,6 +18,7 @@ export type InstructorSubscriptionPlanProvisioning = {
   plan_id: string;
   provisioning_state: "claimed" | "recorded" | "needs_reconciliation" | "failed";
   attempt_count: number;
+  payment_domain?: "test" | "live";
 };
 
 export type InstructorSubscriptionPlanCourse = {
@@ -31,16 +32,22 @@ export type InstructorSubscriptionPlanCourse = {
 
 export async function getOwnInstructorSubscriptionPlanData() {
   const supabase = await createClient();
-  const [plansResult, coursesResult, provisioningResult] = await Promise.all([
+  const [plansResult, coursesResult, provisioningResult, liveProvisioningResult] = await Promise.all([
     supabase.rpc("list_own_learning_subscription_plans"),
     supabase.rpc("list_own_learning_subscription_plan_courses"),
     supabase.rpc("list_own_learning_subscription_plan_provisioning"),
+    supabase.rpc("list_own_learning_live_subscription_plan_ids"),
   ]);
+
+  const liveProvisioning = (liveProvisioningResult.data ?? []) as InstructorSubscriptionPlanProvisioning[];
+  const livePlanIds = new Set(liveProvisioning.map((entry) => entry.plan_id));
+  const testProvisioning = ((provisioningResult.data ?? []) as InstructorSubscriptionPlanProvisioning[])
+    .filter((entry) => !livePlanIds.has(entry.plan_id));
 
   return {
     available: !plansResult.error && !coursesResult.error && !provisioningResult.error,
     plans: (plansResult.data ?? []) as InstructorSubscriptionPlan[],
     courses: (coursesResult.data ?? []) as InstructorSubscriptionPlanCourse[],
-    provisioning: (provisioningResult.data ?? []) as InstructorSubscriptionPlanProvisioning[],
+    provisioning: [...testProvisioning, ...liveProvisioning],
   };
 }

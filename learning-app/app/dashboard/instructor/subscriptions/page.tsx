@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { isApprovedInstructor } from "@/app/lib/instructor/authorization";
 import { getOwnInstructorSubscriptionPlanData } from "@/app/lib/instructor/subscription-plans";
-import { areLearningSubscriptionPlansEnabled, canProvisionTestSubscriptionPlans } from "@/app/lib/subscriptions/feature";
+import { areLearningSubscriptionPlansEnabled, canProvisionLiveSubscriptionPlans, canProvisionTestSubscriptionPlans } from "@/app/lib/subscriptions/feature";
 import { SubscriptionPlanForm } from "@/app/components/instructor/subscription-plan-form";
 import { ProvisionSubscriptionTestPlanButton } from "@/app/components/instructor/provision-subscription-test-plan-button";
 import { EmptyState } from "@/app/components/ui/empty-state";
@@ -23,6 +23,7 @@ export default async function InstructorSubscriptionPlansPage() {
 
   const { available, courses, plans, provisioning } = await getOwnInstructorSubscriptionPlanData();
   const canCreateTestPlans = canProvisionTestSubscriptionPlans();
+  const canCreateLivePlans = canProvisionLiveSubscriptionPlans();
   const provisionByPlanId = new Map(provisioning.map((entry) => [entry.plan_id, entry]));
 
   return <section className={`instructor-earnings-page section-shell ${workbench.page}`}>
@@ -37,7 +38,7 @@ export default async function InstructorSubscriptionPlansPage() {
       <h2>The subscription database foundation is not ready in this environment.</h2>
       <p>No plan was created. The reviewed subscription migrations must be applied before enabling this screen.</p>
     </section> : <>
-      <SubscriptionPlanForm courses={courses} />
+      <SubscriptionPlanForm courses={courses} canCreateLivePlans={canCreateLivePlans} />
       <section className={styles.planSection} aria-labelledby="subscription-plan-list-title">
         <header className={styles.panelHeader}>
           <p className="eyebrow">Your plans</p>
@@ -46,10 +47,11 @@ export default async function InstructorSubscriptionPlansPage() {
         </header>
         {plans.length ? <div className={styles.planList}><WorkbenchList metricLabel="Monthly price, highest first" statuses={{not_started:"Draft setup",recorded:"Preview ready",claimed:"Setup in progress",failed:"Preview setup failed",needs_reconciliation:"Review required",disabled:"Disabled"}} items={plans.map((plan) => {
           const provision = provisionByPlanId.get(plan.plan_id);
+          const isLivePlan = provision?.payment_domain === "live";
           const isCompanyTestModePlan = plan.course_ids.some((courseId) =>
             courses.find((course) => course.course_id === courseId)?.company_test_mode_only === true);
           const provisionState = provision?.provisioning_state ?? "not_started";
-          const statusLabel = provisionState === "recorded" ? "Preview ready"
+          const statusLabel = provisionState === "recorded" ? isLivePlan ? "Live billing plan ready" : "Preview ready"
             : provisionState === "needs_reconciliation" ? "Review required"
               : provisionState === "claimed" ? "Setup in progress"
                 : provisionState === "failed" ? "Preview setup failed"
@@ -62,7 +64,7 @@ export default async function InstructorSubscriptionPlansPage() {
           {isCompanyTestModePlan && provisionState === "recorded" && plan.status === "active" && <p className={styles.notice} role="note">
             Private subscription preview link (share only with the approved learner): <Link href={"/dashboard/test-subscriptions/" + plan.plan_id}>Open private preview</Link>
           </p>}
-          {canCreateTestPlans && plan.status === "draft" && ["not_started", "failed"].includes(provisionState)
+          {canCreateTestPlans && !isLivePlan && plan.status === "draft" && ["not_started", "failed"].includes(provisionState)
             && <ProvisionSubscriptionTestPlanButton planId={plan.plan_id} label={provisionState === "failed" ? "Retry preview setup" : "Prepare private preview"} />}
           {provisionState === "needs_reconciliation" && <p className={styles.notice} role="status">Do not retry this plan. A previous setup may have completed; administrator review is required before another attempt.</p>}
           {provisionState === "claimed" && <>

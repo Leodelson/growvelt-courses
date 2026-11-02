@@ -4,13 +4,14 @@ import { revalidatePath } from "next/cache";
 import { isApprovedInstructor } from "@/app/lib/instructor/authorization";
 import { createAdminClient } from "@/app/lib/supabase/admin";
 import { createClient } from "@/app/lib/supabase/server";
-import { areLearningSubscriptionPlansEnabled, canProvisionTestSubscriptionPlans } from "@/app/lib/subscriptions/feature";
-import { getPaystackTestConfig } from "@/app/lib/payments/paystack";
+import { areLearningSubscriptionPlansEnabled, canProvisionLiveSubscriptionPlans, canProvisionTestSubscriptionPlans } from "@/app/lib/subscriptions/feature";
+import { getPaystackLiveConfig, getPaystackTestConfig } from "@/app/lib/payments/paystack";
+import { createPaystackLiveSubscriptionPlan, PaystackLivePlanCreateError } from "@/app/lib/payments/paystack-live-subscription-plan";
 import { createPaystackTestSubscriptionPlan, PaystackTestPlanCreateError } from "@/app/lib/payments/paystack-subscriptions";
 import { parseNgNPriceToMinorUnits, parseSelectedSubscriptionCourseIds } from "@/app/lib/subscriptions/plan-input";
 
 export type SubscriptionPlanActionState = {
-  status: "idle" | "error" | "success";
+  status: "idle" | "error" | "notice" | "success";
   message: string;
   planId: string | null;
 };
@@ -60,6 +61,111 @@ export async function createOwnSubscriptionPlan(
 
   revalidatePath("/dashboard/instructor/subscriptions");
   return { status: "success", message: "Draft plan saved. No recurring plan was started and no learner was charged.", planId: data };
+}
+
+/** Creates an instructor's Live provider plan behind an independent gate.
+ * It does not start learner billing. A database request id is reserved before
+ * the provider call so repeats cannot create duplicate provider plans. */
+export async function createOwnLiveSubscriptionPlan(
+  _previousState: SubscriptionPlanActionState,
+  formData: FormData,
+): Promise<SubscriptionPlanActionState> {
+  if (!canProvisionLiveSubscriptionPlans()) {
+    return { status: "error", message: "Live subscription plan setup is not enabled in this environment.", planId: null };
+  }
+  if (!await isApprovedInstructor()) {
+    return { status: "error", message: "An approved instructor account is required.", planId: null };
+  }
+
+  const name = String(formData.get("name") ?? "").trim();
+  const description = String(formData.get("description") ?? "").trim();
+  const requestId = String(formData.get("live_request_id") ?? "").trim();
+  const amountMinor = parseNgNPriceToMinorUnits(String(formData.get("monthly_price") ?? ""));
+  const courseIds = parseSelectedSubscriptionCourseIds(formData.getAll("course_ids").map(String));
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(requestId)
+    || name.length < 3 || name.length > 100 || description.length > 1000 || amountMinor === null || !courseIds) {
+    return { status: "error", message: "Check the plan details, monthly price, and selected courses, then try again.", planId: null };
+  }
+
+  try { getPaystackLiveConfig(false); } catch {
+    return { status: "error", message: "Live plan setup is unavailable; no plan was submitted.", planId: null };
+  }
+  const supabase = await createClient();
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  if (userError || !user) return { status: "error", message: "Sign in again with an approved instructor account.", planId: null };
+  const { data: approved, error: approvalError } = await supabase.rpc("is_approved_growvelt_instructor");
+  if (approvalError || approved !== true) return { status: "error", message: "An approved instructor account is required.", planId: null };
+  let admin;
+  try { admin = createAdminClient(); } catch {
+    return { status: "error", message: "Secure Live plan setup is unavailable; no plan was submitted.", planId: null };
+  }
+  const { data: claimData, error: claimError } = await admin.rpc("begin_own_learning_live_subscription_plan", {
+    p_request_id: requestId,
+    p_instructor_id: user.id,
+    p_name: name,
+    p_description: description || null,
+    p_amount_minor: amountMinor,
+    p_course_ids: courseIds,
+  });
+  const claim = firstRow(claimData);
+  const planId = typeof claim?.plan_id === "string" ? claim.plan_id : null;
+  if (claimError || !claim || !planId) {
+    console.error("subscription.live_plan_claim_failed", { instructorId: user.id, code: claimError?.code });
+    return { status: "error", message: "The Live plan could not be safely reserved. Confirm the subscription migration and try again.", planId: null };
+  }
+  if (claim.provisioning_state === "recorded") {
+    revalidatePath("/dashboard/instructor/subscriptions");
+    return { status: "success", message: "The Live billing plan is already recorded. Learner checkout and recurring charges remain unavailable.", planId };
+  }
+  if (claim.provisioning_state === "in_progress") {
+    return { status: "notice", message: "Live plan setup is already in progress. Do not submit it again.", planId };
+  }
+  if (claim.provisioning_state === "needs_reconciliation") {
+    revalidatePath("/dashboard/instructor/subscriptions");
+    return { status: "notice", message: "The Live setup result is uncertain. Do not retry; an administrator must review it first.", planId };
+  }
+  const reservedAmount = typeof claim.amount_minor === "number" ? claim.amount_minor
+    : typeof claim.amount_minor === "string" && /^\d+$/.test(claim.amount_minor) ? Number(claim.amount_minor) : NaN;
+  if (claim.provisioning_state !== "claimed" || claim.plan_name !== name
+    || Number.isNaN(reservedAmount) || reservedAmount !== amountMinor
+    || (claim.plan_description ?? null) !== (description || null)) {
+    revalidatePath("/dashboard/instructor/subscriptions");
+    return { status: "error", message: "The reserved Live plan details did not match. Provider setup was not submitted.", planId };
+  }
+
+  let createdPlan;
+  try {
+    createdPlan = await createPaystackLiveSubscriptionPlan({
+      name: String(claim.plan_name),
+      description: typeof claim.plan_description === "string" ? claim.plan_description : null,
+      amountMinor: reservedAmount,
+    });
+  } catch (error) {
+    const outcome = error instanceof PaystackLivePlanCreateError && error.disposition === "rejected"
+      ? "provider_rejected" : "ambiguous";
+    const { error: finishError } = await admin.rpc("finish_own_learning_live_subscription_plan_provisioning", {
+      p_plan_id: planId, p_instructor_id: user.id, p_outcome: outcome,
+    });
+    if (finishError) console.error("subscription.live_plan_failure_record_failed", { planId, code: finishError.code });
+    revalidatePath("/dashboard/instructor/subscriptions");
+    return outcome === "provider_rejected" && !finishError
+      ? { status: "error", message: "The provider rejected plan setup. No recurring learner charge was started; you may retry safely.", planId }
+      : { status: "notice", message: "The provider result is uncertain. Do not retry; administrator review is required.", planId };
+  }
+
+  const { data: recorded, error: recordError } = await admin.rpc("record_own_learning_live_subscription_plan_provisioning", {
+    p_plan_id: planId, p_instructor_id: user.id, p_paystack_plan_code: createdPlan.planCode,
+  });
+  if (recordError || recorded !== "recorded") {
+    const { error: finishError } = await admin.rpc("finish_own_learning_live_subscription_plan_provisioning", {
+      p_plan_id: planId, p_instructor_id: user.id, p_outcome: "ambiguous",
+    });
+    console.error("subscription.live_plan_record_failed", { planId, code: recordError?.code, recoveryRecorded: !finishError });
+    revalidatePath("/dashboard/instructor/subscriptions");
+    return { status: "notice", message: "The Live plan may have been created, but Growvelt could not confirm its record. Do not retry; administrator review is required.", planId };
+  }
+  revalidatePath("/dashboard/instructor/subscriptions");
+  return { status: "success", message: "Live billing plan created and recorded. Learner checkout and recurring charges are still unavailable.", planId };
 }
 
 export async function provisionOwnTestSubscriptionPlan(

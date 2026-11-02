@@ -33,6 +33,16 @@ export function canProvisionTestSubscriptionPlans() {
   }
 }
 
+export function canProvisionLiveSubscriptionPlans() {
+  if (!areLearningSubscriptionPlansEnabled()
+    || process.env.GROWVELT_LEARNING_SUBSCRIPTION_LIVE_PLAN_CREATION_ENABLED !== "true") return false;
+  try {
+    return resolvePaystackConfiguration(process.env).mode === "live";
+  } catch {
+    return false;
+  }
+}
+
 export function canStartTestSubscriptionCheckout() {
   if (!areLearningSubscriptionPlansEnabled()
     || process.env.GROWVELT_LEARNING_SUBSCRIPTION_TEST_CHECKOUT_ENABLED !== "true"
