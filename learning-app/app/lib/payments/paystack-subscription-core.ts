@@ -14,14 +14,16 @@ export type PaystackCreatePlanRequest = {
   description?: string;
 };
 
-export type PaystackCreatedTestPlan = {
+export type PaystackCreatedPlan<Domain extends "test" | "live" = "test"> = {
   planCode: string;
   name: string;
   amountMinor: number;
   interval: "monthly";
   currency: "NGN";
-  domain: "test";
+  domain: Domain;
 };
+
+export type PaystackCreatedTestPlan = PaystackCreatedPlan<"test">;
 
 export type PaystackTestSubscriptionCheckoutRequest = {
   email: string;
@@ -349,7 +351,7 @@ export function parsePaystackTestSubscriptionWebhook(value: unknown): PaystackTe
   return null;
 }
 
-export function buildPaystackTestPlanRequest(input: PaystackSubscriptionPlanDraft): PaystackCreatePlanRequest {
+export function buildPaystackPlanRequest(input: PaystackSubscriptionPlanDraft): PaystackCreatePlanRequest {
   const name = input.name.trim();
   const description = input.description?.trim();
   if (name.length < 3 || name.length > 100 || (description && description.length > 1000)
@@ -370,10 +372,13 @@ export function buildPaystackTestPlanRequest(input: PaystackSubscriptionPlanDraf
   };
 }
 
-export function parsePaystackCreatedTestPlan(
+export const buildPaystackTestPlanRequest = buildPaystackPlanRequest;
+
+export function parsePaystackCreatedPlan<Domain extends "test" | "live">(
   value: unknown,
   expected: { name: string; amountMinor: number },
-): PaystackCreatedTestPlan | null {
+  domain: Domain,
+): PaystackCreatedPlan<Domain> | null {
   if (!value || typeof value !== "object") return null;
   const response = value as Record<string, unknown>;
   const data = response.data && typeof response.data === "object"
@@ -386,7 +391,7 @@ export function parsePaystackCreatedTestPlan(
     : data.amount;
   if (typeof data.plan_code !== "string" || !/^PLN_[A-Za-z0-9]{8,100}$/.test(data.plan_code)
     || data.name !== expected.name || amount !== expected.amountMinor
-    || data.interval !== "monthly" || data.currency !== "NGN" || data.domain !== "test") {
+    || data.interval !== "monthly" || data.currency !== "NGN" || data.domain !== domain) {
     return null;
   }
 
@@ -396,8 +401,15 @@ export function parsePaystackCreatedTestPlan(
     amountMinor: expected.amountMinor,
     interval: "monthly",
     currency: "NGN",
-    domain: "test",
+    domain,
   };
+}
+
+export function parsePaystackCreatedTestPlan(
+  value: unknown,
+  expected: { name: string; amountMinor: number },
+): PaystackCreatedTestPlan | null {
+  return parsePaystackCreatedPlan(value, expected, "test");
 }
 
 /** Validates the provider-hosted subscription management link before redirecting a learner. */

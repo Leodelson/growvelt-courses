@@ -41,7 +41,11 @@ const adapter = await readFile(new URL("../app/lib/payments/paystack-subscriptio
 assert.match(adapter, /GROWVELT_LEARNING_SUBSCRIPTIONS_ENABLED !== "true"/);
 assert.match(adapter, /GROWVELT_LEARNING_SUBSCRIPTION_TEST_PLAN_CREATION_ENABLED !== "true"/);
 assert.match(adapter, /getPaystackTestConfig\(false\)/);
-assert.doesNotMatch(adapter, /getPaystackLiveConfig|PAYSTACK_LIVE_SECRET_KEY/);
+const testPlanAdapter = adapter.split("export async function createPaystackTestSubscriptionPlan(")[1]
+  ?.split("/** Requests a hosted management link")[0];
+assert.ok(testPlanAdapter);
+assert.match(testPlanAdapter, /getPaystackTestConfig\(false\)/);
+assert.doesNotMatch(testPlanAdapter, /getPaystackLiveConfig|PAYSTACK_LIVE_SECRET_KEY/);
 
 const action = await readFile(new URL("../app/dashboard/instructor/subscriptions/actions.ts", import.meta.url), "utf8");
 assert.match(action, /canProvisionTestSubscriptionPlans\(\)/);
