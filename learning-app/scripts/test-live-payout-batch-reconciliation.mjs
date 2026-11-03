@@ -77,6 +77,13 @@ try {
       values (11,11,'${lowBalanceInstructor}',50000,'NGN','available',now()-interval '20 days',now(),
         null,null,null,0,null,now());
     insert into public.learning_payment_attempts values (11,'succeeded','paystack','live',50000,'NGN');
+    alter table public.learning_commercial_allocations add column subscription_invoice_id uuid;
+    create table public.learning_subscription_invoices(
+      id uuid primary key,instructor_id uuid,status text,payment_domain text,
+      provider_transaction_id text,provider_transaction_reference text,
+      provider_reference text,plan_name_snapshot text,currency text,paid_at timestamptz
+    );
+    create table public.learning_subscription_refund_cases(invoice_id uuid,status text);
   `);
   for (const name of [
     "20260908000000_add_instructor_earnings_reservation_foundation.sql",
@@ -86,6 +93,8 @@ try {
     "20261125000000_add_instructor_live_payout_batch_submission.sql",
     "20261126000000_reconcile_instructor_live_payout_batch_transfer.sql",
     "20261127000000_list_instructor_live_payout_batches.sql",
+    "20261204000000_add_subscription_invoice_earnings_reservation.sql",
+    "20261205000000_approve_subscription_invoice_payout_batch.sql",
   ]) {
     const sql = await readFile(new URL(`../supabase/migrations/${name}`, import.meta.url), "utf8");
     await db.exec(sql);
@@ -221,6 +230,41 @@ try {
     status: "reversed", member_count: 2, attempt_reference: successAttempt.attempt_reference,
     attempt_status: "reversed", provider_status: "reversed", account_last4: "3030",
   });
+
+  const invoiceId = "30000000-0000-4000-8000-000000000012";
+  await db.query(`insert into public.learning_subscription_invoices(
+    id,instructor_id,status,payment_domain,provider_transaction_id,
+    provider_transaction_reference,provider_reference,plan_name_snapshot,currency,paid_at
+  ) values ($1,$2,'paid','live','90012','live-charge-90012',$3,'Monthly learning','NGN',now()-interval '20 days')`,
+  [invoiceId, instructor, `GS-${"E".repeat(32)}`]);
+  await db.query(`insert into public.learning_commercial_allocations(
+    id,order_id,instructor_id,instructor_gross_minor,currency,status,subscription_invoice_id
+  ) values (12,null,$1,120000,'NGN','allocated',$2)`, [instructor, invoiceId]);
+  await db.query(`insert into public.learning_instructor_earnings(
+    id,allocation_id,instructor_id,gross_amount_minor,currency,status,available_at,
+    released_at,recoverable_amount_minor
+  ) values (12,12,$1,120000,'NGN','available',now()-interval '20 days',now(),0)`, [instructor]);
+  const invoiceCandidates = await db.query(`select * from public.list_learning_subscription_invoice_payout_batch_candidates($1,100)`, [admin]);
+  assert.equal(invoiceCandidates.rows.length, 1);
+  assert.equal(invoiceCandidates.rows[0].earning_id, 12);
+  assert.equal(invoiceCandidates.rows[0].eligible_total_minor, 120000);
+  assert.equal((await db.query(`select count(*)::int n from public.list_learning_instructor_live_payout_batch_candidates($1,100)
+    where earning_id=12`, [admin])).rows[0].n, 0, 'the ordinary order path must exclude invoice earnings');
+  await assert.rejects(db.query(`select * from public.approve_learning_subscription_invoice_live_payout_batch(
+    $1,$2,1,array[12]::bigint[],120000,'subscription:unauthorized')`, [instructor, instructor]),
+  /Valid administrator and payout batch identity required/);
+  const invoiceBatch = (await db.query(`select * from public.approve_learning_subscription_invoice_live_payout_batch(
+    $1,$2,1,array[12]::bigint[],120000,'subscription:batch:1')`, [admin, instructor])).rows[0];
+  assert.equal(invoiceBatch.amount_minor, 120000);
+  assert.equal((await db.query(`select source_type from public.learning_instructor_payout_batches where id=$1`,
+    [invoiceBatch.batch_id])).rows[0].source_type, 'subscription_invoice');
+  assert.equal((await db.query(`select * from public.approve_learning_subscription_invoice_live_payout_batch(
+    $1,$2,1,array[12]::bigint[],120000,'subscription:batch:1')`,
+    [admin, instructor])).rows[0].batch_id, invoiceBatch.batch_id);
+  await assert.rejects(db.query(`select * from public.begin_learning_instructor_live_payout_batch_transfer(
+    $1,$2,'subscription:transfer:blocked')`, [invoiceBatch.batch_id, admin]),
+  /Payout batch total no longer matches eligible members/,
+  'the order-only transfer path must fail closed for a subscription batch until source validation is added');
 
   const privileges = await db.query(`select has_function_privilege('authenticated',
       'public.process_paystack_live_instructor_payout_batch_event(bigint)','execute') allowed,

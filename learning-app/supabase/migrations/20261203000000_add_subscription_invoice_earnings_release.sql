@@ -72,8 +72,14 @@ begin
     select e.id, a.subscription_invoice_id
       from public.learning_instructor_earnings e
       join public.learning_commercial_allocations a on a.id=e.allocation_id
+      join public.learning_subscription_invoices invoice
+        on invoice.id=a.subscription_invoice_id
       where a.subscription_invoice_id is not null and e.status='held'
         and e.available_at<=now()
+        and invoice.status='paid' and invoice.payment_domain='live'
+        and a.status='allocated'
+        and not exists (select 1 from public.learning_subscription_refund_cases refund_case
+          where refund_case.invoice_id=invoice.id)
       order by e.available_at,e.id limit p_limit
   loop
     -- Refund requests lock their invoice first. Use the same lock order so a
