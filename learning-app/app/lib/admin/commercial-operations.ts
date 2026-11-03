@@ -1,6 +1,23 @@
 import "server-only";
 import { createAdminClient } from "@/app/lib/supabase/admin";
 
+export type SubscriptionInvoiceEarningReview = {
+  invoice_id: string; provider_reference: string; instructor_id: string; instructor_name: string | null;
+  earning_id: number; amount_minor: number; currency: string;
+  earning_status: string; available_at: string | null;
+  invoice_status: string; refund_status: string | null;
+  has_live_payout_profile: boolean;
+};
+
+export async function listSubscriptionInvoiceEarningsForAdmin(operatorId: string) {
+  const { data, error } = await createAdminClient().rpc(
+    "list_learning_subscription_invoice_earnings_for_admin",
+    { p_operator_id: operatorId, p_limit: 100 },
+  );
+  if (error) throw new Error("Unable to load subscription earnings review.");
+  return (data ?? []) as SubscriptionInvoiceEarningReview[];
+}
+
 export type CommercialOperation = {
   earning_id: number;
   instructor_id: string;
