@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
-import { recoverInstructorLivePayoutBatch } from "@/app/lib/admin/instructor-payout-transfer";
+import { getLivePayoutBatchAttemptSource, recoverInstructorLivePayoutBatch } from "@/app/lib/admin/instructor-payout-transfer";
 import { isSameOriginRequest } from "@/app/lib/security/request-origin";
 import { createClient } from "@/app/lib/supabase/server";
 
 export async function POST(request: Request) {
-  if (process.env.LEARNING_LIVE_PAYOUT_BATCH_RECONCILIATION_ENABLED !== "true") {
+  if (process.env.LEARNING_LIVE_PAYOUT_BATCH_RECONCILIATION_ENABLED !== "true"
+    && process.env.LEARNING_LIVE_SUBSCRIPTION_PAYOUT_BATCH_RECONCILIATION_ENABLED !== "true") {
     return NextResponse.json({ code: "live_batch_recovery_disabled" }, { status: 503 });
   }
   if (!isSameOriginRequest(request)) return NextResponse.json({ code: "invalid_origin" }, { status: 403 });
@@ -17,8 +18,15 @@ export async function POST(request: Request) {
   if (!user) return NextResponse.json({ code: "unauthorized" }, { status: 401 });
   const { data: isAdmin } = await supabase.rpc("is_growvelt_learning_admin");
   if (isAdmin !== true) return NextResponse.json({ code: "forbidden" }, { status: 403 });
+  let sourceType: "course_order" | "subscription_invoice";
+  try { sourceType = await getLivePayoutBatchAttemptSource(Number(body.attemptId), user.id); }
+  catch { return NextResponse.json({ code: "live_batch_recovery_requires_review" }, { status: 409 }); }
+  const recoveryEnabled = sourceType === "subscription_invoice"
+    ? process.env.LEARNING_LIVE_SUBSCRIPTION_PAYOUT_BATCH_RECONCILIATION_ENABLED === "true"
+    : process.env.LEARNING_LIVE_PAYOUT_BATCH_RECONCILIATION_ENABLED === "true";
+  if (!recoveryEnabled) return NextResponse.json({ code: "live_batch_recovery_disabled" }, { status: 503 });
   try {
-    const result = await recoverInstructorLivePayoutBatch(Number(body.attemptId), user.id);
+    const result = await recoverInstructorLivePayoutBatch(Number(body.attemptId), user.id, sourceType);
     return NextResponse.json(result, { headers: { "Cache-Control": "no-store" } });
   } catch {
     return NextResponse.json({ code: "live_batch_recovery_requires_review" }, { status: 409 });

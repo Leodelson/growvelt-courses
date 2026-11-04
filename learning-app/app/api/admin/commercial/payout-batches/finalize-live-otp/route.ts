@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
-import { finalizeInstructorLivePayoutBatchOtp } from "@/app/lib/admin/instructor-payout-transfer";
+import { finalizeInstructorLivePayoutBatchOtp, getLivePayoutBatchAttemptSource } from "@/app/lib/admin/instructor-payout-transfer";
 import { isSameOriginRequest } from "@/app/lib/security/request-origin";
 import { createClient } from "@/app/lib/supabase/server";
 
 export async function POST(request: Request) {
-  if (process.env.LEARNING_LIVE_PAYOUT_BATCH_SUBMISSION_ENABLED !== "true"
+  if ((process.env.LEARNING_LIVE_PAYOUT_BATCH_SUBMISSION_ENABLED !== "true"
+      && process.env.LEARNING_LIVE_SUBSCRIPTION_PAYOUT_BATCH_SUBMISSION_ENABLED !== "true")
     || process.env.LEARNING_LIVE_PAYOUT_BATCH_OTP_ENABLED !== "true") {
     return NextResponse.json({ code: "live_otp_finalization_disabled" }, { status: 503 });
   }
@@ -19,8 +20,15 @@ export async function POST(request: Request) {
   if (!user) return NextResponse.json({ code: "unauthorized" }, { status: 401 });
   const { data: isAdmin } = await supabase.rpc("is_growvelt_learning_admin");
   if (isAdmin !== true) return NextResponse.json({ code: "forbidden" }, { status: 403 });
+  let sourceType: "course_order" | "subscription_invoice";
+  try { sourceType = await getLivePayoutBatchAttemptSource(Number(body.attemptId), user.id); }
+  catch { return NextResponse.json({ code: "live_batch_otp_requires_verification" }, { status: 409 }); }
+  const submissionEnabled = sourceType === "subscription_invoice"
+    ? process.env.LEARNING_LIVE_SUBSCRIPTION_PAYOUT_BATCH_SUBMISSION_ENABLED === "true"
+    : process.env.LEARNING_LIVE_PAYOUT_BATCH_SUBMISSION_ENABLED === "true";
+  if (!submissionEnabled) return NextResponse.json({ code: "live_otp_finalization_disabled" }, { status: 503 });
   try {
-    const result = await finalizeInstructorLivePayoutBatchOtp(Number(body.attemptId), body.otp, user.id);
+    const result = await finalizeInstructorLivePayoutBatchOtp(Number(body.attemptId), body.otp, user.id, sourceType);
     return NextResponse.json(result, { headers: { "Cache-Control": "no-store" } });
   } catch {
     return NextResponse.json({ code: "live_batch_otp_requires_verification" }, { status: 409 });

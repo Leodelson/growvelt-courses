@@ -33,6 +33,7 @@ export async function approveInstructorLivePayout(reservationId: number, actorUs
 }
 
 export async function approveInstructorLivePayoutBatch(input: {
+  sourceType?: "course_order" | "subscription_invoice";
   instructorId: string; payoutProfileId: number; earningIds: number[];
   confirmedAmountMinor: number; idempotencyKey: string;
 }, actorUserId: string) {
@@ -45,7 +46,10 @@ export async function approveInstructorLivePayoutBatch(input: {
     || !/^[a-z][a-z0-9:_-]{2,120}$/.test(input.idempotencyKey)) {
     throw new Error("Live payout batch approval is unavailable.");
   }
-  const { data, error } = await createAdminClient().rpc("approve_learning_instructor_live_payout_batch", {
+  const rpc = input.sourceType === "subscription_invoice"
+    ? "approve_learning_subscription_invoice_live_payout_batch"
+    : "approve_learning_instructor_live_payout_batch";
+  const { data, error } = await createAdminClient().rpc(rpc, {
     p_operator_id: actorUserId, p_instructor_id: input.instructorId,
     p_payout_profile_id: input.payoutProfileId, p_earning_ids: input.earningIds,
     p_confirmed_amount_minor: input.confirmedAmountMinor, p_idempotency_key: input.idempotencyKey,
@@ -109,14 +113,23 @@ export async function submitInstructorLivePayout(payoutItemId: number, actorUser
 
 /** Initiates exactly one immutable batch attempt. An idempotent replay that
  * returns an existing attempt never calls the provider again. */
-export async function submitInstructorLivePayoutBatch(batchId: number, idempotencyKey: string, actorUserId: string) {
-  if (process.env.LEARNING_LIVE_PAYOUT_BATCH_SUBMISSION_ENABLED !== "true"
+export async function submitInstructorLivePayoutBatch(
+  batchId: number,idempotencyKey: string,actorUserId: string,
+  sourceType: "course_order" | "subscription_invoice" = "course_order",
+) {
+  const invoiceSource=sourceType === "subscription_invoice";
+  if ((invoiceSource
+      ? process.env.LEARNING_LIVE_SUBSCRIPTION_PAYOUT_BATCH_SUBMISSION_ENABLED !== "true"
+      : process.env.LEARNING_LIVE_PAYOUT_BATCH_SUBMISSION_ENABLED !== "true")
     || !Number.isSafeInteger(batchId) || batchId <= 0
     || !/^[a-z][a-z0-9:_-]{2,120}$/.test(idempotencyKey)) {
     throw new Error("Live payout batch submission is disabled.");
   }
   const admin = createAdminClient();
-  const { data: preflightRows, error: preflightError } = await admin.rpc("get_learning_instructor_live_payout_batch_preflight", {
+  const preflightRpc=invoiceSource
+    ? "get_learning_subscription_invoice_live_payout_batch_preflight"
+    : "get_learning_instructor_live_payout_batch_preflight";
+  const { data: preflightRows, error: preflightError } = await admin.rpc(preflightRpc, {
     p_operator_id: actorUserId, p_batch_id: batchId,
   });
   const preflight = (preflightRows as Array<{ amount_minor?: number; currency?: string }> | null)?.[0];
@@ -128,7 +141,10 @@ export async function submitInstructorLivePayoutBatch(batchId: number, idempoten
   // This is a read-only provider balance check. It runs before the database
   // attempt is created and before any transfer-initiation request is sent.
   await assertPaystackLiveBalanceCoversPayout(preflightAmount);
-  const { data, error } = await admin.rpc("begin_learning_instructor_live_payout_batch_transfer", {
+  const beginRpc=invoiceSource
+    ? "begin_learning_subscription_invoice_live_payout_batch_transfer"
+    : "begin_learning_instructor_live_payout_batch_transfer";
+  const { data, error } = await admin.rpc(beginRpc, {
     p_batch_id: batchId, p_actor_user_id: actorUserId, p_idempotency_key: idempotencyKey,
   });
   const attempt = (data as Array<{ attempt_id?: number; attempt_reference?: string; recipient_code?: string;
@@ -165,8 +181,29 @@ export async function submitInstructorLivePayoutBatch(batchId: number, idempoten
   return { status: transfer.status as "otp" | "pending", attemptReference: attempt.attempt_reference };
 }
 
-export async function finalizeInstructorLivePayoutBatchOtp(attemptId: number, otp: string, actorUserId: string) {
-  if (process.env.LEARNING_LIVE_PAYOUT_BATCH_SUBMISSION_ENABLED !== "true"
+export async function getLivePayoutBatchAttemptSource(attemptId: number, actorUserId: string) {
+  if (!Number.isSafeInteger(attemptId) || attemptId <= 0) throw new Error("Payout attempt is unavailable.");
+  const { data, error } = await createAdminClient().rpc("get_learning_live_payout_batch_attempt_source", {
+    p_operator_id: actorUserId, p_attempt_id: attemptId,
+  });
+  const source = (data as Array<{ source_type?: string }> | null)?.[0]?.source_type;
+  if (error || (source !== "course_order" && source !== "subscription_invoice")) {
+    throw new Error("Payout attempt source could not be confirmed.");
+  }
+  return source;
+}
+
+export async function finalizeInstructorLivePayoutBatchOtp(
+  attemptId: number,otp: string,actorUserId: string,
+  sourceType: "course_order" | "subscription_invoice" = "course_order",
+) {
+  if (await getLivePayoutBatchAttemptSource(attemptId, actorUserId) !== sourceType) {
+    throw new Error("Payout attempt source does not match this request.");
+  }
+  const submissionEnabled=sourceType === "subscription_invoice"
+    ? process.env.LEARNING_LIVE_SUBSCRIPTION_PAYOUT_BATCH_SUBMISSION_ENABLED === "true"
+    : process.env.LEARNING_LIVE_PAYOUT_BATCH_SUBMISSION_ENABLED === "true";
+  if (!submissionEnabled
     || process.env.LEARNING_LIVE_PAYOUT_BATCH_OTP_ENABLED !== "true"
     || !Number.isSafeInteger(attemptId) || attemptId <= 0 || !/^\d{6}$/.test(otp)) {
     throw new Error("Live payout batch OTP finalization is unavailable.");
@@ -197,8 +234,17 @@ export async function finalizeInstructorLivePayoutBatchOtp(attemptId: number, ot
   return { status: "awaiting_provider_outcome" as const };
 }
 
-export async function recoverInstructorLivePayoutBatch(attemptId: number, actorUserId: string) {
-  if (process.env.LEARNING_LIVE_PAYOUT_BATCH_RECONCILIATION_ENABLED !== "true"
+export async function recoverInstructorLivePayoutBatch(
+  attemptId: number,actorUserId: string,
+  sourceType: "course_order" | "subscription_invoice" = "course_order",
+) {
+  if (await getLivePayoutBatchAttemptSource(attemptId, actorUserId) !== sourceType) {
+    throw new Error("Payout attempt source does not match this request.");
+  }
+  const recoveryEnabled=sourceType === "subscription_invoice"
+    ? process.env.LEARNING_LIVE_SUBSCRIPTION_PAYOUT_BATCH_RECONCILIATION_ENABLED === "true"
+    : process.env.LEARNING_LIVE_PAYOUT_BATCH_RECONCILIATION_ENABLED === "true";
+  if (!recoveryEnabled
     || !Number.isSafeInteger(attemptId) || attemptId <= 0) throw new Error("Live payout batch recovery is disabled.");
   const admin = createAdminClient();
   const { data, error } = await admin.rpc("get_learning_instructor_live_payout_batch_transfer_for_recovery", {

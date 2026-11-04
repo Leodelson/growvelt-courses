@@ -77,13 +77,15 @@ export type InstructorLivePayoutCandidate = Omit<InstructorPayoutCandidate, "eli
 export type InstructorPayoutItem = { payout_item_id: number; reservation_id: number; reservation_reference: string; payout_item_reference: string; instructor_name: string | null; instructor_email: string | null; amount_minor: number; currency: "NGN"; status: string; provider_status: string | null; provider_transfer_code: string | null; provider_domain: "test" | "live"; approved_at: string; initiated_at: string | null };
 export type InstructorPayoutReconciliationFinding = { finding_id: number; provider_event_id: number | null; payout_item_reference: string | null; finding_type: string; status: "open" | "resolved"; detail: string; created_at: string };
 export type InstructorLivePayoutBatchCandidate = {
+  source_type: "course_order" | "subscription_invoice";
   earning_id: number; instructor_id: string; instructor_name: string | null; instructor_email: string | null;
   payout_profile_id: number; bank_name: string; account_name: string; account_last4: string;
-  order_reference: string; course_title: string; amount_minor: number; currency: "NGN";
+  source_reference: string; source_label: string; amount_minor: number; currency: "NGN";
   available_at: string; eligible_total_minor: number; eligible_earning_count: number;
 };
 export type InstructorLivePayoutBatch = {
-  batch_id: number; batch_reference: string; instructor_id: string; instructor_name: string | null;
+  batch_id: number; batch_reference: string; source_type: "course_order" | "subscription_invoice";
+  instructor_id: string; instructor_name: string | null;
   instructor_email: string | null; payout_profile_id: number; bank_name: string; account_name: string;
   account_last4: string; amount_minor: number; currency: "NGN"; status: string; member_count: number;
   assembled_at: string; attempt_id: number | null; attempt_reference: string | null;
@@ -128,7 +130,7 @@ export async function listInstructorLivePayoutCandidates(operatorId: string) {
 
 export async function listInstructorLivePayoutBatchCandidates(operatorId: string) {
   if (process.env.LEARNING_LIVE_PAYOUT_BATCH_APPROVAL_ENABLED !== "true") return [] as InstructorLivePayoutBatchCandidate[];
-  const { data, error } = await createAdminClient().rpc("list_learning_instructor_live_payout_batch_candidates", {
+  const { data, error } = await createAdminClient().rpc("list_learning_live_payout_batch_candidates", {
     p_operator_id: operatorId, p_limit: 200,
   });
   if (error) throw new Error("Unable to load Live payout batch candidates.");
@@ -137,7 +139,7 @@ export async function listInstructorLivePayoutBatchCandidates(operatorId: string
 
 export async function listInstructorLivePayoutBatches(operatorId: string) {
   if (process.env.LEARNING_LIVE_PAYOUT_BATCH_APPROVAL_ENABLED !== "true") return [] as InstructorLivePayoutBatch[];
-  const { data, error } = await createAdminClient().rpc("list_learning_instructor_live_payout_batches", {
+  const { data, error } = await createAdminClient().rpc("list_learning_live_payout_batches", {
     p_operator_id: operatorId, p_limit: 100,
   });
   if (error) throw new Error("Unable to load Live payout batch history.");

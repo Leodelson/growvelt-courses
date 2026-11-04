@@ -9,8 +9,10 @@ type Props = {
   batches: InstructorLivePayoutBatch[];
   findings: InstructorLivePayoutBatchFinding[];
   submissionEnabled: boolean;
+  invoiceSubmissionEnabled: boolean;
   otpEnabled: boolean;
   recoveryEnabled: boolean;
+  invoiceRecoveryEnabled: boolean;
 };
 
 const money = (minor: number) => new Intl.NumberFormat("en-NG", {
@@ -20,7 +22,7 @@ const date = (value: string) => new Intl.DateTimeFormat("en-NG", { dateStyle: "m
 
 type BatchAction = "submit" | "otp" | "recover";
 
-export function CommercialLivePayoutBatchControl({ candidates, batches, findings, submissionEnabled, otpEnabled, recoveryEnabled }: Props) {
+export function CommercialLivePayoutBatchControl({ candidates, batches, findings, submissionEnabled, invoiceSubmissionEnabled, otpEnabled, recoveryEnabled, invoiceRecoveryEnabled }: Props) {
   const router = useRouter();
   const [selected, setSelected] = useState<number[]>([]);
   const [amountConfirmation, setAmountConfirmation] = useState("");
@@ -32,7 +34,7 @@ export function CommercialLivePayoutBatchControl({ candidates, batches, findings
   const groups = useMemo(() => {
     const result = new Map<string, InstructorLivePayoutBatchCandidate[]>();
     for (const candidate of candidates) {
-      const key = `${candidate.instructor_id}:${candidate.payout_profile_id}`;
+      const key = `${candidate.source_type}:${candidate.instructor_id}:${candidate.payout_profile_id}`;
       result.set(key, [...(result.get(key) ?? []), candidate]);
     }
     return [...result.entries()];
@@ -41,7 +43,9 @@ export function CommercialLivePayoutBatchControl({ candidates, batches, findings
   const selectedAmount = selectedCandidates.reduce((sum, candidate) => sum + candidate.amount_minor, 0);
   const selectedIdentity = selectedCandidates[0];
   const oneRecipient = selectedCandidates.length > 0 && selectedCandidates.every(candidate =>
-    candidate.instructor_id === selectedIdentity?.instructor_id && candidate.payout_profile_id === selectedIdentity.payout_profile_id);
+    candidate.source_type === selectedIdentity?.source_type
+      && candidate.instructor_id === selectedIdentity?.instructor_id
+      && candidate.payout_profile_id === selectedIdentity.payout_profile_id);
   const approvalReady = oneRecipient && selectedCandidates.length <= 100 && selectedAmount >= 100000
     && amountConfirmation === (selectedAmount / 100).toFixed(2) && busy === null;
 
@@ -64,6 +68,7 @@ export function CommercialLivePayoutBatchControl({ candidates, batches, findings
         method: "POST", credentials: "same-origin", cache: "no-store",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ instructorId: selectedIdentity.instructor_id,
+          sourceType: selectedIdentity.source_type,
           payoutProfileId: selectedIdentity.payout_profile_id,
           earningIds: selectedCandidates.map(candidate => candidate.earning_id),
           confirmedAmountMinor: amount, idempotencyKey: `batch:approve:${crypto.randomUUID()}` }),
@@ -97,7 +102,7 @@ export function CommercialLivePayoutBatchControl({ candidates, batches, findings
         : action === "otp" ? "/api/admin/commercial/payout-batches/finalize-live-otp"
           : "/api/admin/commercial/payout-batches/recover-live";
       const body = action === "submit"
-        ? { batchId: batch.batch_id, idempotencyKey: `batch:submit:${crypto.randomUUID()}` }
+        ? { batchId: batch.batch_id, sourceType: batch.source_type, idempotencyKey: `batch:submit:${crypto.randomUUID()}` }
         : action === "otp" ? { attemptId: batch.attempt_id, otp: otpValue }
           : { attemptId: batch.attempt_id };
       if (action === "otp") setOtp(current => ({ ...current, [batch.batch_id]: "" }));
@@ -135,7 +140,7 @@ export function CommercialLivePayoutBatchControl({ candidates, batches, findings
           </div>
           <div className="commercial-live-payout-batch-earnings">{rows.map(row => <label key={row.earning_id}>
             <input type="checkbox" checked={selected.includes(row.earning_id)} onChange={event => toggle(row.earning_id, event.target.checked)} disabled={busy !== null} />
-            <span><strong>{row.course_title}</strong><small>{row.order_reference}</small></span>
+            <span><strong>{row.source_label}</strong><small>{row.source_reference}</small></span>
             <strong>{money(row.amount_minor)}</strong>
           </label>)}</div>
         </section>;
@@ -159,12 +164,14 @@ export function CommercialLivePayoutBatchControl({ candidates, batches, findings
       <header><p className="eyebrow">Step 2</p><h3 id="live-batch-history-title">Approved batches</h3>
         <p>Transfer initiation is separate from approval. A submitted transfer is not yet a completed payout.</p></header>
       {batches.length ? <div className="commercial-live-payout-batch-groups">{batches.map(batch => {
-        const allowSubmit = submissionEnabled && ["assembled", "failed"].includes(batch.status);
-        const allowOtp = otpEnabled && batch.attempt_id !== null && batch.attempt_status === "pending" && batch.provider_status === "otp";
-        const allowRecover = recoveryEnabled && batch.attempt_id !== null && ["pending", "recovery_required", "financially_blocked"].includes(batch.attempt_status ?? "");
+        const sourceSubmissionEnabled = batch.source_type === "subscription_invoice" ? invoiceSubmissionEnabled : submissionEnabled;
+        const allowSubmit = sourceSubmissionEnabled && ["assembled", "failed"].includes(batch.status);
+        const allowOtp = sourceSubmissionEnabled && otpEnabled && batch.attempt_id !== null && batch.attempt_status === "pending" && batch.provider_status === "otp";
+        const sourceRecoveryEnabled = batch.source_type === "subscription_invoice" ? invoiceRecoveryEnabled : recoveryEnabled;
+        const allowRecover = sourceRecoveryEnabled && batch.attempt_id !== null && ["pending", "recovery_required", "financially_blocked"].includes(batch.attempt_status ?? "");
         const displayStatus = batch.status === "assembled" ? "approved · awaiting transfer" : batch.status.replaceAll("_", " ");
         return <article className="commercial-live-payout-batch-history" key={batch.batch_id}>
-          <div><strong>{batch.instructor_name ?? "Instructor"}</strong><span>{batch.batch_reference} · {batch.member_count} earnings</span><span>Approved {date(batch.assembled_at)}</span></div>
+          <div><strong>{batch.instructor_name ?? "Instructor"}</strong><span>{batch.source_type === "subscription_invoice" ? "Subscription invoice batch" : "Course order batch"} · {batch.batch_reference} · {batch.member_count} earnings</span><span>Approved {date(batch.assembled_at)}</span></div>
           <div><strong>{money(batch.amount_minor)} · {batch.bank_name}</strong><span>{batch.account_name} · account ending {batch.account_last4}</span></div>
           <div><span className={`admin-status is-${batch.status}`}>{displayStatus}</span><span>{batch.attempt_reference ? `${batch.attempt_reference} · ${batch.attempt_status}${batch.provider_status ? ` · provider ${batch.provider_status}` : ""}` : "No provider transfer submitted"}</span>{batch.attempted_at && <span>Last attempt {date(batch.attempted_at)}</span>}{batch.provider_transfer_code && <span>Provider transfer code {batch.provider_transfer_code}</span>}</div>
           {allowSubmit && <div className="commercial-live-payout-batch-actions">
