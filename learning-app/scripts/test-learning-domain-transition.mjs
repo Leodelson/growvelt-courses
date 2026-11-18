@@ -32,6 +32,12 @@ for (const bad of ["https://jobs.growvelt.com", "https://evil.invalid", "http://
 }
 assert.equal(urls.getLearningOrigin(current), "https://learn.growvelt.com");
 assert.equal(urls.getLearningOrigin(future), "https://www.growvelt.com");
+const staging = { NEXT_PUBLIC_LEARNING_SITE_URL: urls.stagingLearningOrigin, NEXT_PUBLIC_LEARNING_DOMAIN_CUTOVER_ENABLED: "false" };
+assert.equal(urls.getLearningOrigin(staging), urls.stagingLearningOrigin);
+assert.equal(urls.learningPath("/dashboard", staging), "/dashboard");
+assert.equal(new URL(urls.learningAuthCallbackUrl(urls.stagingLearningOrigin, "/dashboard", staging)).origin, urls.stagingLearningOrigin);
+assert.throws(() => urls.getLearningOrigin({ NEXT_PUBLIC_LEARNING_SITE_URL: "https://unrelated.late-smoke-33c0.workers.dev" }));
+assert.throws(() => urls.learningAuthCallbackUrl("https://unrelated.late-smoke-33c0.workers.dev", "/dashboard", staging));
 assert.throws(() => urls.getCareersOrigin({ NEXT_PUBLIC_LEARNING_SITE_URL: future.NEXT_PUBLIC_LEARNING_SITE_URL, NEXT_PUBLIC_LEARNING_DOMAIN_CUTOVER_ENABLED: "true" }));
 for (const disabled of [undefined, "", "false", "1", "TRUE"]) {
   const preparedOnly = { ...future, NEXT_PUBLIC_LEARNING_DOMAIN_CUTOVER_ENABLED: disabled };

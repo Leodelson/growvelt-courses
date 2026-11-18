@@ -1,6 +1,7 @@
 // Explicit build-time configuration; defaults preserve the current Learning site.
 export const legacyLearningOrigin = "https://learn.growvelt.com";
 export const futureLearningOrigin = "https://www.growvelt.com";
+export const stagingLearningOrigin = "https://growvelt-learning-staging-pilot.late-smoke-33c0.workers.dev";
 const aliases = {
   "/dashboard": "/learning/dashboard",
   "/dashboard/profile": "/learning/dashboard/profile",
@@ -28,7 +29,7 @@ function exactOrigin(value, allowed) {
 
 export function getLearningOrigin(env = environment()) {
   const selected = exactOrigin(env.NEXT_PUBLIC_LEARNING_SITE_URL?.trim() || legacyLearningOrigin,
-    [legacyLearningOrigin, futureLearningOrigin]);
+    [legacyLearningOrigin, futureLearningOrigin, stagingLearningOrigin]);
   // Preparation may be deployed safely before domain/settings handover. Merely
   // preconfiguring a future URL must not activate it in this release.
   return selected === futureLearningOrigin && env.NEXT_PUBLIC_LEARNING_DOMAIN_CUTOVER_ENABLED !== "true"
@@ -72,7 +73,7 @@ export function learningAuthCallbackUrl(origin, next, env = environment()) {
   const loopback = ["localhost", "127.0.0.1", "[::1]"].includes(parsed.hostname);
   const preview = parsed.hostname === "growvelt-learning.vercel.app"
     || /^growvelt-learning-[a-z0-9-]+-leodelsons-projects\.vercel\.app$/.test(parsed.hostname);
-  const trusted = [legacyLearningOrigin, futureLearningOrigin, "https://www.learn.growvelt.com"].includes(parsed.origin);
+  const trusted = [legacyLearningOrigin, futureLearningOrigin, "https://www.learn.growvelt.com", stagingLearningOrigin].includes(parsed.origin);
   if (parsed.username || parsed.password || parsed.pathname !== "/" || parsed.search || parsed.hash
     || !(loopback && ["http:", "https:"].includes(parsed.protocol) || parsed.protocol === "https:" && (trusted || preview))) {
     throw new Error("Unapproved Growvelt authentication origin.");
