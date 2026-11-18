@@ -6,3 +6,8 @@ node_modules/
 .npm-cache/
 .env*
 !.env.example
+
+# Cloudflare local build output
+.cloudflare/
+.vinext/
+dist/
