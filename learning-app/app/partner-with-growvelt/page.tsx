@@ -4,8 +4,8 @@ import { PartnerPageContent } from "@/app/components/partner-page-content";
 import { publicPageMetadata } from "@/app/lib/seo";
 
 export const metadata = publicPageMetadata({
-  title: "Partner on Skills and Opportunity",
-  description: "Work with Growvelt on digital skills, workforce learning, inclusive education, and practical development programmes.",
+  title: "Partner with Growvelt",
+  description: "Partner with Growvelt on practical digital-skills programmes, workforce learning, inclusive education, and community opportunities.",
   path: "/partner-with-growvelt",
 });
 

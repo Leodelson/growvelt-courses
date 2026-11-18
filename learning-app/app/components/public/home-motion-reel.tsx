@@ -22,10 +22,9 @@ export function HomeMotionReel() {
     const frame = frameRef.current;
     if (!video || !frame) return;
     const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const connection = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection;
     let visible = false;
     let disposed = false;
-    const allowed = () => visible && !document.hidden && !motion.matches && !connection?.saveData;
+    const allowed = () => visible && !document.hidden && !motion.matches;
     const sync = () => {
       if (!allowed()) { video.pause(); return; }
       if (!video.getAttribute("src")) video.src = film;
