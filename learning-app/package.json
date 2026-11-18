@@ -101,7 +101,12 @@
     "test:account-deletion:retention:local": "node scripts/test-account-deletion-retention-local.mjs",
     "test:instructor-application:self-read:local": "node scripts/test-instructor-application-self-read-local.mjs",
     "test:auth:session": "node --experimental-strip-types scripts/test-auth-session-propagation.mjs",
-    "fixture:payments:test": "node scripts/manage-phase1a-test-fixture.mjs"
+    "fixture:payments:test": "node scripts/manage-phase1a-test-fixture.mjs",
+    "dev:vinext": "vite dev --port 3001",
+    "build:vinext": "vite build",
+    "build:worker:pilot": "node scripts/build-worker-pilot.mjs",
+    "deploy:vinext:pilot": "node scripts/deploy-worker-pilot.mjs",
+    "start:vinext": "vite preview"
   },
   "dependencies": {
     "@supabase/ssr": "^0.8.0",
@@ -114,9 +119,12 @@
     "lucide-react": "^1.31.0",
     "next": "16.4.3",
     "qrcode": "^1.5.4",
-    "react": "^19.2.3",
-    "react-dom": "^19.2.3",
-    "sonner": "^2.0.8"
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "sonner": "^2.0.8",
+    "vinext": "1.4.4",
+    "react-server-dom-webpack": "19.3.1",
+    "@vinext/cloudflare": "1.3.3"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.8",
@@ -127,6 +135,15 @@
     "eslint": "^9",
     "eslint-config-next": "16.4.3",
     "tailwindcss": "^4.1.18",
-    "typescript": "^5"
-  }
+    "typescript": "^5",
+    "vite": "8.3.0",
+    "@vitejs/plugin-react": "6.3.0",
+    "@vitejs/plugin-rsc": "0.5.39",
+    "@cloudflare/vite-plugin": "2.0.0-beta.v.13",
+    "cf": "1.0.0-beta.28",
+    "vite-css-modules": "1.16.1",
+    "postcss": "8.5.32"
+  },
+  "type": "module",
+  "packageManager": "npm@11.12.1"
 }
