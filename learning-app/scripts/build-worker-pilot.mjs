@@ -17,9 +17,9 @@ Object.assign(env, {
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "sb_publishable_fixture",
   NEXT_PUBLIC_GOOGLE_CLIENT_ID: "",
   NEXT_PUBLIC_TURNSTILE_SITE_KEY: "",
-  NEXT_PUBLIC_LEARNING_SITE_URL: "https://www.growvelt.com",
+  NEXT_PUBLIC_LEARNING_SITE_URL: "https://growvelt-learning-staging-pilot.late-smoke-33c0.workers.dev",
   NEXT_PUBLIC_CAREERS_SITE_URL: "https://jobs.growvelt.com",
-  NEXT_PUBLIC_LEARNING_DOMAIN_CUTOVER_ENABLED: "true",
+  NEXT_PUBLIC_LEARNING_DOMAIN_CUTOVER_ENABLED: "false",
 });
 
 const result = spawnSync(process.execPath, [vite, "build"], {
