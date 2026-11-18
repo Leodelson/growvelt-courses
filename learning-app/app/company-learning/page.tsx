@@ -1,25 +1,15 @@
-import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import FooterWrapper from "@/app/components/FooterWrapper";
 import { PublicHeader } from "@/app/components/public-header";
 import styles from "@/app/components/public/secondary-pages.module.css";
+import { publicPageMetadata } from "@/app/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Team Training for your team",
-  description: "Help your team build practical skills with Growvelt. Create a private workspace, assign courses, invite employees, and track learning progress.",
-  alternates: { canonical: "/company-learning" },
-  openGraph: {
-    url: "/company-learning",
-    title: "Team Training for your team | Growvelt",
-    description: "Create a private company workspace, assign practical courses, invite employees, and follow team learning progress.",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Team Training for your team | Growvelt",
-    description: "Create a private company workspace, assign practical courses, invite employees, and follow team learning progress.",
-  },
-};
+export const metadata = publicPageMetadata({
+  title: "Company Training and Team Learning",
+  description: "Give your team practical training with private workspaces, course assignments, employee invitations, and learning progress tracking.",
+  path: "/company-learning",
+});
 
 const teamFaqs = [
   { question: "Does an invitation include paid course access?", answer: "An invitation adds someone to your workspace. Paid course access follows the purchase and assignment requirements shown in Team Training; an invitation alone is not a course purchase." },

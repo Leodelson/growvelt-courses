@@ -1,7 +1,11 @@
-import type { Metadata } from "next";
 import { LegalPage } from "@/app/components/legal-page";
+import { publicPageMetadata } from "@/app/lib/seo";
 
-export const metadata: Metadata = { title: "Cookie Policy", description: "How Growvelt uses cookies and similar technologies across applicable Growvelt services." };
+export const metadata = publicPageMetadata({
+  title: "Cookies and Browser Data",
+  description: "Understand how Growvelt uses cookies, browser storage, and related technologies to support accounts and learning features.",
+  path: "/cookie-policy",
+});
 
 const sections = [
   { heading: "1. What this policy covers", paragraphs: ["This Cookie Policy explains how Growvelt uses cookies and similar technologies across applicable Growvelt services and platforms.", "Cookies are small pieces of information a website can store in your browser. Similar technologies include localStorage, sessionStorage, browser and device state, and PWA Cache Storage."] },

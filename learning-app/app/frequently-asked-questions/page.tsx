@@ -1,14 +1,13 @@
-import type { Metadata } from "next";
 import FooterWrapper from "@/app/components/FooterWrapper";
 import { PublicHeader } from "@/app/components/public-header";
 import { FaqPageContent } from "@/app/components/faq-page-content";
+import { publicPageMetadata } from "@/app/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Frequently Asked Questions | Growvelt and Careers",
-  description: "Answers to common Growvelt questions about learning, certificates, teaching, jobs, careers, support, and partnerships.",
-  alternates: { canonical: "/frequently-asked-questions" },
-  openGraph: { url: "/frequently-asked-questions", title: "Frequently Asked Questions | Growvelt" },
-};
+export const metadata = publicPageMetadata({
+  title: "Courses, Certificates, and Learning FAQs",
+  description: "Find answers about Growvelt courses, learner accounts, certificates, teaching, company training, support, and partnerships.",
+  path: "/frequently-asked-questions",
+});
 
 export default function FrequentlyAskedQuestionsPage() {
   return <div className="public-page faq-page">

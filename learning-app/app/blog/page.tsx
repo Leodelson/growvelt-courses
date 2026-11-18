@@ -1,14 +1,13 @@
-import type { Metadata } from "next";
 import FooterWrapper from "@/app/components/FooterWrapper";
 import { PublicHeader } from "@/app/components/public-header";
 import { BlogPageContent } from "@/app/components/blog-page-content";
+import { publicPageMetadata } from "@/app/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Growvelt Blog | Skills, careers, and practical skills",
-  description: "Practical articles from Growvelt on learning, careers, data, technology, and turning skills into opportunity.",
-  alternates: { canonical: "/blog" },
-  openGraph: { url: "/blog", title: "Growvelt Blog | Skills, careers, and practical skills" },
-};
+export const metadata = publicPageMetadata({
+  title: "Practical Skills and Learning Articles",
+  description: "Read Growvelt articles on online learning, practical skills, data, technology, and career development.",
+  path: "/blog",
+});
 
 export default function BlogPage() {
   return (

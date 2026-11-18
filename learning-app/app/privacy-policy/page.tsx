@@ -1,10 +1,11 @@
-import type { Metadata } from "next";
 import { LegalPage } from "@/app/components/legal-page";
+import { publicPageMetadata } from "@/app/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Privacy Policy",
-  description: "How Growvelt collects, uses, protects, and manages personal information.",
-};
+export const metadata = publicPageMetadata({
+  title: "Privacy and Data Protection",
+  description: "Learn what personal information Growvelt collects, how it is used, and how it is protected across learning services.",
+  path: "/privacy-policy",
+});
 
 const sections = [
   {

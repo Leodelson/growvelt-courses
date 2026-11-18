@@ -1,7 +1,11 @@
-import type { Metadata } from "next";
 import { LegalPage } from "@/app/components/legal-page";
+import { publicPageMetadata } from "@/app/lib/seo";
 
-export const metadata: Metadata = { title: "Refund Policy", description: "Growvelt payment confirmation, full-refund eligibility, processing, access, and dispute policy." };
+export const metadata = publicPageMetadata({
+  title: "Payments and Refunds",
+  description: "Review Growvelt payment confirmation, refund eligibility, processing, course access, and dispute procedures.",
+  path: "/refund-policy",
+});
 
 const sections = [
   { heading: "1. Payment confirmation", paragraphs: ["The course price displayed at checkout is the final course price charged by Growvelt unless the checkout clearly states otherwise. Paystack processes the payment. Growvelt grants access only after receiving or independently verifying authoritative payment confirmation.", "A browser redirect, screenshot, debit alert, or pending bank transaction does not by itself prove successful payment. If a payment appears successful but access is unavailable, contact support@growvelt.com with the Growvelt order reference and do not pay again unless Growvelt confirms the first attempt failed."] },

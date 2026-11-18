@@ -1,8 +1,12 @@
-import type { Metadata } from "next";
 import { getCareersOrigin } from "@/app/lib/site-urls.mjs";
 import { LegalPage } from "@/app/components/legal-page";
+import { publicPageMetadata } from "@/app/lib/seo";
 
-export const metadata: Metadata = { title: "Terms of Service", description: "Growvelt Terms of Service for learning, careers, courses, certificates, and related services." };
+export const metadata = publicPageMetadata({
+  title: "Terms of Service",
+  description: "Review the terms for using Growvelt courses, learning accounts, certificates, payments, and related services.",
+  path: "/terms-of-service",
+});
 
 const sections = [
   { heading: "1. Acceptance of these terms", paragraphs: ["By visiting Growvelt, creating an account, enrolling in a course, posting or applying for a job, purchasing an upgrade, or using a Growvelt service, you agree to these Terms of Service and our Privacy Policy.", "If you do not agree, please do not use our websites, courses, job platform, payment features, or communication tools."] },

@@ -1,23 +1,13 @@
-import type { Metadata } from "next";
 import FooterWrapper from "@/app/components/FooterWrapper";
 import { PublicHeader } from "@/app/components/public-header";
 import { AboutPageContent } from "@/app/components/about-page-content";
+import { publicPageMetadata } from "@/app/lib/seo";
 
-export const metadata: Metadata = {
-  title: "About",
-  description: "Learn how Growvelt helps people and teams build practical skills through courses, instructor-led teaching, and private company workspaces.",
-  alternates: { canonical: "/about" },
-  openGraph: {
-    url: "/about",
-    title: "About Growvelt | Practical skills for people and teams",
-    description: "Learn about practical online courses, instructor-led teaching, and private team training workspaces on Growvelt.",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "About Growvelt | Practical skills for people and teams",
-    description: "Learn about practical online courses, instructor-led teaching, and private team training workspaces on Growvelt.",
-  },
-};
+export const metadata = publicPageMetadata({
+  title: "Our Story and Learning Mission",
+  description: "Discover Growvelt’s approach to practical online learning, instructor-led courses, and skills development for individuals and teams.",
+  path: "/about",
+});
 
 /* const offerings = [
   "Real-world projects and mentorship",
