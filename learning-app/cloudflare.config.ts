@@ -13,6 +13,13 @@ export default defineConfig({
       notFoundHandling: "none",
       runWorkerFirst: ["/*", "!/_next/static/*", "!/*/_next/static/*"],
     },
-    env: { ASSETS: bindings.assets() },
+    env: {
+      ASSETS: bindings.assets(),
+      LEARNING_FORWARDING_TOKEN: bindings.secret(),
+      PAYSTACK_LIVE_SECRET_KEY: bindings.secret(),
+      RESEND_API_KEY: bindings.secret(),
+      SUPABASE_SERVICE_ROLE_KEY: bindings.secret(),
+      TURNSTILE_SECRET_KEY: bindings.secret(),
+    },
   }),
 });
