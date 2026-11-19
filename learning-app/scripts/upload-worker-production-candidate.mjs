@@ -8,12 +8,145 @@ const cf = path.join(root, "node_modules", ".bin", process.platform === "win32" 
 const commit = process.env.WORKERS_CI_COMMIT_SHA?.slice(0, 8);
 const message = commit ? `Learning production candidate ${commit}` : "Learning production candidate";
 
+const requiredPublicVariables = [
+  "NEXT_PUBLIC_CAREERS_SITE_URL",
+  "NEXT_PUBLIC_GOOGLE_CLIENT_ID",
+  "NEXT_PUBLIC_LEARNING_DOMAIN_CUTOVER_ENABLED",
+  "NEXT_PUBLIC_LEARNING_SITE_URL",
+  "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
+  "NEXT_PUBLIC_SUPABASE_URL",
+  "NEXT_PUBLIC_TURNSTILE_SITE_KEY",
+];
+
+function parseJsonOutput(output) {
+  const clean = output.replace(/\u001b\[[0-9;]*[A-Za-z]/g, "").trim();
+  try {
+    return JSON.parse(clean);
+  } catch {
+    for (let start = 0; start < clean.length; start += 1) {
+      if (clean[start] !== "{" && clean[start] !== "[") continue;
+      let depth = 0;
+      let inString = false;
+      let escaped = false;
+      for (let end = start; end < clean.length; end += 1) {
+        const char = clean[end];
+        if (inString) {
+          if (escaped) escaped = false;
+          else if (char === "\\") escaped = true;
+          else if (char === '"') inString = false;
+          continue;
+        }
+        if (char === '"') inString = true;
+        else if (char === "{" || char === "[") depth += 1;
+        else if (char === "}" || char === "]") {
+          depth -= 1;
+          if (depth === 0) {
+            try {
+              return JSON.parse(clean.slice(start, end + 1));
+            } catch {
+              break;
+            }
+          }
+        }
+      }
+    }
+    return undefined;
+  }
+}
+
+function runCfJson(args, description, env = process.env) {
+  const result = spawnSync(cf, [...args, "--quiet"], {
+    cwd: root,
+    env,
+    shell: process.platform === "win32",
+    encoding: "utf8",
+    maxBuffer: 16 * 1024 * 1024,
+  });
+  if (result.error) throw result.error;
+  if (result.status !== 0) throw new Error(`Candidate could not ${description}; it was not promoted.`);
+  const value = parseJsonOutput(`${result.stdout ?? ""}\n${result.stderr ?? ""}`);
+  if (!value) throw new Error(`Cloudflare returned an unreadable response while trying to ${description}.`);
+  return value;
+}
+
+function findBindings(value) {
+  if (!value || typeof value !== "object") return undefined;
+  if (Array.isArray(value)) {
+    if (value.every((entry) => entry && typeof entry.name === "string" && typeof entry.type === "string")) return value;
+    for (const entry of value) {
+      const found = findBindings(entry);
+      if (found) return found;
+    }
+    return undefined;
+  }
+  if (Array.isArray(value.bindings)) return value.bindings;
+  if (value.bindings && typeof value.bindings === "object") {
+    return Object.entries(value.bindings).map(([name, binding]) => ({ name, ...binding }));
+  }
+  for (const entry of Object.values(value)) {
+    const found = findBindings(entry);
+    if (found) return found;
+  }
+  return undefined;
+}
+
+function findActiveVersionIds(value) {
+  if (!value || typeof value !== "object") return undefined;
+  if (Array.isArray(value.versions)) {
+    const ids = value.versions
+      .filter((entry) => Number(entry?.percentage) > 0)
+      .map((entry) => entry?.version_id ?? entry?.versionId)
+      .filter((id) => typeof id === "string");
+    if (ids.length > 0) return ids;
+  }
+  for (const entry of Array.isArray(value) ? value : Object.values(value)) {
+    const found = findActiveVersionIds(entry);
+    if (found) return found;
+  }
+  return undefined;
+}
+
+const activeDeployments = runCfJson(
+  ["workers", "deployments", "list", "--worker", target, "--per-page", "1"],
+  "read the current Learning production deployment",
+);
+const activeVersionIds = findActiveVersionIds(activeDeployments);
+if (!activeVersionIds?.length) throw new Error("Could not identify the current Learning production version; no candidate was uploaded.");
+if (activeVersionIds.length !== 1) throw new Error("Learning production currently has multiple traffic-serving versions; no candidate was uploaded.");
+
+const activeVersion = runCfJson(
+  ["workers", "versions", "get", activeVersionIds[0], "--worker-id", target],
+  "read active Learning runtime variables",
+);
+const activeBindings = findBindings(activeVersion);
+if (!activeBindings) throw new Error("Could not read active Learning runtime bindings; no candidate was uploaded.");
+
+const activePlainTextBindings = activeBindings.filter((binding) => binding.type === "plain_text");
+const missingActiveValues = activePlainTextBindings.filter((binding) => typeof binding.text !== "string").map((binding) => binding.name);
+if (missingActiveValues.length > 0) {
+  throw new Error(`Active Learning runtime variables had no readable values: ${missingActiveValues.join(", ")}. No candidate was uploaded.`);
+}
+
+const publicValueMismatches = requiredPublicVariables.filter((name) => {
+  const activeValue = activePlainTextBindings.find((binding) => binding.name === name)?.text;
+  return typeof activeValue !== "string" || process.env[name] !== activeValue;
+});
+if (publicValueMismatches.length > 0) {
+  throw new Error(`Cloudflare build settings do not match active Learning runtime settings: ${publicValueMismatches.join(", ")}. No candidate was uploaded.`);
+}
+
+// Supply existing non-secret runtime variables only to the upload command so
+// cloudflare.config.ts can preserve them. They are never written to the repo or
+// printed in the build log.
+const uploadEnv = { ...process.env };
+for (const { name, text } of activePlainTextBindings) uploadEnv[name] = text;
+
 const upload = spawnSync(
   cf,
   ["workers", "versions", "create", "--prebuilt", "--worker", target, "--message", message],
   {
     cwd: root,
-    env: process.env,
+    env: uploadEnv,
     shell: process.platform === "win32",
     encoding: "utf8",
     maxBuffer: 16 * 1024 * 1024,
@@ -30,104 +163,13 @@ if (upload.status !== 0) {
   const versionId = uploadOutput.match(/Worker Version ID:\s*([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i)?.[1];
   if (!versionId) throw new Error("Candidate upload succeeded but did not report a Worker Version ID.");
 
-  function parseJsonOutput(output) {
-    const clean = output.replace(/\u001b\[[0-9;]*[A-Za-z]/g, "").trim();
-    try {
-      return JSON.parse(clean);
-    } catch {
-      // Some CLI versions add status text around the API response. Extract a
-      // balanced JSON value without printing or logging its contents.
-      for (let start = 0; start < clean.length; start += 1) {
-        if (clean[start] !== "{" && clean[start] !== "[") continue;
-        let depth = 0;
-        let inString = false;
-        let escaped = false;
-        for (let end = start; end < clean.length; end += 1) {
-          const char = clean[end];
-          if (inString) {
-            if (escaped) escaped = false;
-            else if (char === "\\") escaped = true;
-            else if (char === '"') inString = false;
-            continue;
-          }
-          if (char === '"') inString = true;
-          else if (char === "{" || char === "[") depth += 1;
-          else if (char === "}" || char === "]") {
-            depth -= 1;
-            if (depth === 0) {
-              try {
-                return JSON.parse(clean.slice(start, end + 1));
-              } catch {
-                break;
-              }
-            }
-          }
-        }
-      }
-      return undefined;
-    }
-  }
-
-  function runCfJson(args, description) {
-    const result = spawnSync(cf, [...args, "--quiet"], {
-      cwd: root,
-      env: process.env,
-      shell: process.platform === "win32",
-      encoding: "utf8",
-      maxBuffer: 16 * 1024 * 1024,
-    });
-    if (result.error) throw result.error;
-    if (result.status !== 0) {
-      throw new Error(`Candidate was uploaded, but Cloudflare could not ${description}. It remains inactive.`);
-    }
-    const parsed = parseJsonOutput(`${result.stdout ?? ""}\n${result.stderr ?? ""}`);
-    if (!parsed) throw new Error(`Candidate was uploaded, but Cloudflare returned an unreadable response while trying to ${description}. It remains inactive.`);
-    return parsed;
-  }
-
-  function findBindings(value) {
-    if (!value || typeof value !== "object") return undefined;
-    if (Array.isArray(value)) {
-      if (value.every((entry) => entry && typeof entry.name === "string" && typeof entry.type === "string")) return value;
-      for (const entry of value) {
-        const found = findBindings(entry);
-        if (found) return found;
-      }
-      return undefined;
-    }
-    if (Array.isArray(value.bindings)) return value.bindings;
-    if (value.bindings && typeof value.bindings === "object") {
-      return Object.entries(value.bindings).map(([name, binding]) => ({ name, ...binding }));
-    }
-    for (const entry of Object.values(value)) {
-      const found = findBindings(entry);
-      if (found) return found;
-    }
-    return undefined;
-  }
-
-  function findActiveVersionIds(value) {
-    if (!value || typeof value !== "object") return undefined;
-    if (Array.isArray(value.versions)) {
-      const ids = value.versions
-        .filter((entry) => Number(entry?.percentage) > 0)
-        .map((entry) => entry?.version_id ?? entry?.versionId)
-        .filter((id) => typeof id === "string");
-      if (ids.length > 0) return ids;
-    }
-    for (const entry of Array.isArray(value) ? value : Object.values(value)) {
-      const found = findActiveVersionIds(entry);
-      if (found) return found;
-    }
-    return undefined;
-  }
-
   const deployments = runCfJson(
     ["workers", "deployments", "list", "--worker", target, "--per-page", "1"],
     "read the currently active deployment",
   );
   const activeVersionIds = findActiveVersionIds(deployments);
   if (!activeVersionIds?.length) throw new Error("Candidate was uploaded, but the active deployment version could not be identified. It remains inactive.");
+  if (activeVersionIds.length !== 1) throw new Error("Candidate was uploaded while multiple versions serve production traffic. It remains inactive.");
 
   const candidate = runCfJson(["workers", "versions", "get", versionId, "--worker-id", target], "inspect candidate bindings");
   const bindings = findBindings(candidate);
