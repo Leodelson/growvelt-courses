@@ -153,8 +153,16 @@ const upload = spawnSync(
   },
 );
 
-if (upload.stdout) process.stdout.write(upload.stdout);
-if (upload.stderr) process.stderr.write(upload.stderr);
+const redactUploadOutput = (output) => {
+  let safeOutput = output ?? "";
+  for (const { text } of activePlainTextBindings) {
+    if (text) safeOutput = safeOutput.split(text).join("[runtime value hidden]");
+  }
+  return safeOutput.replace(/(env\.[A-Z0-9_]+\s+\()[^)]*(\)\s+Environment Variable)/g, "$1[runtime value hidden]$2");
+};
+
+if (upload.stdout) process.stdout.write(redactUploadOutput(upload.stdout));
+if (upload.stderr) process.stderr.write(redactUploadOutput(upload.stderr));
 if (upload.error) throw upload.error;
 if (upload.status !== 0) {
   process.exitCode = upload.status ?? 1;
