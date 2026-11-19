@@ -2,12 +2,12 @@ import { bindings, defineConfig, defineWorker } from "cf/config";
 
 export default defineConfig({
   worker: defineWorker({
-    name: "growvelt-learning-staging-pilot",
+    name: "growvelt-learning-production",
     entrypoint: "vinext/server/fetch-handler",
     compatibilityDate: "2026-11-09",
     compatibilityFlags: ["nodejs_compat"],
     workersDev: true,
-    previewUrls: true,
+    previewUrls: false,
     assets: {
       htmlHandling: "none",
       notFoundHandling: "none",

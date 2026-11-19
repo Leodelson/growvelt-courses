@@ -6,6 +6,7 @@ import { patchCssModules } from "vite-css-modules";
 import path from "node:path";
 
 export default defineConfig({
+  envDir: process.env.GROWVELT_CLOUDFLARE_BUILD_ENV_DIR || undefined,
   plugins: [
     patchCssModules({ exportMode: "default" }),
     vinext(),
