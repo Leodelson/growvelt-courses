@@ -54,6 +54,21 @@ function parseJsonOutput(output) {
   }
 }
 
+function redactCliOutput(output, env) {
+  let safe = String(output ?? "").replace(/\u001b\[[0-9;]*[A-Za-z]/g, "");
+  for (const [name, value] of Object.entries(env)) {
+    if (/(?:TOKEN|SECRET|KEY|PASSWORD|AUTH)/i.test(name) && typeof value === "string" && value.length >= 4) {
+      safe = safe.split(value).join("[redacted]");
+    }
+  }
+  return safe
+    .replace(/\bBearer\s+[A-Za-z0-9._~+/=-]+/gi, "Bearer [redacted]")
+    .replace(/\b(?:cfat_|sk_live_|sk_test_|re_)[A-Za-z0-9_-]+/g, "[redacted]")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(-900);
+}
+
 function runCfJson(args, description, env = process.env) {
   const result = spawnSync(cf, [...args, "--quiet"], {
     cwd: root,
@@ -63,7 +78,14 @@ function runCfJson(args, description, env = process.env) {
     maxBuffer: 16 * 1024 * 1024,
   });
   if (result.error) throw result.error;
-  if (result.status !== 0) throw new Error(`Candidate could not ${description}; it was not promoted.`);
+  if (result.status !== 0) {
+    const detail = redactCliOutput((result.stdout ?? "") + "\n" + (result.stderr ?? ""), env);
+    const exit = result.status == null ? "unknown" : String(result.status);
+    throw new Error(
+      "Candidate could not " + description + " (Cloudflare CLI exit " + exit + ")" +
+      (detail ? ": " + detail : ".") + " It was not promoted.",
+    );
+  }
   const value = parseJsonOutput(`${result.stdout ?? ""}\n${result.stderr ?? ""}`);
   if (!value) throw new Error(`Cloudflare returned an unreadable response while trying to ${description}.`);
   return value;
