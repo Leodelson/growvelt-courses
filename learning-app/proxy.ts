@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { defaultAuthenticatedPath, getExplicitSafeNextPath, getSafeNextPath } from "@/app/lib/auth/redirect";
-import { getLearningOrigin, internalLearningPath } from "@/app/lib/site-urls.mjs";
+import { internalLearningPath } from "@/app/lib/site-urls.mjs";
 import { careersCompatibilityResponse, learningWwwSafetyBridgeResponse } from "@/app/lib/careers-compatibility.mjs";
 
 const protectedPrefixes = ["/dashboard", "/settings", "/teach/apply", "/teach/application", "/instructor", "/admin"];
@@ -13,14 +13,6 @@ function copySessionCookies(from: NextResponse, to: NextResponse) {
 }
 
 export async function proxy(request: NextRequest) {
-  const requestHostname = request.nextUrl.hostname.toLowerCase();
-  const isLearningProductionWorker = requestHostname.startsWith("growvelt-learning-production.")
-    && requestHostname.endsWith(".workers.dev");
-  if (isLearningProductionWorker && (request.method === "GET" || request.method === "HEAD")) {
-    const destination = new URL(`${request.nextUrl.pathname}${request.nextUrl.search}`, getLearningOrigin());
-    return NextResponse.redirect(destination, 302);
-  }
-
   const bridge = learningWwwSafetyBridgeResponse(request);
   if (bridge) return bridge;
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -85,7 +77,6 @@ export const config = {
   // Additional finite Careers families are filtered by the compatibility helper;
   // matching a family here does not authorize a redirect or backend access.
   matcher: [
-    { source: "/:path*", has: [{ type: "host", value: ".*\\.workers\\.dev" }] },
     { source: "/:path*", has: [{ type: "host", value: "www\\.growvelt\\.com" }] },
     "/dashboard/:path*", "/learning/dashboard/:path*", "/auth", "/auth/callback", "/auth/reset", "/auth/forgot-password", "/api/auth/welcome", "/api/newsletter/subscribe", "/api/unsubscribe", "/api/alerts/unsubscribe", "/api/paystack/verify", "/unsubscribe", "/alerts/unsubscribe", "/unsubscribe-success", "/ref/:code", "/sw.js", "/pwa/launch.html", "/offline.html", "/manifest.webmanifest", "/site.webmanifest", "/jobs", "/jobs/:id", "/jobs/:id/apply/:path*", "/candidates/:id", "/companies/:id", "/employers", "/updates", "/get-started", "/get-started/results", "/post-job/success", "/career-assistant/:path*", "/settings/:path*", "/teach/apply/:path*", "/teach/application/:path*", "/instructor/:path*", "/admin/:path*", "/sign-in", "/sign-up"],
 };
