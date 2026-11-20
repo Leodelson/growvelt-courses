@@ -3,7 +3,7 @@
 import Script from "next/script";
 import { useCallback, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { learningPath } from "@/app/lib/site-urls.mjs";
+import { getLearningOrigin, learningPath } from "@/app/lib/site-urls.mjs";
 import { createClient } from "@/app/lib/supabase/browser";
 import styles from "./learning-google-one-tap.module.css";
 
@@ -77,6 +77,9 @@ export function LearningGoogleOneTap() {
 
   const initializeOneTap = useCallback(async () => {
     if (!clientId || initialized.current || !window.google?.accounts.id) return;
+    // Google labels One Tap with the current browser origin. Never show the
+    // prompt on a technical preview or workers.dev hostname.
+    if (window.location.origin !== getLearningOrigin()) return;
     initialized.current = true;
 
     try {

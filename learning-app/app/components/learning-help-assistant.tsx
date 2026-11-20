@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useId, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "@/app/components/learning-link";
+import { useCookieConsent } from "@/app/components/privacy/cookie-consent-provider";
 import { careersAbsoluteUrl } from "@/app/lib/site-urls.mjs";
 import {
   ArrowLeft,
@@ -131,6 +132,7 @@ export function LearningHelpAssistant() {
   const assistantId = useId();
   const panelRef = useRef<HTMLElement>(null);
   const launcherRef = useRef<HTMLButtonElement>(null);
+  const { consent, ready: consentReady, activePrompt, requestPrompt, releasePrompt } = useCookieConsent();
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<AssistantTab>("guide");
   const [topic, setTopic] = useState<HelpTopic | null>(null);
@@ -141,11 +143,22 @@ export function LearningHelpAssistant() {
   const [messageState, setMessageState] = useState<"idle" | "loading" | "ready" | "signed-out" | "error">("idle");
 
   useEffect(() => {
-    const timer = window.setTimeout(() => setWelcomeReady(true), 900);
-    const listener = () => { setOpen(true); setTab("guide"); setTopic(null); };
+    if (!consentReady || !consent || activePrompt || open || welcomeDismissed) return;
+    const timer = window.setTimeout(() => {
+      if (initialWelcomeDismissed()) {
+        setWelcomeDismissed(true);
+        return;
+      }
+      if (requestPrompt("help")) setWelcomeReady(true);
+    }, 8_000);
+    return () => window.clearTimeout(timer);
+  }, [activePrompt, consent, consentReady, open, requestPrompt, welcomeDismissed]);
+
+  useEffect(() => {
+    const listener = () => { releasePrompt("help"); setOpen(true); setTab("guide"); setTopic(null); };
     window.addEventListener("growvelt:open-help-assistant", listener);
-    return () => { window.clearTimeout(timer); window.removeEventListener("growvelt:open-help-assistant", listener); };
-  }, []);
+    return () => window.removeEventListener("growvelt:open-help-assistant", listener);
+  }, [releasePrompt]);
 
   useEffect(() => {
     if (!open) return;
@@ -190,6 +203,7 @@ export function LearningHelpAssistant() {
 
   function dismissWelcome() {
     setWelcomeDismissed(true);
+    releasePrompt("help");
     try { window.sessionStorage.setItem(welcomeDismissedKey, "1"); } catch { /* The bubble remains dismissed for this render. */ }
   }
 
@@ -209,7 +223,7 @@ export function LearningHelpAssistant() {
 
   function searchTopics(event: FormEvent<HTMLFormElement>) { event.preventDefault(); }
 
-  const showWelcome = welcomeReady && !welcomeDismissed && !open;
+  const showWelcome = welcomeReady && activePrompt === "help" && !welcomeDismissed && !open;
   const updatesHref = careersAbsoluteUrl("/updates");
 
   return <div className={styles.assistant}>
@@ -284,6 +298,7 @@ export function LearningHelpAssistant() {
     </aside>}
 
     <button ref={launcherRef} className={styles.launcher} type="button" aria-controls={open ? assistantId : undefined} aria-expanded={open} aria-label={open ? "Close Growvelt assistant" : "Open Growvelt assistant"} onClick={() => {
+      dismissWelcome();
       if (!open && tab === "messages") setMessageState("loading");
       setOpen((value) => !value);
     }}>

@@ -5,10 +5,10 @@ import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import InstallInstructionsDialog from "./InstallInstructionsDialog";
 import { usePWA } from "./PWAProvider";
+import { useCookieConsent } from "@/app/components/privacy/cookie-consent-provider";
 
 const DISMISSED_UNTIL_KEY = "growvelt-install-banner-dismissed-until";
 const SESSION_SHOWN_KEY = "growvelt-install-banner-shown";
-const SESSION_VISITED_KEY = "growvelt-install-banner-visited-paths";
 const DISMISSAL_DAYS = 30;
 const ENGAGEMENT_DELAY_MS = 60_000;
 
@@ -47,24 +47,6 @@ function isExcludedRoute(pathname: string) {
   return excludedPrefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
 }
 
-function readVisitedPaths() {
-  try {
-    const raw = window.sessionStorage.getItem(SESSION_VISITED_KEY);
-    const parsed = raw ? (JSON.parse(raw) as unknown) : [];
-    return Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === "string") : [];
-  } catch {
-    return [];
-  }
-}
-
-function writeVisitedPaths(paths: string[]) {
-  try {
-    window.sessionStorage.setItem(SESSION_VISITED_KEY, JSON.stringify(paths.slice(-5)));
-  } catch {
-    // The install prompt remains usable when browser storage is unavailable.
-  }
-}
-
 function hasSessionFlag(key: string) {
   try {
     return window.sessionStorage.getItem(key) === "true";
@@ -92,6 +74,7 @@ function setDismissalTimestamp(timestamp: number) {
 export default function InstallGrowveltBanner() {
   const pathname = usePathname() || "/";
   const { isInstalled, isStandalone, isReady, promptInstall } = usePWA();
+  const { consent, ready: consentReady, activePrompt, requestPrompt, releasePrompt } = useCookieConsent();
   const [visible, setVisible] = useState(false);
   const [instructionsOpen, setInstructionsOpen] = useState(false);
 
@@ -99,7 +82,7 @@ export default function InstallGrowveltBanner() {
   const installed = isInstalled || isStandalone;
 
   useEffect(() => {
-    if (!isReady || installed || excluded || visible) {
+    if (!isReady || !consentReady || !consent || activePrompt || installed || excluded || visible) {
       return;
     }
 
@@ -110,36 +93,27 @@ export default function InstallGrowveltBanner() {
       return;
     }
 
-    const visitedPaths = readVisitedPaths();
-    const nextVisitedPaths = visitedPaths.includes(pathname) ? visitedPaths : [...visitedPaths, pathname];
-    writeVisitedPaths(nextVisitedPaths);
-
-    if (nextVisitedPaths.length >= 2) {
-      setSessionFlag(SESSION_SHOWN_KEY);
-      const showTimer = window.setTimeout(() => setVisible(true), 0);
-      return () => window.clearTimeout(showTimer);
-    }
-
     const timer = window.setTimeout(() => {
       if (hasSessionFlag(SESSION_SHOWN_KEY)) {
         return;
       }
 
       const dismissed = getStoredTimestamp(DISMISSED_UNTIL_KEY);
-      if (dismissed <= Date.now() && !isExcludedRoute(window.location.pathname)) {
+      if (dismissed <= Date.now() && !isExcludedRoute(window.location.pathname) && requestPrompt("install")) {
         setVisible(true);
         setSessionFlag(SESSION_SHOWN_KEY);
       }
     }, ENGAGEMENT_DELAY_MS);
 
     return () => window.clearTimeout(timer);
-  }, [excluded, installed, isReady, pathname, visible]);
+  }, [activePrompt, consent, consentReady, excluded, installed, isReady, pathname, requestPrompt, visible]);
 
   const dismiss = () => {
     const dismissedUntil = Date.now() + DISMISSAL_DAYS * 24 * 60 * 60 * 1000;
     setDismissalTimestamp(dismissedUntil);
     setSessionFlag(SESSION_SHOWN_KEY);
     setVisible(false);
+    releasePrompt("install");
   };
 
   const handleInstall = async () => {
@@ -153,6 +127,7 @@ export default function InstallGrowveltBanner() {
     if (result === "accepted" || result === "installed") {
       setVisible(false);
       setSessionFlag(SESSION_SHOWN_KEY);
+      releasePrompt("install");
     }
   };
 
@@ -164,7 +139,7 @@ export default function InstallGrowveltBanner() {
     <>
       <aside
         aria-label="Install Growvelt app"
-        className="fixed inset-x-3 bottom-3 z-[1090] mx-auto max-w-4xl rounded-3xl border border-purple-200 bg-white/95 p-4 text-gray-950 shadow-2xl shadow-purple-950/15 backdrop-blur-xl dark:border-purple-400/20 dark:bg-slate-950/95 dark:text-white sm:bottom-5 sm:p-5"
+        className="fixed inset-x-3 bottom-3 z-[70] mx-auto max-w-4xl rounded-3xl border border-purple-200 bg-white/95 p-4 text-gray-950 shadow-2xl shadow-purple-950/15 backdrop-blur-xl dark:border-purple-400/20 dark:bg-slate-950/95 dark:text-white sm:bottom-5 sm:p-5"
       >
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div className="flex gap-3">
@@ -172,9 +147,9 @@ export default function InstallGrowveltBanner() {
               <Download aria-hidden="true" className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-sm font-black tracking-tight sm:text-base">Get the Growvelt Learning App</p>
+              <p className="text-sm font-black tracking-tight sm:text-base">Get the Growvelt App</p>
               <p className="mt-1 max-w-2xl text-sm leading-6 text-gray-600 dark:text-gray-300">
-                Install Growvelt Learning for quicker access to courses, lessons, and your learning workspace.
+                Install Growvelt for quicker access to courses, lessons, and your learning workspace.
               </p>
             </div>
           </div>
