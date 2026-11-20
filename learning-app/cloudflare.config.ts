@@ -48,7 +48,7 @@ const productionTextBindings = Object.fromEntries(
 export default defineConfig({
   worker: defineWorker({
     name: "growvelt-learning-production",
-    entrypoint: "vinext/server/fetch-handler",
+    entrypoint: "./cloudflare-worker.mjs",
     compatibilityDate: "2026-11-09",
     compatibilityFlags: ["nodejs_compat"],
     workersDev: true,
