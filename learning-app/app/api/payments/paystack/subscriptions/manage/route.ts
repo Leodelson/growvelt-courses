@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { findPaystackTestSubscriptionCode, getPaystackTestSubscriptionManagementLink } from "@/app/lib/payments/paystack-subscriptions";
+import { findPaystackTestSubscriptionCode, getPaystackSubscriptionManagementLink } from "@/app/lib/payments/paystack-subscriptions";
+import { getPaystackConfig } from "@/app/lib/payments/paystack";
 import { createAdminClient } from "@/app/lib/supabase/admin";
 import { createClient } from "@/app/lib/supabase/server";
 
@@ -46,7 +47,9 @@ export async function GET(request: Request) {
     billing_interval: string;
   } | undefined : undefined;
   if (!subscription) return NextResponse.json({ code: "not_found" }, { status: 404 });
-  if (subscription.payment_domain !== "test"
+  let mode: "test" | "live";
+  try { mode = getPaystackConfig(false).mode; } catch { return unavailable(request); }
+  if (subscription.payment_domain !== mode
     || !["active", "attention"].includes(subscription.subscription_status)) {
     return unavailable(request);
   }
@@ -56,7 +59,8 @@ export async function GET(request: Request) {
       ? subscription.subscription_code.trim()
       : "";
     if (!subscriptionCode) {
-      if (!user.email || subscription.currency !== "NGN" || subscription.billing_interval !== "monthly"
+      // A missing Live provider identity must never be guessed from email.
+      if (mode !== "test" || !user.email || subscription.currency !== "NGN" || subscription.billing_interval !== "monthly"
         || typeof subscription.plan_code !== "string") return unavailable(request);
       subscriptionCode = await findPaystackTestSubscriptionCode({
         email: user.email,
@@ -64,7 +68,7 @@ export async function GET(request: Request) {
         amountMinor: Number(subscription.amount_minor),
       });
     }
-    const managementUrl = await getPaystackTestSubscriptionManagementLink(subscriptionCode);
+    const managementUrl = await getPaystackSubscriptionManagementLink(subscriptionCode, mode);
     const response = NextResponse.redirect(managementUrl, 303);
     response.headers.set("Cache-Control", "no-store");
     response.headers.set("Referrer-Policy", "no-referrer");

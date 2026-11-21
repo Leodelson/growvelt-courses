@@ -1,5 +1,5 @@
 import "server-only";
-import { getPaystackTestConfig } from "@/app/lib/payments/paystack";
+import { getPaystackLiveConfig, getPaystackTestConfig } from "@/app/lib/payments/paystack";
 import { buildPaystackTestPlanRequest, buildPaystackTestSubscriptionCheckoutRequest, parsePaystackCreatedTestPlan, parsePaystackTestSubscriptionCheckoutResponse, parsePaystackTestSubscriptionListPage, parsePaystackTestSubscriptionManagementLink, sanitizePaystackProviderMessage } from "@/app/lib/payments/paystack-subscription-core";
 
 export class PaystackTestPlanCreateError extends Error {
@@ -102,12 +102,12 @@ export async function createPaystackTestSubscriptionPlan(input: {
   return plan;
 }
 
-/** Requests a hosted management link for one existing Test Mode subscription. */
-export async function getPaystackTestSubscriptionManagementLink(subscriptionCode: string) {
+/** Requests a hosted management link for one existing subscription. */
+export async function getPaystackSubscriptionManagementLink(subscriptionCode: string, domain: "test" | "live") {
   if (!/^SUB_[A-Za-z0-9]{8,100}$/.test(subscriptionCode)) {
-    throw new Error("A valid Test Mode subscription is required.");
+    throw new Error("A valid subscription is required.");
   }
-  const { secretKey } = getPaystackTestConfig(false);
+  const { secretKey } = domain === "live" ? getPaystackLiveConfig(false) : getPaystackTestConfig(false);
   let response: Response;
   try {
     response = await fetch(`https://api.paystack.co/subscription/${encodeURIComponent(subscriptionCode)}/manage/link`, {
@@ -123,6 +123,10 @@ export async function getPaystackTestSubscriptionManagementLink(subscriptionCode
   const link = parsePaystackTestSubscriptionManagementLink(result);
   if (!response.ok || !link) throw new Error("Paystack did not return a valid subscription management link.");
   return link;
+}
+
+export async function getPaystackTestSubscriptionManagementLink(subscriptionCode: string) {
+  return getPaystackSubscriptionManagementLink(subscriptionCode, "test");
 }
 
 /**

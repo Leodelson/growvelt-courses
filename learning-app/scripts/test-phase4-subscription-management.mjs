@@ -55,9 +55,11 @@ assert.match(route, /p_learner_id:\s*user\.id/);
 assert.match(route, /p_subscription_id:\s*subscriptionId/);
 assert.doesNotMatch(route, /admin\.from\("learning_subscriptions"\)|admin\.from\("learning_subscription_plans"\)/,
   "management must use the narrow service-only RPC because direct ledger-table access is revoked");
-assert.match(route, /subscription\.payment_domain !== "test"/);
+assert.match(route, /subscription\.payment_domain !== mode/);
+assert.match(route, /mode !== "test"/,
+  "a missing Live subscription code must not be recovered by matching an email");
 assert.match(route, /\["active", "attention"\]/);
-assert.match(route, /getPaystackTestSubscriptionManagementLink/);
+assert.match(route, /getPaystackSubscriptionManagementLink\(subscriptionCode, mode\)/);
 assert.match(route, /findPaystackTestSubscriptionCode/);
 assert.match(route, /Referrer-Policy/);
 assert.doesNotMatch(route, /\.update\(|\.insert\(|\.delete\(/,
@@ -68,6 +70,8 @@ assert.match(page, /className=\{`back-link \$\{styles\.back\}`\}[\s\S]*?href="\/
   "the Back to My Learning link belongs above the subscription page header");
 assert.match(page, /SubscriptionManagementNotice/,
   "the transient management error should be handled by the URL-cleaning notice");
+assert.match(page, /subscription\.provider_management_available && subscription\.payment_domain === providerMode/,
+  "do not offer Test Mode management on a Live deployment or an unmapped Live subscription");
 assert.match(page, /<div className=\{styles\.footer\}>\{text\.end\}<\/div>/);
 assert.doesNotMatch(page, /styles\.footer[\s\S]{0,160}href="\/dashboard\/my-learning"/,
   "the footer should not contain the Back to My Learning link");
@@ -83,6 +87,8 @@ assert.match(translations, /"nav\.subscriptions": "Mes abonnements"/);
 assert.match(translations, /"nav\.subscriptions": "Mis suscripciones"/);
 
 const provider = await readFile(new URL("../app/lib/payments/paystack-subscriptions.ts", import.meta.url), "utf8");
+assert.match(provider, /domain === "live" \? getPaystackLiveConfig\(false\) : getPaystackTestConfig\(false\)/,
+  "a management link must use credentials matching its subscription domain");
 const lookup = provider.slice(provider.indexOf("export async function findPaystackTestSubscriptionCode"));
 assert.match(lookup, /getPaystackTestConfig\(false\)/);
 assert.match(lookup, /method:\s*"GET"/);
@@ -114,6 +120,15 @@ assert.match(managementMigration, /subscription\.id = p_subscription_id/i);
 assert.match(managementMigration, /subscription\.learner_id = p_learner_id/i);
 assert.match(managementMigration, /revoke all on function public\.get_own_learning_subscription_management_details\(uuid, uuid\)[\s\S]*from public, anon, authenticated, service_role/i);
 assert.match(managementMigration, /grant execute on function public\.get_own_learning_subscription_management_details\(uuid, uuid\)[\s\S]*to service_role, postgres/i);
+
+const domainMigration = await readFile(
+  new URL("../supabase/migrations/20261130000000_scope_subscription_management_to_provider_domain.sql", import.meta.url),
+  "utf8",
+);
+assert.match(domainMigration, /subscription\.learner_id = auth\.uid\(\)/i);
+assert.match(domainMigration, /subscription\.payment_domain/i);
+assert.doesNotMatch(domainMigration, /returns table\([^)]*paystack_subscription_code/i);
+assert.match(domainMigration, /grant execute on function public\.list_own_learning_subscriptions\(\)[\s\S]*to authenticated/i);
 
 const notice = await readFile(new URL("../app/components/learning/subscription-management-notice.tsx", import.meta.url), "utf8");
 assert.match(notice, /searchParams\.delete\("management"\)/);

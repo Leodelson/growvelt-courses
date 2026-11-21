@@ -18,7 +18,9 @@
 .courses h3 { margin: 0; font-size: 14px; }
 .courses ul { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
 .courses li { max-width: 100%; padding: 8px 11px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface-muted); overflow-wrap: anywhere; font-size: 13px; }
-.manage { display: grid; justify-items: start; gap: 9px; }
+.manage { display: grid; justify-items: start; gap: 9px; padding-block-start: 16px; border-top: 1px solid var(--line); }
+.manage > a { max-width: 100%; }
+.manage > a:focus-visible { outline: 2px solid var(--purple); outline-offset: 4px; }
 .manage p { max-width: 760px; font-size: 13px; }
 .note { padding: 13px 15px; border-radius: 12px; background: var(--surface-muted); }
 .empty > * { margin: 0; }

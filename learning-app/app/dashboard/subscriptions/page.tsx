@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getPaystackConfig } from "@/app/lib/payments/paystack";
 import { EmptyState } from "@/app/components/ui/empty-state";
 import { getRequestLocale } from "@/app/lib/i18n-server";
 import { listOwnLearningSubscriptions } from "@/app/lib/learning/subscriptions";
@@ -46,6 +47,8 @@ export default async function LearnerSubscriptionsPage({ searchParams }: { searc
     listOwnLearningSubscriptions(), getRequestLocale(), searchParams,
   ]);
   const text = copy[locale];
+  let providerMode: "test" | "live" | null = null;
+  try { providerMode = getPaystackConfig(false).mode; } catch { /* Leave online management unavailable. */ }
   const dateLocale = locale === "fr" ? "fr-FR" : locale === "es" ? "es-ES" : "en-NG";
   const formatDate = (value: string | null) => formatSubscriptionDate(value, dateLocale);
 
@@ -72,9 +75,11 @@ export default async function LearnerSubscriptionsPage({ searchParams }: { searc
         {paidThrough && <p className={styles.period}>{text.paidThrough}: <strong>{paidThrough}</strong></p>}
         {subscription.course_titles.length > 0 && <div className={styles.courses}><h3>{text.included}</h3><ul>{subscription.course_titles.map((title) => <li key={title}>{title}</li>)}</ul></div>}
         {subscription.subscription_status === "non_renewing" && <p className={styles.note} role="status">{text.noRenew}</p>}
-        {subscription.provider_management_available || ["active", "attention"].includes(subscription.subscription_status)
+        {subscription.provider_management_available && subscription.payment_domain === providerMode
           ? <div className={styles.manage}><Link prefetch={false} className="button button-primary" href={`/api/payments/paystack/subscriptions/manage?subscriptionId=${encodeURIComponent(subscription.subscription_id)}`}>{text.manage}</Link><p>{text.manageCopy}</p></div>
-          : null}
+          : ["active", "attention"].includes(subscription.subscription_status)
+            ? <div className={styles.manage}><Link href="/dashboard/support">{locale === "fr" ? "Contacter l’assistance" : locale === "es" ? "Contactar con soporte" : "Contact support about this subscription"}</Link></div>
+            : null}
       </article> };
     })} /> : <EmptyState titleId="subscriptions-empty-title" icon="courses"
       title={text.emptyTitle} description={text.emptyCopy}

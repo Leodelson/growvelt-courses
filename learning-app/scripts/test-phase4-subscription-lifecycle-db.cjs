@@ -5,6 +5,11 @@ const { readFileSync } = require('node:fs');
 const path = require('node:path');
 const { PGlite } = require(process.env.PGLITE_PACKAGE_PATH || '@electric-sql/pglite');
 
+const fixtureMonth = new Date();
+function billingDate(monthOffset, minute = 0) {
+  return new Date(Date.UTC(fixtureMonth.getUTCFullYear(), fixtureMonth.getUTCMonth() + monthOffset, 1, 0, minute)).toISOString();
+}
+
 const migrationPaths = [
   '../supabase/migrations/20261022000000_add_private_learning_subscription_foundation.sql',
   '../supabase/migrations/20261023000000_add_learning_subscription_plan_management.sql',
@@ -16,6 +21,7 @@ const migrationPaths = [
   '../supabase/migrations/20261029000000_allow_allowlisted_private_test_subscription_checkout.sql',
   '../supabase/migrations/20261030000000_reconcile_subscription_test_payment_from_provider_api.sql',
   '../supabase/migrations/20261031000000_list_own_learning_subscriptions.sql',
+  '../supabase/migrations/20261130000000_scope_subscription_management_to_provider_domain.sql',
 ];
 const migrations = migrationPaths.map((file) => readFileSync(path.resolve(__dirname, file), 'utf8'));
 
@@ -191,7 +197,7 @@ async function main() {
       id,subscription_id,instructor_id,plan_name_snapshot,billing_period_starts_at,paid_through,
       provider_reference,amount_minor,platform_share_minor,seller_share_minor,
       commercial_terms_version,status
-    ) values ($1,$2,$3,'Monthly learning catalog','2026-09-01T00:00:00Z','2026-10-01T00:00:00Z',
+    ) values ($1,$2,$3,'Monthly learning catalog','${billingDate(-1)}','${billingDate(0)}',
       $4,5000,1250,3750,'growvelt-commercial-v1','created')`,
     [initialInvoiceId, subscriptionId, instructorId, initialReference]);
     await db.query(`insert into public.learning_subscription_invoice_courses(
@@ -353,8 +359,8 @@ async function main() {
       currency: 'NGN', domain: 'test', status: 'success',
     }), 'processed');
     assert.deepEqual(await currentSubscription(), {
-      status: 'active', current_period_starts_at: new Date('2026-09-01T00:00:00.000Z'),
-      paid_through: new Date('2026-10-01T00:00:00.000Z'), cancel_requested_at: null,
+      status: 'active', current_period_starts_at: new Date(billingDate(-1)),
+      paid_through: new Date(billingDate(0)), cancel_requested_at: null,
     });
     const subscriptionEnrollment = await inspect(
       `select enrollment.id, enrollment.status, source.preexisting_access
@@ -374,7 +380,7 @@ async function main() {
     const renewalInvoicePayload = {
       invoice_code: 'INV_1234567890', subscription_code: subscriptionCode,
       amount_minor: 5000, currency: 'NGN', status: 'pending',
-      period_starts_at: '2026-10-01T00:00:00.000Z', paid_through: '2026-11-01T00:00:00.000Z',
+      period_starts_at: billingDate(0), paid_through: billingDate(1),
     };
     const renewalReceipt = await receive('invoice.create:invoice:INV_1234567890:status:pending', 'invoice.create', renewalInvoicePayload);
     await assert.rejects(process(renewalReceipt.event_id), /arrived before its subscription mapping/);
@@ -397,12 +403,12 @@ async function main() {
     const failedReceipt = await receive('invoice.payment_failed:INV_1234567890:attention', 'invoice.payment_failed', failedPayload);
     assert.equal(await process(failedReceipt.event_id), 'processed');
     assert.equal((await currentSubscription()).status, 'attention');
-    assert.equal((await currentSubscription()).paid_through.toISOString(), '2026-10-01T00:00:00.000Z');
+    assert.equal((await currentSubscription()).paid_through.toISOString(), billingDate(0));
 
     const renewalSuccessPayload = {
       invoice_code: 'INV_1234567890', subscription_code: subscriptionCode,
       amount_minor: 5000, currency: 'NGN', status: 'success',
-      transaction_reference: 'provider-renewal-90002', paid_at: '2026-10-01T00:05:00.000Z',
+      transaction_reference: 'provider-renewal-90002', paid_at: billingDate(0, 5),
     };
     const renewalSuccess = await receive('invoice.update:INV_1234567890:success', 'invoice.update', renewalSuccessPayload);
     const renewalVerification = {
@@ -411,7 +417,7 @@ async function main() {
     };
     assert.equal(await process(renewalSuccess.event_id, renewalVerification), 'processed');
     assert.equal((await currentSubscription()).status, 'active');
-    assert.equal((await currentSubscription()).paid_through.toISOString(), '2026-11-01T00:00:00.000Z');
+    assert.equal((await currentSubscription()).paid_through.toISOString(), billingDate(1));
     assert.equal((await inspect('select status from public.learning_subscription_invoices where id=$1', [renewalInvoice.id])).rows[0].status, 'paid');
     assert.equal((await inspect('select public.has_own_learning_course_access($1,1) as allowed', [learnerId])).rows[0].allowed, true,
       'a verified paid renewal period should grant access');
@@ -425,6 +431,8 @@ async function main() {
     assert.equal(paidRenewalStatus.rows[0].access_active, true, 'the callback status RPC should report access for a current verified paid period');
     const learnerSubscriptions = await db.query('select * from public.list_own_learning_subscriptions()');
     assert.equal(learnerSubscriptions.rows.length, 1, 'a learner should see only their own subscription records');
+    assert.equal(learnerSubscriptions.rows[0].payment_domain, 'test');
+    assert.ok(!('paystack_subscription_code' in learnerSubscriptions.rows[0]));
     assert.deepEqual({
       subscription_id: learnerSubscriptions.rows[0].subscription_id,
       plan_name: learnerSubscriptions.rows[0].plan_name,
@@ -453,7 +461,7 @@ async function main() {
     assert.equal(await process(repeatedSuccess.event_id, renewalVerification), 'already_processed');
     const lateFailure = await receive('invoice.payment_failed:INV_1234567890:attention', 'invoice.payment_failed', failedPayload);
     assert.equal(await process(lateFailure.event_id), 'already_processed');
-    assert.equal((await currentSubscription()).paid_through.toISOString(), '2026-11-01T00:00:00.000Z');
+    assert.equal((await currentSubscription()).paid_through.toISOString(), billingDate(1));
     assert.equal((await currentSubscription()).status, 'active');
     assert.equal((await receive('invoice.update:INV_1234567890:success', 'invoice.update', renewalSuccessPayload, null, 'b'.repeat(64))).outcome, 'duplicate_conflict');
 
@@ -467,7 +475,7 @@ async function main() {
     const nextInvoicePayload = {
       invoice_code: 'INV_2234567890', subscription_code: subscriptionCode,
       amount_minor: 5000, currency: 'NGN', status: 'pending',
-      period_starts_at: '2026-11-01T00:00:00.000Z', paid_through: '2026-12-01T00:00:00.000Z',
+      period_starts_at: billingDate(1), paid_through: billingDate(2),
     };
     const nextInvoiceEvent = await receive('invoice.create:invoice:INV_2234567890:status:pending', 'invoice.create', nextInvoicePayload);
     assert.equal(await process(nextInvoiceEvent.event_id), 'processed');
@@ -486,13 +494,13 @@ async function main() {
       currency: 'NGN', domain: 'test', status: 'success',
     }), 'processed');
     assert.equal((await currentSubscription()).status, 'cancelled');
-    assert.equal((await currentSubscription()).paid_through.toISOString(), '2026-12-01T00:00:00.000Z');
+    assert.equal((await currentSubscription()).paid_through.toISOString(), billingDate(2));
 
     // A delayed success for an older billing period records its invoice but never shortens current access.
     const oldInvoicePayload = {
       invoice_code: 'INV_0234567890', subscription_code: subscriptionCode,
       amount_minor: 5000, currency: 'NGN', status: 'pending',
-      period_starts_at: '2026-08-01T00:00:00.000Z', paid_through: '2026-09-01T00:00:00.000Z',
+      period_starts_at: billingDate(-2), paid_through: billingDate(-1),
     };
     const oldInvoiceEvent = await receive('invoice.create:invoice:INV_0234567890:status:pending', 'invoice.create', oldInvoicePayload);
     assert.equal(await process(oldInvoiceEvent.event_id), 'processed');
@@ -504,14 +512,14 @@ async function main() {
       reference: 'provider-renewal-old', transaction_id: '90004', requested_amount_minor: 5000,
       currency: 'NGN', domain: 'test', status: 'success',
     }), 'processed');
-    assert.equal((await currentSubscription()).paid_through.toISOString(), '2026-12-01T00:00:00.000Z');
+    assert.equal((await currentSubscription()).paid_through.toISOString(), billingDate(2));
     assert.equal((await currentSubscription()).status, 'cancelled');
 
     // Bad verification fails closed and leaves the invoice unpaid and paid-through untouched.
     const badInvoicePayload = {
       invoice_code: 'INV_3234567890', subscription_code: subscriptionCode,
       amount_minor: 5000, currency: 'NGN', status: 'pending',
-      period_starts_at: '2026-12-01T00:00:00.000Z', paid_through: '2027-01-01T00:00:00.000Z',
+      period_starts_at: billingDate(2), paid_through: billingDate(3),
     };
     const badInvoiceEvent = await receive('invoice.create:invoice:INV_3234567890:status:pending', 'invoice.create', badInvoicePayload);
     assert.equal(await process(badInvoiceEvent.event_id), 'processed');
@@ -524,7 +532,7 @@ async function main() {
       currency: 'NGN', domain: 'test', status: 'success',
     }), /matching verified Test Mode transaction/);
     assert.equal((await invoiceByCode('INV_3234567890')).status, 'payment_pending');
-    assert.equal((await currentSubscription()).paid_through.toISOString(), '2026-12-01T00:00:00.000Z');
+    assert.equal((await currentSubscription()).paid_through.toISOString(), billingDate(2));
 
     await db.exec('reset role');
     await db.exec(`update public.enrollments set status='completed',completed_at=now()
