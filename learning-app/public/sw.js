@@ -1,4 +1,4 @@
-const CACHE_VERSION = "v8";
+const CACHE_VERSION = "v9";
 const CACHE_NAME = `growvelt-pwa-${CACHE_VERSION}`;
 
 const ALLOWED_CACHE_PATHS = new Set([
@@ -232,7 +232,7 @@ async function showGrowveltPushNotification(event) {
   const payload = parseGrowveltPushPayload(event);
   await self.registration.showNotification(payload.title, {
     body: payload.body,
-    icon: "/pwa/icon-any-192x192.png",
+    icon: "/pwa/icon-any-192x192.png?v=9",
     tag: payload.tag,
     data: {
       path: payload.path,
