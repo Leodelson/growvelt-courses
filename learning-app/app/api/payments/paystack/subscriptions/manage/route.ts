@@ -6,20 +6,23 @@ import { createClient } from "@/app/lib/supabase/server";
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-function unavailable(request: Request) {
-  const destination = new URL("/dashboard/subscriptions?management=unavailable", request.url);
-  const response = NextResponse.redirect(destination, 303);
-  response.headers.set("Cache-Control", "no-store");
-  response.headers.set("Referrer-Policy", "no-referrer");
-  return response;
+function managementRedirect(location: string) {
+  return new Response(null, {
+    status: 303,
+    headers: { Location: location, "Cache-Control": "no-store", "Referrer-Policy": "no-referrer" },
+  });
+}
+
+function unavailable() {
+  return managementRedirect("/dashboard/subscriptions?management=unavailable");
 }
 
 export async function GET(request: Request) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user?.id) {
-    const next = `${new URL(request.url).pathname}${new URL(request.url).search}`;
-    return NextResponse.redirect(new URL(`/sign-in?next=${encodeURIComponent(next)}`, request.url), 303);
+    const { pathname, search } = new URL(request.url);
+    return managementRedirect(`/sign-in?next=${encodeURIComponent(pathname + search)}`);
   }
 
   const subscriptionId = new URL(request.url).searchParams.get("subscriptionId")?.trim() ?? "";
@@ -27,7 +30,7 @@ export async function GET(request: Request) {
 
   let admin;
   try { admin = createAdminClient(); } catch {
-    return unavailable(request);
+    return unavailable();
   }
   const { data: managementRows, error } = await admin.rpc("get_own_learning_subscription_management_details", {
     p_learner_id: user.id,
@@ -35,7 +38,7 @@ export async function GET(request: Request) {
   });
   if (error) {
     console.error("subscription.management_lookup_failed", { code: error.code });
-    return unavailable(request);
+    return unavailable();
   }
   const subscription = Array.isArray(managementRows) ? managementRows[0] as {
     subscription_code: string | null;
@@ -48,10 +51,10 @@ export async function GET(request: Request) {
   } | undefined : undefined;
   if (!subscription) return NextResponse.json({ code: "not_found" }, { status: 404 });
   let mode: "test" | "live";
-  try { mode = getPaystackConfig(false).mode; } catch { return unavailable(request); }
+  try { mode = getPaystackConfig(false).mode; } catch { return unavailable(); }
   if (subscription.payment_domain !== mode
     || !["active", "attention"].includes(subscription.subscription_status)) {
-    return unavailable(request);
+    return unavailable();
   }
 
   try {
@@ -61,7 +64,7 @@ export async function GET(request: Request) {
     if (!subscriptionCode) {
       // A missing Live provider identity must never be guessed from email.
       if (mode !== "test" || !user.email || subscription.currency !== "NGN" || subscription.billing_interval !== "monthly"
-        || typeof subscription.plan_code !== "string") return unavailable(request);
+        || typeof subscription.plan_code !== "string") return unavailable();
       subscriptionCode = await findPaystackTestSubscriptionCode({
         email: user.email,
         planCode: subscription.plan_code,
@@ -69,12 +72,9 @@ export async function GET(request: Request) {
       });
     }
     const managementUrl = await getPaystackSubscriptionManagementLink(subscriptionCode, mode);
-    const response = NextResponse.redirect(managementUrl, 303);
-    response.headers.set("Cache-Control", "no-store");
-    response.headers.set("Referrer-Policy", "no-referrer");
-    return response;
+    return managementRedirect(managementUrl);
   } catch {
     console.error("subscription.management_link_unavailable");
-    return unavailable(request);
+    return unavailable();
   }
 }
