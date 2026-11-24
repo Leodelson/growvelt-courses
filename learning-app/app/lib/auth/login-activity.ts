@@ -1,6 +1,7 @@
 import "server-only";
 import type { User } from "@supabase/supabase-js";
 import { createAdminClient } from "@/app/lib/supabase/admin";
+import { getSafeSupabaseError } from "@/app/lib/supabase/logging";
 import { scheduleLearningLoginActivityEmail } from "@/app/lib/email/login-activity";
 
 function deviceDetails(userAgent: string) {
@@ -17,19 +18,31 @@ export async function recordLearningSignIn(user: User, headers: Headers, verifie
   // one-time proof of a fresh sign-in and passes its own trusted timestamp.
   if (!verifiedSignInAt && Math.abs(Date.now() - Date.parse(signInAt)) > 30 * 60 * 1000) return;
 
-  const admin = createAdminClient();
+  let admin: ReturnType<typeof createAdminClient>;
+  try {
+    admin = createAdminClient();
+  } catch (error) {
+    console.error("learning.login_activity.database_client_failed", {
+      urlConfigured: Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL),
+      serverKeyConfigured: Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY),
+    });
+    throw error;
+  }
   const details = deviceDetails(headers.get("user-agent") ?? "");
   const rawCountry = headers.get("x-vercel-ip-country") ?? "";
   const country = /^[A-Z]{2}$/.test(rawCountry) ? rawCountry : null;
-  const { error } = await admin.from("learning_login_activity").insert({
+  const { error, status } = await admin.from("learning_login_activity").insert({
     user_id: user.id, sign_in_at: signInAt, ...details, country,
   });
   if (error?.code === "23505") return;
-  if (error) throw error;
+  if (error) {
+    console.error("learning.login_activity.history_write_failed", { ...getSafeSupabaseError(error), status });
+    throw error;
+  }
 
   scheduleLearningLoginActivityEmail(user, headers, signInAt, details.browser, details.device);
 
-  const { error: notificationError } = await admin.from("learning_notifications").insert({
+  const { error: notificationError, status: notificationStatus } = await admin.from("learning_notifications").insert({
     user_id: user.id,
     kind: "login",
     title: "New sign-in to your Growvelt account",
@@ -37,5 +50,8 @@ export async function recordLearningSignIn(user: User, headers: Headers, verifie
     href: "/dashboard/settings",
     source_key: `login:${signInAt}`,
   });
-  if (notificationError && notificationError.code !== "23505") throw notificationError;
+  if (notificationError && notificationError.code !== "23505") {
+    console.error("learning.login_activity.bell_write_failed", { ...getSafeSupabaseError(notificationError), status: notificationStatus });
+    throw notificationError;
+  }
 }
