@@ -13,6 +13,7 @@ import { synchronizeLearningConsent } from "@/app/lib/email/email-center-consent
 import { hasEmailCenterProviderHeadroom } from "@/app/lib/email/email-center-provider-usage";
 
 const json = (data: unknown, status = 200) => NextResponse.json(data, {status,headers:{"Cache-Control":"private, no-store"}});
+const RETIRED_BROADCAST_VISIBILITY_MS = 12 * 60 * 60 * 1000;
 async function operatorSession() {
   const client = await createClient();
   const {data:{user},error:authError} = await client.auth.getUser();
@@ -40,9 +41,15 @@ export async function GET(request: Request) {
   ]);
   if (drafts.error) return json({error:"The Email Center upgrade needs its approved Growvelt database migration. Existing campaigns are preserved.",setupRequired:true},503);
   const release = emailCenterRelease();
+  const cutoff = Date.now() - RETIRED_BROADCAST_VISIBILITY_MS;
+  const visibleOperations = (operations.error ? [] : operations.data ?? []).filter(operation => {
+    if (!["abandoned","canceled"].includes(operation.phase)) return true;
+    const updatedAt = Date.parse(operation.updated_at);
+    return !Number.isFinite(updatedAt) || updatedAt > cutoff;
+  });
   return json({drafts:drafts.data ?? [],legacy:legacy.error ? [] : legacy.data ?? [],
     senders:senderChoices.map(sender=>({id:sender.id,configured:!!process.env[sender.variable]})),
-    operations:operations.error ? [] : operations.data ?? [],attempts:attempts.error ? [] : attempts.data ?? [],
+    operations:visibleOperations,attempts:attempts.error ? [] : attempts.data ?? [],
     recoveryEnabled:release.enabled || process.env.LEARNING_EMAIL_CENTER_RECOVERY === "enabled",
     deliveryEnabled:release.enabled,releaseMode:release.mode,marketingRecipientLimit:release.maxRecipients,
     deliveryNotice:(release.mode === "admin-live" && release.enabled
