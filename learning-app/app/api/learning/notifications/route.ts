@@ -1,25 +1,37 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/app/lib/supabase/server";
-import { isSameOriginRequest } from "@/app/lib/security/request-origin";
+import { isLearningBrowserOrigin } from "@/app/lib/security/request-origin";
 import { JsonBodyError, readBoundedJsonObject } from "@/app/lib/security/json-body";
-import { LOGIN_NOTIFICATION_KIND, LOGIN_NOTIFICATION_RETENTION_MS } from "@/app/lib/learning/notification-retention";
+import { isLearningNotificationVisible, LOGIN_NOTIFICATION_KIND } from "@/app/lib/learning/notification-retention";
+
+const notificationColumns = "id,kind,title,body,href,created_at,read_at";
 
 export async function GET() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Sign in required." }, { status: 401 });
-  const readCutoff = new Date(Date.now() - LOGIN_NOTIFICATION_RETENTION_MS).toISOString();
-  const [notificationsResult, unreadResult] = await Promise.all([
-    supabase.from("learning_notifications").select("id,kind,title,body,href,created_at,read_at").or(`kind.neq.${LOGIN_NOTIFICATION_KIND},read_at.is.null,read_at.gt.${readCutoff}`).order("created_at", { ascending: false }).limit(20),
-    supabase.from("learning_notifications").select("id", { count: "exact", head: true }).is("read_at", null),
+  const [notificationsResult, loginResult, unreadResult] = await Promise.all([
+    supabase.from("learning_notifications").select(notificationColumns).eq("user_id", user.id)
+      .neq("kind", LOGIN_NOTIFICATION_KIND).order("created_at", { ascending: false }).limit(20),
+    supabase.from("learning_notifications").select(notificationColumns).eq("user_id", user.id)
+      .eq("kind", LOGIN_NOTIFICATION_KIND).order("created_at", { ascending: false }).order("id", { ascending: false }).limit(1).maybeSingle(),
+    supabase.from("learning_notifications").select("id", { count: "exact", head: true }).eq("user_id", user.id)
+      .neq("kind", LOGIN_NOTIFICATION_KIND).is("read_at", null),
   ]);
-  if (notificationsResult.error) return NextResponse.json({ error: "Notifications are temporarily unavailable." }, { status: 503 });
+  if (notificationsResult.error || loginResult.error) return NextResponse.json({ error: "Notifications are temporarily unavailable." }, { status: 503 });
   const notifications = notificationsResult.data ?? [];
-  return NextResponse.json({ notifications, unread_count: unreadResult.error ? notifications.filter((item) => !item.read_at).length : unreadResult.count ?? 0 }, { headers: { "Cache-Control": "private, no-store" } });
+  const latestLogin = loginResult.data;
+  const unreadCount = (unreadResult.error ? notifications.filter((item) => !item.read_at).length : unreadResult.count ?? 0)
+    + (latestLogin && !latestLogin.read_at ? 1 : 0);
+  if (latestLogin && isLearningNotificationVisible(latestLogin, Date.now())) {
+    notifications.push(latestLogin);
+    notifications.sort((left, right) => Date.parse(right.created_at) - Date.parse(left.created_at));
+  }
+  return NextResponse.json({ notifications: notifications.slice(0, 20), unread_count: unreadCount }, { headers: { "Cache-Control": "private, no-store" } });
 }
 
 export async function PATCH(request: Request) {
-  if (!isSameOriginRequest(request)) return new NextResponse(null, { status: 403 });
+  if (!isLearningBrowserOrigin(request)) return new NextResponse(null, { status: 403 });
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return new NextResponse(null, { status: 401 });

@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { recordLearningSignIn } from "@/app/lib/auth/login-activity";
-import { isLearningLoginActivityOrigin } from "@/app/lib/security/request-origin";
+import { isLearningBrowserOrigin } from "@/app/lib/security/request-origin";
 import { createClient } from "@/app/lib/supabase/server";
 
 export async function POST(request: Request) {
-  if (!isLearningLoginActivityOrigin(request)) return new NextResponse(null, { status: 403 });
+  if (!isLearningBrowserOrigin(request)) return new NextResponse(null, { status: 403 });
   const supabase = await createClient();
   const { data: { user }, error } = await supabase.auth.getUser();
   if (error || !user) return new NextResponse(null, { status: 401 });

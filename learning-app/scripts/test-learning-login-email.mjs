@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { isLearningLoginActivityOrigin } from "../app/lib/security/request-origin.ts";
+import { isLearningBrowserOrigin } from "../app/lib/security/request-origin.ts";
 
 const email = await readFile(new URL("../app/lib/email/login-activity.ts", import.meta.url), "utf8");
 const activity = await readFile(new URL("../app/lib/auth/login-activity.ts", import.meta.url), "utf8");
@@ -34,11 +34,11 @@ function loginRequest(urlOrigin, browserOrigin, fetchSite = "same-origin") {
     headers: { Origin: browserOrigin, "Sec-Fetch-Site": fetchSite },
   });
 }
-assert.match(authRoute, /if \(!isLearningLoginActivityOrigin\(request\)\)/);
-assert.equal(isLearningLoginActivityOrigin(loginRequest(publicOrigin, publicOrigin)), true);
-assert.equal(isLearningLoginActivityOrigin(loginRequest(workerOrigin, publicOrigin)), true);
-assert.equal(isLearningLoginActivityOrigin(loginRequest(workerOrigin, publicOrigin, "cross-site")), false);
-assert.equal(isLearningLoginActivityOrigin(loginRequest(workerOrigin, "https://jobs.growvelt.com", "same-site")), false);
-assert.equal(isLearningLoginActivityOrigin(loginRequest("https://preview.workers.dev", publicOrigin)), false);
+assert.match(authRoute, /if \(!isLearningBrowserOrigin\(request\)\)/);
+assert.equal(isLearningBrowserOrigin(loginRequest(publicOrigin, publicOrigin)), true);
+assert.equal(isLearningBrowserOrigin(loginRequest(workerOrigin, publicOrigin)), true);
+assert.equal(isLearningBrowserOrigin(loginRequest(workerOrigin, publicOrigin, "cross-site")), false);
+assert.equal(isLearningBrowserOrigin(loginRequest(workerOrigin, "https://jobs.growvelt.com", "same-site")), false);
+assert.equal(isLearningBrowserOrigin(loginRequest("https://preview.workers.dev", publicOrigin)), false);
 
 console.log("PASS Learning login security email uses Careers-style branding, Learning-only links, idempotent delivery, and both sign-in flows");

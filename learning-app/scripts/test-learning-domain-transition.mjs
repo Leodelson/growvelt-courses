@@ -161,6 +161,7 @@ assert.ok(config.matcher.includes("/learning/dashboard/:path*"));
 let exchanges = 0;
 const signInEvents = [];
 const authHandler = load("../app/auth/callback/route.ts", {
+  "@/app/lib/site-urls.mjs": { learningAuthResponseOrigin: url => urls.learningAuthResponseOrigin(url, future) },
   "@/app/lib/auth/login-activity": {
     recordLearningSignIn: async (user, headers, timestamp) => {
       signInEvents.push({ userId: user.id, timestamp, hasHeaders: headers instanceof Headers });
@@ -171,7 +172,7 @@ const authHandler = load("../app/auth/callback/route.ts", {
   "@/app/lib/supabase/auth-callback": {
     preventAuthRedirectCaching(response) { response.headers.set("cache-control", "private, no-store"); return response; },
     createAuthCallbackClient(request, response) {
-      assert.ok(["learn.growvelt.com", "www.growvelt.com"].includes(new URL(request.url).hostname));
+      assert.ok([urls.legacyLearningOrigin, urls.futureLearningOrigin, urls.learningProductionWorkerOrigin].includes(new URL(request.url).origin));
       return { auth: { exchangeCodeForSession: async code => {
         assert.equal(code, "fake-once-only-code"); exchanges++;
         response.cookies.set("sb-learning-fake", "same-origin-session", { path: "/", sameSite: "lax" });
@@ -180,14 +181,16 @@ const authHandler = load("../app/auth/callback/route.ts", {
     },
   },
 });
-for (const [origin, path] of [["https://learn.growvelt.com", "/auth/callback"], ["https://www.growvelt.com", "/auth/learning/callback"]]) {
+for (const [origin, path, responseOrigin = origin] of [["https://learn.growvelt.com", "/auth/callback"], ["https://www.growvelt.com", "/auth/learning/callback"], [urls.learningProductionWorkerOrigin, "/auth/learning/callback", urls.futureLearningOrigin]]) {
   const response = await authHandler.GET(new NextRequest(origin + path + "?code=fake-once-only-code&next=%2Fdashboard"));
-  assert.equal(response.headers.get("location"), origin + "/learning/dashboard");
+  assert.equal(response.headers.get("location"), responseOrigin + "/learning/dashboard");
   assert.match(response.headers.get("set-cookie"), /same-origin-session/);
   assert.match(response.headers.get("cache-control"), /no-store/);
 }
-assert.equal(exchanges, 2);
-assert.equal(signInEvents.length, 2, "both Learning callback hosts record fresh sign-in activity");
+const forwardedWithoutCode = await authHandler.GET(new NextRequest(urls.learningProductionWorkerOrigin + "/auth/learning/callback"));
+assert.equal(forwardedWithoutCode.headers.get("location"), urls.futureLearningOrigin + "/auth/error");
+assert.equal(exchanges, 3);
+assert.equal(signInEvents.length, 3, "all Learning callback entry points record fresh sign-in activity");
 assert.ok(signInEvents.every(event => event.userId === "fake-user"));
 assert.ok(signInEvents.every(event => event.hasHeaders && Number.isFinite(Date.parse(event.timestamp))));
 

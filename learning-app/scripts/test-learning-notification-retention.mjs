@@ -21,8 +21,9 @@ const [route, provider, layout] = await Promise.all([
   readFile(new URL("../app/components/theme-provider.tsx", import.meta.url), "utf8"),
   readFile(new URL("../app/layout.tsx", import.meta.url), "utf8"),
 ]);
-assert.match(route, /\.or\(`kind\.neq\.\$\{LOGIN_NOTIFICATION_KIND\},read_at\.is\.null,read_at\.gt\.\$\{readCutoff\}`\)/, "the API omits only read sign-in notices older than one day");
-assert.match(route, /is\("read_at", null\)/, "the unread badge count remains based on all unread notifications");
+assert.match(route, /\.eq\("kind", LOGIN_NOTIFICATION_KIND\).*\.limit\(1\)\.maybeSingle\(\)/, "the API fetches only the newest sign-in notice");
+assert.match(route, /\.neq\("kind", LOGIN_NOTIFICATION_KIND\)\.is\("read_at", null\)/, "older login notices are excluded from the unread count");
+assert.match(route, /isLearningNotificationVisible\(latestLogin, Date.now\(\)\)/, "the latest login notice still expires after it is read");
 assert.match(provider, /useState<Theme>\("light"\)/, "a new visitor starts with light theme");
 assert.match(provider, /: "light";/, "missing saved preferences fall back to light");
 assert.match(layout, /: "light";/, "the pre-hydration theme bootstrap also falls back to light");

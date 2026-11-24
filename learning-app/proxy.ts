@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { defaultAuthenticatedPath, getExplicitSafeNextPath, getSafeNextPath } from "@/app/lib/auth/redirect";
-import { internalLearningPath } from "@/app/lib/site-urls.mjs";
+import { internalLearningPath, learningAuthResponseOrigin } from "@/app/lib/site-urls.mjs";
 import { careersCompatibilityResponse, learningWwwSafetyBridgeResponse } from "@/app/lib/careers-compatibility.mjs";
 
 const protectedPrefixes = ["/dashboard", "/settings", "/teach/apply", "/teach/application", "/instructor", "/admin"];
@@ -35,7 +35,7 @@ export async function proxy(request: NextRequest) {
   // protected routes can become usable.
   if (!url || !publishableKey) {
     if (protectedPrefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`))) {
-      const destination = new URL(pathname === "/teach/apply" ? "/sign-up" : "/sign-in", request.url);
+      const destination = new URL(pathname === "/teach/apply" ? "/sign-up" : "/sign-in", learningAuthResponseOrigin(request.url));
       destination.searchParams.set("next", getSafeNextPath(`${pathname}${request.nextUrl.search}`));
       return NextResponse.redirect(destination);
     }
@@ -60,14 +60,14 @@ export async function proxy(request: NextRequest) {
   const isAuthenticated = Boolean(data?.claims) && !error;
 
   if (isProtectedPath && !isAuthenticated) {
-    const destination = new URL(pathname === "/teach/apply" ? "/sign-up" : "/sign-in", request.url);
+    const destination = new URL(pathname === "/teach/apply" ? "/sign-up" : "/sign-in", learningAuthResponseOrigin(request.url));
     destination.searchParams.set("next", getSafeNextPath(`${pathname}${request.nextUrl.search}`));
     return copySessionCookies(response, NextResponse.redirect(destination));
   }
 
   if (guestOnlyPaths.has(pathname) && isAuthenticated) {
     const destination = getExplicitSafeNextPath(request.nextUrl.searchParams.get("next")) ?? defaultAuthenticatedPath;
-    return copySessionCookies(response, NextResponse.redirect(new URL(destination, request.url)));
+    return copySessionCookies(response, NextResponse.redirect(new URL(destination, learningAuthResponseOrigin(request.url))));
   }
 
   return response;

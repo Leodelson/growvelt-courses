@@ -1,6 +1,8 @@
 export type SiteEnvironment = Record<string, string | undefined>;
 export const legacyLearningOrigin: string;
 export const futureLearningOrigin: string;
+export const learningProductionWorkerOrigin: string;
+export function learningAuthResponseOrigin(requestUrl: string, env?: SiteEnvironment): string;
 export function getLearningOrigin(env?: SiteEnvironment): string;
 export function getCareersOrigin(env?: SiteEnvironment): string;
 export function internalLearningPath(pathname: string): string;

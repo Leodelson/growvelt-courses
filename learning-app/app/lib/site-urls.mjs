@@ -1,6 +1,7 @@
 // Explicit build-time configuration; defaults preserve the current Learning site.
 export const legacyLearningOrigin = "https://learn.growvelt.com";
 export const futureLearningOrigin = "https://www.growvelt.com";
+export const learningProductionWorkerOrigin = "https://growvelt-learning-production.late-smoke-33c0.workers.dev";
 const aliases = {
   "/dashboard": "/learning/dashboard",
   "/dashboard/profile": "/learning/dashboard/profile",
@@ -60,6 +61,14 @@ export function learningAbsoluteUrl(value = "/", env = environment()) {
   const result = new URL(learningPath(value, env), getLearningOrigin(env));
   if (result.origin !== getLearningOrigin(env)) throw new Error("Invalid Growvelt destination.");
   return result.href;
+}
+
+export function learningAuthResponseOrigin(requestUrl, env = environment()) {
+  const { origin } = new URL(requestUrl);
+  if (origin === learningProductionWorkerOrigin && getLearningOrigin(env) === futureLearningOrigin) {
+    return futureLearningOrigin;
+  }
+  return origin;
 }
 
 export function careersAbsoluteUrl(value = "/", env = environment()) {
