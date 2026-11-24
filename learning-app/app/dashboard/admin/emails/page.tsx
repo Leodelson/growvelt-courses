@@ -10,6 +10,6 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminEmailCenterPage() {
   const { data: { user } } = await (await createClient()).auth.getUser();
-  if (!isEmailOperator(user) || !await isLearningAdmin()) redirect(learningPath("/dashboard"));
-  return <LearningEmailCenter />;
+  if (!user || !isEmailOperator(user) || !await isLearningAdmin()) redirect(learningPath("/dashboard"));
+  return <LearningEmailCenter operatorId={user.id} />;
 }

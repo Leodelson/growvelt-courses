@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Bold, Check, FileText, Italic, List, Mail, Send, Users } from "lucide-react";
-import { audienceChoices, emptyEmailDocument, senderChoices, type EmailDocument } from "@/app/lib/email/email-center";
+import { audienceChoices, emailUuid, emptyEmailDocument, senderChoices, type EmailDocument } from "@/app/lib/email/email-center";
 import styles from "./workspace.module.css";
 
 type Draft = {id:string;document:EmailDocument;revision:number;status:string;updated_at:string};
@@ -33,7 +33,39 @@ const accountStatuses: Record<string, string> = {
   claimed: "Send status pending",
   uncertain: "Delivery unconfirmed · check Resend before resending",
 };
-export function LearningEmailCenter({initialState}:{initialState?:EmailCenterState} = {}) {
+type ComposerSnapshot = {
+  document: EmailDocument;
+  id: string | null;
+  revision: number;
+  saved: string;
+  sendLocked: boolean;
+};
+function readComposer(key: string): ComposerSnapshot | null {
+  try {
+    const value = JSON.parse(sessionStorage.getItem(key) ?? "null") as ComposerSnapshot | null;
+    if (!value?.document || (value.id !== null && !emailUuid.test(value.id))
+      || !Number.isSafeInteger(value.revision) || value.revision < 0
+      || typeof value.saved !== "string" || typeof value.sendLocked !== "boolean") return null;
+    const draft = value.document;
+    if (!senderChoices.some(sender => sender.id === draft.sender)
+      || !audienceChoices.some(audience => audience.id === draft.audience)
+      || (draft.mode !== "marketing" && draft.mode !== "transactional")
+      || !Array.isArray(draft.recipients) || !draft.recipients.every(item => typeof item === "string")
+      || ![draft.subject, draft.headline, draft.message, draft.buttonText, draft.buttonUrl].every(item => typeof item === "string")
+      || typeof draft.personalized !== "boolean" || typeof draft.bell !== "boolean") return null;
+    return value;
+  } catch {
+    return null;
+  }
+}
+function writeComposer(key: string, snapshot: ComposerSnapshot) {
+  try {
+    sessionStorage.setItem(key, JSON.stringify(snapshot));
+  } catch {
+    // The composer remains usable when the browser blocks storage.
+  }
+}
+export function LearningEmailCenter({initialState,operatorId}:{initialState?:EmailCenterState;operatorId?:string} = {}) {
   const [data,setData] = useState<EmailCenterState|null>(initialState ?? null);
   const [document,setDocument] = useState<EmailDocument>({...emptyEmailDocument});
   const [revision,setRevision] = useState(0);
@@ -43,6 +75,8 @@ export function LearningEmailCenter({initialState}:{initialState?:EmailCenterSta
   const [notice,setNotice] = useState("");
   const [confirmation,setConfirmation] = useState<Confirmation|null>(null);
   const [sendLocked,setSendLocked] = useState(false);
+  const storageKey = operatorId ? `growvelt-learning:email-composer:v1:${operatorId}` : null;
+  const [restoredKey, setRestoredKey] = useState<string | null>(null);
   const running = useRef(false);
   const confirmationRef = useRef<HTMLDivElement>(null);
   useEffect(()=>{
@@ -67,6 +101,21 @@ export function LearningEmailCenter({initialState}:{initialState?:EmailCenterSta
   const actionFocus = useRef<HTMLElement|null>(null);
   const fingerprint = JSON.stringify(document);
   const unchanged = saved === fingerprint;
+  const composerReady = restoredKey === storageKey;
+  useEffect(() => {
+    if (!storageKey) return;
+    const snapshot = readComposer(storageKey);
+    draftId.current = snapshot?.id ?? null;
+    setDocument(snapshot?.document ?? { ...emptyEmailDocument });
+    setRevision(snapshot?.revision ?? 0);
+    setSaved(snapshot?.saved ?? "");
+    setSendLocked(snapshot?.sendLocked ?? false);
+    setRestoredKey(storageKey);
+  }, [storageKey]);
+  useEffect(() => {
+    if (!storageKey || !composerReady) return;
+    writeComposer(storageKey, { document, id: draftId.current, revision, saved, sendLocked });
+  }, [storageKey, composerReady, document, revision, saved, sendLocked]);
   useEffect(()=>{
     if (busy) return;
     if (actionFocus.current?.isConnected && window.document.activeElement===window.document.body) actionFocus.current.focus();
@@ -115,7 +164,7 @@ export function LearningEmailCenter({initialState}:{initialState?:EmailCenterSta
     }
   }
   async function prepareSend() {
-    if (!data?.deliveryEnabled || sendLocked || !beginAction()) return;
+    if (!composerReady || !data?.deliveryEnabled || sendLocked || !beginAction()) return;
     try {
       draftId.current ??= crypto.randomUUID();
       const id=draftId.current;
@@ -142,6 +191,7 @@ export function LearningEmailCenter({initialState}:{initialState?:EmailCenterSta
       if (mode==="marketing") await post({action:"prepare-broadcast",id,revision});
       await post({action:"approve-release",id,revision,recipients:targets.map(target=>target.email).sort()});
       dispatchStarted=true;
+      if (storageKey) writeComposer(storageKey, { document, id, revision, saved: fingerprint, sendLocked: true });
       setSendLocked(true);
       if (mode==="marketing") {
         const result=await post({action:"dispatch-broadcast",id,revision});
@@ -169,7 +219,11 @@ export function LearningEmailCenter({initialState}:{initialState?:EmailCenterSta
       setError(cause instanceof Error ? cause.message : "Email status is unavailable.");
     } finally {await refreshHistory();finishAction();}
   }
-  function canDiscard() {return unchanged || !document.subject && !document.message || window.confirm("Discard the unsaved changes in this composer? Saved drafts will be kept.");}
+  function canDiscard() {
+    if (!composerReady) return false;
+    return unchanged || fingerprint === JSON.stringify(emptyEmailDocument)
+      || window.confirm("Discard the unsaved changes in this composer? Saved drafts will be kept.");
+  }
   function loadDraft(draft:Draft) {
     if (!canDiscard()) return;
     draftId.current=draft.id;setRevision(draft.revision);setDocument(draft.document);
@@ -220,7 +274,7 @@ export function LearningEmailCenter({initialState}:{initialState?:EmailCenterSta
       <div><h1>Email Center</h1><p>Send emails to Growvelt Learning users.</p></div>
     </header>
     <form onSubmit={event=>{event.preventDefault();void prepareSend();}}>
-      <fieldset className={styles.composer} disabled={busy || sendLocked}>
+      <fieldset className={styles.composer} disabled={!composerReady || busy || sendLocked}>
         <legend className="sr-only">Compose a Growvelt email</legend>
         <section className={styles.section}>
           <h2>Sender</h2>
