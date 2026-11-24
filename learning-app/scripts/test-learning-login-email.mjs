@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import { isLearningLoginActivityOrigin } from "../app/lib/security/request-origin.ts";
 
 const email = await readFile(new URL("../app/lib/email/login-activity.ts", import.meta.url), "utf8");
 const activity = await readFile(new URL("../app/lib/auth/login-activity.ts", import.meta.url), "utf8");
@@ -24,5 +25,20 @@ assert.match(template, /padding-top:6px;text-align:center/, "primary account act
 assert.match(template, /margin:0 auto 14px/, "the CTA table should center reliably in email clients");
 assert.match(authRoute, /recordLearningSignIn\(user, request\.headers\)/, "password sign-ins must create the email-triggering record");
 assert.match(oauthCallback, /recordLearningSignIn\(data\.session\.user, request\.headers, new Date\(\)\.toISOString\(\)\)/, "OAuth sign-ins must create the email-triggering record");
+
+const publicOrigin = "https://www.growvelt.com";
+const workerOrigin = "https://growvelt-learning-production.late-smoke-33c0.workers.dev";
+function loginRequest(urlOrigin, browserOrigin, fetchSite = "same-origin") {
+  return new Request(urlOrigin + "/api/auth/login-activity", {
+    method: "POST",
+    headers: { Origin: browserOrigin, "Sec-Fetch-Site": fetchSite },
+  });
+}
+assert.match(authRoute, /if \(!isLearningLoginActivityOrigin\(request\)\)/);
+assert.equal(isLearningLoginActivityOrigin(loginRequest(publicOrigin, publicOrigin)), true);
+assert.equal(isLearningLoginActivityOrigin(loginRequest(workerOrigin, publicOrigin)), true);
+assert.equal(isLearningLoginActivityOrigin(loginRequest(workerOrigin, publicOrigin, "cross-site")), false);
+assert.equal(isLearningLoginActivityOrigin(loginRequest(workerOrigin, "https://jobs.growvelt.com", "same-site")), false);
+assert.equal(isLearningLoginActivityOrigin(loginRequest("https://preview.workers.dev", publicOrigin)), false);
 
 console.log("PASS Learning login security email uses Careers-style branding, Learning-only links, idempotent delivery, and both sign-in flows");
