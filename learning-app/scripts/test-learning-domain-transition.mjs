@@ -194,6 +194,28 @@ assert.equal(signInEvents.length, 3, "all Learning callback entry points record 
 assert.ok(signInEvents.every(event => event.userId === "fake-user"));
 assert.ok(signInEvents.every(event => event.hasHeaders && Number.isFinite(Date.parse(event.timestamp))));
 
+const welcomeDeliveries = [];
+let welcomeUser = null;
+const welcomeHandler = load("../app/api/auth/welcome/route.ts", {
+  "@/app/lib/security/request-origin": load("../app/lib/security/request-origin.ts"),
+  "@/app/lib/site-urls.mjs": { learningAuthResponseOrigin: url => urls.learningAuthResponseOrigin(url, future) },
+  "@/app/lib/email/welcome-email": {
+    sendWelcomeEmailForEligibleAccount: async (user, origin) => welcomeDeliveries.push([user.id, origin]),
+  },
+  "@/app/lib/supabase/server": {
+    createClient: async () => ({ auth: { getUser: async () => ({ data: { user: welcomeUser } }) } }),
+  },
+});
+const welcomeRequest = origin => new Request(urls.learningProductionWorkerOrigin + "/api/learning/auth/welcome", {
+  method: "POST", headers: { Origin: origin, "Sec-Fetch-Site": "same-origin" },
+});
+assert.equal((await welcomeHandler.POST(welcomeRequest(urls.futureLearningOrigin))).status, 204);
+assert.deepEqual(welcomeDeliveries, [], "signed-out requests cannot trigger a welcome email");
+welcomeUser = { id: "fake-user" };
+assert.equal((await welcomeHandler.POST(welcomeRequest("https://jobs.growvelt.com"))).status, 403);
+assert.equal((await welcomeHandler.POST(welcomeRequest(urls.futureLearningOrigin))).status, 204);
+assert.deepEqual(welcomeDeliveries, [["fake-user", urls.futureLearningOrigin]], "forwarded Learning welcome email uses the public domain");
+
 // Render the actual app email template without server-only effects or sending email.
 const template = load("../app/lib/email/growvelt-email-template.ts", { "server-only": {}, "../site-urls.mjs": boundUrls, "./email-markdown": load("../app/lib/email/email-markdown.ts"), "./email-dark-compatibility": load("../app/lib/email/email-dark-compatibility.ts") });
 const html = template.renderGrowveltEmail({ greeting: "Test <person>", title: "Account", paragraphs: ["Example"], reason: "Test only", baseUrl: "https://evil.invalid" });
