@@ -25,6 +25,9 @@ export function emailCenterProviderRuntime(options: { recoveryOnly?: boolean } =
   // Email Center needs full access to check usage and reconcile delivery.
   // Keep its usage requests and sends on the same verified Resend team.
   const emailCenterKey = process.env.RESEND_MARKETING_API_KEY;
+  // The adapters invoke request as an object method. Call the Workers global
+  // from a wrapper so the adapter object is never passed as fetch's receiver.
+  const request: typeof fetch = (input, init) => globalThis.fetch(input, init);
   return {
     transport: createEmailCenterResendTransport({
       transactionalKey: emailCenterKey, marketingKey: emailCenterKey,
@@ -32,9 +35,9 @@ export function emailCenterProviderRuntime(options: { recoveryOnly?: boolean } =
       // Operator-approved domain verification is a release prerequisite. The
       // adapter still rejects other domains, unconfigured aliases and spoofing.
       verifiedDomains: (process.env.LEARNING_EMAIL_VERIFIED_DOMAINS ?? "").split(",").map(value => value.trim()),
-      request: fetch, allowProviderWrites: true,
+      request, allowProviderWrites: true,
     }),
-    membership: createLearningConsentProvider({ key: emailCenterKey ?? "", request: fetch, enabled: true }),
+    membership: createLearningConsentProvider({ key: emailCenterKey ?? "", request, enabled: true }),
   };
 }
 export async function checkEmailCenterRecipients(database: Pick<SupabaseClient, "rpc">, actor: string, id: string, revision: number) {
