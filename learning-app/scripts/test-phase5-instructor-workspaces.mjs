@@ -52,7 +52,16 @@ const pages=['app/dashboard/instructor/page.tsx','app/dashboard/instructor/cours
 for(locale of ['en','fr','es'])for(empty of [false,true])for(const Page of pages){
  const html=renderToStaticMarkup(await Page({searchParams:Promise.resolve({}),params:Promise.resolve({courseId:'12'})}));
  assert.equal((html.match(/<h1\b/g)||[]).length,1);assert.doesNotMatch(html,/NaN|undefined|Invalid Date/);
- if(Page===pages[4]&&!empty){assert.match(html,/href="#curriculum-module-1"/);assert.match(html,/id="curriculum-module-1"/);}
+ if(Page===pages[4]&&!empty){
+   assert.match(html,/href="#curriculum-module-1"/);
+   assert.match(html,/id="curriculum-module-1"/);
+   assert.equal((html.match(/class="card-action-menu"/g) ?? []).length,3);
+   if(locale==='en'){
+     assert.match(html,/aria-label="Actions for Getting started"/);
+     assert.match(html,/aria-label="Actions for A video"/);
+     assert.match(html,/disabled=""><svg[^>]*lucide-arrow-up/);
+   }
+ }
  if(Page===pages[3]){assert.match(html,/minlength="3"/i);assert.match(html,/name="title"/);assert.doesNotMatch(html,/course-submission-panel/);}
  if(Page===pages[3]){
    const cover=renderToStaticMarkup(await Page({searchParams:Promise.resolve({step:'cover'}),params:Promise.resolve({courseId:'12'})}));
@@ -65,7 +74,7 @@ for(locale of ['en','fr','es'])for(empty of [false,true])for(const Page of pages
  if(Page===pages[5]&&!empty){assert.match(html,/Create Test Mode plan/);assert.match(html,/name="course_ids"/);}
 }
 empty=false;courseStatus='published';
-for(const Page of [pages[3],pages[4]]) {const html=renderToStaticMarkup(await Page({params:Promise.resolve({courseId:'12'})}));assert.match(html,/<fieldset disabled=""/);assert.doesNotMatch(html,/course-submission-panel/);}
+for(const Page of [pages[3],pages[4]]) {const html=renderToStaticMarkup(await Page({params:Promise.resolve({courseId:'12'})}));assert.match(html,/<fieldset disabled=""/);assert.doesNotMatch(html,/course-submission-panel|class="card-action-menu"/);}
 approved=false;await assert.rejects(()=>pages[0](),/REDIRECT/);await assert.rejects(()=>pages[5](),/REDIRECT/);approved=true;enabled=false;await assert.rejects(()=>pages[5](),/NOT_FOUND/);enabled=true;foundation=false;
 const unavailable=renderToStaticMarkup(await pages[5]());assert.match(unavailable,/foundation is not ready/);assert.doesNotMatch(unavailable,/name="monthly_price"/);
 const form=fs.readFileSync('app/components/instructor/subscription-plan-form.tsx','utf8');

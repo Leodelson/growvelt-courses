@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { Archive, EllipsisVertical, Eye, Pencil, RotateCcw, Trash2 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { Archive, Eye, Pencil, RotateCcw, Trash2 } from "lucide-react";
+import { useState } from "react";
+import { CardActionMenu } from "@/app/components/ui/card-action-menu";
 import { useRouter } from "next/navigation";
 import { ConfirmationDialog } from "@/app/components/ui/confirmation-dialog";
 import { InlineFeedback } from "@/app/components/ui/inline-feedback";
@@ -19,25 +20,7 @@ export function InstructorCourseActions({ courseId, status, title }: { courseId:
   const [action, setAction] = useState<PendingAction>(null);
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const menuRef = useRef<HTMLDetailsElement>(null);
   const detailHref = `/dashboard/instructor/courses/${courseId}`;
-
-  useEffect(() => {
-    function closeWhenOutside(event: PointerEvent) {
-      if (menuRef.current?.open && event.target instanceof Node && !menuRef.current.contains(event.target)) menuRef.current.open = false;
-    }
-    function closeOnEscape(event: KeyboardEvent) {
-      if (event.key === "Escape" && menuRef.current?.open) menuRef.current.open = false;
-    }
-    document.addEventListener("pointerdown", closeWhenOutside);
-    document.addEventListener("keydown", closeOnEscape);
-    return () => { document.removeEventListener("pointerdown", closeWhenOutside); document.removeEventListener("keydown", closeOnEscape); };
-  }, []);
-
-  function requestAction(nextAction: Exclude<PendingAction, null>) {
-    menuRef.current?.removeAttribute("open");
-    setAction(nextAction);
-  }
 
   async function confirmAction() {
     if (!action || isPending) return;
@@ -60,15 +43,12 @@ export function InstructorCourseActions({ courseId, status, title }: { courseId:
 
   return <div className="instructor-course-actions">
     {error && <InlineFeedback variant="error">{error}</InlineFeedback>}
-    <details className="card-action-menu" ref={menuRef}>
-      <summary aria-label={`${text.actions} ${title}`}><EllipsisVertical aria-hidden="true" size={20} /></summary>
-      <div className="card-action-menu-panel">
+    <CardActionMenu label={`${text.actions} ${title}`}>
         <Link href={detailHref}>{status === "draft" ? <><Pencil aria-hidden="true" size={16} />{text.edit}</> : <><Eye aria-hidden="true" size={16} />{text.view}</>}</Link>
-        {status === "published" && <button type="button" onClick={() => requestAction("archive")}><Archive aria-hidden="true" size={16} />{text.archive}</button>}
-        {status === "archived" && <button type="button" onClick={() => requestAction("restore")}><RotateCcw aria-hidden="true" size={16} />{text.restore}</button>}
-        {status === "draft" && <button className="is-danger" type="button" onClick={() => requestAction("delete")}><Trash2 aria-hidden="true" size={16} />{text.remove}</button>}
-      </div>
-    </details>
+        {status === "published" && <button type="button" onClick={() => setAction("archive")}><Archive aria-hidden="true" size={16} />{text.archive}</button>}
+        {status === "archived" && <button type="button" onClick={() => setAction("restore")}><RotateCcw aria-hidden="true" size={16} />{text.restore}</button>}
+        {status === "draft" && <button className="is-danger" type="button" onClick={() => setAction("delete")}><Trash2 aria-hidden="true" size={16} />{text.remove}</button>}
+    </CardActionMenu>
     {action && <ConfirmationDialog
       title={action === "archive" ? text.archiveTitle : action === "restore" ? text.restoreTitle : text.deleteTitle}
       description={<p>{action === "archive" ? `“${title}” will no longer appear in the public catalog or accept new learners. Existing learning records stay protected.` : action === "restore" ? `“${title}” will return to the published catalog and can accept new learners again.` : `This permanently removes “${title}” and its draft curriculum. This cannot be undone.`}</p>}
