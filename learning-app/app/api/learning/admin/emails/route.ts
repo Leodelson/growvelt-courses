@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/app/lib/supabase/server";
 import { createAdminClient } from "@/app/lib/supabase/admin";
-import { isSameOriginRequest } from "@/app/lib/security/request-origin";
+import { isLearningBrowserOrigin } from "@/app/lib/security/request-origin";
 import { JsonBodyError, readBoundedJsonObject } from "@/app/lib/security/json-body";
 import { emailUuid, parseEmailDocument, senderChoices } from "@/app/lib/email/email-center";
 import { isEmailOperator } from "@/app/lib/email/email-center-authorization";
@@ -41,7 +41,7 @@ export async function GET() {
   });
 }
 export async function POST(request: Request) {
-  if (!isSameOriginRequest(request)) return json({error:"This request was not accepted."},403);
+  if (!isLearningBrowserOrigin(request)) return json({error:"This request was not accepted."},403);
   const actor = await operatorSession();
   if (!actor) return json({error:"Only the two authorized Growvelt email administrators may use Email Center."},403);
   let input: Record<string,unknown>;
