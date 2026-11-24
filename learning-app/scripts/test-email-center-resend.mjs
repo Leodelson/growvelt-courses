@@ -40,7 +40,7 @@ const transport = createEmailCenterResendTransport({ ...config, allowProviderWri
 await transport.sendTransactional(item);
 assert.equal(calls.length, 1);
 assert.equal(calls[0].url, "https://api.resend.com/emails");
-assert.equal(calls[0].init.redirect, "error");
+assert.equal(calls[0].init.redirect, "manual");
 assert.equal(calls[0].init.headers["Idempotency-Key"], item.operationKey);
 assert.equal(calls[0].init.headers.Authorization, "Bearer re_fixture_transactional");
 assert.deepEqual(JSON.parse(calls[0].init.body).to, [item.email]);

@@ -60,7 +60,7 @@ export function createEmailCenterResendTransport(options: TransportOptions) {
       let response: Response;
       try {
         response = await options.request(`https://api.resend.com${path}`, {
-          method, redirect: "error", cache: "no-store", signal: AbortSignal.timeout(15000),
+          method, redirect: "manual", cache: "no-store", signal: AbortSignal.timeout(15000),
           headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json", ...(idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {}) },
           ...(payload ? { body: JSON.stringify(payload) } : {}),
         });

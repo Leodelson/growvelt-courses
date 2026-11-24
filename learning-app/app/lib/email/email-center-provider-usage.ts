@@ -40,7 +40,8 @@ export async function readEmailCenterProviderUsage(input: { key: string; request
   if (!/^re_[A-Za-z0-9_-]+$/.test(input.key)) throw new Error("Provider usage access is not configured.");
   let response: Response;
   try {
-    response = await input.request("https://api.resend.com/usage", { method: "GET", cache: "no-store", redirect: "error",
+    // Workers support manual redirects. The non-OK check below rejects them.
+    response = await input.request("https://api.resend.com/usage", { method: "GET", cache: "no-store", redirect: "manual",
       signal: AbortSignal.timeout(10000), headers: { Authorization: `Bearer ${input.key}` } });
   } catch {
     throw new Error("The Worker could not reach the Resend usage endpoint.");

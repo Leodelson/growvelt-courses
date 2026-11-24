@@ -184,7 +184,7 @@ try {
     transactionalKey: "re_fixture_transactional", senders: { support: "support@growvelt.com" }, verifiedDomains: ["growvelt.com"], allowProviderWrites: true,
     request: async (url, init) => {
       assert.equal(init.headers.Authorization, "Bearer re_fixture_transactional");
-      if (url === "https://api.resend.com/usage") { usageReads++; assert.equal(init.method, "GET"); assert.equal(init.redirect, "error"); return Response.json(usagePayload); }
+      if (url === "https://api.resend.com/usage") { usageReads++; assert.equal(init.method, "GET"); assert.equal(init.redirect, "manual"); return Response.json(usagePayload); }
       sends++; assert.equal(url, "https://api.resend.com/emails"); assert.deepEqual(JSON.parse(init.body).to, ["learner@example.invalid"]); assert.match(init.headers["Idempotency-Key"], /^learning-center-/); return Response.json({ id: contactId });
     },
   });

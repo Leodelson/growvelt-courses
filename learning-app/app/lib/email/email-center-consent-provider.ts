@@ -16,7 +16,7 @@ export function createLearningConsentProvider(input: { key: string; request: typ
     if (!/^re_[A-Za-z0-9_-]+$/.test(input.key)) throw new Error("Consent provider access is not configured.");
     try {
       await (input.pace ? input.pace() : delay(250));
-      const response = await input.request(`https://api.resend.com${path}`, { method, redirect: "error", cache: "no-store",
+      const response = await input.request(`https://api.resend.com${path}`, { method, redirect: "manual", cache: "no-store",
         signal: AbortSignal.timeout(10000), headers: { Authorization: `Bearer ${input.key}` } });
       if (method === "GET" && response.status === 404) return null;
       if (!response.ok) { await response.body?.cancel().catch(() => undefined); throw new Error("provider unavailable"); }
