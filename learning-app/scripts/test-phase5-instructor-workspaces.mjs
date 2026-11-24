@@ -34,7 +34,7 @@ function load(file) {
   if(id.endsWith('/instructor/subscriptions/actions'))return {createOwnSubscriptionPlan:async()=>{throw Error('Unexpected write');},provisionOwnTestSubscriptionPlan:async()=>{throw Error('Unexpected provider write');}};
   if(id.endsWith('/supabase/browser'))return {createClient:()=>{throw Error('Unexpected backend call');}};
   if(id.endsWith('/supabase/server'))return {createClient:async()=>({auth:{getUser:async()=>({data:{user:{id:'fixture'}}})}})};
-  if(id.endsWith('/course-video-cover-upload'))return {CourseVideoCoverUpload:()=>null};
+  if(id.endsWith('/course-video-cover-upload'))return {CourseVideoCoverUpload:({next})=>React.createElement('a',{href:next.href},next.label)};
   if(id.startsWith('@/')||id.startsWith('.')){const base=id.startsWith('@/')?id.replace('@/',''):path.resolve(path.dirname(file),id);return load(base+(fs.existsSync(base+'.tsx')?'.tsx':'.ts'));}
   return require(id);
  }});cache.set(file,mod.exports);return mod.exports;
@@ -53,7 +53,15 @@ for(locale of ['en','fr','es'])for(empty of [false,true])for(const Page of pages
  const html=renderToStaticMarkup(await Page({searchParams:Promise.resolve({}),params:Promise.resolve({courseId:'12'})}));
  assert.equal((html.match(/<h1\b/g)||[]).length,1);assert.doesNotMatch(html,/NaN|undefined|Invalid Date/);
  if(Page===pages[4]&&!empty){assert.match(html,/href="#curriculum-module-1"/);assert.match(html,/id="curriculum-module-1"/);}
- if(Page===pages[3]){assert.match(html,/minlength="3"/i);assert.match(html,/name="title"/);assert.match(html,/course-submission-panel/);}
+ if(Page===pages[3]){assert.match(html,/minlength="3"/i);assert.match(html,/name="title"/);assert.doesNotMatch(html,/course-submission-panel/);}
+ if(Page===pages[3]){
+   const cover=renderToStaticMarkup(await Page({searchParams:Promise.resolve({step:'cover'}),params:Promise.resolve({courseId:'12'})}));
+   assert.match(cover,/href="\/dashboard\/instructor\/courses\/12\?step=review"/);
+   assert.doesNotMatch(cover,/course-submission-panel|name="title"/);
+   const review=renderToStaticMarkup(await Page({searchParams:Promise.resolve({step:'review'}),params:Promise.resolve({courseId:'12'})}));
+   if(empty) assert.doesNotMatch(review,/course-submission-panel/);
+   else assert.match(review,/course-submission-panel/);
+ }
  if(Page===pages[5]&&!empty){assert.match(html,/Create Test Mode plan/);assert.match(html,/name="course_ids"/);}
 }
 empty=false;courseStatus='published';

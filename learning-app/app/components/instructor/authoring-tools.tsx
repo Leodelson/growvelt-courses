@@ -5,9 +5,36 @@ import type { CurriculumModule } from "@/app/lib/instructor/curriculum";
 import { curriculumSnapshot, draftDetailChecks, workbenchCopy } from "@/app/lib/instructor/workbench";
 import styles from "./workbench.module.css";
 
-export function CourseWorkflow({courseId,active}:{courseId?:number;active:"details"|"curriculum"}) {
-  const {locale}=useLanguage(),text=workbenchCopy[locale];
-  return <nav className={styles.workflow} aria-label={text.workflow}><Link href="/dashboard/instructor/courses">← {text.courses}</Link><ol>{(["details","curriculum","review"] as const).map((key,index)=><li key={key}><span className={styles.stepNumber} aria-hidden="true">{index+1}</span>{key===active?<span aria-current="step">{text[key]}</span>:courseId&&key==="details"?<Link href={`/dashboard/instructor/courses/${courseId}`}>{text[key]}</Link>:<span>{text[key]}</span>}</li>)}</ol></nav>;
+export function CourseWorkflow({ courseId, active, draft = true }: {
+  courseId?: number;
+  active: "details" | "curriculum" | "cover" | "review";
+  draft?: boolean;
+}) {
+  const { locale } = useLanguage();
+  const text = workbenchCopy[locale];
+  const base = `/dashboard/instructor/courses/${courseId}`;
+  const steps = [
+    { id: "details", label: text.details, href: base },
+    { id: "curriculum", label: text.curriculum, href: `${base}/curriculum` },
+    ...(draft ? [
+      { id: "cover", label: locale === "fr" ? "Couverture" : locale === "es" ? "Portada" : "Course cover", href: `${base}?step=cover` },
+      { id: "review", label: locale === "fr" ? "Soumission" : locale === "es" ? "Envío a revisión" : "Submit for review", href: `${base}?step=review` },
+    ] : []),
+  ];
+
+  return (
+    <nav className={styles.workflow} aria-label={text.workflow}>
+      <Link href="/dashboard/instructor/courses">← {text.courses}</Link>
+      <ol>{steps.map((step, index) => (
+        <li key={step.id}>
+          <span className={styles.stepNumber} aria-hidden="true">{index + 1}</span>
+          {step.id === active
+            ? <span aria-current="step">{step.label}</span>
+            : courseId ? <Link href={step.href} prefetch={false}>{step.label}</Link> : <span>{step.label}</span>}
+        </li>
+      ))}</ol>
+    </nav>
+  );
 }
 export function DraftDetailsChecklist({values,isFree,price}:{values:{title:string;summary:string;description:string};isFree:boolean;price:number|null}) {
   const {locale}=useLanguage(),text=workbenchCopy[locale], checks=draftDetailChecks(values,isFree,price),labels=[text.titleCheck,text.summaryCheck,text.descriptionCheck,text.accessCheck];

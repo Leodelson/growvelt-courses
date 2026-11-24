@@ -75,3 +75,24 @@
 }
 .page :global(.module-rename) > form { margin-top: 10px; }
 .page :global(.add-module-form) { align-items: end; }
+
+.workflowActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+.workflowNext {
+  display: grid;
+  gap: 12px;
+  justify-items: start;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface-muted);
+}
+.workflowNext p, .workflowHint { margin: 0; color: var(--ink); line-height: 1.6; }
+@media (max-width: 540px) {
+  .workflowNext { justify-items: stretch; }
+  .workflowActions { align-items: stretch; flex-direction: column; }
+}
