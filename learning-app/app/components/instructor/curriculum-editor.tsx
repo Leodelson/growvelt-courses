@@ -1,7 +1,7 @@
 "use client";
 
 import { authoringRecoveryKey, useAuthoringRecovery } from "./use-authoring-recovery";
-import { ArrowDown, ArrowUp, Pencil, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronDown, Pencil, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { CardActionMenu } from "@/app/components/ui/card-action-menu";
 import styles from "./workbench.module.css";
@@ -330,27 +330,84 @@ function LessonEditor({ userId, courseId, moduleId, lesson, editable, pendingKey
   const savedText = locale === "fr" ? "Leçon enregistrée. Vous pouvez ajouter une autre leçon ou passer à la couverture." : locale === "es" ? "Lección guardada. Puedes añadir otra lección o continuar a la portada." : "Lesson saved. Add another lesson or continue to the course cover.";
   const busy = Boolean(pendingKey);
   const key = lesson ? `lesson-${lesson.id}` : `add-lesson-${moduleId}`;
-  const detailsRef = useRef<HTMLDetailsElement>(null);
-  const editLabel = locale === "fr" ? "Modifier la leçon" : locale === "es" ? "Editar lección" : "Edit lesson";
-  return <div className={styles.lessonItem}>
-    <details className="lesson-editor" ref={detailsRef}><summary><span>{lesson ? `${lesson.type === "video" ? copy.video : lesson.type === "quiz" ? copy.quiz : copy.text} ${copy.lesson}` : copy.add}</span>{lesson && <><strong>{lesson.title}</strong><small>{lesson.type === "video" ? formatDuration(lesson.durationSeconds) : lesson.type === "quiz" ? copy.assessment : `${copy.text} ${copy.lesson}`}{lesson.isPreview ? ` · ${copy.preview}` : ""}</small></>}</summary><form onChange={() => setSaved(false)} onSubmit={async (event) => {
-    const succeeded = await onSave(moduleId, lesson, event);
-    if (succeeded) recovery.clear();
-    setSaved(succeeded);
-  }}><fieldset disabled={!editable || busy}><label className="course-field"><span className="field-label">{copy.title} <span className="required-mark" aria-hidden="true">*</span></span><input name="title" value={values.title} onChange={(event) => recovery.update({ title: event.target.value })} minLength={2} maxLength={160} required /></label><label className="course-field">{copy.type}<select name="lesson-type" value={type} onChange={(event) => recovery.update({ type: event.target.value as typeof type })}><option value="video">{copy.video}</option><option value="text">{copy.text}</option><option value="quiz">{copy.quiz}</option></select></label>{type === "video" ? <><label className="course-field"><span className="field-label">{copy.youtube} <span className="required-mark" aria-hidden="true">*</span></span><input name="youtube-url" value={values.videoReference} onChange={(event) => recovery.update({ videoReference: event.target.value })} placeholder="https://www.youtube.com/watch?v=…" required /><span>{copy.youtubeHelp}</span></label><div className="course-form-grid"><label className="course-field"><span className="field-label">{copy.duration} <span className="required-mark" aria-hidden="true">*</span></span><input name="duration-minutes" type="number" min="1" max="1440" value={values.minutes} onChange={(event) => recovery.update({ minutes: event.target.value })} required /></label><label className="course-field">{copy.visibility}<select name="video-visibility" value={values.visibility} onChange={(event) => recovery.update({ visibility: event.target.value })}><option value="public">{copy.public}</option><option value="unlisted">{copy.unlisted}</option></select><span>{copy.visibilityHelp}</span></label></div></> : type === "text" ? <label className="course-field"><span className="field-label">{copy.content} <span className="required-mark" aria-hidden="true">*</span></span><textarea name="content" value={values.content} onChange={(event) => recovery.update({ content: event.target.value })} rows={7} maxLength={20000} required /><span>{copy.contentHelp}</span></label> : <p className="course-field">{copy.quizHelp}</p>}<label className="lesson-preview"><input name="is-preview" type="checkbox" checked={values.isPreview} onChange={(event) => recovery.update({ isPreview: event.target.checked })} />{copy.markPreview}</label></fieldset><div className="lesson-actions"><ActionButton className="button button-small" type="submit" isPending={pendingKey === key} pendingLabel={lesson ? copy.saving : copy.adding} disabled={!editable || busy}>{copy.save}</ActionButton></div>
-    {saved && <InlineFeedback variant="success">{savedText}</InlineFeedback>}
-    </form></details>
-    {editable && lesson && (
-      <CurriculumActions title={lesson.title} pending={busy} isFirst={isFirst} isLast={isLast} onMove={onMove} onDelete={onDelete}>
-        <button type="button" disabled={busy} onClick={() => {
-          if (detailsRef.current) {
-            detailsRef.current.open = true;
-            detailsRef.current.querySelector<HTMLInputElement>('input[name="title"]')?.focus();
-          }
-        }}>
-          <Pencil aria-hidden="true" size={16} />{editLabel}
-        </button>
-      </CurriculumActions>
-    )}
-  </div>;
+  const lessonType = lesson?.type === "video" ? copy.video : lesson?.type === "quiz" ? copy.quiz : copy.text;
+
+  return <details className="lesson-editor">
+    <summary className={styles.lessonSummary}>
+      <div className={styles.lessonSummaryContent}>
+        <span>{lesson ? `${lessonType} ${copy.lesson}` : copy.add}</span>
+        {lesson && <>
+          <strong>{lesson.title}</strong>
+          <small>
+            {lesson.type === "video" ? formatDuration(lesson.durationSeconds) : lesson.type === "quiz" ? copy.assessment : `${copy.text} ${copy.lesson}`}
+            {lesson.isPreview ? ` · ${copy.preview}` : ""}
+          </small>
+        </>}
+      </div>
+      <ChevronDown aria-hidden="true" size={18} />
+    </summary>
+    <form onChange={() => setSaved(false)} onSubmit={async (event) => {
+      const succeeded = await onSave(moduleId, lesson, event);
+      if (succeeded) recovery.clear();
+      setSaved(succeeded);
+    }}>
+      <fieldset disabled={!editable || busy}>
+        <label className="course-field">
+          <span className="field-label">{copy.title} <span className="required-mark" aria-hidden="true">*</span></span>
+          <input name="title" value={values.title} onChange={(event) => recovery.update({ title: event.target.value })}
+            minLength={2} maxLength={160} required />
+        </label>
+        <label className="course-field">{copy.type}
+          <select name="lesson-type" value={type} onChange={(event) => recovery.update({ type: event.target.value as typeof type })}>
+            <option value="video">{copy.video}</option>
+            <option value="text">{copy.text}</option>
+            <option value="quiz">{copy.quiz}</option>
+          </select>
+        </label>
+        {type === "video" ? <>
+          <label className="course-field">
+            <span className="field-label">{copy.youtube} <span className="required-mark" aria-hidden="true">*</span></span>
+            <input name="youtube-url" value={values.videoReference}
+              onChange={(event) => recovery.update({ videoReference: event.target.value })}
+              placeholder="https://www.youtube.com/watch?v=…" required />
+            <span>{copy.youtubeHelp}</span>
+          </label>
+          <div className="course-form-grid">
+            <label className="course-field">
+              <span className="field-label">{copy.duration} <span className="required-mark" aria-hidden="true">*</span></span>
+              <input name="duration-minutes" type="number" min="1" max="1440" value={values.minutes}
+                onChange={(event) => recovery.update({ minutes: event.target.value })} required />
+            </label>
+            <label className="course-field">{copy.visibility}
+              <select name="video-visibility" value={values.visibility}
+                onChange={(event) => recovery.update({ visibility: event.target.value })}>
+                <option value="public">{copy.public}</option>
+                <option value="unlisted">{copy.unlisted}</option>
+              </select>
+              <span>{copy.visibilityHelp}</span>
+            </label>
+          </div>
+        </> : type === "text" ? (
+          <label className="course-field">
+            <span className="field-label">{copy.content} <span className="required-mark" aria-hidden="true">*</span></span>
+            <textarea name="content" value={values.content} onChange={(event) => recovery.update({ content: event.target.value })}
+              rows={7} maxLength={20000} required />
+            <span>{copy.contentHelp}</span>
+          </label>
+        ) : <p className="course-field">{copy.quizHelp}</p>}
+        <label className="lesson-preview">
+          <input name="is-preview" type="checkbox" checked={values.isPreview}
+            onChange={(event) => recovery.update({ isPreview: event.target.checked })} />
+          {copy.markPreview}
+        </label>
+      </fieldset>
+      <div className={styles.lessonActions}>
+        <ActionButton className="button button-small" type="submit" isPending={pendingKey === key}
+          pendingLabel={lesson ? copy.saving : copy.adding} disabled={!editable || busy}>{copy.save}</ActionButton>
+        {editable && lesson && <CurriculumActions title={lesson.title} pending={busy}
+          isFirst={isFirst} isLast={isLast} onMove={onMove} onDelete={onDelete} />}
+      </div>
+      {saved && <InlineFeedback variant="success">{savedText}</InlineFeedback>}
+    </form>
+  </details>;
 }
