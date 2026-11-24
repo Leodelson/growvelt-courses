@@ -10,6 +10,7 @@ import { emailCenterRelease, emailCenterProviderRuntime, checkEmailCenterRecipie
 import { runLearningBroadcast } from "@/app/lib/email/email-center-broadcast-worker";
 import { deliverLearningAccountNotice } from "@/app/lib/email/email-center-account-worker";
 import { synchronizeLearningConsent } from "@/app/lib/email/email-center-consent-worker";
+import { hasEmailCenterProviderHeadroom } from "@/app/lib/email/email-center-provider-usage";
 
 const json = (data: unknown, status = 200) => NextResponse.json(data, {status,headers:{"Cache-Control":"private, no-store"}});
 async function operatorSession() {
@@ -19,8 +20,17 @@ async function operatorSession() {
   const {data,error} = await client.rpc("is_growvelt_learning_admin");
   return !error && data === true ? user : null;
 }
-export async function GET() {
+export async function GET(request: Request) {
   if (!await operatorSession()) return json({error:"Only the two authorized Growvelt email administrators may use Email Center."},403);
+  if (new URL(request.url).searchParams.get("check") === "provider") {
+    try {
+      const { transport } = emailCenterProviderRuntime();
+      const usage = await transport.readSharedUsage();
+      return json({ ready: hasEmailCenterProviderHeadroom(usage), daily: usage.daily, monthly: usage.monthly });
+    } catch (error) {
+      return json({ ready: false, error: error instanceof Error ? error.message : "Provider usage is unavailable." }, 503);
+    }
+  }
   const admin = createAdminClient();
   const [drafts,legacy,operations,attempts] = await Promise.all([
     admin.from("learning_email_center_drafts").select("id,document,revision,status,created_at,updated_at,reviewed_at").order("updated_at",{ascending:false}).limit(30),

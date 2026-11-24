@@ -42,7 +42,16 @@ export async function readEmailCenterProviderUsage(input: { key: string; request
   try {
     response = await input.request("https://api.resend.com/usage", { method: "GET", cache: "no-store", redirect: "error",
       signal: AbortSignal.timeout(10000), headers: { Authorization: `Bearer ${input.key}` } });
-    if (!response.ok) { await response.body?.cancel().catch(() => undefined); throw new Error("usage unavailable"); }
+  } catch {
+    throw new Error("The Worker could not reach the Resend usage endpoint.");
+  }
+  if (!response.ok) {
+    await response.body?.cancel().catch(() => undefined);
+    throw new Error(`Resend usage returned HTTP ${response.status}.`);
+  }
+  try {
     return parseEmailCenterProviderUsage(await response.json());
-  } catch { throw new Error("Shared provider usage could not be verified. Sending stays blocked."); }
+  } catch {
+    throw new Error("Resend returned usage data outside the configured plan limits or format.");
+  }
 }
