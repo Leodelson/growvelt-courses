@@ -22,16 +22,19 @@ export function emailCenterRelease() {
 export function emailCenterProviderRuntime(options: { recoveryOnly?: boolean } = {}) {
   const release = emailCenterRelease();
   if (!release.enabled && !(options.recoveryOnly && process.env.LEARNING_EMAIL_CENTER_RECOVERY === "enabled")) throw new Error("Sending is not activated. Complete the approved provider and release setup first. No email was sent.");
+  // Email Center needs full access to check usage and reconcile delivery.
+  // Keep its usage requests and sends on the same verified Resend team.
+  const emailCenterKey = process.env.RESEND_MARKETING_API_KEY;
   return {
     transport: createEmailCenterResendTransport({
-      transactionalKey: process.env.RESEND_API_KEY, marketingKey: process.env.RESEND_MARKETING_API_KEY,
+      transactionalKey: emailCenterKey, marketingKey: emailCenterKey,
       senders: Object.fromEntries(senderChoices.map(sender => [sender.id, process.env[sender.variable]])),
       // Operator-approved domain verification is a release prerequisite. The
       // adapter still rejects other domains, unconfigured aliases and spoofing.
       verifiedDomains: (process.env.LEARNING_EMAIL_VERIFIED_DOMAINS ?? "").split(",").map(value => value.trim()),
       request: fetch, allowProviderWrites: true,
     }),
-    membership: createLearningConsentProvider({ key: process.env.RESEND_MARKETING_API_KEY ?? "", request: fetch, enabled: true }),
+    membership: createLearningConsentProvider({ key: emailCenterKey ?? "", request: fetch, enabled: true }),
   };
 }
 export async function checkEmailCenterRecipients(database: Pick<SupabaseClient, "rpc">, actor: string, id: string, revision: number) {
