@@ -1,10 +1,18 @@
-import { listOwnCertificates } from "@/app/lib/learning/certificates";
-import { listOwnLearningEnrollments } from "@/app/lib/learning/enrollments";
-import { DashboardOverview } from "@/app/components/learning/dashboard-overview";
+import { DashboardHome } from "@/app/components/learning/dashboard-home";
+import { getActiveLearningEditorialCampaign, normalizePublicCatalogQuery, searchPublicPublishedLearningCourses } from "@/app/lib/catalog/published-courses";
+import { getOwnSavedLearningCourseIds } from "@/app/lib/learning/saved-courses";
+import { getRequestLocale } from "@/app/lib/i18n-server";
 
-export const metadata = { title: "Growvelt overview" };
+export const metadata = { title: "Learning home" };
 
 export default async function DashboardPage() {
-  const [courses, certificates] = await Promise.all([listOwnLearningEnrollments(), listOwnCertificates()]);
-  return <DashboardOverview courses={courses} certificates={certificates} />;
+  const [campaign, savedCourseIds, locale] = await Promise.all([
+    getActiveLearningEditorialCampaign(),
+    getOwnSavedLearningCourseIds(),
+    getRequestLocale(),
+  ]);
+  const catalogCourses = campaign
+    ? []
+    : (await searchPublicPublishedLearningCourses(normalizePublicCatalogQuery({}))).courses;
+  return <DashboardHome campaign={campaign} courses={catalogCourses} savedCourseIds={savedCourseIds} locale={locale} />;
 }

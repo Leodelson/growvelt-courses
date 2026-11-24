@@ -7,7 +7,7 @@ import { isLearningAdmin } from "@/app/lib/admin/authorization";
 import { createClient } from "@/app/lib/supabase/server";
 
 const pagePath = "/dashboard/admin/promotions";
-const campaignRefreshPaths = [pagePath, "/learn", "/dashboard/explore"];
+const campaignRefreshPaths = [pagePath, "/learn", "/dashboard", "/dashboard/explore"];
 
 function amountToMinor(value: FormDataEntryValue | null): number | null {
   if (typeof value !== "string" || !/^\d{1,8}(?:\.\d{1,2})?$/.test(value.trim())) return null;

@@ -63,7 +63,7 @@ export default async function AdminPromotionsPage({
   const error = queryValue("error");
   const successMessage = queryValue("created") ? "Coupon created. It can only be redeemed when the Test Mode fixture and coupon feature gates are satisfied."
     : queryValue("disabled") ? "Coupon disabled. Existing payment behavior is unchanged."
-    : queryValue("campaignCreated") ? "Featured campaign scheduled. It will appear on Explore during its selected dates."
+    : queryValue("campaignCreated") ? "Featured campaign scheduled. It will appear on dashboard Home and public Explore during its selected dates."
     : queryValue("campaignDisabled") ? "Featured campaign disabled. Its record is retained for the admin history."
     : null;
   const errorMessage = error === "duplicate" ? "That code already exists. Choose a different code."
@@ -91,7 +91,7 @@ export default async function AdminPromotionsPage({
     <ActionFeedback message={errorMessage ?? successMessage} kind={errorMessage ? "error" : "success"} />
 
     <section id="campaign-create" className={styles.panel}>
-      <header><p className="eyebrow">Editorial merchandising · No placement fee</p><h2>Schedule a featured campaign</h2><p>Choose up to six published courses with an instructor or provider organization and a display window. The campaign appears on public and dashboard Explore pages only during that window. Company-only courses and Paystack test fixtures are excluded.</p></header>
+      <header><p className="eyebrow">Editorial merchandising · No placement fee</p><h2>Schedule a featured campaign</h2><p>Choose up to six published courses with an instructor or provider organization and a display window. The campaign appears on dashboard Home and public Explore only during that window. It is shown once on dashboard Home; the full catalog stays on Explore. Company-only courses and Paystack test fixtures are excluded.</p></header>
       {editorialCoursesError ? <p className={styles.error}>Eligible published courses could not be loaded. Try again later.</p> : editorialCourses.length === 0 ? <p className={styles.muted}>There are no eligible published courses with an instructor or provider organization to feature yet.</p> : <form action={createLearningCampaignAction} className={styles.form}>
         <label>Campaign title<input name="campaignTitle" required minLength={3} maxLength={80} placeholder="Featured learning" /></label>
         <label className={styles.courseField}>Short message<textarea name="campaignMessage" required minLength={3} maxLength={240} rows={3} placeholder="A short introduction to this collection of courses." /></label>
