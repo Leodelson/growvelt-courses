@@ -64,7 +64,7 @@ assert.ok(manifest.icons.some(icon => icon.src === "/pwa/icon-maskable-512x512.p
   && icon.sizes === "512x512" && icon.type === "image/png" && icon.purpose === "maskable"),
   "maskable PWA icon must be declared in the manifest");
 const sw = await readFile(new URL("../public/sw.js", import.meta.url), "utf8");
-assert.match(sw, /CACHE_VERSION\s*=\s*["']v10["']/, "service worker cache must refresh updated icons and offline page");
+assert.match(sw, /CACHE_VERSION\s*=\s*["']v11["']/, "service worker cache must refresh updated icons and offline page");
 for (const path of ["/favicon.ico", "/favicon-16x16.png", "/favicon-32x32.png", "/favicon-96x96.png",
   "/android-chrome-192x192.png", "/android-chrome-512x512.png", "/apple-touch-icon.png",
   "/pwa/icon-any-192x192.png", "/pwa/icon-any-512x512.png", "/pwa/icon-maskable-512x512.png"]) {

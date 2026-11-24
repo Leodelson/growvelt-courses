@@ -23,7 +23,7 @@ function rememberDismissal() {
 }
 
 export default function GrowveltUpdateBanner() {
-  const { updateAvailable, applyUpdate } = usePWA();
+  const { updateAvailable, applyingUpdate, applyUpdate } = usePWA();
   const [dismissed, setDismissed] = useState(() => {
     if (typeof window === "undefined") return false;
     return isDismissed();
@@ -51,8 +51,8 @@ export default function GrowveltUpdateBanner() {
           <p className="text-xs font-extrabold tracking-tight sm:text-sm">
             New Growvelt Learning version available
           </p>
-          <p className="mt-0.5 text-[11px] leading-4 text-gray-600 dark:text-gray-300 sm:text-xs sm:leading-5">
-            Refresh to see the latest changes.
+          <p role="status" className="mt-0.5 text-[11px] leading-4 text-gray-600 dark:text-gray-300 sm:text-xs sm:leading-5">
+            {applyingUpdate ? "Applying the update…" : "Refresh to see the latest changes."}
           </p>
 
           <div className="mt-2.5 flex justify-end gap-2 sm:mt-3">
@@ -69,6 +69,7 @@ export default function GrowveltUpdateBanner() {
               className="inline-flex cursor-pointer items-center justify-center rounded-lg bg-gradient-to-r from-purple-700 to-fuchsia-600 px-2.5 py-1.5 text-[11px] font-extrabold text-white transition hover:-translate-y-0.5 hover:shadow-lg hover:shadow-purple-900/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:from-purple-500 dark:to-fuchsia-500 dark:focus-visible:ring-offset-slate-950 sm:px-3 sm:py-2 sm:text-xs"
               type="button"
               onClick={applyUpdate}
+              disabled={applyingUpdate}
             >
               Refresh
             </button>

@@ -31,6 +31,7 @@ type PWAContextValue = {
   isIOS: boolean;
   isReady: boolean;
   updateAvailable: boolean;
+  applyingUpdate: boolean;
   promptInstall: () => Promise<InstallResult>;
   applyUpdate: () => void;
 };
@@ -76,8 +77,6 @@ async function registerServiceWorker(onUpdateReady: (worker: ServiceWorker) => v
 
     // Ask the browser to compare the service worker promptly after a deployment.
     // This never caches app data or affects authentication requests.
-    void registration.update();
-
     if (registration.waiting && navigator.serviceWorker.controller) {
       onUpdateReady(registration.waiting);
     }
@@ -92,6 +91,7 @@ async function registerServiceWorker(onUpdateReady: (worker: ServiceWorker) => v
         }
       });
     });
+    void registration.update().catch(() => { /* Offline browsers retry later. */ });
   } catch (error) {
     console.warn("Growvelt service worker registration failed", error);
   }
@@ -104,8 +104,9 @@ export function PWAProvider({ children }: { children: ReactNode }) {
   const [isIOS, setIsIOS] = useState(false);
   const [isReady, setIsReady] = useState(false);
   const [updateAvailable, setUpdateAvailable] = useState(false);
+  const [applyingUpdate, setApplyingUpdate] = useState(false);
   const waitingWorkerRef = useRef<ServiceWorker | null>(null);
-  const refreshingRef = useRef(false);
+  const applyingWorkerRef = useRef<ServiceWorker | null>(null);
 
   useEffect(() => {
     const updateStandaloneState = () => {
@@ -130,12 +131,6 @@ export function PWAProvider({ children }: { children: ReactNode }) {
       setUpdateAvailable(true);
     };
 
-    const handleControllerChange = () => {
-      if (refreshingRef.current) return;
-      refreshingRef.current = true;
-      window.location.reload();
-    };
-
     const handleLoad = () => registerServiceWorker(handleUpdateReady);
 
     const standaloneQuery = window.matchMedia?.("(display-mode: standalone)");
@@ -154,14 +149,12 @@ export function PWAProvider({ children }: { children: ReactNode }) {
 
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
     window.addEventListener("appinstalled", handleAppInstalled);
-    navigator.serviceWorker?.addEventListener?.("controllerchange", handleControllerChange);
     standaloneQuery?.addEventListener?.("change", updateStandaloneState);
 
     return () => {
       window.removeEventListener("load", handleLoad);
       window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
       window.removeEventListener("appinstalled", handleAppInstalled);
-      navigator.serviceWorker?.removeEventListener?.("controllerchange", handleControllerChange);
       standaloneQuery?.removeEventListener?.("change", updateStandaloneState);
       window.clearTimeout(readyTimer);
     };
@@ -191,25 +184,31 @@ export function PWAProvider({ children }: { children: ReactNode }) {
 
   const applyUpdate = useCallback(() => {
     const waitingWorker = waitingWorkerRef.current;
-    if (!waitingWorker) {
-      window.location.reload();
-      return;
-    }
+    if (!waitingWorker || applyingWorkerRef.current) return;
+    applyingWorkerRef.current = waitingWorker;
+    setApplyingUpdate(true);
 
-    waitingWorker.addEventListener("statechange", () => {
-      if (waitingWorker.state === "activated" && !refreshingRef.current) {
-        refreshingRef.current = true;
+    const checkActivation = () => {
+      if (waitingWorker.state === "activated") {
+        waitingWorker.removeEventListener("statechange", checkActivation);
         window.location.reload();
+      } else if (waitingWorker.state === "redundant") {
+        waitingWorker.removeEventListener("statechange", checkActivation);
+        applyingWorkerRef.current = null;
+        setApplyingUpdate(false);
+        if (waitingWorkerRef.current === waitingWorker) {
+          waitingWorkerRef.current = null;
+          setUpdateAvailable(false);
+        }
       }
-    });
+    };
 
-    waitingWorker.postMessage({ type: "SKIP_WAITING" });
-
-    window.setTimeout(() => {
-      if (refreshingRef.current) return;
-      refreshingRef.current = true;
-      window.location.reload();
-    }, 1200);
+    waitingWorker.addEventListener("statechange", checkActivation);
+    if (waitingWorker.state === "installed") {
+      waitingWorker.postMessage({ type: "SKIP_WAITING" });
+    } else {
+      checkActivation();
+    }
   }, []);
 
   const value = useMemo<PWAContextValue>(
@@ -220,10 +219,11 @@ export function PWAProvider({ children }: { children: ReactNode }) {
       isIOS,
       isReady,
       updateAvailable,
+      applyingUpdate,
       promptInstall,
       applyUpdate,
     }),
-    [installPrompt, isInstalled, isStandalone, isIOS, isReady, updateAvailable, promptInstall, applyUpdate]
+    [installPrompt, isInstalled, isStandalone, isIOS, isReady, updateAvailable, applyingUpdate, promptInstall, applyUpdate]
   );
 
   return <PWAContext.Provider value={value}>{children}</PWAContext.Provider>;
