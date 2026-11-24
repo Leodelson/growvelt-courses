@@ -56,3 +56,22 @@
   .accessOptions { grid-template-columns: 1fr; }
   .createAction { align-items: stretch; flex-direction: column; }
 }
+
+.page :global(.module-heading-title) {
+  align-self: center;
+  margin: 0;
+  color: var(--ink);
+  font-size: clamp(17px, 2.2vw, 21px);
+  overflow-wrap: anywhere;
+}
+.page :global(.module-rename) { min-width: 0; }
+.page :global(.module-rename) > summary {
+  width: fit-content;
+  padding-block: 8px;
+  color: var(--purple);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+}
+.page :global(.module-rename) > form { margin-top: 10px; }
+.page :global(.add-module-form) { align-items: end; }

@@ -51,6 +51,10 @@ const defaultValues: CourseValues = {
   price_currency: "NGN",
 };
 
+function RequiredLabel({ label }: { label: string }) {
+  return <span className="field-label">{label} <span className="required-mark" aria-hidden="true">*</span></span>;
+}
+
 function getSafePrice(value: FormDataEntryValue | null) {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : null;
@@ -142,7 +146,7 @@ export function CourseDraftForm({ mode, courseId, initialValues = defaultValues,
           : await supabase.rpc("create_instructor_course_draft", input);
         const created = data?.[0] as { course_id?: number } | undefined;
         if (error || !created?.course_id) throw new Error("create_failed");
-        router.replace(`/dashboard/instructor/courses/${created.course_id}`);
+        router.replace(`/dashboard/instructor/courses/${created.course_id}/curriculum`);
         router.refresh();
         return;
       }
@@ -195,7 +199,7 @@ export function CourseDraftForm({ mode, courseId, initialValues = defaultValues,
         }
       }}
     >
-      {creating ? <p className={styles.createHint}>{guide.required}</p> : <DraftDetailsChecklist values={details} isFree={isFree} price={draftPrice} />}
+      {creating ? <p className={styles.createHint}><span className="required-mark" aria-hidden="true">*</span> {guide.required}</p> : <DraftDetailsChecklist values={details} isFree={isFree} price={draftPrice} />}
       {!isEditable && <InlineFeedback variant="info">{text.readOnly}</InlineFeedback>}
       {feedback && <InlineFeedback variant={feedback.variant}>{feedback.message}</InlineFeedback>}
 
@@ -203,7 +207,7 @@ export function CourseDraftForm({ mode, courseId, initialValues = defaultValues,
         <section className={creating ? styles.createSection : styles.editSection}>
           {creating && <h2>{guide.basics}</h2>}
           <label className="course-field">
-            {text.title}
+            <RequiredLabel label={text.title} />
             <input
               id="course-title" name="title" defaultValue={initialValues.title} minLength={3} maxLength={160} required
               {...fieldState("title")}
@@ -216,7 +220,7 @@ export function CourseDraftForm({ mode, courseId, initialValues = defaultValues,
             <span className={styles.meter}><span>{text.titleHelp}</span><span>{details.title.length} / 160</span></span>
           </label>
           <label className="course-field">
-            {text.summary}
+            <RequiredLabel label={text.summary} />
             <textarea
               id="course-summary" name="summary" defaultValue={initialValues.summary} minLength={10} maxLength={320} rows={3} required
               placeholder={creating ? guide.summaryExample : undefined}
@@ -230,7 +234,7 @@ export function CourseDraftForm({ mode, courseId, initialValues = defaultValues,
             <span className={styles.meter}><span>{text.summaryHelp}</span><span>{details.summary.length} / 320</span></span>
           </label>
           <label className="course-field">
-            {text.description}
+            <RequiredLabel label={text.description} />
             <textarea
               id="course-description" name="description" defaultValue={initialValues.description} minLength={40} maxLength={10000} rows={creating ? 5 : 7} required
               placeholder={creating ? guide.descriptionExample : undefined}
@@ -249,13 +253,13 @@ export function CourseDraftForm({ mode, courseId, initialValues = defaultValues,
           {creating && <h2>{guide.classification}</h2>}
           <div className="course-form-grid">
             <label className="course-field">
-              {text.category}
+              <RequiredLabel label={text.category} />
               <select name="category" defaultValue={initialValues.category} required>
                 {courseCategories.map((category) => <option key={category} value={category}>{category}</option>)}
               </select>
             </label>
             <label className="course-field">
-              {text.level}
+              <RequiredLabel label={text.level} />
               <select name="level" defaultValue={initialValues.level} required>
                 {courseLevels.map((level) => <option key={level} value={level}>{level}</option>)}
               </select>
@@ -297,7 +301,7 @@ export function CourseDraftForm({ mode, courseId, initialValues = defaultValues,
           </div>
           {!isFree && (
             <label className="course-field course-price-field">
-              {text.price}
+              <RequiredLabel label={text.price} />
               <input
                 name="price_amount" type="number" min="1" max="10000000" step="0.01" required
                 defaultValue={creating ? (draftPrice ?? "") : (initialValues.price_amount ?? "")}
