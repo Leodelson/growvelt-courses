@@ -1,4 +1,4 @@
-const CACHE_VERSION = "v9";
+const CACHE_VERSION = "v10";
 const CACHE_NAME = `growvelt-pwa-${CACHE_VERSION}`;
 
 const ALLOWED_CACHE_PATHS = new Set([
@@ -41,7 +41,7 @@ const SUPABASE_HOST_PARTS = ["supabase.co", "supabase.in"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(Array.from(ALLOWED_CACHE_PATHS)))
+    caches.open(CACHE_NAME).then((cache) => cache.addAll([...ALLOWED_CACHE_PATHS, "/android-chrome-192x192.png?v=10", "/pwa/icon-any-192x192.png?v=10"]))
   );
 });
 
@@ -232,7 +232,7 @@ async function showGrowveltPushNotification(event) {
   const payload = parseGrowveltPushPayload(event);
   await self.registration.showNotification(payload.title, {
     body: payload.body,
-    icon: "/pwa/icon-any-192x192.png?v=9",
+    icon: "/pwa/icon-any-192x192.png?v=10",
     tag: payload.tag,
     data: {
       path: payload.path,
