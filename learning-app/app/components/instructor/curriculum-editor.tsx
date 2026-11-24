@@ -1,7 +1,7 @@
 "use client";
 
+import { authoringRecoveryKey, useAuthoringRecovery } from "./use-authoring-recovery";
 import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ActionButton } from "@/app/components/ui/action-button";
 import { ConfirmationDialog } from "@/app/components/ui/confirmation-dialog";
@@ -10,7 +10,6 @@ import type { CurriculumLesson, CurriculumModule } from "@/app/lib/instructor/cu
 import type { CourseStatus } from "@/app/lib/instructor/course-options";
 import { createClient } from "@/app/lib/supabase/browser";
 import { useLanguage } from "@/app/components/language-provider";
-import styles from "./workbench.module.css";
 
 type Feedback = { variant: "error" | "success" | "info"; message: string } | null;
 type ConfirmTarget = { kind: "module" | "lesson"; id: number; title: string; lessonCount?: number } | null;
@@ -40,7 +39,7 @@ function formatDuration(seconds: number | null) {
   return `${minutes} min`;
 }
 
-export function CurriculumEditor({ courseId, status, initialModules }: { courseId: number; status: CourseStatus; initialModules: CurriculumModule[] }) {
+export function CurriculumEditor({ userId, courseId, status, initialModules }: { userId: string; courseId: number; status: CourseStatus; initialModules: CurriculumModule[] }) {
   const router = useRouter();
   const { locale } = useLanguage();
   const text = locale === "fr" ? { mutation: "Nous n’avons pas pu enregistrer cette modification. Vérifiez les informations et réessayez.", moduleTitle: "Saisissez un titre de module d’au moins deux caractères.", moduleAdded: "Module enregistré. Choisissez Ajouter une leçon sous son titre pour continuer.", moduleSaved: "Titre du module enregistré.", lessonTitle: "Saisissez un titre de leçon d’au moins deux caractères.", videoRequired: "Saisissez une URL ou un identifiant YouTube pris en charge et une durée en minutes.", textRequired: "Saisissez le contenu de la leçon texte.", lessonSaved: "Leçon enregistrée.", lessonAdded: "Leçon ajoutée à ce module.", moduleDeleted: "Module et leçons supprimés.", lessonDeleted: "Leçon supprimée.", readonly: "Le programme est en lecture seule tant que ce cours n’est pas revenu au statut de brouillon.", structure: "Structure du cours", curriculum: "Programme", intro: "Créez des modules ciblés avec des activités texte, vidéo et quiz.", newModule: "Titre du nouveau module", modulePlaceholder: "Titre du module", adding: "Ajout…", addModule: "Ajouter un module", start: "Commencez ici", first: "Construisez la première section de ce cours.", firstCopy: "Un module regroupe des leçons connexes. Vous pouvez le modifier tant que le cours est un brouillon.", save: "Enregistrer", saving: "Enregistrement…", moveUp: "Monter", moveDown: "Descendre", delete: "Supprimer", deleteModule: "Supprimer ce module ?", deleteLesson: "Supprimer cette leçon ?", confirmModule: "Supprimer le module", confirmLesson: "Supprimer la leçon", deleting: "Suppression…" } : locale === "es" ? { mutation: "No pudimos guardar este cambio. Revisa los datos e inténtalo de nuevo.", moduleTitle: "Introduce un título de módulo de al menos dos caracteres.", moduleAdded: "Módulo guardado. Elige Añadir lección debajo de su título para continuar.", moduleSaved: "Título del módulo guardado.", lessonTitle: "Introduce un título de lección de al menos dos caracteres.", videoRequired: "Introduce una URL o un ID de YouTube compatible y una duración en minutos.", textRequired: "Introduce el contenido de la lección de texto.", lessonSaved: "Lección guardada.", lessonAdded: "Lección añadida a este módulo.", moduleDeleted: "Módulo y lecciones eliminados.", lessonDeleted: "Lección eliminada.", readonly: "El plan de estudios será de solo lectura hasta que el curso vuelva a borrador.", structure: "Estructura del curso", curriculum: "Plan de estudios", intro: "Crea módulos enfocados con actividades de texto, vídeo y cuestionario.", newModule: "Título del nuevo módulo", modulePlaceholder: "Título del módulo", adding: "Añadiendo…", addModule: "Añadir módulo", start: "Empieza aquí", first: "Crea la primera sección de este curso.", firstCopy: "Un módulo agrupa lecciones relacionadas. Puedes modificarlo mientras el curso sea un borrador.", save: "Guardar", saving: "Guardando…", moveUp: "Subir", moveDown: "Bajar", delete: "Eliminar", deleteModule: "¿Eliminar este módulo?", deleteLesson: "¿Eliminar esta lección?", confirmModule: "Eliminar módulo", confirmLesson: "Eliminar lección", deleting: "Eliminando…" } : { mutation: "We couldn’t save that curriculum change. Review the details and try again.", moduleTitle: "Enter a module title with at least two characters.", moduleAdded: "Module saved. Choose Add lesson under its title to continue.", moduleSaved: "Module title saved.", lessonTitle: "Enter a lesson title with at least two characters.", videoRequired: "Enter a supported YouTube URL or video ID and a duration in minutes.", textRequired: "Enter the text lesson content.", lessonSaved: "Lesson saved.", lessonAdded: "Lesson added to this module.", moduleDeleted: "Module and its lessons deleted.", lessonDeleted: "Lesson deleted.", readonly: "Curriculum is read-only until this course returns to draft status.", structure: "Course structure", curriculum: "Curriculum", intro: "Create focused modules with text, video, and quiz activities.", newModule: "New module title", modulePlaceholder: "Module title", adding: "Adding…", addModule: "Add module", start: "Start here", first: "Build the first section of this course.", firstCopy: "A module groups related lessons. You can change it while this course is a draft.", save: "Save", saving: "Saving…", moveUp: "Move up", moveDown: "Move down", delete: "Delete", deleteModule: "Delete this module?", deleteLesson: "Delete this lesson?", confirmModule: "Delete module", confirmLesson: "Delete lesson", deleting: "Deleting…" };
@@ -61,18 +60,18 @@ export function CurriculumEditor({ courseId, status, initialModules }: { courseI
     return true;
   }
 
-  async function addModule(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const formElement = event.currentTarget;
-    const title = String(new FormData(formElement).get("module-title") ?? "").trim();
-    if (title.length < 2) { setFeedback({ variant: "error", message: text.moduleTitle }); return; }
-    if (await call("add_instructor_course_module", { p_course_id: courseId, p_title: title }, "add-module")) { formElement.reset(); setFeedback({ variant: "success", message: text.moduleAdded }); }
+  async function addModule(title: string) {
+    if (title.length < 2) { setFeedback({ variant: "error", message: text.moduleTitle }); return false; }
+    const saved = await call("add_instructor_course_module", { p_course_id: courseId, p_title: title }, "add-module");
+    if (saved) setFeedback({ variant: "success", message: text.moduleAdded });
+    return saved;
   }
 
-  async function updateModule(moduleId: number, event: FormEvent<HTMLFormElement>) {
-    event.preventDefault(); const title = String(new FormData(event.currentTarget).get("title") ?? "").trim();
-    if (title.length < 2) { setFeedback({ variant: "error", message: text.moduleTitle }); return; }
-    if (await call("update_instructor_course_module", { p_module_id: moduleId, p_title: title }, `module-${moduleId}`)) setFeedback({ variant: "success", message: text.moduleSaved });
+  async function updateModule(moduleId: number, title: string) {
+    if (title.length < 2) { setFeedback({ variant: "error", message: text.moduleTitle }); return false; }
+    const saved = await call("update_instructor_course_module", { p_module_id: moduleId, p_title: title }, `module-${moduleId}`);
+    if (saved) setFeedback({ variant: "success", message: text.moduleSaved });
+    return saved;
   }
 
   async function saveLesson(moduleId: number, lesson: CurriculumLesson | null, event: FormEvent<HTMLFormElement>) {
@@ -89,7 +88,6 @@ export function CurriculumEditor({ courseId, status, initialModules }: { courseI
     const name = lesson ? "update_instructor_course_lesson" : "add_instructor_course_lesson";
     const payload = lesson ? { p_lesson_id: lesson.id, p_module_id: moduleId, p_title: title, p_lesson_type: type, p_content: content || null, p_video_provider: type === "video" ? "youtube" : null, p_video_reference: type === "video" ? reference : null, p_video_visibility: type === "video" ? String(form.get("video-visibility") ?? "public") : null, p_duration_seconds: type === "video" ? duration : null, p_is_preview: form.get("is-preview") === "on" } : args;
     const saved = await call(name, payload, lesson ? `lesson-${lesson.id}` : `add-lesson-${moduleId}`);
-    if (saved && !lesson) formElement.reset();
     return saved;
   }
 
@@ -108,15 +106,11 @@ export function CurriculumEditor({ courseId, status, initialModules }: { courseI
           <h2 id="curriculum-title">{modules.length === 0 ? text.first : text.addModule}</h2>
           <p>{modules.length === 0 ? text.firstCopy : text.intro}</p>
         </div>
-        <form onSubmit={addModule} className="add-module-form">
-          <label className="course-field">
-            <span className="field-label">{text.newModule} <span className="required-mark" aria-hidden="true">*</span></span>
-            <input id="module-title" name="module-title" placeholder={text.modulePlaceholder} minLength={2} maxLength={160} required disabled={Boolean(pendingKey)} />
-          </label>
+        <ModuleForm recoveryKey={authoringRecoveryKey(userId, "course", courseId, "module", "new")} inputId="module-title" initialTitle="" className="add-module-form" disabled={Boolean(pendingKey)} onSave={addModule} label={text.newModule} placeholder={text.modulePlaceholder}>
           <ActionButton className="button button-primary" type="submit" isPending={pendingKey === "add-module"} pendingLabel={text.adding} disabled={Boolean(pendingKey)}>
             {text.addModule}
           </ActionButton>
-        </form>
+        </ModuleForm>
       </section>
     )}
     {modules.length > 0 && <ol className="curriculum-modules">{modules.map((module, index) => (
@@ -135,23 +129,50 @@ export function CurriculumEditor({ courseId, status, initialModules }: { courseI
         {editable && (
           <details className="module-rename">
             <summary>{renameModule}</summary>
-            <form onSubmit={(event) => updateModule(module.id, event)} className="module-title-form">
-              <label className="sr-only" htmlFor={`module-${module.id}`}>{text.modulePlaceholder}</label>
-              <input id={`module-${module.id}`} name="title" defaultValue={module.title} minLength={2} maxLength={160} required disabled={Boolean(pendingKey)} />
+            <ModuleForm recoveryKey={authoringRecoveryKey(userId, "course", courseId, "module", module.id)} inputId={`module-${module.id}`} initialTitle={module.title} className="module-title-form" disabled={Boolean(pendingKey)} onSave={(title) => updateModule(module.id, title)} label={text.modulePlaceholder}>
               <ActionButton className="button button-small" type="submit" isPending={pendingKey === `module-${module.id}`} pendingLabel={text.saving} disabled={Boolean(pendingKey)}>{text.save}</ActionButton>
-            </form>
+            </ModuleForm>
           </details>
         )}
-      <div className="lesson-list">{module.lessons.map((lesson, lessonIndex) => <div key={lesson.id}><LessonEditor courseId={courseId} moduleId={module.id} lesson={lesson} editable={editable} pendingKey={pendingKey} onSave={saveLesson} onMove={(direction) => call("move_instructor_course_lesson", { p_lesson_id: lesson.id, p_direction: direction }, `lesson-move-${lesson.id}`)} onDelete={() => setConfirm({ kind: "lesson", id: lesson.id, title: lesson.title })} isFirst={lessonIndex === 0} isLast={lessonIndex === module.lessons.length - 1} />{lesson.type === "quiz" && <QuizBuilder lessonId={lesson.id} editable={editable} />}</div>)}</div>
-      {editable && <LessonEditor courseId={courseId} moduleId={module.id} lesson={null} editable={editable} pendingKey={pendingKey} onSave={saveLesson} onMove={() => undefined} onDelete={() => undefined} isFirst={false} isLast={false} />}</li>
+      <div className="lesson-list">{module.lessons.map((lesson, lessonIndex) => <div key={lesson.id}><LessonEditor userId={userId} courseId={courseId} moduleId={module.id} lesson={lesson} editable={editable} pendingKey={pendingKey} onSave={saveLesson} onMove={(direction) => call("move_instructor_course_lesson", { p_lesson_id: lesson.id, p_direction: direction }, `lesson-move-${lesson.id}`)} onDelete={() => setConfirm({ kind: "lesson", id: lesson.id, title: lesson.title })} isFirst={lessonIndex === 0} isLast={lessonIndex === module.lessons.length - 1} />{lesson.type === "quiz" && <QuizBuilder userId={userId} courseId={courseId} lessonId={lesson.id} editable={editable} />}</div>)}</div>
+      {editable && <LessonEditor userId={userId} courseId={courseId} moduleId={module.id} lesson={null} editable={editable} pendingKey={pendingKey} onSave={saveLesson} onMove={() => undefined} onDelete={() => undefined} isFirst={false} isLast={false} />}</li>
     ))}</ol>}
     {confirm && <ConfirmationDialog title={confirm.kind === "module" ? text.deleteModule : text.deleteLesson} description={<p>{confirm.title}</p>} confirmLabel={confirm.kind === "module" ? text.confirmModule : text.confirmLesson} pendingLabel={text.deleting} tone="danger" isPending={pendingKey === `delete-${confirm.kind}-${confirm.id}`} onCancel={() => !pendingKey && setConfirm(null)} onConfirm={confirmDelete} />}
   </div>;
 }
 
+function ModuleForm({ recoveryKey, inputId, initialTitle, className, disabled, onSave, label, placeholder, children }: {
+  recoveryKey: string | null;
+  inputId: string;
+  initialTitle: string;
+  className: string;
+  disabled: boolean;
+  onSave: (title: string) => Promise<boolean>;
+  label: string;
+  placeholder?: string;
+  children: ReactNode;
+}) {
+  const recovery = useAuthoringRecovery(recoveryKey, { title: initialTitle });
+  const input = <input id={inputId} name="title" value={recovery.values.title}
+    onChange={(event) => recovery.update({ title: event.target.value })}
+    placeholder={placeholder} minLength={2} maxLength={160} required disabled={disabled} />;
+
+  return <form className={className} onSubmit={async (event) => {
+    event.preventDefault();
+    if (await onSave(recovery.values.title.trim())) recovery.clear();
+  }}>
+    {placeholder ? <label className="course-field">
+      <span className="field-label">{label} <span className="required-mark" aria-hidden="true">*</span></span>
+      {input}
+    </label> : <><label className="sr-only" htmlFor={inputId}>{label}</label>{input}</>}
+    {children}
+  </form>;
+}
+
 type QuizAuthorRow = { quiz_id: number; instructions: string | null; passing_percentage: number; question_id: number | null; question_text: string | null; question_position: number | null; option_id: number | null; option_text: string | null; option_position: number | null; is_correct: boolean | null };
 
 type QuizQuestionEditorProps = {
+  recoveryKey: string | null;
   label: string;
   initialQuestion?: string;
   initialOptions?: string[];
@@ -165,79 +186,96 @@ type QuizQuestionEditorProps = {
   isNew?: boolean;
 };
 
-function QuizQuestionEditor({ label, initialQuestion = "", initialOptions = ["", ""], initialCorrect = 0, editable, pending, submitLabel, pendingLabel, onSave, actions, isNew = false }: QuizQuestionEditorProps) {
+function QuizQuestionEditor({ recoveryKey, label, initialQuestion = "", initialOptions = ["", ""], initialCorrect = 0, editable, pending, submitLabel, pendingLabel, onSave, actions, isNew = false }: QuizQuestionEditorProps) {
   const { locale } = useLanguage();
   const copy = locale === "fr" ? { unsaved: "Modifications non enregistrées", new: "Pas encore enregistré", saved: "Enregistré", question: "Question", answers: "Choix de réponse", option: "Choix", remove: "Retirer", add: "+ Ajouter un choix", hint: "sur 6 choix · Sélectionnez une bonne réponse" } : locale === "es" ? { unsaved: "Cambios sin guardar", new: "Aún no guardado", saved: "Guardado", question: "Pregunta", answers: "Opciones de respuesta", option: "Opción", remove: "Quitar", add: "+ Añadir opción", hint: "de 6 opciones · Selecciona una respuesta correcta" } : { unsaved: "Unsaved changes", new: "Not saved yet", saved: "Saved", question: "Question", answers: "Answer options", option: "Option", remove: "Remove", add: "+ Add option", hint: "of 6 options · Select one correct answer" };
-  const [question, setQuestion] = useState(initialQuestion);
-  const [options, setOptions] = useState(initialOptions.length >= 2 ? initialOptions : ["", ""]);
-  const [correctOption, setCorrectOption] = useState(initialCorrect >= 0 && initialCorrect < initialOptions.length ? initialCorrect : 0);
-  const [dirty, setDirty] = useState(false);
+  const recovery = useAuthoringRecovery(editable ? recoveryKey : null, {
+    question: initialQuestion,
+    options: initialOptions.length >= 2 ? initialOptions : ["", ""],
+    correctOption: initialCorrect >= 0 && initialCorrect < initialOptions.length ? initialCorrect : 0,
+  });
+  const { question, options, correctOption } = recovery.values;
+  const { dirty } = recovery;
 
   function updateOption(index: number, value: string) {
-    setOptions((current) => current.map((option, optionIndex) => optionIndex === index ? value : option));
-    setDirty(true);
+    recovery.update({ options: options.map((option, optionIndex) => optionIndex === index ? value : option) });
   }
 
   function addOption() {
     if (options.length >= 6) return;
-    setOptions((current) => [...current, ""]);
-    setDirty(true);
+    recovery.update({ options: [...options, ""] });
   }
 
   function removeOption(index: number) {
     if (options.length <= 2) return;
-    setOptions((current) => current.filter((_, optionIndex) => optionIndex !== index));
-    setCorrectOption((current) => current === index ? 0 : current > index ? current - 1 : current);
-    setDirty(true);
+    recovery.update({
+      options: options.filter((_, optionIndex) => optionIndex !== index),
+      correctOption: correctOption === index ? 0 : correctOption > index ? correctOption - 1 : correctOption,
+    });
   }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const saved = await onSave(question.trim(), options.map((option) => option.trim()), correctOption);
-    if (saved) setDirty(false);
+    if (saved) recovery.clear();
   }
 
   return <form onSubmit={submit} className="quiz-question-editor">
     <div className="quiz-question-heading"><strong>{label}</strong><span className={dirty || isNew ? "quiz-save-state is-unsaved" : "quiz-save-state"}>{dirty ? copy.unsaved : isNew ? copy.new : copy.saved}</span></div>
-    <label className="course-field">{copy.question}<textarea value={question} onChange={(event) => { setQuestion(event.target.value); setDirty(true); }} rows={2} required disabled={!editable || pending} /></label>
-    <fieldset className="quiz-option-editor" disabled={!editable || pending}><legend>{copy.answers}</legend>{options.map((option, index) => <div className="quiz-author-option" key={index}><label className="quiz-option"><input type="radio" name="correct-option" value={index} checked={correctOption === index} onChange={() => { setCorrectOption(index); setDirty(true); }} /><input value={option} onChange={(event) => updateOption(index, event.target.value)} placeholder={`${copy.option} ${index + 1}`} required aria-label={`${copy.option} ${index + 1}`} /></label><button type="button" className="text-button text-button-danger" onClick={() => removeOption(index)} disabled={options.length <= 2}>{copy.remove}</button></div>)}</fieldset>
+    <label className="course-field">{copy.question}<textarea value={question} onChange={(event) => recovery.update({ question: event.target.value })} rows={2} required disabled={!editable || pending} /></label>
+    <fieldset className="quiz-option-editor" disabled={!editable || pending}><legend>{copy.answers}</legend>{options.map((option, index) => <div className="quiz-author-option" key={index}><label className="quiz-option"><input type="radio" name="correct-option" value={index} checked={correctOption === index} onChange={() => recovery.update({ correctOption: index })} /><input value={option} onChange={(event) => updateOption(index, event.target.value)} placeholder={`${copy.option} ${index + 1}`} required aria-label={`${copy.option} ${index + 1}`} /></label><button type="button" className="text-button text-button-danger" onClick={() => removeOption(index)} disabled={options.length <= 2}>{copy.remove}</button></div>)}</fieldset>
     <div className="quiz-option-toolbar"><button type="button" className="text-button" onClick={addOption} disabled={!editable || pending || options.length >= 6}>{copy.add}</button><small>{options.length} {copy.hint}</small></div>
     <div className="quiz-question-actions"><ActionButton className="button button-small" type="submit" isPending={pending} pendingLabel={pendingLabel} disabled={!editable}>{submitLabel}</ActionButton>{actions}</div>
   </form>;
 }
 
-function QuizBuilder({ lessonId, editable }: { lessonId: number; editable: boolean }) {
+function QuizBuilder({ userId, courseId, lessonId, editable }: { userId: string; courseId: number; lessonId: number; editable: boolean }) {
   const { locale } = useLanguage();
   const copy = locale === "fr" ? { loadError: "Nous n’avons pas pu charger l’éditeur de quiz.", settingsError: "Nous n’avons pas pu enregistrer les paramètres du quiz.", incomplete: "Ajoutez une question, 2 à 6 choix complets et sélectionnez une seule bonne réponse.", saveError: "Nous n’avons pas pu enregistrer cette question.", updateError: "Nous n’avons pas pu modifier cette question.", secure: "Évaluation sécurisée", builder: "Éditeur de quiz", question: "question", questions: "questions", instructions: "Instructions", passing: "Pourcentage de réussite", saveSettings: "Enregistrer les paramètres", saving: "Enregistrement…", loading: "Chargement des questions…", empty: "Aucune question enregistrée. Ajoutez votre première question avant de soumettre le cours.", saveQuestion: "Enregistrer la question", moveUp: "Monter", moveDown: "Descendre", delete: "Supprimer", addTitle: "Ajouter une question", newQuestion: "Nouvelle question", addQuestion: "Ajouter la question", adding: "Ajout…", saveFirst: "Enregistrez les paramètres du quiz avant d’ajouter des questions." } : locale === "es" ? { loadError: "No pudimos cargar el editor del cuestionario.", settingsError: "No pudimos guardar la configuración del cuestionario.", incomplete: "Añade una pregunta, de 2 a 6 opciones completas y selecciona una sola respuesta correcta.", saveError: "No pudimos guardar esta pregunta.", updateError: "No pudimos actualizar esta pregunta.", secure: "Evaluación segura", builder: "Editor de cuestionarios", question: "pregunta", questions: "preguntas", instructions: "Instrucciones", passing: "Porcentaje de aprobación", saveSettings: "Guardar configuración", saving: "Guardando…", loading: "Cargando preguntas…", empty: "Aún no hay preguntas guardadas. Añade la primera antes de enviar el curso.", saveQuestion: "Guardar pregunta", moveUp: "Subir", moveDown: "Bajar", delete: "Eliminar", addTitle: "Añadir pregunta", newQuestion: "Nueva pregunta", addQuestion: "Añadir pregunta", adding: "Añadiendo…", saveFirst: "Guarda la configuración antes de añadir preguntas." } : { loadError: "We couldn’t load this quiz builder.", settingsError: "We couldn’t save the quiz settings.", incomplete: "Add a question, 2 to 6 complete options, and select exactly one correct option before saving.", saveError: "We couldn’t save this question.", updateError: "We couldn’t update that question.", secure: "Secure assessment", builder: "Quiz builder", question: "question", questions: "questions", instructions: "Instructions", passing: "Passing percentage", saveSettings: "Save quiz settings", saving: "Saving…", loading: "Loading quiz questions…", empty: "No saved questions yet. Add your first question before submitting this course.", saveQuestion: "Save question", moveUp: "Move up", moveDown: "Move down", delete: "Delete", addTitle: "Add question", newQuestion: "New question", addQuestion: "Add question", adding: "Adding…", saveFirst: "Save quiz settings before adding questions." };
   const [rows, setRows] = useState<QuizAuthorRow[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [revision, setRevision] = useState(0);
+  const recovery = useAuthoringRecovery(editable ? authoringRecoveryKey(userId, "course", courseId, "quiz", lessonId, "settings") : null, {
+    instructions: rows?.[0]?.instructions ?? "",
+    passingPercentage: String(rows?.[0]?.passing_percentage ?? 70),
+  });
   const quizId = rows?.[0]?.quiz_id;
   const load = useCallback(async () => { const { data, error: rpcError } = await createClient().rpc("get_own_instructor_quiz_authoring", { p_lesson_id: lessonId }); if (rpcError) setError(copy.loadError); else setRows((data ?? []) as QuizAuthorRow[]); }, [lessonId, copy.loadError]);
   useEffect(() => { const request = window.setTimeout(() => { void load(); }, 0); return () => window.clearTimeout(request); }, [load, revision]);
-  async function saveConfig(event: FormEvent<HTMLFormElement>) { event.preventDefault(); const form = new FormData(event.currentTarget); setPending(true); setError(null); const { error: rpcError } = await createClient().rpc("upsert_instructor_quiz_configuration", { p_lesson_id: lessonId, p_instructions: String(form.get("instructions") ?? "").trim() || null, p_passing_percentage: Number(form.get("passing-percentage")) }); setPending(false); if (rpcError) setError(copy.settingsError); else setRevision((value) => value + 1); }
+  async function saveConfig(event: FormEvent<HTMLFormElement>) { event.preventDefault(); const form = new FormData(event.currentTarget); setPending(true); setError(null); const { error: rpcError } = await createClient().rpc("upsert_instructor_quiz_configuration", { p_lesson_id: lessonId, p_instructions: String(form.get("instructions") ?? "").trim() || null, p_passing_percentage: Number(form.get("passing-percentage")) }); setPending(false); if (rpcError) setError(copy.settingsError); else { recovery.clear(); setRevision((value) => value + 1); } }
   async function saveQuestion(question: string, options: string[], correct: number, questionId?: number) { if (question.length < 2 || options.length < 2 || options.length > 6 || options.some((option) => option.length === 0) || !Number.isInteger(correct) || correct < 0 || correct >= options.length) { setError(copy.incomplete); return false; } setPending(true); setError(null); const { data, error: rpcError } = await createClient().rpc("upsert_instructor_quiz_question", { p_lesson_id: lessonId, p_question_id: questionId ?? null, p_question_text: question, p_options: options.map((option, index) => ({ option_text: option, is_correct: index === correct })) }); setPending(false); if (rpcError || !data?.[0]) { setError(copy.saveError); return false; } setRevision((value) => value + 1); return true; }
   async function questionAction(name: string, args: Record<string, unknown>) { setPending(true); setError(null); const { error: rpcError } = await createClient().rpc(name, args); setPending(false); if (rpcError) { setError(copy.updateError); return; } setRevision((value) => value + 1); }
   const grouped = new Map<number, QuizAuthorRow[]>(); rows?.forEach((row) => { if (row.question_id) grouped.set(row.question_id, [...(grouped.get(row.question_id) ?? []), row]); });
-  return <section className="quiz-builder" aria-label={copy.builder}><div className="quiz-builder-heading"><div><p className="eyebrow">{copy.secure}</p><h3>{copy.builder}</h3></div><span>{grouped.size} {grouped.size === 1 ? copy.question : copy.questions}</span></div>{error && <InlineFeedback variant="error">{error}</InlineFeedback>}<form onSubmit={saveConfig} className="quiz-builder-config"><label className="course-field">{copy.instructions}<textarea name="instructions" defaultValue={rows?.[0]?.instructions ?? ""} rows={3} maxLength={2000} disabled={!editable || pending} /></label><label className="course-field">{copy.passing}<input name="passing-percentage" type="number" min="1" max="100" defaultValue={rows?.[0]?.passing_percentage ?? 70} disabled={!editable || pending} required /></label><ActionButton className="button button-small" type="submit" isPending={pending} pendingLabel={copy.saving} disabled={!editable}>{copy.saveSettings}</ActionButton></form>{rows === null ? <p>{copy.loading}</p> : !quizId || grouped.size === 0 ? <p className="published-outline-empty">{copy.empty}</p> : <ol className="quiz-builder-questions">{[...grouped.entries()].map(([questionId, questionRows], index) => { const first = questionRows[0]; const correctIndex = Math.max(0, questionRows.findIndex((row) => row.is_correct)); return <li key={questionId}><QuizQuestionEditor label={`${copy.question} ${index + 1}`} initialQuestion={first.question_text ?? ""} initialOptions={questionRows.map((row) => row.option_text ?? "")} initialCorrect={correctIndex} editable={editable} pending={pending} submitLabel={copy.saveQuestion} pendingLabel={copy.saving} onSave={(question, options, correct) => saveQuestion(question, options, correct, questionId)} actions={<div className="row-actions"><button type="button" className="text-button" disabled={!editable || pending || index === 0} onClick={() => questionAction("move_instructor_quiz_question", { p_lesson_id: lessonId, p_question_id: questionId, p_direction: "up" })}>{copy.moveUp}</button><button type="button" className="text-button" disabled={!editable || pending || index === grouped.size - 1} onClick={() => questionAction("move_instructor_quiz_question", { p_lesson_id: lessonId, p_question_id: questionId, p_direction: "down" })}>{copy.moveDown}</button><button type="button" className="text-button text-button-danger" disabled={!editable || pending} onClick={() => questionAction("delete_instructor_quiz_question", { p_lesson_id: lessonId, p_question_id: questionId })}>{copy.delete}</button></div>} /></li>; })}</ol>}<div className="quiz-builder-add"><h4>{copy.addTitle}</h4><QuizQuestionEditor key={`new-${revision}`} label={copy.newQuestion} editable={editable && Boolean(quizId)} pending={pending} submitLabel={copy.addQuestion} pendingLabel={copy.adding} onSave={(question, options, correct) => saveQuestion(question, options, correct)} isNew />{!quizId && <p>{copy.saveFirst}</p>}</div></section>;
+  return <section className="quiz-builder" aria-label={copy.builder}><div className="quiz-builder-heading"><div><p className="eyebrow">{copy.secure}</p><h3>{copy.builder}</h3></div><span>{grouped.size} {grouped.size === 1 ? copy.question : copy.questions}</span></div>{error && <InlineFeedback variant="error">{error}</InlineFeedback>}<form onSubmit={saveConfig} className="quiz-builder-config"><label className="course-field">{copy.instructions}<textarea name="instructions" value={recovery.values.instructions} onChange={(event) => recovery.update({ instructions: event.target.value })} rows={3} maxLength={2000} disabled={!editable || pending} /></label><label className="course-field">{copy.passing}<input name="passing-percentage" type="number" min="1" max="100" value={recovery.values.passingPercentage} onChange={(event) => recovery.update({ passingPercentage: event.target.value })} disabled={!editable || pending} required /></label><ActionButton className="button button-small" type="submit" isPending={pending} pendingLabel={copy.saving} disabled={!editable}>{copy.saveSettings}</ActionButton></form>{rows === null ? <p>{copy.loading}</p> : !quizId || grouped.size === 0 ? <p className="published-outline-empty">{copy.empty}</p> : <ol className="quiz-builder-questions">{[...grouped.entries()].map(([questionId, questionRows], index) => { const first = questionRows[0]; const correctIndex = Math.max(0, questionRows.findIndex((row) => row.is_correct)); return <li key={questionId}><QuizQuestionEditor recoveryKey={authoringRecoveryKey(userId, "course", courseId, "quiz", lessonId, "question", questionId)} label={`${copy.question} ${index + 1}`} initialQuestion={first.question_text ?? ""} initialOptions={questionRows.map((row) => row.option_text ?? "")} initialCorrect={correctIndex} editable={editable} pending={pending} submitLabel={copy.saveQuestion} pendingLabel={copy.saving} onSave={(question, options, correct) => saveQuestion(question, options, correct, questionId)} actions={<div className="row-actions"><button type="button" className="text-button" disabled={!editable || pending || index === 0} onClick={() => questionAction("move_instructor_quiz_question", { p_lesson_id: lessonId, p_question_id: questionId, p_direction: "up" })}>{copy.moveUp}</button><button type="button" className="text-button" disabled={!editable || pending || index === grouped.size - 1} onClick={() => questionAction("move_instructor_quiz_question", { p_lesson_id: lessonId, p_question_id: questionId, p_direction: "down" })}>{copy.moveDown}</button><button type="button" className="text-button text-button-danger" disabled={!editable || pending} onClick={() => questionAction("delete_instructor_quiz_question", { p_lesson_id: lessonId, p_question_id: questionId })}>{copy.delete}</button></div>} /></li>; })}</ol>}<div className="quiz-builder-add"><h4>{copy.addTitle}</h4><QuizQuestionEditor recoveryKey={authoringRecoveryKey(userId, "course", courseId, "quiz", lessonId, "question", "new")} label={copy.newQuestion} editable={editable && Boolean(quizId)} pending={pending} submitLabel={copy.addQuestion} pendingLabel={copy.adding} onSave={(question, options, correct) => saveQuestion(question, options, correct)} isNew />{!quizId && <p>{copy.saveFirst}</p>}</div></section>;
 }
 
-function LessonEditor({ courseId, moduleId, lesson, editable, pendingKey, onSave, onMove, onDelete, isFirst, isLast }: { courseId: number; moduleId: number; lesson: CurriculumLesson | null; editable: boolean; pendingKey: string | null; onSave: (moduleId: number, lesson: CurriculumLesson | null, event: FormEvent<HTMLFormElement>) => Promise<boolean>; onMove: (direction: "up" | "down") => void; onDelete: () => void; isFirst: boolean; isLast: boolean }) {
+function LessonEditor({ userId, courseId, moduleId, lesson, editable, pendingKey, onSave, onMove, onDelete, isFirst, isLast }: { userId: string; courseId: number; moduleId: number; lesson: CurriculumLesson | null; editable: boolean; pendingKey: string | null; onSave: (moduleId: number, lesson: CurriculumLesson | null, event: FormEvent<HTMLFormElement>) => Promise<boolean>; onMove: (direction: "up" | "down") => void; onDelete: () => void; isFirst: boolean; isLast: boolean }) {
   const { locale } = useLanguage();
   const copy = locale === "fr" ? { video: "Vidéo", quiz: "Quiz", text: "Texte", lesson: "leçon", add: "Ajouter une leçon", assessment: "Évaluation quiz", preview: "Aperçu", title: "Titre de la leçon", type: "Type de leçon", youtube: "URL ou identifiant YouTube", youtubeHelp: "Seuls les liens YouTube standard ou l’identifiant vidéo canonique de 11 caractères sont acceptés.", duration: "Durée (minutes)", visibility: "Visibilité chez le fournisseur", public: "Publique", unlisted: "Non répertoriée", visibilityHelp: "La visibilité du fournisseur ne protège pas le contenu payant.", content: "Contenu de la leçon", contentHelp: "Utilisez des titres et paragraphes clairs pour les apprenants.", quizHelp: "Enregistrez cette leçon quiz, puis configurez ses instructions, son seuil et ses questions ci-dessous.", markPreview: "Marquer comme aperçu du cours", save: "Enregistrer la leçon", adding: "Ajout…", saving: "Enregistrement…", moveUp: "Monter", moveDown: "Descendre", delete: "Supprimer" } : locale === "es" ? { video: "Vídeo", quiz: "Cuestionario", text: "Texto", lesson: "lección", add: "Añadir lección", assessment: "Evaluación", preview: "Vista previa", title: "Título de la lección", type: "Tipo de lección", youtube: "URL o ID de YouTube", youtubeHelp: "Solo se aceptan enlaces estándar de YouTube o el ID canónico de 11 caracteres.", duration: "Duración (minutos)", visibility: "Visibilidad del proveedor", public: "Público", unlisted: "No listado", visibilityHelp: "La visibilidad del proveedor no protege el contenido de pago.", content: "Contenido de la lección", contentHelp: "Usa títulos y párrafos claros para los estudiantes.", quizHelp: "Guarda esta lección y configura después sus instrucciones, puntuación y preguntas.", markPreview: "Marcar como vista previa del curso", save: "Guardar lección", adding: "Añadiendo…", saving: "Guardando…", moveUp: "Subir", moveDown: "Bajar", delete: "Eliminar" } : { video: "Video", quiz: "Quiz", text: "Text", lesson: "lesson", add: "Add lesson", assessment: "Quiz assessment", preview: "Preview", title: "Lesson title", type: "Lesson type", youtube: "YouTube URL or video ID", youtubeHelp: "Only standard YouTube links or the canonical 11-character video ID are accepted.", duration: "Duration (minutes)", visibility: "Provider visibility", public: "Public", unlisted: "Unlisted", visibilityHelp: "Provider visibility is not paid-content protection.", content: "Lesson content", contentHelp: "Use readable headings and well-organized paragraphs.", quizHelp: "Save this quiz lesson, then configure its instructions, passing score, questions, and correct answers below.", markPreview: "Mark as a course preview", save: "Save lesson", adding: "Adding…", saving: "Saving…", moveUp: "Move up", moveDown: "Move down", delete: "Delete" };
-  const [type, setType] = useState<"video" | "text" | "quiz">(lesson?.type ?? "video");
+  const recovery = useAuthoringRecovery(
+    editable ? authoringRecoveryKey(userId, "course", courseId, "module", moduleId, "lesson", lesson?.id ?? "new") : null,
+    {
+      title: lesson?.title ?? "",
+      type: lesson?.type ?? "video",
+      videoReference: lesson?.videoReference ?? "",
+      minutes: lesson?.durationSeconds ? String(Math.round(lesson.durationSeconds / 60)) : "",
+      visibility: lesson?.videoVisibility === "unlisted" ? "unlisted" : "public",
+      content: lesson?.content ?? "",
+      isPreview: lesson?.isPreview ?? false,
+    },
+  );
+  const { values } = recovery;
+  const { type } = values;
   const [saved, setSaved] = useState(false);
   const savedText = locale === "fr" ? "Leçon enregistrée. Vous pouvez ajouter une autre leçon ou passer à la couverture." : locale === "es" ? "Lección guardada. Puedes añadir otra lección o continuar a la portada." : "Lesson saved. Add another lesson or continue to the course cover.";
-  const continueLabel = locale === "fr" ? "Continuer vers la couverture" : locale === "es" ? "Continuar a la portada" : "Continue to course cover";
   const busy = Boolean(pendingKey);
   const key = lesson ? `lesson-${lesson.id}` : `add-lesson-${moduleId}`;
-  return <details className="lesson-editor"><summary><span>{lesson ? `${lesson.type === "video" ? copy.video : lesson.type === "quiz" ? copy.quiz : copy.text} ${copy.lesson}` : copy.add}</span>{lesson && <><strong>{lesson.title}</strong><small>{lesson.type === "video" ? formatDuration(lesson.durationSeconds) : lesson.type === "quiz" ? copy.assessment : `${copy.text} ${copy.lesson}`}{lesson.isPreview ? ` · ${copy.preview}` : ""}</small></>}</summary><form onChange={() => setSaved(false)} onSubmit={async (event) => setSaved(await onSave(moduleId, lesson, event))}><fieldset disabled={!editable || busy}><label className="course-field"><span className="field-label">{copy.title} <span className="required-mark" aria-hidden="true">*</span></span><input name="title" defaultValue={lesson?.title ?? ""} minLength={2} maxLength={160} required /></label><label className="course-field">{copy.type}<select name="lesson-type" value={type} onChange={(event) => setType(event.target.value as "video" | "text" | "quiz")}><option value="video">{copy.video}</option><option value="text">{copy.text}</option><option value="quiz">{copy.quiz}</option></select></label>{type === "video" ? <><label className="course-field"><span className="field-label">{copy.youtube} <span className="required-mark" aria-hidden="true">*</span></span><input name="youtube-url" defaultValue={lesson?.videoReference ?? ""} placeholder="https://www.youtube.com/watch?v=…" required /><span>{copy.youtubeHelp}</span></label><div className="course-form-grid"><label className="course-field"><span className="field-label">{copy.duration} <span className="required-mark" aria-hidden="true">*</span></span><input name="duration-minutes" type="number" min="1" max="1440" defaultValue={lesson?.durationSeconds ? Math.round(lesson.durationSeconds / 60) : ""} required /></label><label className="course-field">{copy.visibility}<select name="video-visibility" defaultValue={lesson?.videoVisibility === "unlisted" ? "unlisted" : "public"}><option value="public">{copy.public}</option><option value="unlisted">{copy.unlisted}</option></select><span>{copy.visibilityHelp}</span></label></div></> : type === "text" ? <label className="course-field"><span className="field-label">{copy.content} <span className="required-mark" aria-hidden="true">*</span></span><textarea name="content" defaultValue={lesson?.content ?? ""} rows={7} maxLength={20000} required /><span>{copy.contentHelp}</span></label> : <p className="course-field">{copy.quizHelp}</p>}<label className="lesson-preview"><input name="is-preview" type="checkbox" defaultChecked={lesson?.isPreview ?? false} />{copy.markPreview}</label></fieldset><div className="lesson-actions"><ActionButton className="button button-small" type="submit" isPending={pendingKey === key} pendingLabel={lesson ? copy.saving : copy.adding} disabled={!editable || busy}>{copy.save}</ActionButton>{lesson && <div className="row-actions"><button type="button" className="text-button" onClick={() => onMove("up")} disabled={!editable || busy || isFirst}>{copy.moveUp}</button><button type="button" className="text-button" onClick={() => onMove("down")} disabled={!editable || busy || isLast}>{copy.moveDown}</button><button type="button" className="text-button text-button-danger" onClick={onDelete} disabled={!editable || busy}>{copy.delete}</button></div>}</div>
-    {saved && (
-      <div className={styles.workflowNext}>
-        <p role="status">{savedText}</p>
-        <Link className="button button-primary" href={"/dashboard/instructor/courses/" + courseId + "?step=cover"}>{continueLabel}</Link>
-      </div>
-    )}
+  return <details className="lesson-editor"><summary><span>{lesson ? `${lesson.type === "video" ? copy.video : lesson.type === "quiz" ? copy.quiz : copy.text} ${copy.lesson}` : copy.add}</span>{lesson && <><strong>{lesson.title}</strong><small>{lesson.type === "video" ? formatDuration(lesson.durationSeconds) : lesson.type === "quiz" ? copy.assessment : `${copy.text} ${copy.lesson}`}{lesson.isPreview ? ` · ${copy.preview}` : ""}</small></>}</summary><form onChange={() => setSaved(false)} onSubmit={async (event) => {
+    const succeeded = await onSave(moduleId, lesson, event);
+    if (succeeded) recovery.clear();
+    setSaved(succeeded);
+  }}><fieldset disabled={!editable || busy}><label className="course-field"><span className="field-label">{copy.title} <span className="required-mark" aria-hidden="true">*</span></span><input name="title" value={values.title} onChange={(event) => recovery.update({ title: event.target.value })} minLength={2} maxLength={160} required /></label><label className="course-field">{copy.type}<select name="lesson-type" value={type} onChange={(event) => recovery.update({ type: event.target.value as typeof type })}><option value="video">{copy.video}</option><option value="text">{copy.text}</option><option value="quiz">{copy.quiz}</option></select></label>{type === "video" ? <><label className="course-field"><span className="field-label">{copy.youtube} <span className="required-mark" aria-hidden="true">*</span></span><input name="youtube-url" value={values.videoReference} onChange={(event) => recovery.update({ videoReference: event.target.value })} placeholder="https://www.youtube.com/watch?v=…" required /><span>{copy.youtubeHelp}</span></label><div className="course-form-grid"><label className="course-field"><span className="field-label">{copy.duration} <span className="required-mark" aria-hidden="true">*</span></span><input name="duration-minutes" type="number" min="1" max="1440" value={values.minutes} onChange={(event) => recovery.update({ minutes: event.target.value })} required /></label><label className="course-field">{copy.visibility}<select name="video-visibility" value={values.visibility} onChange={(event) => recovery.update({ visibility: event.target.value })}><option value="public">{copy.public}</option><option value="unlisted">{copy.unlisted}</option></select><span>{copy.visibilityHelp}</span></label></div></> : type === "text" ? <label className="course-field"><span className="field-label">{copy.content} <span className="required-mark" aria-hidden="true">*</span></span><textarea name="content" value={values.content} onChange={(event) => recovery.update({ content: event.target.value })} rows={7} maxLength={20000} required /><span>{copy.contentHelp}</span></label> : <p className="course-field">{copy.quizHelp}</p>}<label className="lesson-preview"><input name="is-preview" type="checkbox" checked={values.isPreview} onChange={(event) => recovery.update({ isPreview: event.target.checked })} />{copy.markPreview}</label></fieldset><div className="lesson-actions"><ActionButton className="button button-small" type="submit" isPending={pendingKey === key} pendingLabel={lesson ? copy.saving : copy.adding} disabled={!editable || busy}>{copy.save}</ActionButton>{lesson && <div className="row-actions"><button type="button" className="text-button" onClick={() => onMove("up")} disabled={!editable || busy || isFirst}>{copy.moveUp}</button><button type="button" className="text-button" onClick={() => onMove("down")} disabled={!editable || busy || isLast}>{copy.moveDown}</button><button type="button" className="text-button text-button-danger" onClick={onDelete} disabled={!editable || busy}>{copy.delete}</button></div>}</div>
+    {saved && <InlineFeedback variant="success">{savedText}</InlineFeedback>}
   </form></details>;
 }

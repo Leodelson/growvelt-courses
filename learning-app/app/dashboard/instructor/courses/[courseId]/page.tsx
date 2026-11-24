@@ -4,7 +4,7 @@ import { CourseDraftForm } from "@/app/components/instructor/course-draft-form";
 import { CourseSubmissionForm } from "@/app/components/instructor/course-submission-form";
 import { CourseStatusBadge } from "@/app/components/instructor/course-status-badge";
 import { CourseVideoCoverUpload } from "@/app/components/instructor/course-video-cover-upload";
-import { CourseWorkflow } from "@/app/components/instructor/authoring-tools";
+import { CourseStepActions, CourseWorkflow } from "@/app/components/instructor/authoring-tools";
 import { getRequestLocale } from "@/app/lib/i18n-server";
 import { getOwnInstructorCourse } from "@/app/lib/instructor/courses";
 import { getOwnInstructorCurriculum } from "@/app/lib/instructor/curriculum";
@@ -77,10 +77,8 @@ export default async function DashboardInstructorCourseEditorPage({ params, sear
       {step === "details" && (
         <>
           {course.status === "pending_review" && <p role="status">{text.pending}</p>}
-          <div className={styles.workflowActions}>
-            <Link className="button button-primary" href={base + "/curriculum"}>{draft ? text.curriculum : text.view}</Link>
-          </div>
           <CourseDraftForm
+            userId={user.id}
             mode="edit" courseId={course.course_id} status={course.status}
             initialValues={{
               title: course.title,
@@ -94,31 +92,28 @@ export default async function DashboardInstructorCourseEditorPage({ params, sear
               company_test_mode_only: course.company_test_mode_only,
             }}
           />
+          {!draft && <Link className="button button-secondary" href={base + "/curriculum"}>{text.view}</Link>}
         </>
       )}
 
       {step === "cover" && (
-        <>
-          <p className={styles.workflowHint}>{text.coverHint}</p>
-          <CourseVideoCoverUpload
-            courseId={course.course_id}
-            userId={user.id}
-            next={{ href: base + "?step=review", label: text.next }}
-          />
-          <Link className="button button-secondary" href={base + "/curriculum"}>{text.backToCurriculum}</Link>
-        </>
+        <CourseVideoCoverUpload
+          courseId={course.course_id}
+          userId={user.id}
+          backHref={base + "/curriculum"}
+          next={{ href: base + "?step=review", label: text.next }}
+        />
       )}
 
       {step === "review" && (
-        <>
-          <Link className="button button-secondary" href={base + "?step=cover"}>{text.backToCover}</Link>
-          {canSubmit ? <CourseSubmissionForm courseId={course.course_id} /> : (
-            <div className={styles.workflowNext}>
-              <p role="status">{text.missing}</p>
+        canSubmit ? <CourseSubmissionForm courseId={course.course_id} userId={user.id} backHref={base + "?step=cover"} /> : (
+          <>
+            <p role="status">{text.missing}</p>
+            <CourseStepActions step={4} backHref={base + "?step=cover"}>
               <Link className="button button-primary" href={base + "/curriculum"}>{text.backToCurriculum}</Link>
-            </div>
-          )}
-        </>
+            </CourseStepActions>
+          </>
+        )
       )}
     </section>
   );

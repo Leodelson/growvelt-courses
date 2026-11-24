@@ -14,13 +14,13 @@
   padding-bottom: 24px;
   border-bottom: 1px solid var(--line);
 }
-.createSection h2 {
+.createSection h2, .pricing h2 {
   margin: 0;
   color: var(--ink);
   font-size: clamp(19px, 2.5vw, 24px);
   line-height: 1.3;
 }
-.createHint, .createAction p {
+.createHint {
   margin: 0;
   color: var(--muted);
   font-size: 14px;
@@ -30,7 +30,16 @@
 .createForm :global(.course-field) select { min-height: 44px; }
 .createForm :global(.course-field) [aria-invalid="true"] { border-color: #dc555c; }
 .createForm :global(.course-field) .createError { color: light-dark(#a42129, #ffb4b8); }
-.createPricing { min-width: 0; }
+.pricing {
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr);
+  padding: clamp(14px, 3vw, 22px);
+}
+.pricing :global(.course-choice) {
+  grid-template-columns: auto minmax(0, 1fr);
+  overflow-wrap: anywhere;
+}
+.companyAccess > strong { color: var(--ink); }
 .accessOptions, .editAccessOptions { display: grid; gap: 11px; }
 .accessOptions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .accessOptions :global(.course-choice) {
@@ -43,18 +52,8 @@
   border-color: var(--purple);
   background: color-mix(in srgb, var(--surface) 94%, var(--purple));
 }
-.createAction {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 14px;
-  padding-top: 12px;
-}
-.editAction { display: contents; }
 @media (max-width: 620px) {
   .accessOptions { grid-template-columns: 1fr; }
-  .createAction { align-items: stretch; flex-direction: column; }
 }
 
 .page :global(.module-heading-title) {
@@ -76,23 +75,33 @@
 .page :global(.module-rename) > form { margin-top: 10px; }
 .page :global(.add-module-form) { align-items: end; }
 
-.workflowActions {
+.stepFooter {
+  grid-column: 1 / -1;
   display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
   align-items: center;
+  justify-content: space-between;
+  gap: 12px 20px;
+  min-width: 0;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 13px;
 }
-.workflowNext {
-  display: grid;
-  gap: 12px;
-  justify-items: start;
-  padding: 16px;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  background: var(--surface-muted);
+.stepButtons {
+  display: flex;
+  gap: 10px;
+  min-width: 0;
 }
-.workflowNext p, .workflowHint { margin: 0; color: var(--ink); line-height: 1.6; }
+.stepButtons :global(.button) {
+  min-height: 44px;
+  width: auto;
+  white-space: normal;
+  text-align: center;
+}
+.workflowHint { margin: 0; color: var(--ink); line-height: 1.6; }
 @media (max-width: 540px) {
-  .workflowNext { justify-items: stretch; }
-  .workflowActions { align-items: stretch; flex-direction: column; }
+  .stepFooter { flex-wrap: wrap; }
+  .stepButtons { flex: 1 0 100%; }
+  .stepButtons :global(.button-primary) { flex: 1; }
+  .stepFooter > span { margin-inline-start: auto; }
 }

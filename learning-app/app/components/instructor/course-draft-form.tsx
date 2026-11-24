@@ -8,7 +8,8 @@ import { useLanguage } from "@/app/components/language-provider";
 import { createClient } from "@/app/lib/supabase/browser";
 import { courseCategories, courseLevels, type CourseStatus } from "@/app/lib/instructor/course-options";
 
-import { DraftDetailsChecklist } from "./authoring-tools";
+import { CourseStepActions, DraftDetailsChecklist } from "./authoring-tools";
+import { authoringRecoveryKey, useAuthoringRecovery } from "./use-authoring-recovery";
 import styles from "./workbench.module.css";
 
 type CourseValues = {
@@ -25,6 +26,7 @@ type CourseValues = {
 
 type CourseDraftFormProps = {
   mode: "create" | "edit";
+  userId: string;
   courseId?: number;
   initialValues?: CourseValues;
   status?: CourseStatus;
@@ -60,7 +62,7 @@ function getSafePrice(value: FormDataEntryValue | null) {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-export function CourseDraftForm({ mode, courseId, initialValues = defaultValues, status = "draft", organizations = [] }: CourseDraftFormProps) {
+export function CourseDraftForm({ mode, userId, courseId, initialValues = defaultValues, status = "draft", organizations = [] }: CourseDraftFormProps) {
   const router = useRouter();
   const { locale } = useLanguage();
   const text = locale === "fr" ? { invalid: "Complétez les informations obligatoires et indiquez un prix NGN valide pour un brouillon payant.", saved: "Modifications enregistrées. Ce cours reste privé et non publié.", createError: "Nous n’avons pas pu créer ce brouillon. Vérifiez les informations et réessayez.", saveError: "Nous n’avons pas pu enregistrer ces modifications. Votre brouillon n’a pas été mis à jour.", readOnly: "Les informations de ce cours sont en lecture seule pour les instructeurs dans cette phase.", title: "Titre du cours", titleHelp: "Utilisez un titre clair axé sur le résultat. L’URL du cours est créée une fois et reste stable.", summary: "Résumé court", summaryHelp: "Affiché dans la découverte des cours. Restez précis et pratique.", description: "Description du cours", descriptionHelp: "Expliquez le résultat pratique, le public visé et l’approche pédagogique.", category: "Catégorie", level: "Niveau", access: "Accès au cours", free: "Cours gratuit", freeHelp: "Éligible à l’examen, à la publication et à l’inscription des apprenants lorsque le cours est terminé.", paid: "Cours payant", paidHelp: "Définit le prix du brouillon. La publication et les paiements sont contrôlés séparément.", price: "Prix (NGN)", priceHelp: "Définir un prix ne publie pas le cours et n’accorde pas l’accès aux apprenants.", creating: "Création du brouillon…", saving: "Enregistrement…", create: "Créer le brouillon", save: "Enregistrer" } : locale === "es" ? { invalid: "Completa los datos obligatorios e indica un precio NGN válido para un borrador de pago.", saved: "Cambios guardados. Este curso sigue siendo privado y no está publicado.", createError: "No pudimos crear este borrador. Revisa los datos e inténtalo de nuevo.", saveError: "No pudimos guardar estos cambios. Tu borrador no se ha actualizado.", readOnly: "Los datos de este curso son de solo lectura para los instructores en esta fase.", title: "Título del curso", titleHelp: "Usa un título claro orientado al resultado. La URL del curso se crea una vez y permanece estable.", summary: "Resumen breve", summaryHelp: "Se muestra al descubrir cursos. Hazlo claro y práctico.", description: "Descripción del curso", descriptionHelp: "Explica el resultado práctico, el estudiante previsto y el enfoque de aprendizaje.", category: "Categoría", level: "Nivel", access: "Acceso al curso", free: "Curso gratuito", freeHelp: "Elegible para revisión, publicación e inscripción cuando el curso esté completo.", paid: "Curso de pago", paidHelp: "Define el precio del borrador. La publicación y los pagos se controlan por separado.", price: "Precio (NGN)", priceHelp: "Establecer un precio no publica el curso ni concede acceso.", creating: "Creando borrador…", saving: "Guardando cambios…", create: "Crear borrador", save: "Guardar cambios" } : { invalid: "Complete the required metadata and provide a valid NGN price for a paid draft.", saved: "Draft changes saved. This course is still private and unpublished.", createError: "We couldn’t create this draft. Review the details and try again.", saveError: "We couldn’t save these changes. Your draft has not been updated.", readOnly: "This course metadata is read-only for Instructors in this phase.", title: "Course title", titleHelp: "Use a specific, outcome-led title. Your course URL is created once and stays stable.", summary: "Short summary", summaryHelp: "Shown in course discovery. Keep it focused and practical.", description: "Course description", descriptionHelp: "Explain the practical outcome, intended learner, and learning approach.", category: "Category", level: "Level", access: "Course access", free: "Free course", freeHelp: "Eligible for review, publication, and learner enrollment when the course is complete.", paid: "Paid course", paidHelp: "Sets this draft’s price. Publication and payment availability are controlled separately.", price: "Price (NGN)", priceHelp: "Setting a price does not publish the course or grant learner access.", creating: "Creating draft…", saving: "Saving changes…", create: "Create draft", save: "Save changes" };
@@ -73,13 +75,26 @@ export function CourseDraftForm({ mode, courseId, initialValues = defaultValues,
     return name === "price_amount" ? guide.price : `${guide.short} ${minimumLengths[name]} ${guide.characters}`;
   }
 
-  const [details, setDetails] = useState({title:initialValues.title,summary:initialValues.summary,description:initialValues.description});
-  const [draftPrice, setDraftPrice] = useState<number | null>(initialValues.price_amount);
-  const [isFree, setIsFree] = useState(initialValues.is_free);
   const [isPending, setIsPending] = useState(false);
   const [feedback, setFeedback] = useState<{ variant: "error" | "success" | "info"; message: string } | null>(null);
   const isEditable = status === "draft";
-  const [companyTestModeOnly, setCompanyTestModeOnly] = useState(initialValues.company_test_mode_only ?? false);
+  const recovery = useAuthoringRecovery(
+    isEditable ? authoringRecoveryKey(userId, "course", courseId ?? "new", "details") : null,
+    {
+      title: initialValues.title,
+      summary: initialValues.summary,
+      description: initialValues.description,
+      category: initialValues.category,
+      level: initialValues.level,
+      organizationId: "",
+      isFree: initialValues.is_free,
+      price: String(initialValues.price_amount ?? ""),
+      companyTestModeOnly: initialValues.company_test_mode_only ?? false,
+    },
+  );
+  const details = recovery.values;
+  const { isFree, companyTestModeOnly } = details;
+  const draftPrice = details.price === "" ? null : getSafePrice(details.price);
   const companyTestModeText = locale === "fr"
     ? { label: "Accès réservé aux responsables d’entreprise", help: "Ce cours restera absent du catalogue public et sera accessible uniquement aux responsables d’entreprise.", saveError: "Le brouillon a été enregistré, mais le paramètre d’accès réservé aux responsables d’entreprise n’a pas pu l’être. Réessayez." }
     : locale === "es"
@@ -146,6 +161,7 @@ export function CourseDraftForm({ mode, courseId, initialValues = defaultValues,
           : await supabase.rpc("create_instructor_course_draft", input);
         const created = data?.[0] as { course_id?: number } | undefined;
         if (error || !created?.course_id) throw new Error("create_failed");
+        recovery.clear();
         router.replace(`/dashboard/instructor/courses/${created.course_id}/curriculum`);
         router.refresh();
         return;
@@ -163,7 +179,9 @@ export function CourseDraftForm({ mode, courseId, initialValues = defaultValues,
           return;
         }
       }
+      recovery.clear();
       setFeedback({ variant: "success", message: text.saved });
+      router.push(`/dashboard/instructor/courses/${courseId}/curriculum`);
       router.refresh();
     } catch {
       setFeedback({ variant: "error", message: mode === "create" ? text.createError : text.saveError });
@@ -209,10 +227,10 @@ export function CourseDraftForm({ mode, courseId, initialValues = defaultValues,
           <label className="course-field">
             <RequiredLabel label={text.title} />
             <input
-              id="course-title" name="title" defaultValue={initialValues.title} minLength={3} maxLength={160} required
+              id="course-title" name="title" value={details.title} minLength={3} maxLength={160} required
               {...fieldState("title")}
               onChange={(event) => {
-                setDetails((current) => ({ ...current, title: event.target.value }));
+                recovery.update({ title: event.target.value });
                 clearFieldError("title");
               }}
             />
@@ -222,11 +240,11 @@ export function CourseDraftForm({ mode, courseId, initialValues = defaultValues,
           <label className="course-field">
             <RequiredLabel label={text.summary} />
             <textarea
-              id="course-summary" name="summary" defaultValue={initialValues.summary} minLength={10} maxLength={320} rows={3} required
+              id="course-summary" name="summary" value={details.summary} minLength={10} maxLength={320} rows={3} required
               placeholder={creating ? guide.summaryExample : undefined}
               {...fieldState("summary")}
               onChange={(event) => {
-                setDetails((current) => ({ ...current, summary: event.target.value }));
+                recovery.update({ summary: event.target.value });
                 clearFieldError("summary");
               }}
             />
@@ -236,11 +254,11 @@ export function CourseDraftForm({ mode, courseId, initialValues = defaultValues,
           <label className="course-field">
             <RequiredLabel label={text.description} />
             <textarea
-              id="course-description" name="description" defaultValue={initialValues.description} minLength={40} maxLength={10000} rows={creating ? 5 : 7} required
+              id="course-description" name="description" value={details.description} minLength={40} maxLength={10000} rows={creating ? 5 : 7} required
               placeholder={creating ? guide.descriptionExample : undefined}
               {...fieldState("description")}
               onChange={(event) => {
-                setDetails((current) => ({ ...current, description: event.target.value }));
+                recovery.update({ description: event.target.value });
                 clearFieldError("description");
               }}
             />
@@ -254,13 +272,13 @@ export function CourseDraftForm({ mode, courseId, initialValues = defaultValues,
           <div className="course-form-grid">
             <label className="course-field">
               <RequiredLabel label={text.category} />
-              <select name="category" defaultValue={initialValues.category} required>
+              <select name="category" value={details.category} onChange={(event) => recovery.update({ category: event.target.value })} required>
                 {courseCategories.map((category) => <option key={category} value={category}>{category}</option>)}
               </select>
             </label>
             <label className="course-field">
               <RequiredLabel label={text.level} />
-              <select name="level" defaultValue={initialValues.level} required>
+              <select name="level" value={details.level} onChange={(event) => recovery.update({ level: event.target.value })} required>
                 {courseLevels.map((level) => <option key={level} value={level}>{level}</option>)}
               </select>
             </label>
@@ -268,7 +286,7 @@ export function CourseDraftForm({ mode, courseId, initialValues = defaultValues,
           {creating && activeOrganizations.length > 0 && (
             <label className="course-field">
               {guide.organization}
-              <select name="organization_id" defaultValue="">
+              <select name="organization_id" value={activeOrganizations.some((organization) => String(organization.organization_id) === details.organizationId) ? details.organizationId : ""} onChange={(event) => recovery.update({ organizationId: event.target.value })}>
                 <option value="">{guide.personal}</option>
                 {activeOrganizations.map((organization) => (
                   <option key={organization.organization_id} value={organization.organization_id}>
@@ -281,20 +299,19 @@ export function CourseDraftForm({ mode, courseId, initialValues = defaultValues,
           )}
         </section>
 
-        <fieldset className={`course-pricing-fieldset ${creating ? styles.createPricing : ""}`}>
-          <legend>{text.access}</legend>
+        <fieldset className={`course-pricing-fieldset ${styles.pricing}`} aria-labelledby="course-access-heading">
+          <h2 id="course-access-heading">{text.access}</h2>
           <div className={creating ? styles.accessOptions : styles.editAccessOptions}>
             <label className="course-choice">
               <input type="radio" name="access" checked={isFree} onChange={() => {
-                setIsFree(true);
-                setCompanyTestModeOnly(false);
+                recovery.update({ isFree: true, companyTestModeOnly: false });
                 clearFieldError("price_amount");
               }} />
               {text.free}
               <span>{text.freeHelp}</span>
             </label>
             <label className="course-choice">
-              <input type="radio" name="access" checked={!isFree} onChange={() => setIsFree(false)} />
+              <input type="radio" name="access" checked={!isFree} onChange={() => recovery.update({ isFree: false })} />
               {text.paid}
               <span>{text.paidHelp}</span>
             </label>
@@ -304,10 +321,10 @@ export function CourseDraftForm({ mode, courseId, initialValues = defaultValues,
               <RequiredLabel label={text.price} />
               <input
                 name="price_amount" type="number" min="1" max="10000000" step="0.01" required
-                defaultValue={creating ? (draftPrice ?? "") : (initialValues.price_amount ?? "")}
+                value={details.price}
                 {...fieldState("price_amount")}
                 onChange={(event) => {
-                  setDraftPrice(event.target.value === "" ? null : Number(event.target.value));
+                  recovery.update({ price: event.target.value });
                   clearFieldError("price_amount");
                 }}
               />
@@ -316,21 +333,21 @@ export function CourseDraftForm({ mode, courseId, initialValues = defaultValues,
             </label>
           )}
           {!creating && !isFree && (
-            <label className="course-choice">
-              <input type="checkbox" checked={companyTestModeOnly} onChange={(event) => setCompanyTestModeOnly(event.target.checked)} />
-              <span><strong>{companyTestModeText.label}</strong><span>{companyTestModeText.help}</span></span>
+            <label className={`course-choice ${styles.companyAccess}`}>
+              <input type="checkbox" checked={companyTestModeOnly} onChange={(event) => recovery.update({ companyTestModeOnly: event.target.checked })} />
+              <strong>{companyTestModeText.label}</strong>
+              <span>{companyTestModeText.help}</span>
             </label>
           )}
         </fieldset>
       </fieldset>
 
       {isEditable && (
-        <div className={creating ? styles.createAction : styles.editAction}>
-          {creating && <p>{guide.next}</p>}
+        <CourseStepActions step={1} backHref="/dashboard/instructor/courses">
           <ActionButton className="button button-primary" type="submit" isPending={isPending} pendingLabel={creating ? text.creating : text.saving}>
-            {creating ? guide.save : text.save}
+            {creating ? guide.save : locale === "fr" ? "Enregistrer et continuer" : locale === "es" ? "Guardar y continuar" : "Save and continue"}
           </ActionButton>
-        </div>
+        </CourseStepActions>
       )}
     </form>
   );

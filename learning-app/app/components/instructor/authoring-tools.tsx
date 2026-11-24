@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { useLanguage } from "@/app/components/language-provider";
 import type { CurriculumModule } from "@/app/lib/instructor/curriculum";
 import { curriculumSnapshot, draftDetailChecks, workbenchCopy } from "@/app/lib/instructor/workbench";
@@ -35,6 +36,25 @@ export function CourseWorkflow({ courseId, active, draft = true }: {
       ))}</ol>
     </nav>
   );
+}
+
+export function CourseStepActions({ step, backHref, children }: {
+  step: 1 | 2 | 3 | 4;
+  backHref: string;
+  children: ReactNode;
+}) {
+  const { locale } = useLanguage();
+  const text = locale === "fr" ? { back: "Retour", step: `Étape ${step} sur 4` }
+    : locale === "es" ? { back: "Atrás", step: `Paso ${step} de 4` }
+    : { back: "Back", step: `Step ${step} of 4` };
+
+  return <div className={styles.stepFooter}>
+    <div className={styles.stepButtons}>
+      <Link className="button button-secondary" href={backHref} prefetch={false}>{text.back}</Link>
+      {children}
+    </div>
+    <span>{text.step}</span>
+  </div>;
 }
 export function DraftDetailsChecklist({values,isFree,price}:{values:{title:string;summary:string;description:string};isFree:boolean;price:number|null}) {
   const {locale}=useLanguage(),text=workbenchCopy[locale], checks=draftDetailChecks(values,isFree,price),labels=[text.titleCheck,text.summaryCheck,text.descriptionCheck,text.accessCheck];
