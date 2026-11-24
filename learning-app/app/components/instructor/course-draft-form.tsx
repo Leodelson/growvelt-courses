@@ -31,6 +31,15 @@ type CourseDraftFormProps = {
   organizations?: Array<{ organization_id: number; name: string; membership_role: "owner" | "admin" | "instructor"; organization_status: "active" | "suspended" | "archived"; membership_status: "active" | "suspended" | "revoked" }>;
 };
 
+const createCopy = {
+  en: { basics: "Course basics", classification: "Category and level", summaryExample: "Example: Learn to build a sales dashboard in Excel.", descriptionExample: "Example: This course is for beginners. You’ll clean sample sales data, create charts, and build a dashboard in Excel.", required: "All fields are required unless marked optional.", organization: "Provider organization (optional)", personal: "Personal instructor course", organizationHelp: "Choose who owns this draft. You’ll be the lead instructor.", next: "Your draft stays private. You can add lessons after saving.", save: "Save draft and continue", short: "Enter at least", characters: "characters.", price: "Enter a price between ₦1 and ₦10,000,000." },
+  fr: { basics: "Informations de base", classification: "Catégorie et niveau", summaryExample: "Exemple : apprenez à créer un tableau de bord des ventes dans Excel.", descriptionExample: "Exemple : ce cours s’adresse aux débutants. Vous nettoierez des données de vente, créerez des graphiques et réaliserez un tableau de bord dans Excel.", required: "Tous les champs sont obligatoires sauf indication contraire.", organization: "Organisation (facultatif)", personal: "Cours personnel", organizationHelp: "Choisissez le propriétaire du brouillon. Vous serez l’instructeur principal.", next: "Votre brouillon reste privé. Vous pourrez ajouter des leçons après l’enregistrement.", save: "Enregistrer et continuer", short: "Saisissez au moins", characters: "caractères.", price: "Saisissez un prix compris entre 1 et 10 000 000 NGN." },
+  es: { basics: "Datos básicos del curso", classification: "Categoría y nivel", summaryExample: "Ejemplo: aprende a crear un panel de ventas en Excel.", descriptionExample: "Ejemplo: este curso es para principiantes. Limpiarás datos de ventas, crearás gráficos y construirás un panel en Excel.", required: "Todos los campos son obligatorios salvo que se indiquen como opcionales.", organization: "Organización (opcional)", personal: "Curso personal", organizationHelp: "Elige quién será titular del borrador. Tú serás el instructor principal.", next: "Tu borrador seguirá siendo privado. Podrás añadir lecciones después de guardarlo.", save: "Guardar borrador y continuar", short: "Introduce al menos", characters: "caracteres.", price: "Introduce un precio entre 1 y 10.000.000 NGN." },
+} as const;
+
+type DraftField = "title" | "summary" | "description" | "price_amount";
+const minimumLengths = { title: 3, summary: 10, description: 40 } as const;
+
 const defaultValues: CourseValues = {
   title: "",
   summary: "",
@@ -51,6 +60,15 @@ export function CourseDraftForm({ mode, courseId, initialValues = defaultValues,
   const router = useRouter();
   const { locale } = useLanguage();
   const text = locale === "fr" ? { invalid: "Complétez les informations obligatoires et indiquez un prix NGN valide pour un brouillon payant.", saved: "Modifications enregistrées. Ce cours reste privé et non publié.", createError: "Nous n’avons pas pu créer ce brouillon. Vérifiez les informations et réessayez.", saveError: "Nous n’avons pas pu enregistrer ces modifications. Votre brouillon n’a pas été mis à jour.", readOnly: "Les informations de ce cours sont en lecture seule pour les instructeurs dans cette phase.", title: "Titre du cours", titleHelp: "Utilisez un titre clair axé sur le résultat. L’URL du cours est créée une fois et reste stable.", summary: "Résumé court", summaryHelp: "Affiché dans la découverte des cours. Restez précis et pratique.", description: "Description du cours", descriptionHelp: "Expliquez le résultat pratique, le public visé et l’approche pédagogique.", category: "Catégorie", level: "Niveau", access: "Accès au cours", free: "Cours gratuit", freeHelp: "Éligible à l’examen, à la publication et à l’inscription des apprenants lorsque le cours est terminé.", paid: "Cours payant", paidHelp: "Définit le prix du brouillon. La publication et les paiements sont contrôlés séparément.", price: "Prix (NGN)", priceHelp: "Définir un prix ne publie pas le cours et n’accorde pas l’accès aux apprenants.", creating: "Création du brouillon…", saving: "Enregistrement…", create: "Créer le brouillon", save: "Enregistrer" } : locale === "es" ? { invalid: "Completa los datos obligatorios e indica un precio NGN válido para un borrador de pago.", saved: "Cambios guardados. Este curso sigue siendo privado y no está publicado.", createError: "No pudimos crear este borrador. Revisa los datos e inténtalo de nuevo.", saveError: "No pudimos guardar estos cambios. Tu borrador no se ha actualizado.", readOnly: "Los datos de este curso son de solo lectura para los instructores en esta fase.", title: "Título del curso", titleHelp: "Usa un título claro orientado al resultado. La URL del curso se crea una vez y permanece estable.", summary: "Resumen breve", summaryHelp: "Se muestra al descubrir cursos. Hazlo claro y práctico.", description: "Descripción del curso", descriptionHelp: "Explica el resultado práctico, el estudiante previsto y el enfoque de aprendizaje.", category: "Categoría", level: "Nivel", access: "Acceso al curso", free: "Curso gratuito", freeHelp: "Elegible para revisión, publicación e inscripción cuando el curso esté completo.", paid: "Curso de pago", paidHelp: "Define el precio del borrador. La publicación y los pagos se controlan por separado.", price: "Precio (NGN)", priceHelp: "Establecer un precio no publica el curso ni concede acceso.", creating: "Creando borrador…", saving: "Guardando cambios…", create: "Crear borrador", save: "Guardar cambios" } : { invalid: "Complete the required metadata and provide a valid NGN price for a paid draft.", saved: "Draft changes saved. This course is still private and unpublished.", createError: "We couldn’t create this draft. Review the details and try again.", saveError: "We couldn’t save these changes. Your draft has not been updated.", readOnly: "This course metadata is read-only for Instructors in this phase.", title: "Course title", titleHelp: "Use a specific, outcome-led title. Your course URL is created once and stays stable.", summary: "Short summary", summaryHelp: "Shown in course discovery. Keep it focused and practical.", description: "Course description", descriptionHelp: "Explain the practical outcome, intended learner, and learning approach.", category: "Category", level: "Level", access: "Course access", free: "Free course", freeHelp: "Eligible for review, publication, and learner enrollment when the course is complete.", paid: "Paid course", paidHelp: "Sets this draft’s price. Publication and payment availability are controlled separately.", price: "Price (NGN)", priceHelp: "Setting a price does not publish the course or grant learner access.", creating: "Creating draft…", saving: "Saving changes…", create: "Create draft", save: "Save changes" };
+  const creating = mode === "create";
+  const guide = createCopy[locale];
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<DraftField, string>>>({});
+  const activeOrganizations = organizations.filter((item) => item.organization_status === "active" && item.membership_status === "active");
+
+  function fieldMessage(name: DraftField) {
+    return name === "price_amount" ? guide.price : `${guide.short} ${minimumLengths[name]} ${guide.characters}`;
+  }
+
   const [details, setDetails] = useState({title:initialValues.title,summary:initialValues.summary,description:initialValues.description});
   const [draftPrice, setDraftPrice] = useState<number | null>(initialValues.price_amount);
   const [isFree, setIsFree] = useState(initialValues.is_free);
@@ -77,6 +95,25 @@ export function CourseDraftForm({ mode, courseId, initialValues = defaultValues,
     const organizationId = Number(form.get("organization_id") ?? 0) || null;
     const priceAmount = isFree ? 0 : getSafePrice(form.get("price_amount"));
     const nextCompanyTestModeOnly = mode === "edit" && !isFree && companyTestModeOnly;
+
+    if (creating) {
+      const values = { title, summary, description };
+      const errors: Partial<Record<DraftField, string>> = {};
+      for (const field of ["title", "summary", "description"] as const) {
+        if (values[field].length < minimumLengths[field]) errors[field] = fieldMessage(field);
+      }
+      if (!isFree && (!priceAmount || priceAmount < 1 || priceAmount > 10000000)) {
+        errors.price_amount = fieldMessage("price_amount");
+      }
+      setFieldErrors(errors);
+      const firstError = Object.keys(errors)[0];
+      if (firstError) {
+        const input = event.currentTarget.elements.namedItem(firstError);
+        if (input instanceof HTMLElement) input.focus();
+        setFeedback(null);
+        return;
+      }
+    }
 
     if (title.length < 3 || summary.length < 10 || description.length < 40 || (!isFree && (!priceAmount || priceAmount <= 0))) {
       setFeedback({ variant: "error", message: text.invalid });
@@ -131,23 +168,166 @@ export function CourseDraftForm({ mode, courseId, initialValues = defaultValues,
     }
   }
 
-  return <form className="course-draft-form" onSubmit={handleSubmit}>
-    <DraftDetailsChecklist values={details} isFree={isFree} price={draftPrice} />
-    {!isEditable && <InlineFeedback variant="info">{text.readOnly}</InlineFeedback>}
-    {feedback && <InlineFeedback variant={feedback.variant}>{feedback.message}</InlineFeedback>}
-    <fieldset disabled={isPending || !isEditable}>
-      <label className="course-field">{text.title}<input id="course-title" name="title" defaultValue={initialValues.title} onChange={(event) => setDetails(current=>({...current,title:event.target.value}))} minLength={3} maxLength={160} required /><span className={styles.meter}><span>{text.titleHelp}</span><span>{details.title.length} / 160</span></span></label>
-      <label className="course-field">{text.summary}<textarea id="course-summary" name="summary" defaultValue={initialValues.summary} onChange={(event) => setDetails(current=>({...current,summary:event.target.value}))} minLength={10} maxLength={320} rows={3} required /><span className={styles.meter}><span>{text.summaryHelp}</span><span>{details.summary.length} / 320</span></span></label>
-      <label className="course-field">{text.description}<textarea id="course-description" name="description" defaultValue={initialValues.description} onChange={(event) => setDetails(current=>({...current,description:event.target.value}))} minLength={40} maxLength={10000} rows={7} required /><span className={styles.meter}><span>{text.descriptionHelp}</span><span>{details.description.length} / 10000</span></span></label>
-      <div className="course-form-grid">
-        <label className="course-field">{text.category}<select name="category" defaultValue={initialValues.category} required>{courseCategories.map((category) => <option key={category} value={category}>{category}</option>)}</select></label>
-        <label className="course-field">{text.level}<select name="level" defaultValue={initialValues.level} required>{courseLevels.map((level) => <option key={level} value={level}>{level}</option>)}</select></label>
-      </div>
-      {mode === "create" && organizations.length > 0 && <label className="course-field">Provider organization (optional)<select name="organization_id" defaultValue=""><option value="">Personal instructor course</option>{organizations.filter((organization) => organization.organization_status === "active" && organization.membership_status === "active").map((organization) => <option key={organization.organization_id} value={organization.organization_id}>{organization.name} ({organization.membership_role})</option>)}</select><span>Choose an organization to create this as an organization-owned draft. You remain its lead instructor and commercial owner until a later provider-commerce phase.</span></label>}
-      <fieldset className="course-pricing-fieldset">
-        <legend>{text.access}</legend><label className="course-choice"><input type="radio" name="access" checked={isFree} onChange={() => { setIsFree(true); setCompanyTestModeOnly(false); }} />{text.free}<span>{text.freeHelp}</span></label><label className="course-choice"><input type="radio" name="access" checked={!isFree} onChange={() => setIsFree(false)} />{text.paid}<span>{text.paidHelp}</span></label>{!isFree && <label className="course-field course-price-field">{text.price}<input name="price_amount" onChange={(event)=>setDraftPrice(Number(event.target.value))} type="number" min="1" max="10000000" step="0.01" defaultValue={initialValues.price_amount ?? ""} required /><span>{text.priceHelp}</span></label>}{mode === "edit" && !isFree && <label className="course-choice"><input type="checkbox" checked={companyTestModeOnly} onChange={(event) => setCompanyTestModeOnly(event.target.checked)} /><span><strong>{companyTestModeText.label}</strong><span>{companyTestModeText.help}</span></span></label>}
+  const clearFieldError = (field: DraftField) => {
+    if (fieldErrors[field]) setFieldErrors((current) => ({ ...current, [field]: undefined }));
+  };
+  const fieldState = (field: DraftField) => ({
+    "aria-invalid": fieldErrors[field] ? true : undefined,
+    "aria-describedby": fieldErrors[field] ? `course-${field}-error` : undefined,
+  });
+  const errorFor = (field: DraftField) => fieldErrors[field] && (
+    <span id={`course-${field}-error`} className={styles.createError} role="alert">{fieldErrors[field]}</span>
+  );
+
+  return (
+    <form
+      className={`course-draft-form ${creating ? styles.createForm : ""}`}
+      onSubmit={handleSubmit}
+      onInvalid={(event) => {
+        if (!creating) return;
+        const input = event.target;
+        if (!(input instanceof HTMLInputElement || input instanceof HTMLTextAreaElement)) return;
+        const field = input.name;
+        if (field === "title" || field === "summary" || field === "description" || field === "price_amount") {
+          const message = input.validity.valueMissing || input.validity.tooShort || input.validity.rangeUnderflow || input.validity.rangeOverflow
+            ? fieldMessage(field) : input.validationMessage;
+          setFieldErrors((current) => ({ ...current, [field]: message }));
+        }
+      }}
+    >
+      {creating ? <p className={styles.createHint}>{guide.required}</p> : <DraftDetailsChecklist values={details} isFree={isFree} price={draftPrice} />}
+      {!isEditable && <InlineFeedback variant="info">{text.readOnly}</InlineFeedback>}
+      {feedback && <InlineFeedback variant={feedback.variant}>{feedback.message}</InlineFeedback>}
+
+      <fieldset disabled={isPending || !isEditable}>
+        <section className={creating ? styles.createSection : styles.editSection}>
+          {creating && <h2>{guide.basics}</h2>}
+          <label className="course-field">
+            {text.title}
+            <input
+              id="course-title" name="title" defaultValue={initialValues.title} minLength={3} maxLength={160} required
+              {...fieldState("title")}
+              onChange={(event) => {
+                setDetails((current) => ({ ...current, title: event.target.value }));
+                clearFieldError("title");
+              }}
+            />
+            {errorFor("title")}
+            <span className={styles.meter}><span>{text.titleHelp}</span><span>{details.title.length} / 160</span></span>
+          </label>
+          <label className="course-field">
+            {text.summary}
+            <textarea
+              id="course-summary" name="summary" defaultValue={initialValues.summary} minLength={10} maxLength={320} rows={3} required
+              placeholder={creating ? guide.summaryExample : undefined}
+              {...fieldState("summary")}
+              onChange={(event) => {
+                setDetails((current) => ({ ...current, summary: event.target.value }));
+                clearFieldError("summary");
+              }}
+            />
+            {errorFor("summary")}
+            <span className={styles.meter}><span>{text.summaryHelp}</span><span>{details.summary.length} / 320</span></span>
+          </label>
+          <label className="course-field">
+            {text.description}
+            <textarea
+              id="course-description" name="description" defaultValue={initialValues.description} minLength={40} maxLength={10000} rows={creating ? 5 : 7} required
+              placeholder={creating ? guide.descriptionExample : undefined}
+              {...fieldState("description")}
+              onChange={(event) => {
+                setDetails((current) => ({ ...current, description: event.target.value }));
+                clearFieldError("description");
+              }}
+            />
+            {errorFor("description")}
+            <span className={styles.meter}><span>{text.descriptionHelp}</span><span>{details.description.length} / 10000</span></span>
+          </label>
+        </section>
+
+        <section className={creating ? styles.createSection : styles.editSection}>
+          {creating && <h2>{guide.classification}</h2>}
+          <div className="course-form-grid">
+            <label className="course-field">
+              {text.category}
+              <select name="category" defaultValue={initialValues.category} required>
+                {courseCategories.map((category) => <option key={category} value={category}>{category}</option>)}
+              </select>
+            </label>
+            <label className="course-field">
+              {text.level}
+              <select name="level" defaultValue={initialValues.level} required>
+                {courseLevels.map((level) => <option key={level} value={level}>{level}</option>)}
+              </select>
+            </label>
+          </div>
+          {creating && activeOrganizations.length > 0 && (
+            <label className="course-field">
+              {guide.organization}
+              <select name="organization_id" defaultValue="">
+                <option value="">{guide.personal}</option>
+                {activeOrganizations.map((organization) => (
+                  <option key={organization.organization_id} value={organization.organization_id}>
+                    {organization.name} ({organization.membership_role})
+                  </option>
+                ))}
+              </select>
+              <span>{guide.organizationHelp}</span>
+            </label>
+          )}
+        </section>
+
+        <fieldset className={`course-pricing-fieldset ${creating ? styles.createPricing : ""}`}>
+          <legend>{text.access}</legend>
+          <div className={creating ? styles.accessOptions : styles.editAccessOptions}>
+            <label className="course-choice">
+              <input type="radio" name="access" checked={isFree} onChange={() => {
+                setIsFree(true);
+                setCompanyTestModeOnly(false);
+                clearFieldError("price_amount");
+              }} />
+              {text.free}
+              <span>{text.freeHelp}</span>
+            </label>
+            <label className="course-choice">
+              <input type="radio" name="access" checked={!isFree} onChange={() => setIsFree(false)} />
+              {text.paid}
+              <span>{text.paidHelp}</span>
+            </label>
+          </div>
+          {!isFree && (
+            <label className="course-field course-price-field">
+              {text.price}
+              <input
+                name="price_amount" type="number" min="1" max="10000000" step="0.01" required
+                defaultValue={creating ? (draftPrice ?? "") : (initialValues.price_amount ?? "")}
+                {...fieldState("price_amount")}
+                onChange={(event) => {
+                  setDraftPrice(event.target.value === "" ? null : Number(event.target.value));
+                  clearFieldError("price_amount");
+                }}
+              />
+              {errorFor("price_amount")}
+              <span>{text.priceHelp}</span>
+            </label>
+          )}
+          {!creating && !isFree && (
+            <label className="course-choice">
+              <input type="checkbox" checked={companyTestModeOnly} onChange={(event) => setCompanyTestModeOnly(event.target.checked)} />
+              <span><strong>{companyTestModeText.label}</strong><span>{companyTestModeText.help}</span></span>
+            </label>
+          )}
+        </fieldset>
       </fieldset>
-    </fieldset>
-    {isEditable && <ActionButton className="button button-primary" type="submit" isPending={isPending} pendingLabel={mode === "create" ? text.creating : text.saving}>{mode === "create" ? text.create : text.save}</ActionButton>}
-  </form>;
+
+      {isEditable && (
+        <div className={creating ? styles.createAction : styles.editAction}>
+          {creating && <p>{guide.next}</p>}
+          <ActionButton className="button button-primary" type="submit" isPending={isPending} pendingLabel={creating ? text.creating : text.saving}>
+            {creating ? guide.save : text.save}
+          </ActionButton>
+        </div>
+      )}
+    </form>
+  );
 }

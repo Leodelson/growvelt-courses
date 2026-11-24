@@ -10,6 +10,10 @@ export const metadata = { title: "Create course draft" };
 export default async function DashboardNewInstructorCoursePage() {
   const locale = await getRequestLocale();
   const organizations = await getOwnInstructorOrganizations();
-  const text = locale === "fr" ? { eyebrow: "Brouillon privé", title: "Commencez un cours avec un résultat clair.", copy: "Cela crée un brouillon privé appartenant à l’instructeur. Il ne soumet pas, ne publie pas et ne propose pas le cours aux apprenants." } : locale === "es" ? { eyebrow: "Borrador privado", title: "Comienza un curso con un resultado claro.", copy: "Esto crea un borrador privado del instructor. No envía, publica ni ofrece el curso a los estudiantes." } : { eyebrow: "Private draft", title: "Start a course with a specific outcome.", copy: "This creates a private Instructor-owned draft. It does not submit, publish, or offer the course to learners." };
+  const text = locale === "fr"
+    ? { eyebrow: "Brouillon privé", title: "Créer un cours", copy: "Renseignez les détails de votre cours. Vous pourrez ajouter des leçons après l’enregistrement du brouillon." }
+    : locale === "es"
+      ? { eyebrow: "Borrador privado", title: "Crear un curso", copy: "Completa los datos del curso. Podrás añadir lecciones después de guardar el borrador." }
+      : { eyebrow: "Private draft", title: "Create a course", copy: "Set up your course details. You can add lessons after you save your draft." };
   return <section className={`course-editor-page section-shell ${styles.page}`}><CourseWorkflow active="details" /><header className="course-editor-heading"><div><p className="eyebrow">{text.eyebrow}</p><h1>{text.title}</h1><p>{text.copy}</p></div></header><CourseDraftForm mode="create" organizations={organizations} /></section>;
 }

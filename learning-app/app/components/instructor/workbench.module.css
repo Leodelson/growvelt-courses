@@ -7,3 +7,52 @@
 .snapshot { display: grid; gap: 16px; padding: 22px; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); }.snapshot dl { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 15px; margin: 0; }.snapshot dt { color: var(--muted); font-size: 12px; }.snapshot dd { margin: 8px 0 0; color: var(--ink); font-size: 28px; font-weight: 700; }.snapshot > p { color: var(--muted); font-size: 12px; margin: 0; line-height: 1.7; }.snapshot nav { display: flex; align-items: center; flex-wrap: wrap; gap: 9px; padding-top: 16px; border-top: 1px solid var(--line); }.snapshot nav > strong { width: 100%; color: var(--muted); font-size: 12px; }.snapshot nav a { max-width: 100%; padding: 9px 12px; border: 1px solid var(--line); border-radius: 999px; color: var(--purple); font-size: 12px; overflow-wrap: anywhere; }.page :global(.curriculum-editor) { max-width: none; }.page :global(.curriculum-toolbar) { grid-template-columns: 1fr; box-shadow: none; }.page :global(.curriculum-toolbar) h2 { margin-bottom: 10px; font-size: 26px; }.page :global(.curriculum-module) { box-shadow: none; scroll-margin-top: 100px; }.page :global(.curriculum-empty) { max-width: none; box-shadow: none; }.page :global(.module-heading) { grid-template-columns: auto minmax(0,1fr); }.page :global(.module-heading) > :global(.row-actions) { grid-column: 1 / -1; }.page :global(.lesson-editor) summary strong { white-space: normal; overflow-wrap: anywhere; }.page :global(.lesson-editor) summary { min-height: 52px; }.page :global(.course-submission-panel) { border-radius: 20px; box-shadow: none; }
 @media(max-width:900px) { .controls { grid-template-columns: repeat(2,minmax(0,1fr)); }.controls label:first-child { grid-column: 1 / -1; }.page :global(.course-editor-workspace) { grid-template-columns: 1fr; }.page :global(.instructor-analytics-summary) { grid-template-columns: repeat(2,minmax(0,1fr)); } }
 @media(max-width:620px) { .page { gap: 18px; }.page :global(.instructor-analytics-hero),.page :global(.course-management-heading),.page :global(.course-editor-heading),.page :global(.instructor-earnings-hero) { padding: 24px; border-radius: 20px; }.page :global(.instructor-analytics-summary) { gap: 10px; }.page :global(.instructor-analytics-summary) article { padding: 17px; min-height: 0; }.page :global(.instructor-analytics-summary) small { font-size: 11px; line-height: 1.6; }.page :global(.instructor-analytics-course-list) .item > article { padding: 18px; }.page :global(.instructor-analytics-course-heading) { flex-direction: row; }.page :global(.instructor-course-row) { padding: 20px; }.checklist ul { grid-template-columns: 1fr; }.pipeline nav { grid-template-columns: repeat(2,minmax(0,1fr)); }.pipeline { padding: 22px; }.snapshot dl { grid-template-columns: repeat(2,minmax(0,1fr)); }.workflow ol { gap: 12px; }.workflow li { font-size: 11px; }.page :global(.add-module-form),.page :global(.module-title-form) { grid-template-columns: 1fr; }.page :global(.course-management-actions) { width: 100%; }.page :global(.course-management-actions) a { flex: 1 1 140px; }.page :global(.course-editor-status) { align-items: start; } }
+
+.createForm > fieldset { gap: 24px; }
+.createSection, .editSection { display: grid; gap: 20px; min-width: 0; }
+.createSection {
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--line);
+}
+.createSection h2 {
+  margin: 0;
+  color: var(--ink);
+  font-size: clamp(19px, 2.5vw, 24px);
+  line-height: 1.3;
+}
+.createHint, .createAction p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+.createForm :global(.course-field) input,
+.createForm :global(.course-field) select { min-height: 44px; }
+.createForm :global(.course-field) [aria-invalid="true"] { border-color: #dc555c; }
+.createForm :global(.course-field) .createError { color: light-dark(#a42129, #ffb4b8); }
+.createPricing { min-width: 0; }
+.accessOptions, .editAccessOptions { display: grid; gap: 11px; }
+.accessOptions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.accessOptions :global(.course-choice) {
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+}
+.accessOptions :global(.course-choice):has(input:checked) {
+  border-color: var(--purple);
+  background: color-mix(in srgb, var(--surface) 94%, var(--purple));
+}
+.createAction {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+  padding-top: 12px;
+}
+.editAction { display: contents; }
+@media (max-width: 620px) {
+  .accessOptions { grid-template-columns: 1fr; }
+  .createAction { align-items: stretch; flex-direction: column; }
+}
