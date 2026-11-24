@@ -50,7 +50,11 @@ export function createEmailCenterResendTransport(options: TransportOptions) {
   let sequence = Promise.resolve();
   async function request(path: string, key: string | undefined, method = "GET", payload?: object, idempotencyKey?: string): Promise<Record<string, unknown>> {
     if (options.allowProviderWrites !== true) throw new Error("Provider writes are not activated.");
-    if (!key || !/^re_[A-Za-z0-9_-]+$/.test(key)) throw new Error("A valid server-side provider key is required.");
+    if (!key || !/^re_[A-Za-z0-9_-]+$/.test(key)) {
+      throw new Error(path.startsWith("/broadcasts") || path.startsWith("/contacts")
+        ? "The Learning Resend marketing key is missing or invalid. Broadcast drafts and status checks need that key."
+        : "The Learning Resend sending key is missing or invalid.");
+    }
     const operation = sequence.then(async () => {
       await (options.pace ? options.pace() : delay(250));
       let response: Response;

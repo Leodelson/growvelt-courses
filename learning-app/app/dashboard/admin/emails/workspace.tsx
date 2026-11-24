@@ -19,6 +19,20 @@ type SendConfirmation = {
 type Confirmation = { kind: "send"; message: SendConfirmation } | { kind: "cancel"; operation: BroadcastOperation };
 export type EmailCenterState = {drafts:Draft[];legacy:Legacy[];senders:{id:string;configured:boolean}[];deliveryEnabled:boolean;recoveryEnabled?:boolean;deliveryNotice:string;operations?:BroadcastOperation[];attempts?:{draft_id:string;target_key:string;state:string}[]};
 const api = "/api/learning/admin/emails";
+const broadcastStatuses: Record<string, string> = {
+  draft: "Draft · no email sent",
+  queued: "Queued with Resend",
+  scheduled: "Scheduled with Resend",
+  sent: "Resend marked the broadcast sent · inbox delivery unverified",
+  canceled: "Canceled",
+  dispatching: "Send started · waiting for provider status",
+};
+const accountStatuses: Record<string, string> = {
+  accepted: "Accepted by Resend · inbox delivery unverified",
+  skipped: "Not sent · sending budget or provider usage check did not pass",
+  claimed: "Send status pending",
+  uncertain: "Delivery unconfirmed · check Resend before resending",
+};
 export function LearningEmailCenter({initialState}:{initialState?:EmailCenterState} = {}) {
   const [data,setData] = useState<EmailCenterState|null>(initialState ?? null);
   const [document,setDocument] = useState<EmailDocument>({...emptyEmailDocument});
@@ -131,13 +145,14 @@ export function LearningEmailCenter({initialState}:{initialState?:EmailCenterSta
       setSendLocked(true);
       if (mode==="marketing") {
         const result=await post({action:"dispatch-broadcast",id,revision});
-        setNotice(result.state==="sent" ? "Email sent." : result.state==="queued" || result.state==="scheduled"
+        setNotice(result.state==="sent" ? "Resend marked the broadcast sent. Inbox delivery is unverified." : result.state==="queued" || result.state==="scheduled"
           ? "Email queued." : result.notice || "Check the status in Email activity.");
       } else {
         const results=[];
         for (const target of targets) results.push(await post({action:"send",id,revision,targetUserId:target.userId}));
         const accepted=results.filter(result=>result.state==="accepted").length;
-        setNotice(accepted===targets.length ? "Email accepted for delivery."
+        setNotice(accepted===targets.length ? "Resend accepted the email for delivery. Inbox delivery is unverified."
+          : results.every(result=>result.state==="budget_blocked") ? "No email was sent. The account email budget or provider usage check did not pass."
           : `${accepted} of ${targets.length} accepted for delivery. Check Email activity for the remaining statuses.`);
       }
     } catch(cause) {
@@ -149,7 +164,7 @@ export function LearningEmailCenter({initialState}:{initialState?:EmailCenterSta
     if (!beginAction()) return;
     try {
       const result=await post({action,id:operation.draft_id,revision:operation.revision});
-      setNotice(result.notice || `Email status: ${result.state}.`);
+      setNotice(broadcastStatuses[result.state] || result.notice || `Email status: ${result.state}.`);
     } catch(cause) {
       setError(cause instanceof Error ? cause.message : "Email status is unavailable.");
     } finally {await refreshHistory();finishAction();}
@@ -211,21 +226,22 @@ export function LearningEmailCenter({initialState}:{initialState?:EmailCenterSta
           <h2>Sender</h2>
           <div className={styles.choices}>{senderChoices.map(sender=><button key={sender.id} type="button" aria-pressed={document.sender===sender.id} className={styles.choice} onClick={()=>patch({sender:sender.id})}>
             <Mail size={19} aria-hidden="true"/><strong>{sender.label}</strong>
+            <span>{sender.description}</span>
             {document.sender===sender.id && <Check className={styles.check} size={16} aria-hidden="true"/>}
           </button>)}</div>
         </section>
         <section className={styles.section}>
           <h2>Email type</h2>
           <div className={styles.choices}>
-            <button type="button" className={styles.choice} aria-pressed={document.mode==="marketing"} onClick={()=>patch({mode:"marketing"})}><Mail size={19} aria-hidden="true"/><strong>Announcement</strong><span>News or promotions for opted-in users.</span></button>
-            <button type="button" className={styles.choice} aria-pressed={document.mode==="transactional"} onClick={()=>patch({mode:"transactional",audience:"specific",recipients:[]})}><Mail size={19} aria-hidden="true"/><strong>Account or support</strong><span>Service messages to selected users.</span></button>
+            <button type="button" className={styles.choice} aria-pressed={document.mode==="marketing"} onClick={()=>patch({mode:"marketing"})}><Mail size={19} aria-hidden="true"/><strong>Announcement</strong><span>Course news, newsletters, and promotions for users who opted in.</span></button>
+            <button type="button" className={styles.choice} aria-pressed={document.mode==="transactional"} onClick={()=>{if (document.mode!=="transactional") patch({mode:"transactional",audience:"specific",recipients:[]});}}><Mail size={19} aria-hidden="true"/><strong>Account or support</strong><span>Individual account notices and support follow-ups for up to 10 selected users.</span></button>
           </div>
         </section>
         <section className={styles.section}>
           <h2>Recipients</h2>
           <div className={styles.choices}>{audienceChoices.filter(audience=>document.mode==="marketing" || audience.id==="specific").map(audience=><button type="button" key={audience.id} aria-pressed={document.audience===audience.id} className={styles.choice} onClick={()=>{
             if (document.audience!==audience.id) patch({audience:audience.id,recipients:[]});
-          }}><Users size={19} aria-hidden="true"/><strong>{audience.label}</strong></button>)}</div>
+          }}><Users size={19} aria-hidden="true"/><strong>{audience.label}</strong><span>{audience.description}</span>{document.audience===audience.id && <Check className={styles.check} size={16} aria-hidden="true"/>}</button>)}</div>
           {document.audience==="specific" && <label>Account emails or IDs, one per line<textarea rows={4} required value={document.recipients.join("\n")} onChange={event=>patch({recipients:event.target.value.split("\n")})}/></label>}
         </section>
         <section className={styles.section}>
@@ -264,13 +280,16 @@ export function LearningEmailCenter({initialState}:{initialState?:EmailCenterSta
       {!data?.operations?.length && !data?.attempts?.length && !data?.legacy.length && <p>No send activity yet.</p>}
       {data?.operations?.map(operation=><div className={styles.recovery} key={operation.draft_id}>
         <strong>{data.drafts.find(draft=>draft.id===operation.draft_id)?.document.subject || "Saved broadcast"}</strong>
-        <small>{operation.provider_status || operation.phase}</small>
+        <small>{broadcastStatuses[operation.phase] || operation.phase}</small>
         <div className={styles.actions}>
-          <button type="button" className="button button-secondary" disabled={busy || !(data.deliveryEnabled || data.recoveryEnabled)} onClick={()=>void checkDelivery("reconcile-broadcast",operation)}>Check status</button>
+          {!["sent","canceled","abandoned"].includes(operation.phase) && <button type="button" className="button button-secondary" disabled={busy || !(data.deliveryEnabled || data.recoveryEnabled)} onClick={()=>void checkDelivery("reconcile-broadcast",operation)}>Check broadcast status</button>}
           {["dispatching","queued"].includes(operation.phase) && <button type="button" className="button button-secondary" disabled={busy || !(data.deliveryEnabled || data.recoveryEnabled)} onClick={()=>setConfirmation({kind:"cancel",operation})}>Cancel queued email</button>}
         </div>
       </div>)}
-      {data?.attempts?.filter(attempt=>attempt.target_key!=="broadcast").map(attempt=><p key={`${attempt.draft_id}-${attempt.target_key}`}>Account email · {attempt.state}</p>)}
+      {data?.attempts?.filter(attempt=>attempt.target_key!=="broadcast").map(attempt=><div className={styles.recovery} key={`${attempt.draft_id}-${attempt.target_key}`}>
+        <strong>{data.drafts.find(draft=>draft.id===attempt.draft_id)?.document.subject || "Account email"}</strong>
+        <small>{accountStatuses[attempt.state] || attempt.state}</small>
+      </div>)}
       {data?.legacy.map(item=><p key={item.id}>{item.subject} · {item.status} · {item.sent_count} accepted · {item.failed_count} failed</p>)}
       {savedEmails.length>0 && <details>
         <summary>Continue a saved email</summary>
