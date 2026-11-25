@@ -296,12 +296,12 @@ export function LearningEmailCenter({initialState,operatorId}:{initialState?:Ema
           <div className={styles.choices}>{audienceChoices.filter(audience=>document.mode==="marketing" || audience.id==="specific").map(audience=><button type="button" key={audience.id} aria-pressed={document.audience===audience.id} className={styles.choice} onClick={()=>{
             if (document.audience!==audience.id) patch({audience:audience.id,recipients:[]});
           }}><Users size={19} aria-hidden="true"/><strong>{audience.label}</strong><span>{audience.description}</span>{document.audience===audience.id && <Check className={styles.check} size={16} aria-hidden="true"/>}</button>)}</div>
-          {document.audience==="specific" && <label>Account emails or IDs, one per line<textarea rows={4} required value={document.recipients.join("\n")} onChange={event=>patch({recipients:event.target.value.split("\n")})}/></label>}
+          {document.audience==="specific" && <label><span>Account emails or IDs, one per line <span className="required-mark" aria-hidden="true">*</span></span><textarea rows={4} required value={document.recipients.join("\n")} onChange={event=>patch({recipients:event.target.value.split("\n")})}/></label>}
         </section>
         <section className={styles.section}>
           <h2>Email</h2>
-          <label>Subject<input value={document.subject} minLength={3} maxLength={160} required placeholder="Your email subject" onChange={event=>patch({subject:event.target.value})}/></label>
-          <label htmlFor="learning-email-body">Message</label>
+          <label><span>Subject <span className="required-mark" aria-hidden="true">*</span></span><input value={document.subject} minLength={3} maxLength={160} required placeholder="Your email subject" onChange={event=>patch({subject:event.target.value})}/></label>
+          <label htmlFor="learning-email-body">Message <span className="required-mark" aria-hidden="true">*</span></label>
           <div className={styles.editor}>
             <div className={styles.toolbar} role="group" aria-label="Message formatting">
               <button type="button" aria-label="Add bold text" onClick={()=>format("**")}><Bold size={17}/></button>

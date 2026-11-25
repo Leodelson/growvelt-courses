@@ -1,5 +1,5 @@
 .page { width: min(1440px, calc(100% - 64px)); margin: 0 auto; padding: 32px 0 64px; min-width: 0; }
-.dashboard { width: 100%; padding-top: 0; }
+.dashboard { width: 100%; padding-top: 0; container-type: inline-size; }
 .hero { padding: clamp(24px, 4vw, 48px); border: 1px solid var(--line); border-radius: 24px; margin-bottom: 28px; background: radial-gradient(ellipse at 100% 0%, color-mix(in srgb, var(--purple) 12%, transparent), transparent 60%), var(--surface); }
 .hero h1 { font-size: clamp(36px, 4.4vw, 60px); line-height: 1.1; letter-spacing: -.045em; margin: 20px 0; font-weight: 650; text-wrap: balance; }
 .hero > p:not(:first-child) { max-width: 630px; color: var(--muted); font-size: 17px; line-height: 1.65; }
@@ -15,14 +15,13 @@
 .query strong { color: var(--ink); }
 .resultsHeading { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin: 12px 0 24px; }
 .resultsHeading h2 { font-size: clamp(23px, 3vw, 30px); margin: 8px 0 0; letter-spacing: -.025em; }
-.page .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+.grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
 .homeFeed { min-width: 0; container-type: inline-size; }
 .homeEnd { display: grid; justify-items: center; margin-top: 30px; }
 .homeEnd p { margin: 0; }
-.homeFeed .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
 .homeFeed .resultsHeading { flex-flow: row wrap; align-items: baseline; margin-top: 0; }
 .homeFeed .resultsHeading a { color: var(--purple); font-size: 14px; font-weight: 700; }
-@container (max-width: 850px) { .homeFeed .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@container (max-width: 520px) { .homeFeed .grid { grid-template-columns: minmax(0, 1fr); } }
-@media (max-width: 1000px) { .page .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .controls { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 620px) { .page { width: calc(100% - 36px); padding: 24px 0 48px; } .hero { padding: 20px 0 32px; } .hero > p:last-child { font-size: 16px; } .controls { padding: 16px; gap: 18px 12px; margin-bottom: 28px; } .controls select { font-size: 12px; padding: 0 6px; } .page .grid { grid-template-columns: minmax(0, 1fr); } .resultsHeading { align-items: flex-start; flex-direction: column; gap: 8px; } .filterHeading { gap: 12px; } .filterHeading a { white-space: nowrap; font-size: 12px; } }
+@container (max-width: 850px) { :is(.homeFeed, .dashboard) .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@container (max-width: 520px) { :is(.homeFeed, .dashboard) .grid { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 1000px) { .page:not(.dashboard) .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .controls { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 620px) { .page { width: calc(100% - 36px); padding: 24px 0 48px; } .hero { padding: 20px 0 32px; } .hero > p:last-child { font-size: 16px; } .controls { padding: 16px; gap: 18px 12px; margin-bottom: 28px; } .controls select { font-size: 12px; padding: 0 6px; } .page:not(.dashboard) .grid { grid-template-columns: minmax(0, 1fr); } .resultsHeading { align-items: flex-start; flex-direction: column; gap: 8px; } .filterHeading { gap: 12px; } .filterHeading a { white-space: nowrap; font-size: 12px; } }

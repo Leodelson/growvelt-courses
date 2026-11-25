@@ -152,8 +152,11 @@ export function PublicCatalog({ catalog, query, authenticated, savedCourseIds = 
     );
   }
   const hasActiveFilters = Boolean(query.query || query.category || query.level || query.access !== "all");
+  const showSubjectShelves = !dashboard && !hasActiveFilters && query.sort === "newest";
   const groups = new Map<string, PublishedCourse[]>();
-  for (const course of courses) { const topic = course.category || t("catalog.fallbackCategory"); groups.set(topic, [...(groups.get(topic) ?? []), course]); }
+  if (showSubjectShelves) {
+    for (const course of courses) { const topic = course.category || t("catalog.fallbackCategory"); groups.set(topic, [...(groups.get(topic) ?? []), course]); }
+  }
   const shelves = [...groups].filter(([, items]) => items.length > 1);
   const remaining = [...groups.values()].filter((items) => items.length === 1).flat();
   if (remaining.length) shelves.push([coursePresentationCopy[locale].more, remaining]);
@@ -179,7 +182,7 @@ export function PublicCatalog({ catalog, query, authenticated, savedCourseIds = 
 
     {catalog.total === 0 ? dashboard ? <section className="course-empty-state catalog-empty-state"><p className="eyebrow">{t("catalog.noMatches")}</p><h2>{hasActiveFilters ? t("catalog.tryDifferent") : t("catalog.noCourses")}</h2><p>{hasActiveFilters ? t("catalog.clearFiltersCopy") : t("catalog.emptyCopy")}</p>{hasActiveFilters ? <Link className="button button-secondary" href={basePath}>{t("catalog.clearFilters")}</Link> : null}</section> : <EmptyState titleId="catalog-empty-title" icon="explore" eyebrow={t("catalog.noMatches")} title={hasActiveFilters ? t("catalog.tryDifferent") : t("catalog.noCourses")} description={hasActiveFilters ? t("catalog.clearFiltersCopy") : t("catalog.emptyCopy")} /> : <section aria-labelledby="public-catalog-title">
       <div className={styles.resultsHeading}><div><p className="eyebrow">{t("catalog.published")}</p><h2 id="public-catalog-title">{catalog.total} {catalog.total === 1 ? t("catalog.course") : t("catalog.courses")} {t("catalog.available")}</h2></div><p className="live-catalog-chip"><span aria-hidden="true" />{t("catalog.live")}</p></div>
-      {!hasActiveFilters && query.sort === "newest" ? shelves.map(([topic, items]) => <CourseShelf key={topic} title={topic} courses={items} dashboard={dashboard} authenticated={authenticated} savedCourseIds={savedCourseIds} />) : <div className={styles.grid}>{courses.map((course, index) => <PublishedCourseCard course={course} highlightQuery={query.query} href={courseHref(course.slug)} index={index} key={course.id} authenticated={authenticated} isSaved={savedCourseIds.includes(course.id)} />)}</div>}
+      {showSubjectShelves ? shelves.map(([topic, items]) => <CourseShelf key={topic} title={topic} courses={items} authenticated={authenticated} savedCourseIds={savedCourseIds} />) : <div className={styles.grid}>{courses.map((course, index) => <PublishedCourseCard course={course} highlightQuery={query.query} href={courseHref(course.slug)} index={index} key={course.id} authenticated={authenticated} isSaved={savedCourseIds.includes(course.id)} />)}</div>}
       {loadControl}
     </section>}
   </section>;

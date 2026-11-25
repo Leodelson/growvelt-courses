@@ -16,7 +16,7 @@ export function CourseRatingForm({ courseId, initialRating }: { courseId: number
     <p className="eyebrow">{copy.feedback}</p><h2 id="course-rating-heading">{copy.question}</h2>
     <p>{copy.feedbackCopy}</p>
     <form onSubmit={(event) => { event.preventDefault(); startTransition(async () => { setMessage(""); try { const result = await saveCourseRating(courseId, rating); setMessage(result.error ? copy.error : copy.thanks); } catch { setMessage(copy.error); } }); }}>
-      <fieldset disabled={pending}><legend>{copy.choose}</legend><div className={styles.stars}>{[1, 2, 3, 4, 5].map((value) => <label key={value}><input type="radio" name="rating" value={value} checked={rating === value} onChange={() => setRating(value)} required /><span aria-hidden="true" data-filled={value <= rating}>★</span><span className={styles.sr}>{value} {value === 1 ? copy.star : copy.stars}</span></label>)}</div></fieldset>
+      <fieldset disabled={pending}><legend>{copy.choose} <span className="required-mark" aria-hidden="true">*</span></legend><div className={styles.stars}>{[1, 2, 3, 4, 5].map((value) => <label key={value}><input type="radio" name="rating" value={value} checked={rating === value} onChange={() => setRating(value)} required /><span aria-hidden="true" data-filled={value <= rating}>★</span><span className={styles.sr}>{value} {value === 1 ? copy.star : copy.stars}</span></label>)}</div></fieldset>
       <button className="button button-primary" disabled={!rating || pending} type="submit">{pending ? <><span className="catalog-loader" aria-hidden="true" /> {copy.saving}</> : initialRating ? copy.update : copy.save}</button>
       <p role="status" aria-live="polite">{message}</p>
     </form>

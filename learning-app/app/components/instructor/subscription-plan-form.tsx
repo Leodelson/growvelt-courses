@@ -49,12 +49,12 @@ export function SubscriptionPlanForm({ courses }: { courses: InstructorSubscript
       <p>Choose your published paid courses and set the monthly price in naira. Saving a draft never contacts Paystack; Test Mode plan setup is a separate, gated action.</p>
     </header>
     <form action={formAction} className={styles.form}>
-      <label className="course-field">Plan name<input name="name" minLength={3} maxLength={100} placeholder="For example, Design Essentials" required /></label>
-      <label className="course-field">Monthly price (NGN)<input name="monthly_price" type="number" min="0.01" step="0.01" inputMode="decimal" placeholder="15000.00" required /><span>Saved internally in kobo. One-time course prices and purchases remain unchanged.</span></label>
+      <label className="course-field"><span className="field-label">Plan name <span className="required-mark" aria-hidden="true">*</span></span><input name="name" minLength={3} maxLength={100} placeholder="For example, Design Essentials" required /></label>
+      <label className="course-field"><span className="field-label">Monthly price (NGN) <span className="required-mark" aria-hidden="true">*</span></span><input name="monthly_price" type="number" min="0.01" step="0.01" inputMode="decimal" placeholder="15000.00" required /><span>Saved internally in kobo. One-time course prices and purchases remain unchanged.</span></label>
       <label className={`course-field ${styles.fullWidth}`}>Description (optional)<textarea name="description" rows={3} maxLength={1000} placeholder="Explain what learners get with this monthly plan." /></label>
 
       <fieldset className={styles.coursePicker}>
-        <legend>Courses included</legend>
+        <legend>Courses included <span className="required-mark" aria-hidden="true">*</span></legend>
         <p>Select 1 to 50 of your published paid NGN courses with the same commercial terms. Company Test Mode-only courses can be used to prepare a Test Mode plan, but are never offered through public subscription checkout; keep them separate from public courses. Paystack coupon test fixtures are excluded.</p>
         {courses.length > 0 && <><label className="course-field">{ui.findCourses}<input type="search" onKeyDown={event=>{if(event.key==="Enter")event.preventDefault();}} value={courseSearch} maxLength={120} onChange={event=>setCourseSearch(event.target.value)} /></label><p role="status">{ui.selected}: {selectedIds.length} / 50 · {ui.results}: {courses.filter(course=>matchesSearch(course.title)).length} / {courses.length}</p><p>{ui.selectionHint}</p></>}
         {courses.length ? <div className={styles.courseList}>{courses.map((course) => <label className={styles.courseOption} key={course.course_id} hidden={!matchesSearch(course.title)}>

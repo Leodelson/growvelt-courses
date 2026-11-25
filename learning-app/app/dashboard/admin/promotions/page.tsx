@@ -106,10 +106,10 @@ export default async function AdminPromotionsPage({
     <section id="campaign-create" className={styles.panel}>
       <header><p className="eyebrow">Appears on Learning Home</p><h2>Feature a campaign</h2><p>The title and short message fill the Home banner. The selected courses appear below it and on public Explore.</p></header>
       <form action={createLearningCampaignAction} className={styles.form}>
-        <label>Campaign title<input name="campaignTitle" required minLength={3} maxLength={80} placeholder="Featured learning" /></label>
-        <label className={styles.courseField}>Short message<textarea name="campaignMessage" required minLength={3} maxLength={240} rows={3} placeholder="A short introduction to this collection of courses." /></label>
+        <label><span>Campaign title <span className="required-mark" aria-hidden="true">*</span></span><input name="campaignTitle" required minLength={3} maxLength={80} placeholder="Featured learning" /></label>
+        <label className={styles.courseField}><span>Short message <span className="required-mark" aria-hidden="true">*</span></span><textarea name="campaignMessage" required minLength={3} maxLength={240} rows={3} placeholder="A short introduction to this collection of courses." /></label>
         <label>Starts (Africa/Lagos time)<input name="campaignStartsAt" type="datetime-local" /><small>Leave blank to publish now.</small></label>
-        <label>Ends (Africa/Lagos time)<input name="campaignEndsAt" type="datetime-local" required /></label>
+        <label><span>Ends (Africa/Lagos time) <span className="required-mark" aria-hidden="true">*</span></span><input name="campaignEndsAt" type="datetime-local" required /></label>
         <FeaturedCoursePicker />
         <ActionSubmitButton label="Save featured campaign" pendingLabel="Saving campaign…" />
       </form>
@@ -134,13 +134,13 @@ export default async function AdminPromotionsPage({
         <p>Codes are restricted to test checkout and stay in the admin register. Each tester can redeem a code once. To change coupon terms, disable the code and create a replacement.</p>
       </aside>
       {coursesError ? <p className={styles.error}>Eligible courses could not be loaded. Try again later.</p> : courses.length === 0 ? <p className={styles.muted}>There are no eligible paid courses or active test fixtures yet.</p> : <form action={createLearningCouponAction} className={styles.form}>
-        <label>Coupon code<input name="code" required minLength={4} maxLength={24} pattern="[A-Za-z0-9][A-Za-z0-9_-]{3,23}" autoCapitalize="characters" autoComplete="off" placeholder="WELCOME10" /></label>
+        <label><span>Coupon code <span className="required-mark" aria-hidden="true">*</span></span><input name="code" required minLength={4} maxLength={24} pattern="[A-Za-z0-9][A-Za-z0-9_-]{3,23}" autoCapitalize="characters" autoComplete="off" placeholder="WELCOME10" /></label>
         <label>Discount type<select name="discountKind" defaultValue="fixed"><option value="fixed">Fixed amount (NGN)</option><option value="percentage">Percentage</option></select></label>
-        <label>Discount value<input name="discountValue" type="number" min="0.01" step="0.01" required /><small>Enter NGN for fixed discounts, or a percentage from 0.01 to 100.</small></label>
-        <label>Maximum discount (NGN)<input name="maxDiscount" type="number" min="0.01" step="0.01" required /></label>
-        <label>Minimum customer charge (NGN)<input name="minimumCharge" type="number" min="0.01" step="0.01" defaultValue="1" required /></label>
-        <label>Starts (Africa/Lagos time)<input name="startsAt" type="datetime-local" required /></label>
-        <label>Ends (Africa/Lagos time)<input name="endsAt" type="datetime-local" required /></label>
+        <label><span>Discount value <span className="required-mark" aria-hidden="true">*</span></span><input name="discountValue" type="number" min="0.01" step="0.01" required /><small>Enter NGN for fixed discounts, or a percentage from 0.01 to 100.</small></label>
+        <label><span>Maximum discount (NGN) <span className="required-mark" aria-hidden="true">*</span></span><input name="maxDiscount" type="number" min="0.01" step="0.01" required /></label>
+        <label><span>Minimum customer charge (NGN) <span className="required-mark" aria-hidden="true">*</span></span><input name="minimumCharge" type="number" min="0.01" step="0.01" defaultValue="1" required /></label>
+        <label><span>Starts (Africa/Lagos time) <span className="required-mark" aria-hidden="true">*</span></span><input name="startsAt" type="datetime-local" required /></label>
+        <label><span>Ends (Africa/Lagos time) <span className="required-mark" aria-hidden="true">*</span></span><input name="endsAt" type="datetime-local" required /></label>
         <label>Global redemption limit<input name="maxRedemptions" type="number" min="1" max="999999" step="1" placeholder="No fixed cap" /></label>
         <CourseChoices name="courseIds" legend="Eligible courses"
           hint="Choose one to twenty courses. Redemption requires an active test fixture."

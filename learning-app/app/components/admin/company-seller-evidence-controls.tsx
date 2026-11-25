@@ -93,11 +93,11 @@ export function CompanyBankSettlementEvidenceControl({
 
   return <form className={actionClassName} action={submit}>
     <p>First compare this payout in Paystack with the actual bank statement. Enter the credited amount and exact statement-line reference below; a mismatch will not be recorded.</p>
-    <label htmlFor={`${id}-amount`}>Bank credit amount (NGN)</label>
+    <label htmlFor={`${id}-amount`}>Bank credit amount (NGN) <span className="required-mark" aria-hidden="true">*</span></label>
     <input id={`${id}-amount`} name="bankCreditAmount" type="number" min="0.01" step="0.01" required />
-    <label htmlFor={`${id}-date`}>Bank credit date</label>
+    <label htmlFor={`${id}-date`}>Bank credit date <span className="required-mark" aria-hidden="true">*</span></label>
     <input id={`${id}-date`} name="bankCreditDate" type="date" required />
-    <label htmlFor={`${id}-reference`}>Bank statement line reference</label>
+    <label htmlFor={`${id}-reference`}>Bank statement line reference <span className="required-mark" aria-hidden="true">*</span></label>
     <input id={`${id}-reference`} name="bankStatementReference" required minLength={3} maxLength={120} autoComplete="off" />
     <button className="button button-secondary" type="submit" disabled={state === "saving"}>
       {state === "saving" ? "Verifying…" : "Record bank statement match"}
@@ -150,14 +150,14 @@ export function CompanyRecoveryReceiptControl({
   }
 
   return <form className={actionClassName} action={submit}>
-    <label htmlFor={`${id}-amount`}>Confirmed repayment amount (NGN)</label>
+    <label htmlFor={`${id}-amount`}>Confirmed repayment amount (NGN) <span className="required-mark" aria-hidden="true">*</span></label>
     <input id={`${id}-amount`} name="amount" type="number" min="0.01" step="0.01" max={outstandingMinor / 100} required />
     <label htmlFor={`${id}-method`}>How repayment was received</label>
     <select id={`${id}-method`} name="paymentMethod" defaultValue="bank_transfer">
       <option value="bank_transfer">Bank transfer</option>
       <option value="other">Other verified method</option>
     </select>
-    <label htmlFor={`${id}-reference`}>Bank/provider reference</label>
+    <label htmlFor={`${id}-reference`}>Bank/provider reference <span className="required-mark" aria-hidden="true">*</span></label>
     <input id={`${id}-reference`} name="paymentReference" required maxLength={160} autoComplete="off" />
     <button className="button button-secondary" type="submit" disabled={state === "saving"}>
       {state === "saving" ? "Recording…" : "Record confirmed repayment"}
