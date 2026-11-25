@@ -32,6 +32,29 @@ const money = (minor: number) => new Intl.NumberFormat("en-NG", {
   style: "currency", currency: "NGN", maximumFractionDigits: 2,
 }).format(minor / 100);
 
+function CourseChoices({ name, legend, hint, options }: {
+  name: string;
+  legend: string;
+  hint: string;
+  options: { id: number; title: string; price: string }[];
+}) {
+  const hintId = name + "-hint";
+  return (
+    <fieldset className={styles.courseField} aria-describedby={hintId}>
+      <legend>{legend}</legend>
+      <small id={hintId}>{hint}</small>
+      <div className={styles.courseOptions}>
+        {options.map(({ id, title, price }) => (
+          <label key={id}>
+            <input type="checkbox" name={name} value={id} />
+            <span>{title}<small>{price}</small></span>
+          </label>
+        ))}
+      </div>
+    </fieldset>
+  );
+}
+
 export default async function AdminPromotionsPage({
   searchParams,
 }: {
@@ -63,7 +86,7 @@ export default async function AdminPromotionsPage({
   const error = queryValue("error");
   const successMessage = queryValue("created") ? "Coupon created. It can only be redeemed when the Test Mode fixture and coupon feature gates are satisfied."
     : queryValue("disabled") ? "Coupon disabled. Existing payment behavior is unchanged."
-    : queryValue("campaignCreated") ? "Featured campaign scheduled. It will appear on dashboard Home and public Explore during its selected dates."
+    : queryValue("campaignCreated") ? "Featured campaign saved. It appears on dashboard Home and public Explore during its display window."
     : queryValue("campaignDisabled") ? "Featured campaign disabled. Its record is retained for the admin history."
     : null;
   const errorMessage = error === "duplicate" ? "That code already exists. Choose a different code."
@@ -77,28 +100,30 @@ export default async function AdminPromotionsPage({
   return <section className={styles.page + " "+ops.page+" admin-page section-shell"}>
     <OperationsNavigation sections={[{id:"campaign-create",label:"Schedule campaign"},{id:"campaign-history",label:"Campaign history"},{id:"coupon-create",label:"Create coupon"},{id:"coupon-history",label:"Coupon register"}]} />
     <header className="admin-page-header admin-review-hero">
-      <p className="eyebrow">Phase 4 · Growvelt Admin</p>
+      <p className="eyebrow">Growvelt Admin</p>
       <h1>Promotions and coupons</h1>
-      <p>Curate scheduled featured-course campaigns and manage controlled coupon codes. Featured placement is editorial-only: no placement fee, checkout change, seller-share adjustment, or automatic transfer.</p>
+      <p>Schedule what learners see on Home and manage private checkout test codes.</p>
     </header>
 
     <OperationsSummary items={[{label:"Live campaigns",value:campaignError?", ":campaigns.filter(item=>item.campaign_state==="live").length,detail:"Live state in the loaded schedule"},{label:"Enabled coupon codes",value:couponsError?", ":coupons.filter(item=>item.active).length,detail:"Enabled does not mean currently redeemable"},{label:"Recorded redemptions",value:couponsError?", ":coupons.reduce((sum,item)=>sum+item.redeemed_count,0),detail:"Across the loaded coupon register"}]} note="Editorial campaigns and coupons are separate. An enabled code must still meet its date, course, learner and checkout restrictions." />
-    <aside className={styles.safety}>
-      <strong>{testCouponCheckoutActive ? "Test Mode coupon checkout enabled" : "Test Mode coupon checkout disabled"}</strong>
-      <p>{testCouponCheckoutActive ? "Only the assigned tester can redeem a code on its active fixture course. No Live or company purchase uses coupons." : "Checkout needs Test Mode, learner checkout, and the explicit coupon feature flag. Company purchases, organization courses, private company test courses, subscriptions, and Live payments remain excluded."} Coupon terms cannot be edited after creation; disable a code and issue a new one instead.</p>
-    </aside>
 
     <ActionFeedback message={errorMessage ?? successMessage} kind={errorMessage ? "error" : "success"} />
 
     <section id="campaign-create" className={styles.panel}>
-      <header><p className="eyebrow">Editorial merchandising · No placement fee</p><h2>Schedule a featured campaign</h2><p>The title and message become the dashboard Home spotlight during the scheduled window. To feature a topic, name it in the title and choose one to six eligible published courses for the featured row. The campaign also appears on public Explore.</p></header>
+      <header><p className="eyebrow">Appears on Learning Home</p><h2>Feature a campaign</h2><p>The title and short message fill the Home banner. The selected courses appear below it and on public Explore.</p></header>
       {editorialCoursesError ? <p className={styles.error}>Eligible published courses could not be loaded. Try again later.</p> : editorialCourses.length === 0 ? <p className={styles.muted}>There are no eligible published courses with an instructor or provider organization to feature yet.</p> : <form action={createLearningCampaignAction} className={styles.form}>
         <label>Campaign title<input name="campaignTitle" required minLength={3} maxLength={80} placeholder="Featured learning" /></label>
         <label className={styles.courseField}>Short message<textarea name="campaignMessage" required minLength={3} maxLength={240} rows={3} placeholder="A short introduction to this collection of courses." /></label>
-        <label>Starts (Africa/Lagos time)<input name="campaignStartsAt" type="datetime-local" required /></label>
+        <label>Starts (Africa/Lagos time)<input name="campaignStartsAt" type="datetime-local" /><small>Leave blank to publish now.</small></label>
         <label>Ends (Africa/Lagos time)<input name="campaignEndsAt" type="datetime-local" required /></label>
-        <label className={styles.courseField}>Featured courses<select name="campaignCourseIds" required multiple size={Math.min(Math.max(editorialCourses.length, 3), 8)}>{editorialCourses.map((course) => <option value={course.course_id} key={course.course_id}>{course.title} · {course.is_free ? "Free" : `${course.price_currency || "NGN"} ${Number(course.price_amount ?? 0).toLocaleString("en-NG")}`}</option>)}</select><small>Choose one to six courses. Hold Ctrl (Windows) or Command (Mac) to choose more than one. A course must still be published and publicly eligible when the campaign is displayed.</small></label>
-        <ActionSubmitButton label="Schedule featured campaign" pendingLabel="Scheduling campaign…" />
+        <CourseChoices name="campaignCourseIds" legend="Featured courses"
+          hint="Choose one to six published courses. To feature a topic, name it in the title and choose courses that match."
+          options={editorialCourses.map((course) => ({
+            id: course.course_id,
+            title: course.title,
+            price: course.is_free ? "Free" : `${course.price_currency || "NGN"} ${Number(course.price_amount ?? 0).toLocaleString("en-NG")}`,
+          }))} />
+        <ActionSubmitButton label="Save featured campaign" pendingLabel="Saving campaign…" />
       </form>}
     </section>
 
@@ -115,8 +140,12 @@ export default async function AdminPromotionsPage({
     </section>
 
     <section id="coupon-create" className={styles.panel}>
-      <header><p className="eyebrow">Administrator-issued</p><h2>Create coupon</h2><p>Choose one or more eligible courses. Learner use is limited to one redemption per account.</p></header>
-      {coursesError ? <p className={styles.error}>Eligible courses could not be loaded. Try again later.</p> : courses.length === 0 ? <p className={styles.muted}>There are no eligible published paid courses or active Test Mode fixtures yet.</p> : <form action={createLearningCouponAction} className={styles.form}>
+      <header><p className="eyebrow">Private · Paystack Test Mode</p><h2>Create coupon</h2><p>Issue a code for an assigned tester to redeem on an eligible test course.</p></header>
+      <aside className={styles.safety}>
+        <strong>{testCouponCheckoutActive ? "Test coupon checkout is enabled" : "Test coupon checkout is disabled"}</strong>
+        <p>Codes are restricted to test checkout and stay in the admin register. Each tester can redeem a code once. To change coupon terms, disable the code and create a replacement.</p>
+      </aside>
+      {coursesError ? <p className={styles.error}>Eligible courses could not be loaded. Try again later.</p> : courses.length === 0 ? <p className={styles.muted}>There are no eligible paid courses or active test fixtures yet.</p> : <form action={createLearningCouponAction} className={styles.form}>
         <label>Coupon code<input name="code" required minLength={4} maxLength={24} pattern="[A-Za-z0-9][A-Za-z0-9_-]{3,23}" autoCapitalize="characters" autoComplete="off" placeholder="WELCOME10" /></label>
         <label>Discount type<select name="discountKind" defaultValue="fixed"><option value="fixed">Fixed amount (NGN)</option><option value="percentage">Percentage</option></select></label>
         <label>Discount value<input name="discountValue" type="number" min="0.01" step="0.01" required /><small>Enter NGN for fixed discounts, or a percentage from 0.01 to 100.</small></label>
@@ -125,7 +154,13 @@ export default async function AdminPromotionsPage({
         <label>Starts (Africa/Lagos time)<input name="startsAt" type="datetime-local" required /></label>
         <label>Ends (Africa/Lagos time)<input name="endsAt" type="datetime-local" required /></label>
         <label>Global redemption limit<input name="maxRedemptions" type="number" min="1" max="999999" step="1" placeholder="No fixed cap" /></label>
-        <label className={styles.courseField}>Eligible courses<select name="courseIds" required multiple size={Math.min(Math.max(courses.length, 3), 8)}>{courses.map((course) => <option value={course.course_id} key={course.course_id}>{course.title} · {money(Math.round(Number(course.price_amount) * 100))}</option>)}</select><small>Use Ctrl (Windows) or Command (Mac) to select multiple courses. Company-only courses and inactive fixtures are not shown.</small></label>
+        <CourseChoices name="courseIds" legend="Eligible courses"
+          hint="Choose one to twenty courses. Redemption requires an active test fixture."
+          options={courses.map((course) => ({
+            id: course.course_id,
+            title: course.title,
+            price: money(Math.round(Number(course.price_amount) * 100)),
+          }))} />
         <ActionSubmitButton label="Create coupon" pendingLabel="Creating coupon…" />
       </form>}
     </section>

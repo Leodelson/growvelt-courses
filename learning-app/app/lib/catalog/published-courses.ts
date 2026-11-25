@@ -196,10 +196,11 @@ export async function listPublicLearningSubjects(firstPage: PublicCatalogResult,
     const client = await createClient();
     for (let offset = firstPage.courses.length; offset < firstPage.total; offset += pageSize) {
       const { data, error } = await client.rpc("search_public_published_learning_courses", {
+        p_sort: "newest",
         p_limit: pageSize,
         p_offset: offset,
       }).select("category");
-      if (error || !data?.length) break;
+      if (error || !Array.isArray(data) || data.length === 0) break;
       for (const row of data as { category: string | null }[]) add(row.category);
     }
   }

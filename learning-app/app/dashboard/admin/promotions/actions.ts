@@ -95,13 +95,15 @@ export async function createLearningCampaignAction(formData: FormData) {
 
   const title = String(formData.get("campaignTitle") ?? "").trim();
   const message = String(formData.get("campaignMessage") ?? "").trim();
-  const startsAt = dateValue(formData.get("campaignStartsAt"));
+  const now = new Date();
+  const startInput = formData.get("campaignStartsAt");
+  const startsAt = startInput === null || startInput === "" ? now.toISOString() : dateValue(startInput);
   const endsAt = dateValue(formData.get("campaignEndsAt"));
   const courseIds = formData.getAll("campaignCourseIds").map((item) => typeof item === "string" ? Number(item) : Number.NaN);
 
   if (title.length < 3 || title.length > 80 || message.length < 3 || message.length > 240
       || !startsAt || !endsAt || new Date(startsAt) >= new Date(endsAt)
-      || new Date(endsAt) <= new Date()
+      || new Date(endsAt) <= now
       || courseIds.length < 1 || courseIds.length > 6
       || courseIds.some((id) => !Number.isSafeInteger(id) || id <= 0)
       || new Set(courseIds).size !== courseIds.length) {
