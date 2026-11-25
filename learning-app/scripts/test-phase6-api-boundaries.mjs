@@ -7,7 +7,6 @@ import ts from "typescript";
 
 // Execute real route handlers with fake authenticated clients. Every provider
 // and database operation is captured here; no hosted credentials or writes.
-const require = createRequire(import.meta.url);
 const root = new URL("../", import.meta.url);
 const userId = "00000000-0000-4000-8000-000000000001";
 const otherId = "00000000-0000-4000-8000-000000000002";
@@ -60,15 +59,17 @@ function client() {
 }
 
 function load(path, mocks = {}) {
-  const source = readFileSync(new URL(path, root), "utf8");
+  const sourceUrl = new URL(path, root);
+  const requireFromSource = createRequire(sourceUrl);
+  const source = readFileSync(sourceUrl, "utf8");
   const compiled = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true } }).outputText;
   const moduleValue = { exports: {} };
   vm.runInNewContext(compiled, {
     module: moduleValue, exports: moduleValue.exports, URL, Request, Response, Headers, FormData, AbortSignal, TextDecoder, Buffer, console,
     process: { env: { TURNSTILE_SECRET_KEY: "local-test-value", CRON_SECRET: "local-cron-secret" } },
     fetch: async (...args) => { providerCalls.push(args); throw new Error("Provider access forbidden in this suite"); },
-    require: id => id in mocks ? mocks[id] : id in shared ? shared[id] : require(id),
-  }, { filename: fileURLToPath(new URL(path, root)) });
+    require: id => id in mocks ? mocks[id] : id in shared ? shared[id] : requireFromSource(id),
+  }, { filename: fileURLToPath(sourceUrl) });
   return moduleValue.exports;
 }
 
@@ -82,12 +83,19 @@ shared["@/app/lib/email/email-center"] = load("app/lib/email/email-center.ts");
 shared["@/app/lib/email/email-center-authorization"] = load("app/lib/email/email-center-authorization.ts", {"server-only":{}});
 shared["@/app/lib/email/email-center-render"] = { renderEmailCenterMessage: () => "fixture email preview" };
 shared["@/app/lib/email/email-center-runtime"] = { emailCenterRelease: () => ({enabled:false}) };
+shared["@/app/lib/email/email-center-provider-usage"] = {
+  hasEmailCenterProviderHeadroom: async () => { throw new Error("Unexpected email provider usage check"); },
+};
 shared["@/app/lib/email/email-center-broadcast-worker"] = {};
 shared["@/app/lib/email/email-center-account-worker"] = {};
 shared["@/app/lib/email/email-center-consent-worker"] = {};
 shared["@/app/lib/supabase/server"] = { createClient: async () => { clientCalls++; return client(); } };
 shared["@/app/lib/supabase/admin"] = { createAdminClient: () => { adminCalls++; return client(); } };
 shared["@/app/lib/email/growvelt-email-template"] = { renderGrowveltEmail: () => "mock-email" };
+shared["@/app/lib/email/payment-notifications"] = {
+  getOrderNotificationContext: async () => { throw new Error("Unexpected payment notification lookup"); },
+  sendPaymentNotification: async () => { throw new Error("Unexpected payment notification"); },
+};
 shared["@/app/lib/site-urls.mjs"] = { learningAbsoluteUrl: path => new URL(path, "https://www.growvelt.com").href };
 shared["@/app/lib/learning/notification-retention"] = { LOGIN_NOTIFICATION_KIND: "login", LOGIN_NOTIFICATION_RETENTION_MS: 86400000 };
 shared["@/app/lib/auth/login-activity"] = { recordLearningSignIn: async () => providerCalls.push("login-activity") };
@@ -261,7 +269,7 @@ actor = {id:userId,email:"admin@growvelt.com",email_confirmed_at:"2026-10-22",ro
 assert.equal((await email.POST(request("POST",undefined,{action:"save",id:noticeId,revision:0,document:{sender:"learning",mode:"marketing",audience:"learners",recipients:[],subject:'"'.repeat(160),headline:'"'.repeat(160),message:'"'.repeat(4000),personalized:false,buttonText:"",buttonUrl:"",bell:false}}))).status,201);
 for (const address of ["admin@growvelt.com","nduleonardc@gmail.com"]) {
   actor={id:userId,email:address,email_confirmed_at:"2026-10-22",role:"admin"};
-  assert.equal((await email.GET()).status,200,"both permitted confirmed admins can load Email Center");
+  assert.equal((await email.GET(new Request(hosts[0] + "/api/learning/admin/emails"))).status,200,"both permitted confirmed admins can load Email Center");
   const beforePreview=adminCalls;
   const document={sender:"partnerships",mode:"marketing",audience:"all",recipients:[],subject:"Learning news",headline:"",message:"A message for our Learning community.",personalized:false,buttonText:"",buttonUrl:"",bell:false};
   assert.equal((await email.POST(request("POST",undefined,{action:"preview",document}))).status,200);
