@@ -41,59 +41,113 @@ function toCourse(row: PublicCatalogCourseRow): PublishedCourse {
   return { id: row.course_id, slug: row.slug, title: row.title, summary: row.summary, category: row.category, level: row.level, isFree: row.is_free, priceAmount: row.price_amount, priceCurrency: row.price_currency, instructorName: row.instructor_name, providerName: row.provider_name, providerSlug: row.provider_slug, providerVerified: row.provider_verified };
 }
 
-export function PublicCatalog({ catalog, query, authenticated, savedCourseIds = [], basePath = "/learn", dashboard = false, campaign = null }: { catalog: PublicCatalogResult; query: PublicCatalogQuery; authenticated: boolean; savedCourseIds?: number[]; basePath?: string; dashboard?: boolean; campaign?: ActiveLearningCampaign | null }) {
+export function PublicCatalog({ catalog, query, authenticated, savedCourseIds = [], basePath = "/learn", dashboard = false, campaign = null, homeFeed }: {
+  catalog: PublicCatalogResult;
+  query: PublicCatalogQuery;
+  authenticated: boolean;
+  savedCourseIds?: number[];
+  basePath?: string;
+  dashboard?: boolean;
+  campaign?: ActiveLearningCampaign | null;
+  homeFeed?: { title: string; catalogLabel: string; excludedIds: number[] };
+}) {
   const { t, locale } = useLanguage();
   const copy = publicExperienceCopy[locale].catalog;
   const router = useRouter();
   const sentinelRef = useRef<HTMLDivElement>(null);
+  const pending = useRef(false);
   const [typedQuery, setTypedQuery] = useState(query.query);
   const [courses, setCourses] = useState(catalog.courses);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [loadMoreError, setLoadMoreError] = useState(false);
-  const hasMore = (query.page - 1) * catalog.pageSize + courses.length < catalog.total;
+  const [offset, setOffset] = useState((query.page - 1) * catalog.pageSize + catalog.courses.length);
+  const [total, setTotal] = useState(catalog.total);
+  const hasMore = offset < total;
 
   const updateQuery = useCallback((changes: Partial<PublicCatalogQuery>) => {
     router.replace(publicCatalogHref({ ...query, page: 1 }, changes, basePath), { scroll: false });
   }, [basePath, query, router]);
 
   useEffect(() => {
+    if (homeFeed) return;
     const timer = window.setTimeout(() => {
       if (typedQuery !== query.query) updateQuery({ query: typedQuery.trim().slice(0, 120) });
     }, 280);
     return () => window.clearTimeout(timer);
-  }, [typedQuery, query.query, updateQuery]);
+  }, [homeFeed, typedQuery, query.query, updateQuery]);
 
   const loadMore = useCallback(async () => {
-    if (!hasMore || isLoadingMore) return;
+    if (!hasMore || pending.current) return;
+    pending.current = true;
     setIsLoadingMore(true);
     setLoadMoreError(false);
     try {
-    const { data, error } = await createClient().rpc("search_public_published_learning_courses", {
-      p_query: query.query || null,
-      p_category: query.category || null,
-      p_level: query.level || null,
-      p_is_free: query.access === "all" ? null : query.access === "free",
-      p_sort: query.sort,
-      p_limit: catalog.pageSize,
-      p_offset: (query.page - 1) * catalog.pageSize + courses.length,
-    });
-    if (error) setLoadMoreError(true);
-    else { const next = await withCourseRatings(createClient(), ((data ?? []) as PublicCatalogCourseRow[]).map(toCourse)); setCourses((current) => [...current, ...next.filter((item) => !current.some((existing) => existing.id === item.id))]); }
-    } catch { setLoadMoreError(true); }
-    finally { setIsLoadingMore(false); }
-  }, [catalog.pageSize, courses.length, hasMore, isLoadingMore, query.access, query.category, query.level, query.query, query.sort, query.page]);
+      const client = createClient();
+      const { data, error } = await client.rpc("search_public_published_learning_courses", {
+        p_query: query.query || null,
+        p_category: query.category || null,
+        p_level: query.level || null,
+        p_is_free: query.access === "all" ? null : query.access === "free",
+        p_sort: query.sort,
+        p_limit: catalog.pageSize,
+        p_offset: offset,
+      });
+      if (error) throw error;
+      const rows = (data ?? []) as PublicCatalogCourseRow[];
+      if (rows.length) {
+        const next = await withCourseRatings(client, rows.map(toCourse));
+        setCourses((current) => [...current, ...next.filter((item) => !current.some((existing) => existing.id === item.id))]);
+        setOffset(offset + rows.length);
+      }
+      setTotal(Number(rows[0]?.total_courses ?? offset));
+    } catch {
+      setLoadMoreError(true);
+    } finally {
+      pending.current = false;
+      setIsLoadingMore(false);
+    }
+  }, [catalog.pageSize, hasMore, offset, query.access, query.category, query.level, query.query, query.sort]);
 
   useEffect(() => {
     const sentinel = sentinelRef.current;
-    if (!sentinel || !hasMore) return;
+    if (!sentinel || !hasMore || loadMoreError || isLoadingMore || typeof IntersectionObserver === "undefined") return;
     const observer = new IntersectionObserver((entries) => {
       if (entries[0]?.isIntersecting) void loadMore();
     }, { rootMargin: "240px 0px" });
     observer.observe(sentinel);
     return () => observer.disconnect();
-  }, [hasMore, loadMore]);
+  }, [hasMore, isLoadingMore, loadMore, loadMoreError]);
 
   const courseHref = (slug: string) => `${dashboard ? "/dashboard/courses" : "/courses"}/${encodeURIComponent(slug)}`;
+  const loadControl = hasMore ? (
+    <div className="public-catalog-load-more" ref={sentinelRef} aria-live="polite">
+      {isLoadingMore ? <p><span className="catalog-loader" aria-hidden="true" />{t("catalog.loadingMore")}</p> : (
+        <button className="button button-secondary" type="button" onClick={() => void loadMore()}>
+          {loadMoreError ? t("catalog.tryLoading") : t("catalog.browseMore")}
+        </button>
+      )}
+    </div>
+  ) : null;
+
+  if (homeFeed) {
+    const additionalCourses = courses.filter((course) => !homeFeed.excludedIds.includes(course.id));
+    if (!additionalCourses.length && !hasMore) return null;
+    return (
+      <section className={styles.homeFeed} aria-labelledby="home-course-feed">
+        <div className={styles.resultsHeading}>
+          <h2 id="home-course-feed">{homeFeed.title}</h2>
+          <Link href={basePath}>{homeFeed.catalogLabel} <span aria-hidden="true">↗</span></Link>
+        </div>
+        <div className={styles.grid}>
+          {additionalCourses.map((course, index) => (
+            <PublishedCourseCard key={course.id} course={course} href={courseHref(course.slug)} index={index}
+              authenticated={authenticated} isSaved={savedCourseIds.includes(course.id)} />
+          ))}
+        </div>
+        {loadControl}
+      </section>
+    );
+  }
   const hasActiveFilters = Boolean(query.query || query.category || query.level || query.access !== "all");
   const groups = new Map<string, PublishedCourse[]>();
   for (const course of courses) { const topic = course.category || t("catalog.fallbackCategory"); groups.set(topic, [...(groups.get(topic) ?? []), course]); }
@@ -123,7 +177,7 @@ export function PublicCatalog({ catalog, query, authenticated, savedCourseIds = 
     {catalog.total === 0 ? dashboard ? <section className="course-empty-state catalog-empty-state"><p className="eyebrow">{t("catalog.noMatches")}</p><h2>{hasActiveFilters ? t("catalog.tryDifferent") : t("catalog.noCourses")}</h2><p>{hasActiveFilters ? t("catalog.clearFiltersCopy") : t("catalog.emptyCopy")}</p>{hasActiveFilters ? <Link className="button button-secondary" href={basePath}>{t("catalog.clearFilters")}</Link> : null}</section> : <EmptyState titleId="catalog-empty-title" icon="explore" eyebrow={t("catalog.noMatches")} title={hasActiveFilters ? t("catalog.tryDifferent") : t("catalog.noCourses")} description={hasActiveFilters ? t("catalog.clearFiltersCopy") : t("catalog.emptyCopy")} /> : <section aria-labelledby="public-catalog-title">
       <div className={styles.resultsHeading}><div><p className="eyebrow">{t("catalog.published")}</p><h2 id="public-catalog-title">{catalog.total} {catalog.total === 1 ? t("catalog.course") : t("catalog.courses")} {t("catalog.available")}</h2></div><p className="live-catalog-chip"><span aria-hidden="true" />{t("catalog.live")}</p></div>
       {!hasActiveFilters && query.sort === "newest" ? shelves.map(([topic, items]) => <CourseShelf key={topic} title={topic} courses={items} dashboard={dashboard} authenticated={authenticated} savedCourseIds={savedCourseIds} />) : <div className={styles.grid}>{courses.map((course, index) => <PublishedCourseCard course={course} highlightQuery={query.query} href={courseHref(course.slug)} index={index} key={course.id} authenticated={authenticated} isSaved={savedCourseIds.includes(course.id)} />)}</div>}
-      <div className="public-catalog-load-more" ref={sentinelRef} aria-live="polite">{isLoadingMore ? <p><span className="catalog-loader" aria-hidden="true" />{t("catalog.loadingMore")}</p> : null}{loadMoreError ? <button className="button button-secondary" type="button" onClick={() => void loadMore()}>{t("catalog.tryLoading")}</button> : null}{!hasMore && !isLoadingMore && !loadMoreError ? <p className="results-end-marker">{t("catalog.end")}</p> : null}</div>
+      {loadControl}
     </section>}
   </section>;
 }

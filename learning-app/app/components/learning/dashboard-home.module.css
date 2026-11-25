@@ -1,95 +1,118 @@
-.page { display: grid; gap: clamp(24px, 3vw, 36px); min-width: 0; padding-bottom: 36px; }
-.header { display: flex; align-items: end; justify-content: space-between; gap: 24px; min-width: 0; }
-.header > div { min-width: 0; max-width: 760px; }
-.header h1 { margin: 0 0 12px; font-size: clamp(32px, 4.5vw, 54px); line-height: 1.08; letter-spacing: -.045em; text-wrap: balance; }
-.header p:last-child { margin: 0; max-width: 660px; color: var(--muted); line-height: 1.7; }
-.header > a { flex: 0 0 auto; }
-.search { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px; min-width: 0; padding: 9px 10px 9px 18px; border: 1px solid var(--line-strong); border-radius: 18px; background: var(--surface); box-shadow: 0 8px 24px color-mix(in srgb, var(--ink) 5%, transparent); }
-.search > svg { color: var(--purple); }
-.search input { width: 100%; min-width: 0; min-height: 46px; border: 0; outline: 0; background: transparent; color: var(--ink); font: inherit; }
-.search input:focus-visible { outline: 0; }
-.search button { display: inline-flex; align-items: center; justify-content: center; gap: 9px; min-height: 46px; padding: 0 18px; border: 0; border-radius: 12px; background: var(--purple); color: var(--surface); font: inherit; font-weight: 750; cursor: pointer; }
-.search button:hover { background: var(--purple-deep); }
-.subjects, .collection { display: grid; gap: 18px; min-width: 0; }
-.sectionHeading { display: flex; align-items: end; justify-content: space-between; gap: 20px; min-width: 0; }
-.sectionHeading > div { min-width: 0; }
-.sectionHeading h2 { margin: 0; font-size: clamp(22px, 2.8vw, 30px); line-height: 1.2; letter-spacing: -.035em; }
-.sectionHeading .eyebrow { margin-bottom: 8px; }
-.sectionHeading > a { display: inline-flex; align-items: center; gap: 5px; flex: 0 0 auto; min-height: 40px; color: var(--purple); font-size: 13px; font-weight: 750; }
-.subjectGrid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px; }
-.subject { position: relative; display: flex; flex-direction: column; gap: 7px; min-width: 0; min-height: 104px; padding: 17px 36px 16px 16px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); color: var(--ink); transition: border-color .18s, transform .18s, background-color .18s; }
-.subject:hover { border-color: color-mix(in srgb, var(--purple) 45%, var(--line)); background: var(--purple-soft); transform: translateY(-2px); }
-.subject > span { font-size: 14px; font-weight: 750; line-height: 1.35; overflow-wrap: anywhere; }
-.subject small { color: var(--muted); font-size: 11px; line-height: 1.5; }
-.subject > svg { position: absolute; top: 16px; right: 13px; color: var(--purple); }
-.spotlight { display: grid; grid-template-columns: minmax(0, .95fr) minmax(0, 1.05fr); min-width: 0; overflow: hidden; border: 1px solid color-mix(in srgb, var(--purple) 28%, var(--line)); border-radius: 24px; background: var(--surface); }
-.spotlightVisual { position: relative; isolation: isolate; display: block; min-width: 0; min-height: 360px; overflow: hidden; background: linear-gradient(135deg, #301052, #8a04df 58%, #ca80ff); }
-.spotlightVisual::after { position: absolute; z-index: 1; inset: 35% 0 0; background: linear-gradient(0deg, #170c24a6, transparent); content: ""; pointer-events: none; }
-.spotlightVisual > img { position: absolute; z-index: 0; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-.visualFallback { position: absolute; z-index: 0; inset: auto 24px 35px; color: white; font-size: clamp(24px, 3vw, 38px); font-weight: 800; letter-spacing: -.04em; line-height: 1.1; }
-.spotlightBadge { position: absolute; z-index: 2; top: 18px; left: 18px; padding: 8px 12px; border: 1px solid #ffffff70; border-radius: 999px; background: #1c102ab8; color: white; font-size: 11px; font-weight: 800; letter-spacing: .04em; backdrop-filter: blur(12px); }
-.spotlightContent { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; padding: clamp(24px, 3vw, 42px); }
-.spotlightContent > .eyebrow { margin-bottom: 12px; }
-.spotlightContent h2 { max-width: 700px; margin: 0; font-size: clamp(26px, 3.1vw, 40px); line-height: 1.13; letter-spacing: -.04em; overflow-wrap: anywhere; }
-.spotlightSummary { max-width: 680px; margin: 14px 0 16px; color: var(--muted); line-height: 1.7; }
-.courseDetails { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 20px; width: 100%; margin: 22px 0 24px; padding: 18px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
-.courseDetails > div { min-width: 0; }
-.courseDetails dt { margin-bottom: 5px; color: var(--muted); font-size: 11px; }
-.courseDetails dd { margin: 0; color: var(--ink); font-size: 13px; font-weight: 700; line-height: 1.4; overflow-wrap: anywhere; }
-.actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: auto; }
-.actions a { display: inline-flex; align-items: center; justify-content: center; gap: 7px; }
-.courseGrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 16px; min-width: 0; }
-.courseCard { display: flex; flex-direction: column; min-width: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); transition: border-color .18s, box-shadow .18s, transform .18s; }
-.courseCard:hover { border-color: color-mix(in srgb, var(--purple) 45%, var(--line)); box-shadow: 0 12px 28px color-mix(in srgb, var(--ink) 8%, transparent); transform: translateY(-2px); }
-.cardVisual { position: relative; isolation: isolate; display: block; aspect-ratio: 16 / 9; min-width: 0; overflow: hidden; background: linear-gradient(125deg, #38196a, #ab54da); }
-.cardImageLink { position: absolute; inset: 0; display: block; color: white; }
-.cardImageLink > span { position: absolute; z-index: 0; inset: 24% 18px auto; font-size: 23px; font-weight: 750; line-height: 1.2; overflow-wrap: anywhere; }
-.cardImageLink > img { position: absolute; z-index: 1; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-.save { position: absolute; z-index: 2; top: 10px; right: 10px; }
-.cardBody { display: flex; flex: 1; flex-direction: column; align-items: flex-start; gap: 9px; min-width: 0; padding: 17px; }
-.cardBody > * { min-width: 0; margin: 0; }
-.cardCategory { color: var(--purple); font-size: 11px; font-weight: 800; }
-.cardInstructor { color: var(--muted); font-size: 11px; }
-.cardBody h3 { font-size: 17px; line-height: 1.35; letter-spacing: -.02em; overflow-wrap: anywhere; }
-.cardBody h3 a:hover { color: var(--purple); }
-.cardSummary { display: -webkit-box; overflow: hidden; color: var(--muted); font-size: 12px; line-height: 1.6; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
-.cardFooter { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; margin-top: auto !important; padding-top: 13px; border-top: 1px solid var(--line); }
-.cardFooter strong { color: var(--ink); font-size: 14px; }
-.cardFooter a { display: inline-flex; align-items: center; gap: 4px; min-height: 36px; color: var(--purple); font-size: 12px; font-weight: 750; white-space: nowrap; }
-.empty { display: grid; justify-items: start; gap: 12px; padding: clamp(26px, 5vw, 52px); border: 1px solid var(--line); border-radius: 22px; background: radial-gradient(ellipse at 100% 0, color-mix(in srgb, var(--purple) 13%, transparent), transparent 75%), var(--surface); }
-.empty h2 { margin: 0; font-size: clamp(24px, 3vw, 36px); line-height: 1.2; }
-.empty p:not(.eyebrow) { max-width: 600px; margin: 0; color: var(--muted); line-height: 1.7; }
-.empty a { display: inline-flex; align-items: center; gap: 7px; margin-top: 8px; }
-.page :is(a, button, input):focus-visible { outline: 3px solid color-mix(in srgb, var(--purple) 65%, transparent); outline-offset: 3px; }
-@media (max-width: 1100px) {
-  .subjectGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .spotlight { grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); }
-  .spotlightVisual { min-height: 320px; }
-  .spotlightContent { padding: 26px; }
+.page {
+  display: grid;
+  min-width: 0;
+  gap: clamp(24px, 3.5vw, 44px);
+  container-type: inline-size;
 }
-@media (max-width: 780px) {
-  .header { align-items: flex-start; flex-direction: column; }
+
+.spotlight {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  background: linear-gradient(125deg, var(--surface), var(--purple-soft));
+}
+
+.spotlightContent {
+  align-self: center;
+  min-width: 0;
+  padding: clamp(24px, 5cqw, 64px);
+}
+
+.spotlightContent h1 {
+  max-width: 17ch;
+  margin: 10px 0 16px;
+  color: var(--ink);
+  font-size: clamp(31px, 5cqw, 64px);
+  line-height: 1.07;
+  letter-spacing: -.045em;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+}
+
+.spotlightContent > p:not(:first-child) {
+  max-width: 48ch;
+  margin: 0 0 20px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.spotlightContent > a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.spotlightVisual {
+  position: relative;
+  min-width: 0;
+  min-height: 280px;
+  isolation: isolate;
+  background: #321944;
+}
+
+.spotlightVisual > img {
+  object-fit: cover;
+  object-position: 65% center;
+  opacity: 0;
+  transition: opacity 850ms ease-in-out;
+}
+
+.spotlightVisual > .activeImage { opacity: 1; }
+
+.artControls {
+  position: absolute;
+  inset: auto 10px 10px auto;
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 999px;
+  color: white;
+  background: #241332df;
+}
+
+.artControls button {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 42px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.artControls button:hover { background: #ffffff28; }
+.artControls button:focus-visible { outline: 2px solid white; outline-offset: -3px; }
+.dot { width: 8px; height: 8px; border: 1px solid white; border-radius: 999px; }
+.artControls button[aria-pressed="true"] .dot { width: 14px; background: white; }
+
+.subjects h2 { margin: 0 0 14px; font-size: clamp(23px, 2.8vw, 30px); }
+.subjects ul { display: flex; flex-wrap: wrap; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.subjects a {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 8px 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink);
+  font-weight: 650;
+  font-size: 14px;
+}
+.subjects a:hover, .subjects a svg { color: var(--purple); }
+
+@container (max-width: 660px) {
   .spotlight { grid-template-columns: minmax(0, 1fr); }
-  .spotlightVisual { min-height: 0; aspect-ratio: 16 / 9; }
-  .spotlightContent { padding: clamp(22px, 5vw, 30px); }
-  .courseDetails { margin-block: 18px 20px; }
+  .spotlightVisual { grid-row: 1; min-height: 0; aspect-ratio: 16 / 9; }
+  .spotlightContent { padding: clamp(20px, 5cqw, 34px); }
 }
-@media (max-width: 520px) {
-  .page { gap: 24px; }
-  .search { grid-template-columns: auto minmax(0, 1fr); padding: 8px 10px 8px 14px; border-radius: 15px; }
-  .search button { grid-column: 1 / -1; width: 100%; }
-  .sectionHeading { align-items: flex-start; flex-direction: column; gap: 8px; }
-  .subjectGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
-  .subject { min-height: 94px; padding: 14px 32px 13px 13px; }
-  .subject > span { font-size: 13px; }
-  .subject small { font-size: 10px; }
-  .spotlightContent { padding: 21px 18px; }
-  .courseDetails { gap: 12px; }
-  .actions { align-items: stretch; flex-direction: column; width: 100%; }
-  .actions a { width: 100%; }
-  .courseGrid { grid-template-columns: minmax(0, 1fr); }
-}
+
 @media (prefers-reduced-motion: reduce) {
-  .subject, .courseCard { transition: none; }
-  .subject:hover, .courseCard:hover { transform: none; }
+  .spotlightVisual > img { transition: none; }
 }

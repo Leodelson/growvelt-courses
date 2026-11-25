@@ -6,13 +6,12 @@ import { getRequestLocale } from "@/app/lib/i18n-server";
 export const metadata = { title: "Learning home" };
 
 export default async function DashboardPage() {
-  const [campaign, savedCourseIds, locale] = await Promise.all([
+  const query = normalizePublicCatalogQuery({});
+  const [campaign, savedCourseIds, locale, catalog] = await Promise.all([
     getActiveLearningEditorialCampaign(),
     getOwnSavedLearningCourseIds(),
     getRequestLocale(),
+    searchPublicPublishedLearningCourses(query),
   ]);
-  const catalogCourses = campaign
-    ? []
-    : (await searchPublicPublishedLearningCourses(normalizePublicCatalogQuery({}))).courses;
-  return <DashboardHome campaign={campaign} courses={catalogCourses} savedCourseIds={savedCourseIds} locale={locale} />;
+  return <DashboardHome campaign={campaign} catalog={catalog} query={query} savedCourseIds={savedCourseIds} locale={locale} />;
 }
