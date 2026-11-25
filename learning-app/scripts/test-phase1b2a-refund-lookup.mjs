@@ -29,8 +29,13 @@ async function lookup(data, meta) {
 
 assert.equal(await lookup([matching]), "321");
 assert.equal(await lookup([{ ...matching, transaction: { id: 12345 }, amount: String(matching.amount) }]), "321", "Provider list may encode the transaction as an object and amount as a decimal-free string");
-assert.equal(await lookup([]), null, "No match remains unresolved, never retried");
-assert.equal(await lookup([], { pageCount: 0 }), null, "A provider-confirmed empty page is not a lookup error");
+assert.equal(await lookup([], { pageCount: 0, total: 0 }), null);
+assert.equal(await lookup([], { pageCount: 1, total: 0 }), null);
+await assert.rejects(lookup([]), /did not confirm an empty result/);
+await assert.rejects(lookup([], { pageCount: 0 }), /did not confirm an empty result/);
+await assert.rejects(lookup([], { pageCount: 1, total: 1 }), /did not confirm an empty result/);
+await assert.rejects(lookup([], { pageCount: 2, total: 0 }), /did not confirm an empty result/);
+await assert.rejects(lookup([{ ...matching, amount: 9000 }]), /unverifiable records/);
 await assert.rejects(lookup([matching], { pageCount: 0 }), /manual review/);
 await assert.rejects(lookup([{ ...matching, transaction: 99999 }]), /unverifiable records/);
 await assert.rejects(lookup([{ ...matching, created_at: "2026-10-29T11:00:00.000Z" }]), /unverifiable records/);

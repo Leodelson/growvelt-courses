@@ -342,11 +342,16 @@ export async function findPaystackRefundIdForTransaction(input: { transactionId:
   url.searchParams.set("perPage", "100");
   url.searchParams.set("page", "1");
   const response = await fetch(url, { headers: { Authorization: `Bearer ${secretKey}` }, cache: "no-store", signal: AbortSignal.timeout(15000) });
-  const result = await response.json().catch(() => null) as { status?: unknown; data?: unknown; meta?: { pageCount?: unknown } } | null;
+  const result = await response.json().catch(() => null) as { status?: unknown; data?: unknown; meta?: { pageCount?: unknown; total?: unknown } } | null;
   if (!response.ok || result?.status !== true || !Array.isArray(result.data)) throw new Error("Refund lookup was inconclusive.");
   // Do not treat a truncated list as an authoritative absence or unique match.
   const pageCount = result.meta?.pageCount;
   const emptyResult = result.data.length === 0;
+  // Live recovery can close a case on null, so absence must be explicit.
+  if (input.domain === "live" && emptyResult
+    && (result.meta?.total !== 0 || (pageCount !== 0 && pageCount !== 1))) {
+    throw new Error("Refund lookup did not confirm an empty result; manual review required.");
+  }
   if (result.data.length >= 100 || (pageCount !== undefined && pageCount !== 1 && !(pageCount === 0 && emptyResult))
     || (result.meta?.pageCount === undefined && result.data.length >= 50)) throw new Error("Refund lookup requires manual review.");
   const candidates = result.data.filter((entry: unknown) => {
