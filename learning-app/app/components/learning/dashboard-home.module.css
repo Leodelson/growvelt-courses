@@ -91,21 +91,55 @@
 .artControls button[aria-pressed="true"] .dot { width: 14px; background: white; }
 
 .subjects h2 { margin: 0 0 14px; font-size: clamp(23px, 2.8vw, 30px); }
-.subjects ul { display: flex; flex-wrap: wrap; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.subjects ul {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
 .subjects a {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  gap: 8px;
-  min-height: 44px;
-  padding: 8px 14px;
+  gap: 10px;
+  height: 100%;
+  min-height: 64px;
+  padding: 10px 12px;
   border: 1px solid var(--line);
-  border-radius: 999px;
+  border-radius: 14px;
   background: var(--surface);
   color: var(--ink);
   font-weight: 650;
   font-size: 14px;
 }
-.subjects a:hover, .subjects a svg { color: var(--purple); }
+.subjects a:hover { border-color: var(--purple); color: var(--purple); }
+.subjects a > svg, .subjectIcon { color: var(--purple); }
+.subjectIcon {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: var(--purple-soft);
+}
+.subjectName { overflow-wrap: anywhere; }
+
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px 20px;
+  align-items: center;
+  padding: 14px 0;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 13px;
+}
+.footer > div { display: flex; flex-wrap: wrap; gap: 0 16px; }
+.footer a { display: inline-flex; align-items: center; min-height: 44px; }
+.footer a:hover { color: var(--purple); text-decoration: underline; }
 
 @container (max-width: 660px) {
   .spotlight { grid-template-columns: minmax(0, 1fr); }

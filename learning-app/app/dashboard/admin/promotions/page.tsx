@@ -91,7 +91,7 @@ export default async function AdminPromotionsPage({
     <ActionFeedback message={errorMessage ?? successMessage} kind={errorMessage ? "error" : "success"} />
 
     <section id="campaign-create" className={styles.panel}>
-      <header><p className="eyebrow">Editorial merchandising · No placement fee</p><h2>Schedule a featured campaign</h2><p>Choose up to six published courses with an instructor or provider organization and a display window. The campaign appears on dashboard Home and public Explore only during that window. It is shown once on dashboard Home; the full catalog stays on Explore. Company-only courses and Paystack test fixtures are excluded.</p></header>
+      <header><p className="eyebrow">Editorial merchandising · No placement fee</p><h2>Schedule a featured campaign</h2><p>The title and message become the dashboard Home spotlight during the scheduled window. To feature a topic, name it in the title and choose one to six eligible published courses for the featured row. The campaign also appears on public Explore.</p></header>
       {editorialCoursesError ? <p className={styles.error}>Eligible published courses could not be loaded. Try again later.</p> : editorialCourses.length === 0 ? <p className={styles.muted}>There are no eligible published courses with an instructor or provider organization to feature yet.</p> : <form action={createLearningCampaignAction} className={styles.form}>
         <label>Campaign title<input name="campaignTitle" required minLength={3} maxLength={80} placeholder="Featured learning" /></label>
         <label className={styles.courseField}>Short message<textarea name="campaignMessage" required minLength={3} maxLength={240} rows={3} placeholder="A short introduction to this collection of courses." /></label>

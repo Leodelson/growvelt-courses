@@ -182,6 +182,30 @@ export async function getActiveLearningEditorialCampaign(): Promise<ActiveLearni
   };
 }
 
+export async function listPublicLearningSubjects(firstPage: PublicCatalogResult, locale: string): Promise<string[]> {
+  const subjects = new Map<string, string>();
+  const add = (category: string | null) => {
+    const label = category?.trim();
+    if (label && !subjects.has(label.toLowerCase())) subjects.set(label.toLowerCase(), label);
+  };
+  for (const course of firstPage.courses) add(course.category);
+
+  // Keep the same eligibility rules and ordering as the catalog, without loading ratings for later pages.
+  const pageSize = 24;
+  if (firstPage.courses.length < firstPage.total) {
+    const client = await createClient();
+    for (let offset = firstPage.courses.length; offset < firstPage.total; offset += pageSize) {
+      const { data, error } = await client.rpc("search_public_published_learning_courses", {
+        p_limit: pageSize,
+        p_offset: offset,
+      }).select("category");
+      if (error || !data?.length) break;
+      for (const row of data as { category: string | null }[]) add(row.category);
+    }
+  }
+  return [...subjects.values()].sort((a, b) => a.localeCompare(b, locale));
+}
+
 export async function getPublishedLearningCourse(slug: string): Promise<PublishedCourseDetail | null> {
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("get_published_learning_course_by_slug", { p_slug: slug });

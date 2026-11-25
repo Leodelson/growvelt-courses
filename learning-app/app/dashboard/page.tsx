@@ -1,5 +1,10 @@
 import { DashboardHome } from "@/app/components/learning/dashboard-home";
-import { getActiveLearningEditorialCampaign, normalizePublicCatalogQuery, searchPublicPublishedLearningCourses } from "@/app/lib/catalog/published-courses";
+import {
+  getActiveLearningEditorialCampaign,
+  listPublicLearningSubjects,
+  normalizePublicCatalogQuery,
+  searchPublicPublishedLearningCourses,
+} from "@/app/lib/catalog/published-courses";
 import { getOwnSavedLearningCourseIds } from "@/app/lib/learning/saved-courses";
 import { getRequestLocale } from "@/app/lib/i18n-server";
 
@@ -13,5 +18,6 @@ export default async function DashboardPage() {
     getRequestLocale(),
     searchPublicPublishedLearningCourses(query),
   ]);
-  return <DashboardHome campaign={campaign} catalog={catalog} query={query} savedCourseIds={savedCourseIds} locale={locale} />;
+  const subjects = await listPublicLearningSubjects(catalog, locale);
+  return <DashboardHome campaign={campaign} catalog={catalog} query={query} savedCourseIds={savedCourseIds} locale={locale} subjects={subjects} />;
 }

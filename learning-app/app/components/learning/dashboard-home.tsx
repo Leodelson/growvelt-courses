@@ -1,29 +1,28 @@
 import Link from "next/link";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, BookOpen } from "lucide-react";
 import { CourseShelf } from "@/app/components/course-shelf";
-import Footer from "@/app/components/Footer";
 import { PublicCatalog } from "@/app/components/public-catalog";
 import type { ActiveLearningCampaign, PublicCatalogResult } from "@/app/lib/catalog/published-courses";
 import { publicCatalogHref, type PublicCatalogQuery } from "@/app/lib/catalog/public-catalog-query";
-import type { Locale } from "@/app/lib/i18n";
+import { translate, type Locale } from "@/app/lib/i18n";
 import { DashboardSpotlightArt } from "./dashboard-spotlight-art";
 import { dashboardHomeCopy } from "./dashboard-home-copy";
 import styles from "./dashboard-home.module.css";
 
 const explorePath = "/dashboard/explore";
 
-export function DashboardHome({ campaign, catalog, query, savedCourseIds, locale }: {
+export function DashboardHome({ campaign, catalog, query, savedCourseIds, locale, subjects }: {
   campaign: ActiveLearningCampaign | null;
   catalog: PublicCatalogResult;
   query: PublicCatalogQuery;
   savedCourseIds: number[];
   locale: Locale;
+  subjects: string[];
 }) {
   const copy = dashboardHomeCopy[locale];
   const featured = campaign?.courses ?? [];
-  const subjects = [...new Set([...featured, ...catalog.courses].flatMap((course) => course.category ? [course.category] : []))];
   const dataHref = publicCatalogHref(query, { category: "Data Analytics" }, explorePath);
-  const hasDataCourses = subjects.includes("Data Analytics");
+  const hasDataCourses = subjects.some((subject) => subject.toLowerCase() === "data analytics");
   const featureHref = featured[0] ? `/dashboard/courses/${encodeURIComponent(featured[0].slug)}` : hasDataCourses ? dataHref : explorePath;
 
   return (
@@ -44,14 +43,16 @@ export function DashboardHome({ campaign, catalog, query, savedCourseIds, locale
       {featured.length > 0 && (
         <CourseShelf title={copy.featured} courses={featured} dashboard authenticated savedCourseIds={savedCourseIds} />
       )}
-      {subjects.length > 1 && (
+      {subjects.length > 0 && (
         <section className={styles.subjects} aria-labelledby="home-subjects">
           <h2 id="home-subjects">{copy.browseSubjects}</h2>
           <ul>
-            {subjects.slice(0, 6).map((subject) => (
+            {subjects.map((subject) => (
               <li key={subject}>
                 <Link href={publicCatalogHref(query, { category: subject }, explorePath)}>
-                  {subject} <ArrowUpRight size={15} aria-hidden="true" />
+                  <span className={styles.subjectIcon}><BookOpen size={18} aria-hidden="true" /></span>
+                  <span className={styles.subjectName}>{subject}</span>
+                  <ArrowUpRight size={16} aria-hidden="true" />
                 </Link>
               </li>
             ))}
@@ -60,7 +61,14 @@ export function DashboardHome({ campaign, catalog, query, savedCourseIds, locale
       )}
       <PublicCatalog catalog={catalog} query={query} authenticated savedCourseIds={savedCourseIds} dashboard basePath={explorePath}
         homeFeed={{ title: copy.moreCourses, catalogLabel: copy.browseCatalog, excludedIds: featured.map(({ id }) => id) }} />
-      <Footer />
+      <footer className={styles.footer}>
+        <span>© {new Date().getFullYear()} Growvelt</span>
+        <div>
+          <Link href="/dashboard/support">{translate(locale, "footer.support")}</Link>
+          <Link href="/privacy-policy">{translate(locale, "footer.privacy")}</Link>
+          <Link href="/terms-of-service">{translate(locale, "footer.terms")}</Link>
+        </div>
+      </footer>
     </div>
   );
 }
