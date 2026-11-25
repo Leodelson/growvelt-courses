@@ -17,6 +17,8 @@
 .resultsHeading h2 { font-size: clamp(23px, 3vw, 30px); margin: 8px 0 0; letter-spacing: -.025em; }
 .page .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
 .homeFeed { min-width: 0; container-type: inline-size; }
+.homeEnd { display: grid; justify-items: center; margin-top: 30px; }
+.homeEnd p { margin: 0; }
 .homeFeed .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
 .homeFeed .resultsHeading { flex-flow: row wrap; align-items: baseline; margin-top: 0; }
 .homeFeed .resultsHeading a { color: var(--purple); font-size: 14px; font-weight: 700; }
