@@ -11,6 +11,7 @@ import { coursePresentationCopy } from "@/app/lib/catalog/course-presentation-co
 import { getEnrollmentState } from "@/app/lib/learning/enrollments";
 import { getOwnSavedLearningCourseIds } from "@/app/lib/learning/saved-courses";
 import { getOwnPaystackTestFixtureEligibility } from "@/app/lib/payments/test-fixture";
+import { isLiveLearnerCheckoutInScope } from "@/app/lib/payments/paystack-config";
 import { createClient } from "@/app/lib/supabase/server";
 import { canStartTestSubscriptionCheckout } from "@/app/lib/subscriptions/feature";
 import { SubscriptionPlanPurchase, type PublicTestSubscriptionPlan } from "@/app/components/learning/subscription-plan-purchase";
@@ -35,8 +36,12 @@ export default async function PublishedCourseDetailPage({ params }: { params: Pr
   if (!course) notFound();
   const copy = coursePresentationCopy[await getRequestLocale()];
   const paystackMode = process.env.PAYSTACK_MODE === "live" ? "live" : "test";
+  const liveCheckoutEnabled = paystackMode === "live" && !course.isFree
+    && process.env.PAYMENTS_CHECKOUT_ENABLED === "true"
+    && process.env.PAYMENTS_LIVE_LEARNER_CHECKOUT_ENABLED === "true";
+  const liveCheckoutScope = process.env.PAYMENTS_LIVE_LEARNER_CHECKOUT_SCOPE;
   const subscriptionsAvailable = canStartTestSubscriptionCheckout() && !course.isFree;
-  const [enrollment, savedCourseIds, fixtureEligibility, subscriptionPlanResult, related] = await Promise.all([
+  const [enrollment, savedCourseIds, fixtureEligibility, subscriptionPlanResult, related, scopedLearnerId] = await Promise.all([
     getEnrollmentState(course.id),
     getOwnSavedLearningCourseIds(),
     course.isFree || paystackMode === "live" ? Promise.resolve({ eligible: false }) : getOwnPaystackTestFixtureEligibility(course.id),
@@ -44,13 +49,14 @@ export default async function PublishedCourseDetailPage({ params }: { params: Pr
       ? createClient().then((client) => client.rpc("list_public_test_learning_subscription_plans_for_course", { p_course_id: course.id }))
       : Promise.resolve({ data: null, error: null }),
     getRelatedLearningCourses(course),
+    liveCheckoutEnabled && liveCheckoutScope !== undefined
+      ? createClient().then(async (client) => (await client.auth.getUser()).data.user?.id)
+      : Promise.resolve(undefined),
   ]);
   const subscriptionPlans = (subscriptionPlanResult.data ?? []) as PublicTestSubscriptionPlan[];
   const pricing = course.isFree ? "Free" : `${course.priceCurrency || "NGN"} ${Number(course.priceAmount ?? 0).toLocaleString("en-NG")}`;
   const activityCount = course.modules.reduce((total, module) => total + module.lessons.filter((lesson) => lesson.type !== "project").length, 0);
-  const checkoutMode = process.env.PAYMENTS_CHECKOUT_ENABLED === "true"
-    && paystackMode === "live"
-    && process.env.PAYMENTS_LIVE_LEARNER_CHECKOUT_ENABLED === "true"
+  const checkoutMode = liveCheckoutEnabled && isLiveLearnerCheckoutInScope(liveCheckoutScope, scopedLearnerId, course.id)
     ? "live"
     : process.env.PAYMENTS_CHECKOUT_ENABLED === "true" && paystackMode === "test" && fixtureEligibility.eligible
       ? "test"

@@ -12,6 +12,12 @@ export type PaystackConfiguration = {
   liveRefundsEnabled: boolean;
 };
 
+export function isLiveLearnerCheckoutInScope(scope: string | undefined, learnerId: string | undefined, courseId: number): boolean {
+  if (scope === undefined) return true;
+  const match = /^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}):([1-9]\d*)$/i.exec(scope.trim());
+  return Boolean(match && learnerId?.toLowerCase() === match[1].toLowerCase() && String(courseId) === match[2]);
+}
+
 /** Keep new payment returns on the initiating session host during the grace period.
  * Call only after the route's same-origin check. Never use body/forwarded headers.
  * Existing provider authorizations and callbacks are deliberately not rewritten.

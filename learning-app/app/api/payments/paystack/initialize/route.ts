@@ -4,7 +4,7 @@ import { createAdminClient } from "@/app/lib/supabase/admin";
 import { isLearningBrowserOrigin } from "@/app/lib/security/request-origin";
 import { classifyPaystackCheckoutRecovery, getPaystackConfig, getPaystackTestConfig, initializePaystackLiveTransaction, initializePaystackTestTransaction, verifyPaystackTransaction } from "@/app/lib/payments/paystack";
 import type { PaystackConfiguration } from "@/app/lib/payments/paystack-config";
-import { paystackCallbackForRequest } from "@/app/lib/payments/paystack-config";
+import { isLiveLearnerCheckoutInScope, paystackCallbackForRequest } from "@/app/lib/payments/paystack-config";
 import { getOrderNotificationContext, sendPaymentNotification } from "@/app/lib/email/payment-notifications";
 
 type OrderRow = { order_id: number; order_reference: string; payment_attempt_id: number; amount_minor: number; currency: string };
@@ -146,6 +146,9 @@ export async function POST(request: Request) {
   const body = await request.json().catch(() => null) as { courseId?: unknown; couponCode?: unknown; checkoutKey?: unknown } | null;
   if (!Number.isSafeInteger(body?.courseId) || Number(body?.courseId) <= 0) return NextResponse.json({ code: "invalid_course", message: "Choose a valid course." }, { status: 400 });
   const courseId = Number(body?.courseId);
+  if (configuration.mode === "live" && !isLiveLearnerCheckoutInScope(process.env.PAYMENTS_LIVE_LEARNER_CHECKOUT_SCOPE, user.id, courseId)) {
+    return NextResponse.json({ code: "checkout_disabled", message: "Paid checkout is not available." }, { status: 503 });
+  }
   const couponCode = typeof body?.couponCode === "string" ? body.couponCode.trim() : "";
   if (body?.couponCode !== undefined && typeof body.couponCode !== "string") {
     return NextResponse.json({ code: "invalid_checkout", message: "Checkout details are invalid." }, { status: 400 });

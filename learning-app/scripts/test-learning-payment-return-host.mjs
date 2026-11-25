@@ -41,14 +41,17 @@ for (const host of ["learn.growvelt.com", "www.growvelt.com"]) {
     const rpc = async name => {
       writes++;
       if (name === "get_own_paystack_test_fixture_eligibility") return { data: [{ eligible: true }] };
-      if (name === "initialize_paystack_test_learning_order") return { data: [{ order_reference: reference, amount_minor: 10000 }] };
+      if (["initialize_paystack_test_learning_order", "initialize_paystack_live_learning_order"].includes(name)) {
+        return { data: [{ order_reference: reference, amount_minor: 10000 }] };
+      }
       if (name === "start_learning_company_paid_course_checkout") return { data: [{ provider_reference: reference, amount_minor: 10000 }] };
       if (name === "get_company_test_learning_subscription_plan_for_checkout") return { data: [] };
       if (name === "begin_own_learning_test_subscription_checkout") return { data: [{ outcome: ready ? "ready" : "initialize", authorization_url: ready ? "https://checkout.paystack.com/existing" : null, reference, amount_minor: 10000, subscription_id: "id", invoice_id: "id", plan_code: "PLN_existing" }] };
       if (name === "finish_own_learning_test_subscription_checkout") return { data: "ready" };
       return { data: null };
     };
-    const client = { auth: { getUser: async () => ({ data: { user: { id: "synthetic", email: "learner@example.invalid" } } }) }, rpc };
+    const learnerId = "10000000-0000-4000-8000-000000000001";
+    const client = { auth: { getUser: async () => ({ data: { user: { id: learnerId, email: "learner@example.invalid" } } }) }, rpc };
     const getConfig = () => ({ mode: "test", checkoutEnabled: true, callbackUrl: "https://learn.growvelt.com/payments/paystack/callback" });
     const initialize = async input => { providerCalls++; supplied = input; return { authorizationUrl: "https://checkout.paystack.com/synthetic" }; };
     const mocks = {
@@ -86,6 +89,21 @@ for (const host of ["learn.growvelt.com", "www.growvelt.com"]) {
       assert.equal((await invoke(request(urls.learningProductionWorkerOrigin, `https://${host}`))).status, 200);
       assert.equal(providerCalls, 2);
       assert.equal(supplied.callbackUrl, `https://${host}/payments/paystack/callback?reference=${reference}`);
+      const liveMocks = { ...mocks, "@/app/lib/payments/paystack": {
+        getPaystackConfig: () => ({ ...getConfig(), mode: "live", liveLearnerCheckoutEnabled: true }),
+        initializePaystackLiveTransaction: initialize,
+      } };
+      const liveRoute = (scope) => load(path, liveMocks, { ...future, PAYMENTS_LIVE_LEARNER_CHECKOUT_SCOPE: scope });
+      const writesBeforeScopeCheck = writes;
+      for (const deniedScope of [learnerId + ":2", "10000000-0000-4000-8000-000000000002:1", ""]) {
+        const denied = await liveRoute(deniedScope).POST(request(urls.learningProductionWorkerOrigin, `https://${host}`));
+        assert.equal(denied.status, 503);
+        assert.equal((await denied.json()).code, "checkout_disabled");
+      }
+      assert.equal(writes, writesBeforeScopeCheck);
+      assert.equal(providerCalls, 2);
+      assert.equal((await liveRoute(learnerId + ":1").POST(request(urls.learningProductionWorkerOrigin, `https://${host}`))).status, 200);
+      assert.equal(providerCalls, 3);
     }
     if (kind === "subscription") {
       ready = true;

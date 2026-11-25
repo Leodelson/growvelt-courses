@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
-const { resolvePaystackConfiguration } = await import("../app/lib/payments/paystack-config.ts");
+const { isLiveLearnerCheckoutInScope, resolvePaystackConfiguration } = await import("../app/lib/payments/paystack-config.ts");
 const liveCallback = "https://learn.growvelt.com/payments/paystack/callback";
 const providerSource = await readFile(new URL("../app/lib/payments/paystack.ts", import.meta.url), "utf8");
 const coursePageSource = await readFile(new URL("../app/dashboard/courses/[slug]/page.tsx", import.meta.url), "utf8");
@@ -25,6 +25,15 @@ assert.equal(live.liveRefundsEnabled, false);
 const liveGate = resolvePaystackConfiguration({ PAYSTACK_MODE: "live", PAYSTACK_LIVE_SECRET_KEY: "sk_live_example", PAYSTACK_CALLBACK_URL: liveCallback, PAYMENTS_CHECKOUT_ENABLED: "true", PAYMENTS_LIVE_LEARNER_CHECKOUT_ENABLED: "true", PAYMENTS_REFUNDS_ENABLED: "false" });
 assert.equal(liveGate.checkoutEnabled, true);
 assert.equal(liveGate.liveLearnerCheckoutEnabled, true);
+const approvedLearner = "10000000-0000-4000-8000-000000000001";
+const scope = approvedLearner + ":34";
+assert.equal(isLiveLearnerCheckoutInScope(scope, approvedLearner, 34), true);
+assert.equal(isLiveLearnerCheckoutInScope(scope, approvedLearner, 35), false);
+assert.equal(isLiveLearnerCheckoutInScope(scope, "10000000-0000-4000-8000-000000000002", 34), false);
+assert.equal(isLiveLearnerCheckoutInScope(scope, undefined, 34), false);
+assert.equal(isLiveLearnerCheckoutInScope("", approvedLearner, 34), false);
+assert.equal(isLiveLearnerCheckoutInScope(approvedLearner, approvedLearner, 34), false);
+assert.equal(isLiveLearnerCheckoutInScope(undefined, approvedLearner, 34), true);
 const liveRefundGate = resolvePaystackConfiguration({ PAYSTACK_MODE: "live", PAYSTACK_LIVE_SECRET_KEY: "sk_live_example", PAYSTACK_CALLBACK_URL: liveCallback, PAYMENTS_LIVE_REFUNDS_ENABLED: "true" });
 assert.equal(liveRefundGate.liveRefundsEnabled, true);
 for (const invalid of [
