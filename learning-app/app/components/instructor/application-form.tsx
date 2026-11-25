@@ -1,17 +1,37 @@
 "use client";
 
-import { FormEvent, useRef, useState } from "react";
+import { FormEvent, useMemo, useRef, useState } from "react";
+import { getCountries, getCountryCallingCode, parsePhoneNumberFromString } from "libphonenumber-js/min";
+import type { CountryCode } from "libphonenumber-js/min";
 import { ActionButton } from "@/app/components/ui/action-button";
 import { InlineFeedback } from "@/app/components/ui/inline-feedback";
 import type { InstructorApplicationIdentity } from "@/app/lib/instructor/application";
 import { useLanguage } from "@/app/components/language-provider";
+import { ApplicationRegionPicker } from "./application-region-picker";
+import styles from "./application-region-picker.module.css";
+
+const regionCopy = {
+  en: { choose: "Select a country", search: "Search countries", dial: "Calling code", searchDial: "Search country or calling code", empty: "No matches found", invalidPhone: "Enter a valid phone number for the selected calling code." },
+  fr: { choose: "Sélectionnez un pays", search: "Rechercher un pays", dial: "Indicatif", searchDial: "Rechercher un pays ou un indicatif", empty: "Aucun résultat", invalidPhone: "Saisissez un numéro valide pour l’indicatif sélectionné." },
+  es: { choose: "Selecciona un país", search: "Buscar países", dial: "Prefijo", searchDial: "Buscar país o prefijo", empty: "No se encontraron resultados", invalidPhone: "Introduce un número válido para el prefijo seleccionado." },
+};
+
+const englishRegionNames = new Intl.DisplayNames("en", { type: "region" });
 
 function RequiredLabel({ text }: { text: string }) {
   return <span className="field-label">{text} <span className="required-mark" aria-hidden="true">*</span></span>;
 }
 
 export function InstructorApplicationForm({ identity }: { identity: InstructorApplicationIdentity }) {
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
+  const regionText = regionCopy[locale];
+  const regions = useMemo(() => {
+    const names = new Intl.DisplayNames(locale, { type: "region" });
+    return getCountries().map((code) => ({ code, name: names.of(code) ?? code, dialCode: `+${getCountryCallingCode(code)}` }))
+      .sort((a, b) => a.name.localeCompare(b.name, locale));
+  }, [locale]);
+  const [countryCode, setCountryCode] = useState<CountryCode | "">("");
+  const [phoneRegion, setPhoneRegion] = useState<CountryCode | "">("");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const pendingRef = useRef(false);
@@ -20,13 +40,20 @@ export function InstructorApplicationForm({ identity }: { identity: InstructorAp
     event.preventDefault();
     if (pendingRef.current) return;
     const values = new FormData(event.currentTarget);
-    const country = String(values.get("country") ?? "").trim();
+    const country = countryCode ? englishRegionNames.of(countryCode) ?? countryCode : "";
     const yearsExperienceValue = String(values.get("years_experience") ?? "").trim();
     const yearsExperience = Number(yearsExperienceValue);
     const portfolioUrl = String(values.get("portfolio_url") ?? "").trim();
 
     if (!country || !yearsExperienceValue || !Number.isInteger(yearsExperience) || yearsExperience < 0 || yearsExperience > 60) {
       setMessage(t("teach.validation"));
+      return;
+    }
+
+    const phoneValue = String(values.get("phone") ?? "").trim();
+    const phone = phoneValue ? parsePhoneNumberFromString(phoneValue, { defaultCountry: phoneRegion || countryCode || undefined, extract: false }) : undefined;
+    if (phoneValue && !phone?.isPossible()) {
+      setMessage(regionText.invalidPhone);
       return;
     }
 
@@ -45,7 +72,7 @@ export function InstructorApplicationForm({ identity }: { identity: InstructorAp
     setBusy(true);
     setMessage("");
     try {
-      const response = await fetch("/api/instructor/application", { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ country, phone: String(values.get("phone") ?? "").trim(), headline: String(values.get("headline") ?? "").trim(), expertise, yearsExperience, teachingExperience: String(values.get("teaching_experience") ?? "").trim(), bio: String(values.get("bio") ?? "").trim(), motivation: String(values.get("motivation") ?? "").trim(), portfolioUrl }) });
+      const response = await fetch("/api/instructor/application", { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ country, phone: phone?.number ?? "", headline: String(values.get("headline") ?? "").trim(), expertise, yearsExperience, teachingExperience: String(values.get("teaching_experience") ?? "").trim(), bio: String(values.get("bio") ?? "").trim(), motivation: String(values.get("motivation") ?? "").trim(), portfolioUrl }) });
       if (!response.ok) throw new Error("application_unavailable");
       window.location.assign("/teach/application");
     } catch {
@@ -62,9 +89,20 @@ export function InstructorApplicationForm({ identity }: { identity: InstructorAp
       <span>{identity.email || t("teach.accountEmail")}</span>
       <small>{t("teach.accountNote")}</small>
     </div>
-    <div className="instructor-form-grid">
-      <label><RequiredLabel text={t("teach.country")} /><input name="country" required maxLength={100} autoComplete="country-name" placeholder="e.g. Nigeria" disabled={busy} /></label>
-      <label>{t("teach.phone")} <span>({t("teach.optional")})</span><input name="phone" type="tel" maxLength={32} autoComplete="tel" placeholder="e.g. +234 800 000 0000" disabled={busy} /></label>
+    <div className={styles.fields}>
+      <div className={styles.field}>
+        <RequiredLabel text={t("teach.country")} />
+        <ApplicationRegionPicker regions={regions} selected={countryCode} onSelect={setCountryCode} label={t("teach.country")}
+          placeholder={regionText.choose} searchLabel={regionText.search} emptyLabel={regionText.empty} disabled={busy} />
+      </div>
+      <div className={styles.field}>
+        <label htmlFor="instructor-application-phone"><span className="field-label">{t("teach.phone")} <span className="field-label-optional">({t("teach.optional")})</span></span></label>
+        <div className={styles.phone}>
+          <ApplicationRegionPicker regions={regions} selected={phoneRegion || countryCode} onSelect={setPhoneRegion} label={regionText.dial}
+            placeholder={regionText.dial} searchLabel={regionText.searchDial} emptyLabel={regionText.empty} disabled={busy} dial />
+          <input id="instructor-application-phone" name="phone" type="tel" maxLength={32} autoComplete="tel-national" disabled={busy} />
+        </div>
+      </div>
     </div>
     <label><RequiredLabel text={t("teach.headline")} /><input name="headline" required maxLength={160} placeholder="e.g. Data analyst and practical SQL educator" disabled={busy} /></label>
     <label><RequiredLabel text={t("teach.expertise")} /><input name="expertise" required placeholder="e.g. SQL, data analysis, Power BI" disabled={busy} /><small>{t("teach.expertiseNote")}</small></label>

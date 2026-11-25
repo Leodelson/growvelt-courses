@@ -12,6 +12,7 @@ export function EnrollmentButton({ courseId, slug, isFree, isEnrolled, paidCheck
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [checkoutMessage, setCheckoutMessage] = useState<string | null>(null);
   const [couponCode, setCouponCode] = useState("");
   const [checkoutKey, setCheckoutKey] = useState<string | null>(null);
   if (isEnrolled) return <div className="enrollment-actions"><Link className="button button-primary" href={`/dashboard/my-learning/${encodeURIComponent(slug)}`}>Continue course</Link><Link className="text-link" href="/dashboard/my-learning">View in My Courses</Link></div>;
@@ -30,7 +31,7 @@ export function EnrollmentButton({ courseId, slug, isFree, isEnrolled, paidCheck
   }
   async function purchase() {
     if (pending) return;
-    setPending(true); setError(null);
+    setPending(true); setError(null); setCheckoutMessage(null);
     const normalizedCoupon = couponCode.trim();
     const requestKey = normalizedCoupon ? checkoutKey ?? crypto.randomUUID() : null;
     if (requestKey) setCheckoutKey(requestKey);
@@ -43,7 +44,18 @@ export function EnrollmentButton({ courseId, slug, isFree, isEnrolled, paidCheck
       }),
     }).catch(() => null);
     if (response?.status === 401) { window.location.assign(`/sign-in?next=${encodeURIComponent(`/dashboard/courses/${slug}`)}`); return; }
-    const result = await response?.json().catch(() => null) as { authorizationUrl?: unknown; message?: unknown } | null;
+    const result = await response?.json().catch(() => null) as { authorizationUrl?: unknown; code?: string; outcome?: string; message?: unknown } | null;
+    if (response?.ok && ["paid_and_enrolled", "already_paid", "already_processed"].includes(result?.outcome ?? "")) {
+      setPending(false);
+      setCheckoutMessage("Payment verified. Updating your course access…");
+      router.refresh();
+      return;
+    }
+    if (response?.status === 409 && result?.code === "purchase_pending" && typeof result.message === "string") {
+      setPending(false);
+      setCheckoutMessage(result.message);
+      return;
+    }
     if (!response?.ok || typeof result?.authorizationUrl !== "string") { if (response) setCheckoutKey(null); setPending(false); setError(typeof result?.message === "string" ? result.message : "Checkout could not be started. Please try again."); return; }
     window.location.assign(result.authorizationUrl);
   }
@@ -63,6 +75,7 @@ export function EnrollmentButton({ courseId, slug, isFree, isEnrolled, paidCheck
     <ActionButton className="button button-primary" type="button" onClick={purchase} disabled={pending} isPending={pending} pendingLabel="Opening secure checkout…">Buy Course</ActionButton>
     <p className={`enrollment-unavailable ${styles.legalCopy}`}>By continuing, you agree to the <Link href="/terms-of-service">Terms</Link> and <Link href="/refund-policy">Refund Policy</Link>.</p>
     {error && <InlineFeedback variant="error">{error}</InlineFeedback>}
+    {checkoutMessage && <InlineFeedback>{checkoutMessage}</InlineFeedback>}
   </div>;
   return <div className="enrollment-actions"><ActionButton className="button button-primary" type="button" onClick={enroll} disabled={pending} isPending={pending} pendingLabel="Enrolling…">Enroll free</ActionButton>{error && <InlineFeedback variant="error">{error}</InlineFeedback>}</div>;
 }

@@ -137,7 +137,7 @@ assert.equal(resolvePaystackCallbackReference({ reference, trxref: `GL-${"B".rep
 assert.equal(resolvePaystackCallbackReference({ reference: "invalid-reference" }), null);
 assert.equal(resolvePaystackCallbackReference({}), null);
 
-assert.match(reconciliationRoute, /isSameOriginRequest\(request\)/);
+assert.match(reconciliationRoute, /if \(!isLearningBrowserOrigin\(request\)\).*invalid_origin.*403/);
 assert.match(reconciliationRoute, /supabase\.auth\.getUser\(\)/);
 assert.match(reconciliationRoute, /verifyPaystackTransaction\(reference, configuration\.mode\)/);
 assert.match(reconciliationRoute, /reconcile_own_paystack_learning_payment/);

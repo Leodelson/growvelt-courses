@@ -13,6 +13,10 @@ type ActiveAttemptRow = { status: string; paystack_domain: string | null; initia
 
 const PAYSTACK_ORDER_REFERENCE = /^GL-[A-F0-9]{32}$/;
 
+function checkoutPending(message = "We’re still checking your previous checkout. Wait a minute, then select Buy Course again. If you were charged, check My Courses before paying again.") {
+  return NextResponse.json({ code: "purchase_pending", message }, { status: 409 });
+}
+
 async function recoverPriorCheckout(input: {
   admin: ReturnType<typeof createAdminClient>;
   learnerId: string;
@@ -188,18 +192,14 @@ export async function POST(request: Request) {
         return NextResponse.json({ outcome: recovery.outcome, message: "Your payment is verified. Updating your course access." });
       }
       if (recovery.kind === "waiting") {
-        return NextResponse.json({ code: "purchase_pending", message: "Your previous checkout is still within its safety window. If its Paystack page is open, continue there; otherwise try again in a little while. We won’t start another payment yet." }, { status: 409 });
+        return checkoutPending("If your Paystack checkout is still open, you can continue there. Otherwise, wait a few minutes and select Buy Course again.");
       }
       if (recovery.kind === "released") {
         ({ data, error } = await admin.rpc(initializeFunction, initializeArgs));
         order = (data as OrderRow[] | null)?.[0];
-        if (!error && order) {
-          // Continue with the newly created attempt below.
-        } else {
-          return NextResponse.json({ code: "purchase_pending", message: "Your previous checkout is being resolved. Please check again shortly; no second payment was started." }, { status: 409 });
-        }
+        if (error || !order) return checkoutPending();
       } else {
-        return NextResponse.json({ code: "purchase_pending", message: "We couldn’t verify your previous checkout, so we haven’t started another payment. Please contact support before trying again." }, { status: 409 });
+        return checkoutPending();
       }
     } else {
       return NextResponse.json({ code: duplicate ? "purchase_exists" : "purchase_unavailable", message: duplicate ? "You already have access or a purchase in progress." : "This course cannot be purchased right now." }, { status: duplicate ? 409 : 400 });

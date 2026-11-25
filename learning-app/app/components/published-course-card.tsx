@@ -31,10 +31,13 @@ export function PublishedCourseCard({ course, index, href, highlightQuery = "", 
       <div className={styles.meta}><span>{course.category || t("catalog.fallbackCategory")}</span><SaveCourseButton courseId={course.id} isSaved={isSaved} authenticated={authenticated} signInHref={`/sign-up?next=${encodeURIComponent(`/courses/${course.slug}`)}`} onSavedChange={onSavedChange} /></div>
       <p className={styles.instructor}>{course.instructorName ? `${t("catalog.byInstructor")} ${course.instructorName}` : t("catalog.defaultInstructor")}</p>
       <h2><Link href={destination}>{highlight(course.title, highlightQuery)}</Link></h2><p className={styles.description}>{highlight(course.summary || t("catalog.fallbackSummary"), highlightQuery)}</p>
-      <CourseRatingSummary averageRating={course.averageRating} ratingCount={course.ratingCount} />
-      <span className={styles.level}>{course.level || t("catalog.allLevels")}</span>
       {course.providerVerified && course.providerName && course.providerSlug && <Link className="course-provider-link" href={`/providers/${course.providerSlug}`}>{course.providerName} <VerifiedProviderBadge /></Link>}
-      <div className={styles.footer}><strong>{pricing}</strong><Link href={destination}>{t("catalog.viewCourse")} <span aria-hidden="true">↗</span></Link></div>
+      <strong className={styles.price}>{pricing}</strong>
+      <div className={styles.footer}>
+        <CourseRatingSummary averageRating={course.averageRating} ratingCount={course.ratingCount} />
+        <span className={styles.level}>{course.level || t("catalog.allLevels")}</span>
+        <Link href={destination}>{t("catalog.viewCourse")} <span aria-hidden="true">↗</span></Link>
+      </div>
     </div>
   </article>;
 }

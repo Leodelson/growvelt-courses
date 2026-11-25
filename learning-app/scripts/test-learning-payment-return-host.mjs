@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import * as crypto from "node:crypto";
 import { readFileSync } from "node:fs";
 import vm from "node:vm";
 import ts from "typescript";
@@ -113,4 +114,63 @@ for (const host of ["learn.growvelt.com", "www.growvelt.com"]) {
     }
   }
 }
-console.log("PASS dual-host course/company/subscription returns, dormant behavior, hostile origins/body/headers rejected, early fail-closed, and existing subscription authorization preserved (synthetic only).");
+const core = load("../app/lib/payments/paystack-core.ts", { "node:crypto": crypto });
+for (const scenario of ["inconclusive", "pending", "cooldown", "abandoned", "paid"]) {
+  const reference = `GL-${"A".repeat(32)}`;
+  const learnerId = "10000000-0000-4000-8000-000000000001";
+  let starts = 0;
+  let releases = 0;
+  let providerStarts = 0;
+  const order = { id: 1, order_reference: reference, status: "payment_pending" };
+  const attempt = { status: "pending", paystack_domain: "live", initialized_at: new Date(Date.now() - (scenario === "cooldown" ? 1 : 31) * 60_000).toISOString() };
+  const admin = {
+    from(table) {
+      const query = { select: () => query, eq: () => query, in: () => query, order: () => query, limit: () => query,
+        maybeSingle: async () => ({ data: table === "learning_orders" ? order : attempt }) };
+      return query;
+    },
+    async rpc(name) {
+      if (name === "initialize_paystack_live_learning_order") {
+        return ++starts === 1 ? { error: { code: "23505" } } : { data: [{ order_reference: reference, amount_minor: 10_000 }] };
+      }
+      if (name === "fail_paystack_live_learning_attempt") releases++;
+      if (name === "reconcile_own_paystack_learning_payment") return { data: [{ outcome: "already_paid" }] };
+      return {};
+    },
+  };
+  const route = load("../app/api/payments/paystack/initialize/route.ts", {
+    "next/server": { NextResponse },
+    "@/app/lib/supabase/server": { createClient: async () => ({ auth: { getUser: async () => ({ data: { user: { id: learnerId, email: "learner@example.invalid" } } }) } }) },
+    "@/app/lib/supabase/admin": { createAdminClient: () => admin },
+    "@/app/lib/security/request-origin": requestOrigin,
+    "@/app/lib/payments/paystack-config": config,
+    "@/app/lib/email/payment-notifications": {},
+    "@/app/lib/payments/paystack": {
+      getPaystackConfig: () => ({ mode: "live", liveLearnerCheckoutEnabled: true, callbackUrl: "https://www.growvelt.com/payments/paystack/callback" }),
+      classifyPaystackCheckoutRecovery: core.classifyPaystackCheckoutRecovery,
+      async verifyPaystackTransaction(priorReference, domain) {
+        assert.equal(priorReference, reference);
+        assert.equal(domain, "live");
+        if (scenario === "inconclusive") throw new Error("Lookup unavailable");
+        return { reference, domain, status: scenario === "paid" ? "success" : scenario === "cooldown" ? "abandoned" : scenario };
+      },
+      async initializePaystackLiveTransaction() { providerStarts++; return { authorizationUrl: "https://checkout.paystack.com/retry" }; },
+    },
+  });
+  const response = await route.POST(new Request("https://www.growvelt.com/api/checkout", {
+    method: "POST", headers: { origin: "https://www.growvelt.com", "content-type": "application/json" }, body: JSON.stringify({ courseId: 1 }),
+  }));
+  const result = await response.json();
+  assert.equal(releases, scenario === "abandoned" ? 1 : 0);
+  assert.equal(providerStarts, scenario === "abandoned" ? 1 : 0);
+  if (scenario === "abandoned") assert.equal(result.authorizationUrl, "https://checkout.paystack.com/retry");
+  else if (scenario === "paid") assert.equal(result.outcome, "already_paid");
+  else {
+    assert.equal(response.status, 409);
+    assert.equal(result.code, "purchase_pending");
+    assert.match(result.message, /select Buy Course again/i);
+    assert.doesNotMatch(result.message, /contact support/i);
+  }
+}
+
+console.log("PASS dual-host checkout, origin and scope checks, existing subscription authorization, and safe course checkout retries (synthetic only).");

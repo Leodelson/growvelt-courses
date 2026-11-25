@@ -116,6 +116,7 @@
     "domhandler": "6.0.1",
     "domutils": "4.0.2",
     "htmlparser2": "12.0.0",
+    "libphonenumber-js": "1.13.17",
     "lucide-react": "^1.31.0",
     "next": "16.4.3",
     "qrcode": "^1.5.4",
