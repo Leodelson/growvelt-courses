@@ -15,6 +15,7 @@ function load(path, mocks, env = future) {
   return module.exports;
 }
 const config = load("../app/lib/payments/paystack-config.ts", { "../site-urls.mjs": urls });
+const requestOrigin = load("../app/lib/security/request-origin.ts", { "../site-urls.mjs": urls });
 const { paystackCallbackForRequest: callback } = config;
 for (const host of ["learn.growvelt.com", "www.growvelt.com"]) {
   for (const configuredHost of ["learn.growvelt.com", "www.growvelt.com"]) {
@@ -54,7 +55,11 @@ for (const host of ["learn.growvelt.com", "www.growvelt.com"]) {
       "server-only": {}, "next/server": { NextResponse },
       "@/app/lib/supabase/server": { createClient: async () => client },
       "@/app/lib/supabase/admin": { createAdminClient: () => client },
-      "@/app/lib/security/request-origin": { isSameOriginRequest: request => request.headers.get("origin") === new URL(request.url).origin },
+      "@/app/lib/security/request-origin": requestOrigin,
+      "@/app/lib/email/payment-notifications": {
+        getOrderNotificationContext: async () => { throw new Error("Unexpected payment notification lookup."); },
+        sendPaymentNotification: async () => { throw new Error("Unexpected payment notification."); },
+      },
       "@/app/lib/payments/paystack-config": config,
       "@/app/lib/payments/paystack": { getPaystackConfig: getConfig, getPaystackTestConfig: getConfig, initializePaystackTestTransaction: initialize },
       "@/app/lib/payments/paystack-subscriptions": { initializePaystackTestSubscriptionCheckout: initialize, PaystackTestSubscriptionCheckoutError: class extends Error {} },
@@ -75,6 +80,13 @@ for (const host of ["learn.growvelt.com", "www.growvelt.com"]) {
     assert.equal(supplied.callbackUrl, `https://${host}/payments/paystack/callback?reference=${reference}`);
     assert.equal(supplied.reference, reference);
     assert.equal(supplied.amountMinor, 10000);
+    if (kind === "course" && host === "www.growvelt.com") {
+      assert.equal((await invoke(request(urls.learningProductionWorkerOrigin, "https://jobs.growvelt.com"))).status, 403);
+      assert.equal(providerCalls, 1);
+      assert.equal((await invoke(request(urls.learningProductionWorkerOrigin, `https://${host}`))).status, 200);
+      assert.equal(providerCalls, 2);
+      assert.equal(supplied.callbackUrl, `https://${host}/payments/paystack/callback?reference=${reference}`);
+    }
     if (kind === "subscription") {
       ready = true;
       const response = await invoke(request(`https://${host}`));

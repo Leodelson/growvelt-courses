@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/app/lib/supabase/server";
 import { createAdminClient } from "@/app/lib/supabase/admin";
-import { isSameOriginRequest } from "@/app/lib/security/request-origin";
+import { isLearningBrowserOrigin } from "@/app/lib/security/request-origin";
 import { classifyPaystackCheckoutRecovery, getPaystackConfig, getPaystackTestConfig, initializePaystackLiveTransaction, initializePaystackTestTransaction, verifyPaystackTransaction } from "@/app/lib/payments/paystack";
 import type { PaystackConfiguration } from "@/app/lib/payments/paystack-config";
 import { paystackCallbackForRequest } from "@/app/lib/payments/paystack-config";
@@ -130,7 +130,7 @@ async function recoverPriorCheckout(input: {
 }
 
 export async function POST(request: Request) {
-  if (!isSameOriginRequest(request)) return NextResponse.json({ code: "invalid_origin", message: "This request was not accepted." }, { status: 403 });
+  if (!isLearningBrowserOrigin(request)) return NextResponse.json({ code: "invalid_origin", message: "This request was not accepted." }, { status: 403 });
   let configuration: PaystackConfiguration;
   try {
     configuration = getPaystackConfig(true);

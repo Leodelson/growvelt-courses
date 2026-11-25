@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
-import { isSameOriginRequest } from "@/app/lib/security/request-origin";
+import { isLearningBrowserOrigin } from "@/app/lib/security/request-origin";
 import { createClient } from "@/app/lib/supabase/server";
 import { createAdminClient } from "@/app/lib/supabase/admin";
 import { getPaystackConfig, verifyPaystackTransaction } from "@/app/lib/payments/paystack";
 import { getOrderNotificationContext, sendPaymentNotification } from "@/app/lib/email/payment-notifications";
 
 export async function POST(request: Request) {
-  if (!isSameOriginRequest(request)) return NextResponse.json({ code: "invalid_origin" }, { status: 403 });
+  if (!isLearningBrowserOrigin(request)) return NextResponse.json({ code: "invalid_origin" }, { status: 403 });
 
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();

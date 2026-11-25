@@ -1,4 +1,4 @@
-import { futureLearningOrigin, getLearningOrigin, legacyLearningOrigin } from "../site-urls.mjs";
+import { futureLearningOrigin, getLearningOrigin, learningAuthResponseOrigin, legacyLearningOrigin } from "../site-urls.mjs";
 
 export type PaystackMode = "test" | "live";
 export type PaystackEnvironment = Record<string, string | undefined>;
@@ -18,7 +18,7 @@ export type PaystackConfiguration = {
  */
 export function paystackCallbackForRequest(requestUrl: string, configuredUrl: string, environment: PaystackEnvironment = process.env): string {
   if (getLearningOrigin(environment) !== futureLearningOrigin) return configuredUrl;
-  const origin = new URL(requestUrl).origin;
+  const origin = learningAuthResponseOrigin(requestUrl, environment);
   if (![legacyLearningOrigin, futureLearningOrigin].includes(origin)) {
     throw new Error("Unapproved Growvelt checkout origin.");
   }
