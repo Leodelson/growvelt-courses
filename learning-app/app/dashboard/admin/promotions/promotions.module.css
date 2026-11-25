@@ -41,6 +41,57 @@
 .courseOptions input { width: 18px; height: 18px; margin: 0; accent-color: var(--purple); }
 .courseOptions span { overflow-wrap: anywhere; }
 .courseOptions span small { display: block; }
+.pickerTrigger, .pickerResults button, .pickerSelections button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 650;
+  text-align: start;
+  cursor: pointer;
+}
+.pickerTrigger { width: 100%; margin-top: 8px; }
+.pickerTrigger span, .pickerResults span, .pickerSelections span { flex: 1; overflow-wrap: anywhere; }
+.pickerTrigger svg, .pickerResults svg, .pickerSelections svg { flex: none; color: var(--purple); }
+.pickerTrigger[aria-expanded="true"] > svg:last-child { transform: rotate(180deg); }
+.pickerPanel:not([hidden]) { display: grid; gap: 9px; }
+.pickerPanel {
+  margin-block: 8px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+}
+.pickerPanel p { margin: 0; color: var(--muted); font-size: 14px; }
+.pickerResults, .pickerSelections { margin: 0; padding: 2px; list-style: none; }
+.pickerResults { display: grid; gap: 6px; max-height: 270px; overflow: auto; }
+.pickerResults button { width: 100%; }
+.pickerResults small { display: block; }
+.pickerResults button[aria-pressed="true"] { border-color: var(--purple); background: var(--purple-soft); }
+.pickerResults button:disabled { cursor: default; opacity: .58; }
+.pickerPagination { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+.pickerPagination:empty { display: none; }
+.pickerPagination button {
+  min-height: 44px;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--purple);
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+}
+.pickerSelections { display: flex; flex-wrap: wrap; gap: 6px; margin-block: 8px; }
+.pickerSelections li { min-width: 0; max-width: 100%; }
+.pickerSelections button { max-width: 100%; border-radius: 99px; font-size: 13px; }
 .form button { justify-self: start; }
 .list { display: grid; gap: 12px; }
 .list article { display: grid; min-width: 0; gap: 14px; padding: 18px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface-muted); }

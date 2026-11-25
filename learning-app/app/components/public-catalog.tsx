@@ -131,7 +131,9 @@ export function PublicCatalog({ catalog, query, authenticated, savedCourseIds = 
 
   if (homeFeed) {
     const additionalCourses = courses.filter((course) => !homeFeed.excludedIds.includes(course.id));
-    if (!additionalCourses.length && !hasMore) return null;
+    if (!additionalCourses.length && !hasMore) {
+      return courses.length ? <p className="results-end-marker">{t("catalog.end")}</p> : null;
+    }
     return (
       <section className={styles.homeFeed} aria-labelledby="home-course-feed">
         <div className={styles.resultsHeading}>
@@ -144,7 +146,7 @@ export function PublicCatalog({ catalog, query, authenticated, savedCourseIds = 
               authenticated={authenticated} isSaved={savedCourseIds.includes(course.id)} />
           ))}
         </div>
-        {loadControl}
+        {hasMore ? loadControl : <p className="results-end-marker">{t("catalog.end")}</p>}
       </section>
     );
   }

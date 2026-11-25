@@ -5,6 +5,7 @@ import { createClient } from "@/app/lib/supabase/server";
 import { ActionSubmitButton } from "@/app/components/action-submit-button";
 import { createLearningCampaignAction, createLearningCouponAction, disableLearningCampaignAction, disableLearningCouponAction } from "./actions";
 import { ActionFeedback } from "./action-feedback";
+import { FeaturedCoursePicker } from "./featured-course-picker";
 import styles from "./promotions.module.css";
 
 export const metadata = { title: "Promotions and coupons" };
@@ -16,10 +17,6 @@ type Coupon = {
   discount_value: number; max_discount_minor: number; minimum_charge_minor: number;
   starts_at: string; ends_at: string; max_redemptions: number | null;
   active: boolean; redeemed_count: number; course_ids: number[];
-};
-type EditorialCourseOption = {
-  course_id: number; title: string; summary: string | null; category: string | null;
-  is_free: boolean; price_amount: number | null; price_currency: string | null;
 };
 type EditorialCampaign = {
   campaign_id: number; campaign_title: string; campaign_message: string;
@@ -64,19 +61,16 @@ export default async function AdminPromotionsPage({
   const [
     { data: couponsData, error: couponsError },
     { data: coursesData, error: coursesError },
-    { data: editorialCoursesData, error: editorialCoursesError },
     { data: campaignData, error: campaignError },
     query,
   ] = await Promise.all([
     supabase.rpc("list_learning_promotion_coupons_for_admin"),
     supabase.rpc("list_learning_promotion_course_options_for_admin"),
-    supabase.rpc("list_learning_editorial_courses_for_admin"),
     supabase.rpc("list_learning_editorial_campaigns_for_admin"),
     searchParams,
   ]);
   const coupons = (Array.isArray(couponsData) ? couponsData : []) as Coupon[];
   const courses = (Array.isArray(coursesData) ? coursesData : []) as CourseOption[];
-  const editorialCourses = (Array.isArray(editorialCoursesData) ? editorialCoursesData : []) as EditorialCourseOption[];
   const campaigns = (Array.isArray(campaignData) ? campaignData : []) as EditorialCampaign[];
   const courseTitles = new Map(courses.map((course) => [course.course_id, course.title]));
   const testCouponCheckoutActive = process.env.PAYSTACK_MODE === "test"
@@ -111,20 +105,14 @@ export default async function AdminPromotionsPage({
 
     <section id="campaign-create" className={styles.panel}>
       <header><p className="eyebrow">Appears on Learning Home</p><h2>Feature a campaign</h2><p>The title and short message fill the Home banner. The selected courses appear below it and on public Explore.</p></header>
-      {editorialCoursesError ? <p className={styles.error}>Eligible published courses could not be loaded. Try again later.</p> : editorialCourses.length === 0 ? <p className={styles.muted}>There are no eligible published courses with an instructor or provider organization to feature yet.</p> : <form action={createLearningCampaignAction} className={styles.form}>
+      <form action={createLearningCampaignAction} className={styles.form}>
         <label>Campaign title<input name="campaignTitle" required minLength={3} maxLength={80} placeholder="Featured learning" /></label>
         <label className={styles.courseField}>Short message<textarea name="campaignMessage" required minLength={3} maxLength={240} rows={3} placeholder="A short introduction to this collection of courses." /></label>
         <label>Starts (Africa/Lagos time)<input name="campaignStartsAt" type="datetime-local" /><small>Leave blank to publish now.</small></label>
         <label>Ends (Africa/Lagos time)<input name="campaignEndsAt" type="datetime-local" required /></label>
-        <CourseChoices name="campaignCourseIds" legend="Featured courses"
-          hint="Choose one to six published courses. To feature a topic, name it in the title and choose courses that match."
-          options={editorialCourses.map((course) => ({
-            id: course.course_id,
-            title: course.title,
-            price: course.is_free ? "Free" : `${course.price_currency || "NGN"} ${Number(course.price_amount ?? 0).toLocaleString("en-NG")}`,
-          }))} />
+        <FeaturedCoursePicker />
         <ActionSubmitButton label="Save featured campaign" pendingLabel="Saving campaign…" />
-      </form>}
+      </form>
     </section>
 
     <section id="campaign-history" className={styles.panel}>

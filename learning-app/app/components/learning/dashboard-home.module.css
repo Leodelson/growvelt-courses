@@ -126,21 +126,6 @@
 }
 .subjectName { overflow-wrap: anywhere; }
 
-.footer {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: 8px 20px;
-  align-items: center;
-  padding: 14px 0;
-  border-top: 1px solid var(--line);
-  color: var(--muted);
-  font-size: 13px;
-}
-.footer > div { display: flex; flex-wrap: wrap; gap: 0 16px; }
-.footer a { display: inline-flex; align-items: center; min-height: 44px; }
-.footer a:hover { color: var(--purple); text-decoration: underline; }
-
 @container (max-width: 660px) {
   .spotlight { grid-template-columns: minmax(0, 1fr); }
   .spotlightVisual { grid-row: 1; min-height: 0; aspect-ratio: 16 / 9; }

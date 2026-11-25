@@ -4,7 +4,7 @@ import { CourseShelf } from "@/app/components/course-shelf";
 import { PublicCatalog } from "@/app/components/public-catalog";
 import type { ActiveLearningCampaign, PublicCatalogResult } from "@/app/lib/catalog/published-courses";
 import { publicCatalogHref, type PublicCatalogQuery } from "@/app/lib/catalog/public-catalog-query";
-import { translate, type Locale } from "@/app/lib/i18n";
+import type { Locale } from "@/app/lib/i18n";
 import { DashboardSpotlightArt } from "./dashboard-spotlight-art";
 import { dashboardHomeCopy } from "./dashboard-home-copy";
 import styles from "./dashboard-home.module.css";
@@ -61,14 +61,6 @@ export function DashboardHome({ campaign, catalog, query, savedCourseIds, locale
       )}
       <PublicCatalog catalog={catalog} query={query} authenticated savedCourseIds={savedCourseIds} dashboard basePath={explorePath}
         homeFeed={{ title: copy.moreCourses, catalogLabel: copy.browseCatalog, excludedIds: featured.map(({ id }) => id) }} />
-      <footer className={styles.footer}>
-        <span>© {new Date().getFullYear()} Growvelt</span>
-        <div>
-          <Link href="/dashboard/support">{translate(locale, "footer.support")}</Link>
-          <Link href="/privacy-policy">{translate(locale, "footer.privacy")}</Link>
-          <Link href="/terms-of-service">{translate(locale, "footer.terms")}</Link>
-        </div>
-      </footer>
     </div>
   );
 }

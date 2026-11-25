@@ -4,7 +4,7 @@ import { LanguageProvider } from "@/app/components/language-provider";
 import { ThemeProvider } from "@/app/components/theme-provider";
 import { CookieConsentProvider } from "@/app/components/privacy/cookie-consent-provider";
 import { defaultSocialImage, growveltLearningUrl } from "@/app/lib/seo";
-import { LearningHelpAssistant } from "@/app/components/learning-help-assistant";
+import { SupportPageAssistant } from "@/app/components/support-page-assistant";
 import LearningPWA from "@/app/components/pwa/LearningPWA";
 
 export const metadata: Metadata = {
@@ -75,7 +75,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             <CookieConsentProvider>
               <LearningPWA>
                 {children}
-                <LearningHelpAssistant />
+                <SupportPageAssistant />
               </LearningPWA>
             </CookieConsentProvider>
           </LanguageProvider>

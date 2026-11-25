@@ -182,6 +182,11 @@ export async function getActiveLearningEditorialCampaign(): Promise<ActiveLearni
   };
 }
 
+const extraSubjectBatch = 24;
+const extraSubjectBatches = 2;
+const subjectCacheDuration = 2 * 60 * 1000;
+let subjectCache: { key: string; expiresAt: number; categories: string[] } | undefined;
+
 export async function listPublicLearningSubjects(firstPage: PublicCatalogResult, locale: string): Promise<string[]> {
   const subjects = new Map<string, string>();
   const add = (category: string | null) => {
@@ -190,18 +195,24 @@ export async function listPublicLearningSubjects(firstPage: PublicCatalogResult,
   };
   for (const course of firstPage.courses) add(course.category);
 
-  // Keep the same eligibility rules and ordering as the catalog, without loading ratings for later pages.
-  const pageSize = 24;
+  // Keep Home discovery bounded as the catalog grows. Cache only public labels in the warm worker.
   if (firstPage.courses.length < firstPage.total) {
-    const client = await createClient();
-    for (let offset = firstPage.courses.length; offset < firstPage.total; offset += pageSize) {
-      const { data, error } = await client.rpc("search_public_published_learning_courses", {
-        p_sort: "newest",
-        p_limit: pageSize,
-        p_offset: offset,
-      }).select("category");
-      if (error || !Array.isArray(data) || data.length === 0) break;
-      for (const row of data as { category: string | null }[]) add(row.category);
+    const key = [firstPage.total, ...firstPage.courses.map((course) => course.id)].join(":");
+    if (subjectCache?.key === key && subjectCache.expiresAt > Date.now()) {
+      for (const category of subjectCache.categories) add(category);
+    } else {
+      const client = await createClient();
+      const end = Math.min(firstPage.total, firstPage.courses.length + extraSubjectBatch * extraSubjectBatches);
+      for (let offset = firstPage.courses.length; offset < end; offset += extraSubjectBatch) {
+        const { data, error } = await client.rpc("search_public_published_learning_courses", {
+          p_sort: "newest",
+          p_limit: extraSubjectBatch,
+          p_offset: offset,
+        }).select("category");
+        if (error || !Array.isArray(data) || data.length === 0) break;
+        for (const row of data as { category: string | null }[]) add(row.category);
+      }
+      subjectCache = { key, expiresAt: Date.now() + subjectCacheDuration, categories: [...subjects.values()] };
     }
   }
   return [...subjects.values()].sort((a, b) => a.localeCompare(b, locale));
