@@ -30,10 +30,11 @@ html[data-growvelt-launch-closing="true"] .growvelt-launch-splash {
   flex-direction: column;
   align-items: center;
   gap: 20px;
-  transform: translateY(-4vh);
 }
 .growvelt-launch-mark {
   position: relative;
+  display: block;
+  flex: 0 0 88px;
   width: 88px;
   height: 88px;
   overflow: hidden;
@@ -59,7 +60,7 @@ html[data-growvelt-launch-closing="true"] .growvelt-launch-splash {
 }
 .growvelt-launch-name {
   margin: 0;
-  font: 600 20px/1.3 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font: 700 20px/1.3 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   letter-spacing: -.02em;
 }
 @keyframes growvelt-launch-sheen {

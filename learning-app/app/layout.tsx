@@ -62,12 +62,12 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="en" suppressHydrationWarning>
       <head>
         <meta id="growvelt-theme-color" name="theme-color" content="#f8fafc" />
-        <style dangerouslySetInnerHTML={{ __html: launchStyles }} />
         <script
           dangerouslySetInnerHTML={{
             __html: launchBootstrap,
           }}
         />
+        <style dangerouslySetInnerHTML={{ __html: launchStyles }} />
       </head>
       <body>
         <ThemeProvider>
