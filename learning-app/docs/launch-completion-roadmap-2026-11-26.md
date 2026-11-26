@@ -5,17 +5,25 @@
 **Production branch:** `codex/learning-production-git-release`
 **Production-branch commit at snapshot:** `e047d5c9` (`Stabilize Learning PWA launch splash`)
 
-This is the current roadmap and inventory snapshot. It supersedes older roadmap status statements where they conflict with the newer facts below; the older notes remain useful as historical test evidence. This document is a planning artifact only. It does not authorize merging, production changes, live refunds, or money transfers.
+This roadmap combines the original baseline snapshot with the latest release status below. The Git/worktree inventory later in the document records the earlier baseline and is not a report of the current working tree. This document is a planning artifact only; production releases follow the owner's explicit release instructions, and it does not authorize live refunds or money transfers.
 
 ## Release update — 26 November 2026
 
 - The gated Live subscription slice was committed as `4f09b356` (`Add gated Live Learning subscriptions`) and pushed to the Cloudflare-connected production branch. Cloudflare built and promoted version `9986957c` to 100% of production traffic. The recurring-subscription flags remain off; no subscription payment was initiated.
 - The one-time course purchase remains verified from the owner's successful ₦100 purchase. Do not charge again as a test.
-- The remote Supabase migration history is now reconciled in this worktree with the exact 15 already-applied migration files from `origin/main`; the duplicate `20261206000000` file was removed because its SQL was byte-identical to the already-applied `20261128000000` file. `supabase migration list` now reports zero remote-only versions and zero mismatches.
-- The read-only migration dry run now proposes only `20261203000000_add_live_subscription_checkout_reservation.sql`, `20261204000000_process_live_learning_subscription_events.sql`, and `20261205000000_add_live_subscription_return_reconciliation.sql`. These three database changes have not yet been applied.
+- The remote Supabase migration history is reconciled in this worktree with the exact 15 already-applied migration files from `origin/main`; the duplicate `20261206000000` file was removed because its SQL was byte-identical to the already-applied `20261128000000` file.
+- `20261203000000_add_live_subscription_checkout_reservation.sql` applied successfully. The first attempt at `20261204000000` stopped at a deliberate guard because production already had the stricter Live-aware invoice trigger and access projection. The guard was updated to accept only those exact verified definitions while retaining its guarded upgrade path, then `20261204000000` and `20261205000000` both applied successfully. The final migration list reports zero pending, remote-only, or mismatched migrations. Vault and production secrets were skipped.
 - The project is `qtcpjcaoptdunuefwvgc` (`Growvelt Courses`, main production). Supabase's current platform notice concerns project creation/upgrades and Management API DNS processing; the direct database migration list and dry run both completed successfully.
 - Cloudflare version `1c28a4be`, built from commit `ff1b1315`, is now active at 100%. Public production checks confirmed the homepage card and course detail page replace the long, unbroken Digital Marketing placeholder with the existing localized fallback; stored course content and curriculum were not changed.
 - Recurring subscriptions, real refunds, and instructor transfers remain untested and disabled. The payout work, Phase 6 hardening, and remaining accepted local experience changes are still release gates before media work.
+
+## Latest release status — 26 November 2026
+
+- Learning production branch `codex/learning-production-git-release` is at `7fe88bc2` (`Accept guarded Live subscription access migrations`) and the worktree is clean. The commit changes a guarded database migration and its focused test coverage only; it contains no Worker runtime change requiring a new production traffic promotion.
+- Cloudflare's active Learning Worker remains version `1c28a4be` at 100% traffic, built from `ff1b1315` (`Hide placeholder text in public course listings`). The latest public course-copy fix remains live.
+- The isolated subscription lifecycle test passes with the canonical already-applied `20261128000000` migration in its fixture. The focused plan-input, provider-plan, checkout-core, management, and access tests pass as well.
+- Live subscription database support is now deployed, but recurring subscription gates remain off. No recurring charge, refund, instructor transfer, or one-time repurchase was performed in this work.
+- The current tree has no uncommitted or untracked changes. Next, review the payout/refund controls and their separate unpushed foundation, then finish Phase 6 hardening and the remaining release experience checks before media/streaming.
 
 ## Progress update — 26 November 2026
 
@@ -265,4 +273,4 @@ The listed directories are intentionally inventoried at directory level. Their n
 
 ## What happens next
 
-The production baseline is now reconciled at `e047d5c9`, and the manual-subscription question is resolved. Continue with **Phase 1: Live learner subscription checkout and recovery**. First implement and test the disabled-by-default Live learner path; keep existing one-time course checkout as verified. Then review **payout/refund controls**, close **Phase 6 hardening**, and triage the remaining local work. Media/streaming begins after those gates are closed or explicitly deferred.
+The production branch and Supabase migration ledger are reconciled through `7fe88bc2`; Live subscription database processing is deployed while recurring billing remains disabled. Continue with **Phase 2: instructor payout and refund readiness**: review its production migrations, balance and fee accounting, authorization gates, idempotency, retries, and reconciliation evidence. Do not make a live transfer or refund as a test. Then close **Phase 6 hardening** and verify the remaining accepted experience changes. Media/streaming begins only after those gates are closed or explicitly deferred.
