@@ -14,14 +14,16 @@ export type PaystackCreatePlanRequest = {
   description?: string;
 };
 
-export type PaystackCreatedTestPlan = {
+export type PaystackCreatedPlan<Domain extends "test" | "live" = "test"> = {
   planCode: string;
   name: string;
   amountMinor: number;
   interval: "monthly";
   currency: "NGN";
-  domain: "test";
+  domain: Domain;
 };
+
+export type PaystackCreatedTestPlan = PaystackCreatedPlan<"test">;
 
 export type PaystackTestSubscriptionCheckoutRequest = {
   email: string;
@@ -33,6 +35,15 @@ export type PaystackTestSubscriptionCheckoutRequest = {
   metadata: {
     product: "growvelt_learning_subscription";
     environment: "test";
+    subscription_id: string;
+    invoice_id: string;
+  };
+};
+
+export type PaystackLiveSubscriptionCheckoutRequest = Omit<PaystackTestSubscriptionCheckoutRequest, "metadata"> & {
+  metadata: {
+    product: "growvelt_learning_subscription";
+    environment: "live";
     subscription_id: string;
     invoice_id: string;
   };
@@ -125,6 +136,55 @@ export function buildPaystackTestSubscriptionCheckoutRequest(input: {
   };
 }
 
+/** Builds a Live-only request. The caller must supply plan and invoice values
+ * reserved by trusted server-side persistence; this function never toggles
+ * Live checkout or sends a request itself.
+ */
+export function buildPaystackLiveSubscriptionCheckoutRequest(input: {
+  email: string;
+  amountMinor: number;
+  reference: string;
+  planCode: string;
+  callbackUrl: string;
+  subscriptionId: string;
+  invoiceId: string;
+}): PaystackLiveSubscriptionCheckoutRequest {
+  const email = input.email.trim();
+  let callbackUrl: URL;
+  try {
+    callbackUrl = new URL(input.callbackUrl);
+  } catch {
+    throw new Error("A valid subscription payment callback URL is required.");
+  }
+
+  const localHttpAllowed = callbackUrl.protocol === "http:"
+    && ["localhost", "127.0.0.1", "::1"].includes(callbackUrl.hostname);
+  if (!email || email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+    || !Number.isSafeInteger(input.amountMinor) || input.amountMinor <= 0
+    || !/^GS-[A-F0-9]{32}$/.test(input.reference)
+    || !PLAN_CODE_PATTERN.test(input.planCode)
+    || !UUID_PATTERN.test(input.subscriptionId) || !UUID_PATTERN.test(input.invoiceId)
+    || !["https:", ...(localHttpAllowed ? ["http:"] : [])].includes(callbackUrl.protocol)
+    || callbackUrl.username || callbackUrl.password) {
+    throw new Error("A valid Live subscription checkout is required.");
+  }
+
+  return {
+    email,
+    amount: String(input.amountMinor),
+    currency: "NGN",
+    reference: input.reference,
+    plan: input.planCode,
+    callback_url: callbackUrl.toString(),
+    metadata: {
+      product: "growvelt_learning_subscription",
+      environment: "live",
+      subscription_id: input.subscriptionId,
+      invoice_id: input.invoiceId,
+    },
+  };
+}
+
 export function parsePaystackTestSubscriptionCheckoutResponse(
   value: unknown,
   expectedReference: string,
@@ -148,7 +208,30 @@ export function parsePaystackTestSubscriptionCheckoutResponse(
   };
 }
 
-export type PaystackTestSubscriptionWebhookEvent =
+export function parsePaystackLiveSubscriptionCheckoutResponse(
+  value: unknown,
+  expectedReference: string,
+): { authorizationUrl: string; accessCode: string; reference: string } | null {
+  if (!value || typeof value !== "object") return null;
+  const response = value as Record<string, unknown>;
+  const data = response.data && typeof response.data === "object"
+    ? response.data as Record<string, unknown>
+    : null;
+  if (response.status !== true || !data
+    || data.reference !== expectedReference
+    || typeof data.authorization_url !== "string"
+    || !isTrustedPaystackCheckoutUrl(data.authorization_url)
+    || typeof data.access_code !== "string"
+    || !/^[A-Za-z0-9_-]{6,160}$/.test(data.access_code)) return null;
+
+  return {
+    authorizationUrl: data.authorization_url,
+    accessCode: data.access_code,
+    reference: expectedReference,
+  };
+}
+
+export type PaystackSubscriptionWebhookEvent<Domain extends "test" | "live" = "test"> =
   | {
     kind: "initial_charge_success";
     eventId: string;
@@ -156,7 +239,7 @@ export type PaystackTestSubscriptionWebhookEvent =
     transactionId: string;
     amountMinor: number;
     currency: "NGN";
-    paymentDomain: "test";
+    paymentDomain: Domain;
     subscriptionCode: string | null;
   }
   | {
@@ -166,7 +249,7 @@ export type PaystackTestSubscriptionWebhookEvent =
     transactionId: string;
     amountMinor: number;
     currency: "NGN";
-    paymentDomain: "test";
+    paymentDomain: Domain;
     subscriptionCode: string;
   }
   | {
@@ -176,7 +259,7 @@ export type PaystackTestSubscriptionWebhookEvent =
     subscriptionCode: string;
     amountMinor: number;
     currency: "NGN";
-    paymentDomain: "test";
+    paymentDomain: Domain;
     status: string;
     periodStartsAt: string | null;
     paidThrough: string | null;
@@ -186,12 +269,15 @@ export type PaystackTestSubscriptionWebhookEvent =
     kind: "subscription_create" | "subscription_not_renew" | "subscription_disable";
     eventId: string;
     subscriptionCode: string;
-    paymentDomain: "test";
+    paymentDomain: Domain;
     status: string | null;
     planCode: string | null;
     customerCode: string | null;
     customerEmail: string | null;
   };
+
+export type PaystackTestSubscriptionWebhookEvent = PaystackSubscriptionWebhookEvent<"test">;
+export type PaystackLiveSubscriptionWebhookEvent = PaystackSubscriptionWebhookEvent<"live">;
 
 function asRecord(value: unknown): Record<string, unknown> | null {
   return value && typeof value === "object" && !Array.isArray(value)
@@ -256,11 +342,14 @@ function getPlanCode(data: Record<string, unknown>): string | null {
  * charge is still just an event: its transaction must be independently
  * verified with Paystack before any invoice is marked paid or access granted.
  */
-export function parsePaystackTestSubscriptionWebhook(value: unknown): PaystackTestSubscriptionWebhookEvent | null {
+export function parsePaystackSubscriptionWebhook<Domain extends "test" | "live" = "test">(
+  value: unknown,
+  paymentDomain: Domain,
+): PaystackSubscriptionWebhookEvent<Domain> | null {
   const root = asRecord(value);
   const data = asRecord(root?.data);
   const event = nonEmptyString(root?.event, 100);
-  if (!data || !event || (data.domain !== undefined && data.domain !== "test")) return null;
+  if (!data || !event || (data.domain !== undefined && data.domain !== paymentDomain)) return null;
 
   if (event === "charge.success") {
     const reference = nonEmptyString(data.reference, 100);
@@ -276,7 +365,7 @@ export function parsePaystackTestSubscriptionWebhook(value: unknown): PaystackTe
         transactionId,
         amountMinor,
         currency: "NGN",
-        paymentDomain: "test",
+        paymentDomain,
         subscriptionCode,
       };
     }
@@ -288,7 +377,7 @@ export function parsePaystackTestSubscriptionWebhook(value: unknown): PaystackTe
         transactionId,
         amountMinor,
         currency: "NGN",
-        paymentDomain: "test",
+        paymentDomain,
         subscriptionCode,
       };
     }
@@ -315,7 +404,7 @@ export function parsePaystackTestSubscriptionWebhook(value: unknown): PaystackTe
       subscriptionCode,
       amountMinor,
       currency: "NGN",
-      paymentDomain: "test",
+      paymentDomain,
       status,
       periodStartsAt,
       paidThrough,
@@ -338,7 +427,7 @@ export function parsePaystackTestSubscriptionWebhook(value: unknown): PaystackTe
       kind,
       eventId: `${event}:subscription:${subscriptionCode}${status ? `:status:${status}` : ""}`,
       subscriptionCode,
-      paymentDomain: "test",
+      paymentDomain,
       status,
       planCode,
       customerCode,
@@ -349,7 +438,15 @@ export function parsePaystackTestSubscriptionWebhook(value: unknown): PaystackTe
   return null;
 }
 
-export function buildPaystackTestPlanRequest(input: PaystackSubscriptionPlanDraft): PaystackCreatePlanRequest {
+export function parsePaystackTestSubscriptionWebhook(value: unknown): PaystackTestSubscriptionWebhookEvent | null {
+  return parsePaystackSubscriptionWebhook(value, "test");
+}
+
+export function parsePaystackLiveSubscriptionWebhook(value: unknown): PaystackLiveSubscriptionWebhookEvent | null {
+  return parsePaystackSubscriptionWebhook(value, "live");
+}
+
+export function buildPaystackPlanRequest(input: PaystackSubscriptionPlanDraft): PaystackCreatePlanRequest {
   const name = input.name.trim();
   const description = input.description?.trim();
   if (name.length < 3 || name.length > 100 || (description && description.length > 1000)
@@ -370,10 +467,13 @@ export function buildPaystackTestPlanRequest(input: PaystackSubscriptionPlanDraf
   };
 }
 
-export function parsePaystackCreatedTestPlan(
+export const buildPaystackTestPlanRequest = buildPaystackPlanRequest;
+
+export function parsePaystackCreatedPlan<Domain extends "test" | "live">(
   value: unknown,
   expected: { name: string; amountMinor: number },
-): PaystackCreatedTestPlan | null {
+  domain: Domain,
+): PaystackCreatedPlan<Domain> | null {
   if (!value || typeof value !== "object") return null;
   const response = value as Record<string, unknown>;
   const data = response.data && typeof response.data === "object"
@@ -386,7 +486,7 @@ export function parsePaystackCreatedTestPlan(
     : data.amount;
   if (typeof data.plan_code !== "string" || !/^PLN_[A-Za-z0-9]{8,100}$/.test(data.plan_code)
     || data.name !== expected.name || amount !== expected.amountMinor
-    || data.interval !== "monthly" || data.currency !== "NGN" || data.domain !== "test") {
+    || data.interval !== "monthly" || data.currency !== "NGN" || data.domain !== domain) {
     return null;
   }
 
@@ -396,8 +496,15 @@ export function parsePaystackCreatedTestPlan(
     amountMinor: expected.amountMinor,
     interval: "monthly",
     currency: "NGN",
-    domain: "test",
+    domain,
   };
+}
+
+export function parsePaystackCreatedTestPlan(
+  value: unknown,
+  expected: { name: string; amountMinor: number },
+): PaystackCreatedTestPlan | null {
+  return parsePaystackCreatedPlan(value, expected, "test");
 }
 
 /** Validates the provider-hosted subscription management link before redirecting a learner. */

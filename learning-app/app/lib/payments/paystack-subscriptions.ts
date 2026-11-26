@@ -1,6 +1,7 @@
 import "server-only";
 import { getPaystackLiveConfig, getPaystackTestConfig } from "@/app/lib/payments/paystack";
-import { buildPaystackTestPlanRequest, buildPaystackTestSubscriptionCheckoutRequest, parsePaystackCreatedTestPlan, parsePaystackTestSubscriptionCheckoutResponse, parsePaystackTestSubscriptionListPage, parsePaystackTestSubscriptionManagementLink, sanitizePaystackProviderMessage } from "@/app/lib/payments/paystack-subscription-core";
+import { buildPaystackLiveSubscriptionCheckoutRequest, buildPaystackTestPlanRequest, buildPaystackTestSubscriptionCheckoutRequest, parsePaystackCreatedTestPlan, parsePaystackLiveSubscriptionCheckoutResponse, parsePaystackTestSubscriptionCheckoutResponse, parsePaystackTestSubscriptionListPage, parsePaystackTestSubscriptionManagementLink, sanitizePaystackProviderMessage } from "@/app/lib/payments/paystack-subscription-core";
+import { canStartLiveSubscriptionCheckout } from "@/app/lib/subscriptions/feature";
 
 export class PaystackTestPlanCreateError extends Error {
   constructor(readonly disposition: "rejected" | "ambiguous") {
@@ -60,6 +61,60 @@ export async function initializePaystackTestSubscriptionCheckout(input: {
   }
   const checkout = parsePaystackTestSubscriptionCheckoutResponse(result, input.reference);
   if (!response.ok || !checkout) throw new PaystackTestSubscriptionCheckoutError("ambiguous");
+  return checkout;
+}
+
+export class PaystackLiveSubscriptionCheckoutError extends Error {
+  constructor(
+    readonly disposition: "rejected" | "ambiguous",
+    readonly providerHttpStatus?: number,
+    readonly providerMessage?: string | null,
+  ) {
+    super(disposition === "rejected"
+      ? "Paystack rejected the Live subscription checkout."
+      : "Paystack Live subscription checkout could not be confirmed.");
+    this.name = "PaystackLiveSubscriptionCheckoutError";
+  }
+}
+
+/** Provider initializer only; callers still need a durable Live reservation,
+ * Live callback reconciliation, and Live webhook processing before exposing
+ * it to learners. The independent gate is deliberately disabled by default.
+ */
+export async function initializePaystackLiveSubscriptionCheckout(input: {
+  email: string;
+  amountMinor: number;
+  reference: string;
+  planCode: string;
+  callbackUrl: string;
+  subscriptionId: string;
+  invoiceId: string;
+}) {
+  if (!canStartLiveSubscriptionCheckout()) {
+    throw new Error("Live subscription checkout is disabled.");
+  }
+  const { secretKey } = getPaystackLiveConfig(true);
+  const body = buildPaystackLiveSubscriptionCheckoutRequest(input);
+  let response: Response;
+  try {
+    response = await fetch("https://api.paystack.co/transaction/initialize", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${secretKey}`, "Content-Type": "application/json" },
+      cache: "no-store",
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(15000),
+    });
+  } catch {
+    throw new PaystackLiveSubscriptionCheckoutError("ambiguous");
+  }
+  const result: unknown = await response.json().catch(() => null);
+  if (!response.ok && result && typeof result === "object"
+    && (result as Record<string, unknown>).status === false) {
+    const providerMessage = sanitizePaystackProviderMessage((result as Record<string, unknown>).message);
+    throw new PaystackLiveSubscriptionCheckoutError("rejected", response.status, providerMessage);
+  }
+  const checkout = parsePaystackLiveSubscriptionCheckoutResponse(result, input.reference);
+  if (!response.ok || !checkout) throw new PaystackLiveSubscriptionCheckoutError("ambiguous");
   return checkout;
 }
 

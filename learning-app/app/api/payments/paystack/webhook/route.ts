@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/app/lib/supabase/admin";
-import { digestPaystackPayload, getPaystackConfig, isPaystackCompanyReversalEvent, parsePaystackChargeSuccess, parsePaystackCompanyChargeSuccess, parsePaystackCompanyReversalNotice, parsePaystackDisputeEvent, parsePaystackRefundEvent, parsePaystackTestTransferEvent, verifyPaystackCompanyTransaction, verifyPaystackSignature, verifyPaystackTestSubscriptionTransaction, verifyPaystackTransaction } from "@/app/lib/payments/paystack";
+import { digestPaystackPayload, getPaystackConfig, isPaystackCompanyReversalEvent, parsePaystackChargeSuccess, parsePaystackCompanyChargeSuccess, parsePaystackCompanyReversalNotice, parsePaystackDisputeEvent, parsePaystackRefundEvent, parsePaystackTestTransferEvent, verifyPaystackCompanyTransaction, verifyPaystackLiveSubscriptionTransaction, verifyPaystackSignature, verifyPaystackTestSubscriptionTransaction, verifyPaystackTransaction } from "@/app/lib/payments/paystack";
 import { getOrderNotificationContext, paymentOperationsRecipient, sendPaymentNotification } from "@/app/lib/email/payment-notifications";
 import { recordCompanyPaymentManualReview } from "@/app/lib/company/payment-exceptions";
-import { parsePaystackTestSubscriptionWebhook, type PaystackTestSubscriptionWebhookEvent } from "@/app/lib/payments/paystack-subscription-core";
-import { canProcessTestSubscriptionEvents } from "@/app/lib/subscriptions/feature";
+import { parsePaystackLiveSubscriptionWebhook, parsePaystackTestSubscriptionWebhook, type PaystackSubscriptionWebhookEvent } from "@/app/lib/payments/paystack-subscription-core";
+import { canProcessLiveSubscriptionEvents, canProcessTestSubscriptionEvents } from "@/app/lib/subscriptions/feature";
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -12,10 +12,14 @@ function record(value: unknown): Record<string, unknown> | null {
   return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : null;
 }
 
-function subscriptionCheckoutMetadata(payload: unknown) {
+type SubscriptionWebhookEvent = PaystackSubscriptionWebhookEvent<"test" | "live">;
+type VerifiedSubscriptionTransaction = Awaited<ReturnType<typeof verifyPaystackTestSubscriptionTransaction>>
+  | Awaited<ReturnType<typeof verifyPaystackLiveSubscriptionTransaction>>;
+
+function subscriptionCheckoutMetadata(payload: unknown, paymentDomain: "test" | "live") {
   const data = record(record(payload)?.data);
   const metadata = record(data?.metadata);
-  if (metadata?.product !== "growvelt_learning_subscription" || metadata.environment !== "test") return null;
+  if (metadata?.product !== "growvelt_learning_subscription" || metadata.environment !== paymentDomain) return null;
   const subscriptionId = typeof metadata.subscription_id === "string" && UUID_PATTERN.test(metadata.subscription_id)
     ? metadata.subscription_id : null;
   const invoiceId = typeof metadata.invoice_id === "string" && UUID_PATTERN.test(metadata.invoice_id)
@@ -23,7 +27,7 @@ function subscriptionCheckoutMetadata(payload: unknown) {
   return { subscriptionId, invoiceId };
 }
 
-function subscriptionEventPayload(event: PaystackTestSubscriptionWebhookEvent, verified: Awaited<ReturnType<typeof verifyPaystackTestSubscriptionTransaction>> | null) {
+function subscriptionEventPayload(event: SubscriptionWebhookEvent, verified: VerifiedSubscriptionTransaction | null) {
   switch (event.kind) {
     case "initial_charge_success":
       return {
@@ -52,7 +56,7 @@ function subscriptionEventPayload(event: PaystackTestSubscriptionWebhookEvent, v
   }
 }
 
-async function handleTestSubscriptionWebhook(event: PaystackTestSubscriptionWebhookEvent, payload: unknown, rawBody: string) {
+async function handleSubscriptionWebhook(event: SubscriptionWebhookEvent, payload: unknown, rawBody: string, paymentDomain: "test" | "live") {
   // Renewal invoice events carry the invoice code and are the authoritative
   // join for recurring payments. A bare charge event is not enough to choose
   // a local billing period, so acknowledge it without mutating state.
@@ -62,7 +66,7 @@ async function handleTestSubscriptionWebhook(event: PaystackTestSubscriptionWebh
   let subscriptionId: string | null = null;
   let invoiceId: string | null = null;
   let subscriptionCode: string | null = null;
-  const checkoutMetadata = subscriptionCheckoutMetadata(payload);
+  const checkoutMetadata = subscriptionCheckoutMetadata(payload, paymentDomain);
 
   if (event.kind === "initial_charge_success") {
     if (!checkoutMetadata?.subscriptionId || !checkoutMetadata.invoiceId) {
@@ -79,7 +83,8 @@ async function handleTestSubscriptionWebhook(event: PaystackTestSubscriptionWebh
   }
 
   let subscriptionQuery = admin.from("learning_subscriptions")
-    .select("id,paystack_subscription_code,payment_domain");
+    .select("id,paystack_subscription_code,payment_domain")
+    .eq("payment_domain", paymentDomain);
   subscriptionQuery = subscriptionId
     ? subscriptionQuery.eq("id", subscriptionId)
     : subscriptionQuery.eq("paystack_subscription_code", subscriptionCode ?? "");
@@ -92,7 +97,7 @@ async function handleTestSubscriptionWebhook(event: PaystackTestSubscriptionWebh
   if (!subscription && event.kind === "subscription_create" && !checkoutMetadata?.subscriptionId
     && event.planCode && event.customerEmail) {
     const { data: plan, error: planError } = await admin.from("learning_subscription_plans")
-      .select("id").eq("paystack_plan_code", event.planCode).maybeSingle();
+      .select("id").eq("paystack_plan_code", event.planCode).eq("payment_domain", paymentDomain).maybeSingle();
     if (planError) {
       console.error("subscription.webhook_plan_correlation_failed", { code: planError.code });
       return NextResponse.json({ code: "subscription_correlation_deferred" }, { status: 500 });
@@ -107,7 +112,7 @@ async function handleTestSubscriptionWebhook(event: PaystackTestSubscriptionWebh
       if (profiles?.length === 1) {
         const { data: candidates, error: candidateError } = await admin.from("learning_subscriptions")
           .select("id,paystack_subscription_code,payment_domain")
-          .eq("plan_id", plan.id).eq("learner_id", profiles[0].id).eq("payment_domain", "test")
+          .eq("plan_id", plan.id).eq("learner_id", profiles[0].id).eq("payment_domain", paymentDomain)
           .is("paystack_subscription_code", null).limit(2);
         if (candidateError) {
           console.error("subscription.webhook_customer_correlation_failed", { code: candidateError.code });
@@ -117,7 +122,7 @@ async function handleTestSubscriptionWebhook(event: PaystackTestSubscriptionWebh
       }
     }
   }
-  if (!subscription || subscription.payment_domain !== "test") {
+  if (!subscription || subscription.payment_domain !== paymentDomain) {
     return NextResponse.json({ code: "subscription_correlation_deferred" }, { status: 503 });
   }
   subscriptionId = subscription.id as string;
@@ -129,7 +134,7 @@ async function handleTestSubscriptionWebhook(event: PaystackTestSubscriptionWebh
   if (invoiceId) {
     const { data: invoice, error: invoiceError } = await admin.from("learning_subscription_invoices")
       .select("id,subscription_id,provider_reference")
-      .eq("id", invoiceId).eq("subscription_id", subscriptionId).maybeSingle();
+      .eq("id", invoiceId).eq("subscription_id", subscriptionId).eq("payment_domain", paymentDomain).maybeSingle();
     if (invoiceError || !invoice || invoice.provider_reference !== (event.kind === "initial_charge_success" ? event.reference : null)) {
       console.error("subscription.webhook_invoice_correlation_failed", { eventType: event.kind, code: invoiceError?.code });
       return NextResponse.json({ code: "subscription_invoice_correlation_deferred" }, { status: 503 });
@@ -143,7 +148,7 @@ async function handleTestSubscriptionWebhook(event: PaystackTestSubscriptionWebh
     return NextResponse.json({ received: true, processing: "unsupported_invoice_status" });
   }
 
-  let verified: Awaited<ReturnType<typeof verifyPaystackTestSubscriptionTransaction>> | null = null;
+  let verified: VerifiedSubscriptionTransaction | null = null;
   let verifiedReference: string | null = null;
   if (event.kind === "initial_charge_success") verifiedReference = event.reference;
   if (event.kind === "invoice_update" && ["success", "paid"].includes(event.status)) {
@@ -152,9 +157,11 @@ async function handleTestSubscriptionWebhook(event: PaystackTestSubscriptionWebh
   }
   if (verifiedReference) {
     try {
-      verified = await verifyPaystackTestSubscriptionTransaction(verifiedReference);
+      verified = paymentDomain === "live"
+        ? await verifyPaystackLiveSubscriptionTransaction(verifiedReference)
+        : await verifyPaystackTestSubscriptionTransaction(verifiedReference);
       const expectedAmount = event.kind === "initial_charge_success" ? event.amountMinor : event.kind === "invoice_update" ? event.amountMinor : null;
-      if (verified.status !== "success" || verified.reference !== verifiedReference
+      if (verified.status !== "success" || verified.reference !== verifiedReference || verified.domain !== paymentDomain
         || (event.kind === "initial_charge_success" && verified.transactionId !== event.transactionId)
         || (expectedAmount !== null && verified.requestedAmountMinor !== expectedAmount)
         || (event.kind === "initial_charge_success" && verified.amountMinor !== event.amountMinor)
@@ -191,7 +198,7 @@ async function handleTestSubscriptionWebhook(event: PaystackTestSubscriptionWebh
     p_sanitized_payload: sanitizedPayload,
     p_subscription_id: subscriptionId,
     p_invoice_id: invoiceId,
-    p_payment_domain: "test",
+    p_payment_domain: paymentDomain,
   });
   const receipt = (received as Array<{ event_id?: number; outcome?: string }> | null)?.[0];
   if (receiveError || !receipt?.event_id) {
@@ -221,7 +228,7 @@ async function handleTestSubscriptionWebhook(event: PaystackTestSubscriptionWebh
     && subscription.paystack_subscription_code !== event.subscriptionCode) {
     const { data: linked, error: linkError } = await admin.from("learning_subscriptions")
       .update({ paystack_subscription_code: event.subscriptionCode })
-      .eq("id", subscriptionId).is("paystack_subscription_code", null)
+      .eq("id", subscriptionId).eq("payment_domain", paymentDomain).is("paystack_subscription_code", null)
       .select("id").maybeSingle();
     if (linkError) {
       console.error("subscription.webhook_provider_mapping_deferred", { eventId: receipt.event_id, code: linkError.code });
@@ -229,7 +236,7 @@ async function handleTestSubscriptionWebhook(event: PaystackTestSubscriptionWebh
     }
     if (!linked) {
       const { data: current, error: currentError } = await admin.from("learning_subscriptions")
-        .select("paystack_subscription_code").eq("id", subscriptionId).maybeSingle();
+        .select("paystack_subscription_code").eq("id", subscriptionId).eq("payment_domain", paymentDomain).maybeSingle();
       if (currentError || current?.paystack_subscription_code !== event.subscriptionCode) {
         return NextResponse.json({ code: "subscription_provider_mapping_conflict" }, { status: 409 });
       }
@@ -237,7 +244,10 @@ async function handleTestSubscriptionWebhook(event: PaystackTestSubscriptionWebh
   }
 
   if (event.kind === "initial_charge_success" && verified && invoiceId) {
-    const { error: periodError } = await admin.rpc("finalize_learning_test_subscription_initial_period", {
+    const finalizer = paymentDomain === "live"
+      ? "finalize_learning_live_subscription_initial_period"
+      : "finalize_learning_test_subscription_initial_period";
+    const { error: periodError } = await admin.rpc(finalizer, {
       p_subscription_id: subscriptionId,
       p_invoice_id: invoiceId,
       p_provider_transaction_id: verified.transactionId,
@@ -266,7 +276,11 @@ export async function POST(request: Request) {
   }
   if (config.mode === "test" && canProcessTestSubscriptionEvents()) {
     const subscriptionEvent = parsePaystackTestSubscriptionWebhook(payload);
-    if (subscriptionEvent) return handleTestSubscriptionWebhook(subscriptionEvent, payload, rawBody);
+    if (subscriptionEvent) return handleSubscriptionWebhook(subscriptionEvent, payload, rawBody, "test");
+  }
+  if (config.mode === "live" && canProcessLiveSubscriptionEvents()) {
+    const subscriptionEvent = parsePaystackLiveSubscriptionWebhook(payload);
+    if (subscriptionEvent) return handleSubscriptionWebhook(subscriptionEvent, payload, rawBody, "live");
   }
   const transfer = config.mode === "test" ? parsePaystackTestTransferEvent(payload) : null;
   if (transfer) {

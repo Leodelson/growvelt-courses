@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import {
+  buildPaystackLiveSubscriptionCheckoutRequest,
   buildPaystackTestSubscriptionCheckoutRequest,
+  parsePaystackLiveSubscriptionCheckoutResponse,
+  parsePaystackLiveSubscriptionWebhook,
   parsePaystackTestSubscriptionCheckoutResponse,
   parsePaystackTestSubscriptionWebhook,
   sanitizePaystackProviderMessage,
@@ -33,6 +36,47 @@ assert.deepEqual(checkout, {
     invoice_id: invoiceId,
   },
 });
+
+const liveCheckout = buildPaystackLiveSubscriptionCheckoutRequest({
+  email: " learner@example.com ",
+  amountMinor: 149900,
+  reference,
+  planCode: "PLN_gx2wn530m0i3w3m",
+  callbackUrl: "https://learn.growvelt.com/payments/paystack/callback",
+  subscriptionId,
+  invoiceId,
+});
+assert.deepEqual(liveCheckout, {
+  ...checkout,
+  metadata: {
+    product: "growvelt_learning_subscription",
+    environment: "live",
+    subscription_id: subscriptionId,
+    invoice_id: invoiceId,
+  },
+});
+
+for (const patch of [
+  { amountMinor: 0 },
+  { reference: "GS-not-a-reference" },
+  { planCode: "PLN_invalid" },
+  { callbackUrl: "javascript:alert(1)" },
+  { callbackUrl: "https://user:pass@learn.growvelt.com/payments/paystack/callback" },
+  { email: "not-an-email" },
+  { subscriptionId: "not-a-uuid" },
+  { invoiceId: "not-a-uuid" },
+]) {
+  assert.throws(() => buildPaystackLiveSubscriptionCheckoutRequest({
+    email: "learner@example.com",
+    amountMinor: 149900,
+    reference,
+    planCode: "PLN_gx2wn530m0i3w3m",
+    callbackUrl: "https://learn.growvelt.com/payments/paystack/callback",
+    subscriptionId,
+    invoiceId,
+    ...patch,
+  }));
+}
 
 for (const patch of [
   { amountMinor: 0 },
@@ -69,6 +113,22 @@ assert.deepEqual(parsePaystackTestSubscriptionCheckoutResponse({
   reference,
 });
 assert.equal(parsePaystackTestSubscriptionCheckoutResponse({
+  status: true,
+  data: { authorization_url: "https://attacker.example/pay", access_code: "secure_code_123", reference },
+}, reference), null);
+assert.deepEqual(parsePaystackLiveSubscriptionCheckoutResponse({
+  status: true,
+  data: {
+    authorization_url: "https://checkout.paystack.com/secure-session",
+    access_code: "secure_code_123",
+    reference,
+  },
+}, reference), {
+  authorizationUrl: "https://checkout.paystack.com/secure-session",
+  accessCode: "secure_code_123",
+  reference,
+});
+assert.equal(parsePaystackLiveSubscriptionCheckoutResponse({
   status: true,
   data: { authorization_url: "https://attacker.example/pay", access_code: "secure_code_123", reference },
 }, reference), null);
@@ -118,6 +178,21 @@ assert.equal(parsePaystackTestSubscriptionWebhook({
   ...initialChargePayload,
   data: { ...initialChargePayload.data, domain: "live" },
 }), null, "a Live-domain event must not enter the Test Mode processor");
+const liveInitialCharge = parsePaystackLiveSubscriptionWebhook({
+  event: "charge.success",
+  data: { ...initialChargePayload.data, domain: "live" },
+});
+assert.equal(liveInitialCharge?.paymentDomain, "live", "Live lifecycle events should normalize only in the Live parser");
+assert.equal(parsePaystackLiveSubscriptionWebhook(initialChargePayload), null,
+  "a Test-domain event must not enter the Live processor");
+assert.ok(parsePaystackLiveSubscriptionWebhook({
+  event: "subscription.create",
+  data: { subscription_code: "SUB_1234567890" },
+}), "a signed Live webhook may omit an explicit domain field; the route selects the Live secret before parsing");
+assert.equal(parsePaystackLiveSubscriptionWebhook({
+  event: "subscription.create",
+  data: { domain: "test", subscription_code: "SUB_1234567890" },
+}), null, "an explicitly Test-domain event must not enter the Live processor");
 assert.equal(parsePaystackTestSubscriptionWebhook({
   event: "charge.success",
   data: { ...initialChargePayload.data, status: "failed" },

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { ActionButton } from "@/app/components/ui/action-button";
 import { InlineFeedback } from "@/app/components/ui/inline-feedback";
 
@@ -16,7 +17,12 @@ export type PublicTestSubscriptionPlan = {
   course_titles: string[];
 };
 
-export function SubscriptionPlanPurchase({ plan, privateTestCheckout = false }: { plan: PublicTestSubscriptionPlan; privateTestCheckout?: boolean }) {
+export function SubscriptionPlanPurchase({ plan, privateTestCheckout = false, paymentDomain = "test" }: {
+  plan: PublicTestSubscriptionPlan;
+  privateTestCheckout?: boolean;
+  paymentDomain?: "test" | "live";
+}) {
+  const router = useRouter();
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   async function startCheckout() {
@@ -26,14 +32,16 @@ export function SubscriptionPlanPurchase({ plan, privateTestCheckout = false }: 
     const requestId = crypto.randomUUID();
     const endpoint = privateTestCheckout
       ? "/api/payments/paystack/subscriptions/test-only/initialize"
-      : "/api/payments/paystack/subscriptions/initialize";
+      : paymentDomain === "live"
+        ? "/api/payments/paystack/subscriptions/live/initialize"
+        : "/api/payments/paystack/subscriptions/initialize";
     const response = await fetch(endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ planId: plan.plan_id, requestId }),
     }).catch(() => null);
     if (response?.status === 401) {
-      window.location.assign(`/sign-in?next=${encodeURIComponent(window.location.pathname)}`);
+      router.push(`/sign-in?next=${encodeURIComponent(window.location.pathname)}`);
       return;
     }
     const result = await response?.json().catch(() => null) as { authorizationUrl?: unknown; message?: unknown } | null;
@@ -45,14 +53,19 @@ export function SubscriptionPlanPurchase({ plan, privateTestCheckout = false }: 
     window.location.assign(result.authorizationUrl);
   }
 
+  const liveCheckout = !privateTestCheckout && paymentDomain === "live";
+  const modeLabel = liveCheckout ? "Live" : "Test Mode";
+
   return <article className="subscription-plan-offer">
-    <p className="eyebrow">{privateTestCheckout ? "Private learner test · Test Mode" : "Optional monthly subscription · Test Mode"}</p>
+    <p className="eyebrow">{privateTestCheckout ? "Private learner test · Test Mode" : `Optional monthly subscription · ${modeLabel}`}</p>
     <h3>{plan.name}</h3>
     {plan.description ? <p>{plan.description}</p> : null}
     <p className="subscription-plan-price">{new Intl.NumberFormat("en-NG", { style: "currency", currency: plan.currency }).format(plan.amount_minor / 100)} <span>/ month</span></p>
     <p>By {plan.instructor_name}. Includes {plan.course_titles.join(", ")}. Your existing one-time course purchases stay separate.</p>
-    <ActionButton className="button button-secondary" type="button" onClick={startCheckout} disabled={pending} isPending={pending} pendingLabel="Opening secure Test Mode checkout…">Subscribe · Test Mode</ActionButton>
+    <ActionButton className="button button-secondary" type="button" onClick={startCheckout} disabled={pending} isPending={pending} pendingLabel={`Opening secure ${modeLabel} checkout…`}>Subscribe · {modeLabel}</ActionButton>
     {message ? <InlineFeedback variant="error">{message}</InlineFeedback> : null}
-    <small>Paystack Test Mode only. Recurring access starts only after a signed, independently verified payment confirmation. No live payment is started by this option.</small>
+    <small>{liveCheckout
+      ? "Paystack Live checkout. Recurring access starts only after Growvelt verifies the payment with Paystack and receives the signed provider event."
+      : "Paystack Test Mode only. Recurring access starts only after a signed, independently verified payment confirmation. No live payment is started by this option."}</small>
   </article>;
 }

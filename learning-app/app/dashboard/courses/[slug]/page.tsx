@@ -13,7 +13,7 @@ import { getOwnSavedLearningCourseIds } from "@/app/lib/learning/saved-courses";
 import { getOwnPaystackTestFixtureEligibility } from "@/app/lib/payments/test-fixture";
 import { isLiveLearnerCheckoutInScope } from "@/app/lib/payments/paystack-config";
 import { createClient } from "@/app/lib/supabase/server";
-import { canStartTestSubscriptionCheckout } from "@/app/lib/subscriptions/feature";
+import { canStartLiveSubscriptionCheckout, canStartTestSubscriptionCheckout } from "@/app/lib/subscriptions/feature";
 import { SubscriptionPlanPurchase, type PublicTestSubscriptionPlan } from "@/app/components/learning/subscription-plan-purchase";
 
 export const metadata = { title: "Course" };
@@ -40,13 +40,22 @@ export default async function PublishedCourseDetailPage({ params }: { params: Pr
     && process.env.PAYMENTS_CHECKOUT_ENABLED === "true"
     && process.env.PAYMENTS_LIVE_LEARNER_CHECKOUT_ENABLED === "true";
   const liveCheckoutScope = process.env.PAYMENTS_LIVE_LEARNER_CHECKOUT_SCOPE;
-  const subscriptionsAvailable = canStartTestSubscriptionCheckout() && !course.isFree;
+  const subscriptionPaymentDomain = !course.isFree && canStartLiveSubscriptionCheckout()
+    ? "live"
+    : !course.isFree && canStartTestSubscriptionCheckout()
+      ? "test"
+      : null;
   const [enrollment, savedCourseIds, fixtureEligibility, subscriptionPlanResult, related, scopedLearnerId] = await Promise.all([
     getEnrollmentState(course.id),
     getOwnSavedLearningCourseIds(),
     course.isFree || paystackMode === "live" ? Promise.resolve({ eligible: false }) : getOwnPaystackTestFixtureEligibility(course.id),
-    subscriptionsAvailable
-      ? createClient().then((client) => client.rpc("list_public_test_learning_subscription_plans_for_course", { p_course_id: course.id }))
+    subscriptionPaymentDomain
+      ? createClient().then((client) => client.rpc(
+        subscriptionPaymentDomain === "live"
+          ? "list_public_live_learning_subscription_plans_for_course"
+          : "list_public_test_learning_subscription_plans_for_course",
+        { p_course_id: course.id },
+      ))
       : Promise.resolve({ data: null, error: null }),
     getRelatedLearningCourses(course),
     liveCheckoutEnabled && liveCheckoutScope !== undefined
@@ -83,9 +92,9 @@ export default async function PublishedCourseDetailPage({ params }: { params: Pr
         <h2>{enrollment.isEnrolled ? "You’re enrolled" : course.isFree ? "Start learning for free" : paidCheckoutEnabled ? "Purchase this course securely" : "Paid access is coming later"}</h2>
         <p>{enrollment.isEnrolled ? "Open My Courses to continue lessons, complete quizzes, and follow your saved course progress." : course.isFree ? "Enroll to access the lesson player, complete text and video lessons, take quizzes, and track your progress." : paidCheckoutEnabled ? checkoutMode === "live" ? "Complete a real Paystack payment. Access is granted only after Growvelt verifies the payment event." : "Complete a Paystack test-mode checkout. Access is granted only after Growvelt verifies the payment event." : "Growvelt has not enabled paid enrollment or checkout yet."}</p>
         <EnrollmentButton courseId={course.id} slug={course.slug} isFree={course.isFree} isEnrolled={enrollment.isEnrolled} paidCheckoutEnabled={paidCheckoutEnabled} checkoutMode={checkoutMode ?? "test"} displayedPrice={pricing} testCouponCheckoutEnabled={checkoutMode === "test" && process.env.PAYMENTS_TEST_COUPONS_ENABLED === "true"} />
-        {subscriptionPlans.length > 0 ? <section className="subscription-plan-offers" aria-label="Optional Test Mode subscriptions">
+        {subscriptionPlans.length > 0 ? <section className="subscription-plan-offers" aria-label={`Optional ${subscriptionPaymentDomain === "live" ? "Live" : "Test Mode"} subscriptions`}>
           <p className="eyebrow">More ways to learn</p>
-          {subscriptionPlans.map((plan) => <SubscriptionPlanPurchase key={plan.plan_id} plan={plan} />)}
+          {subscriptionPlans.map((plan) => <SubscriptionPlanPurchase key={plan.plan_id} plan={plan} paymentDomain={subscriptionPaymentDomain ?? "test"} />)}
         </section> : null}
         <Link className="text-link" href="/dashboard/explore">Browse more courses</Link>
       </aside>

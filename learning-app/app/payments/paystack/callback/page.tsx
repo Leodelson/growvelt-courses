@@ -16,7 +16,10 @@ export default async function PaystackCallbackPage({ searchParams }: { searchPar
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (reference?.startsWith("GS-")) {
-    const { data } = user ? await supabase.rpc("get_own_learning_subscription_payment_status", { p_reference: reference }) : { data: null };
+    const statusFunction = process.env.PAYSTACK_MODE === "live"
+      ? "get_own_learning_live_subscription_payment_status"
+      : "get_own_learning_subscription_payment_status";
+    const { data } = user ? await supabase.rpc(statusFunction, { p_reference: reference }) : { data: null };
     const status = (data as SubscriptionPaymentStatus[] | null)?.[0];
     const complete = status?.access_active === true;
     return <main className="payment-callback-page"><section className="auth-card payment-callback-card">

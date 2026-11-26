@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/app/lib/supabase/admin";
 import { createClient } from "@/app/lib/supabase/server";
-import { digestPaystackPayload, verifyPaystackTestSubscriptionTransaction } from "@/app/lib/payments/paystack";
+import { digestPaystackPayload, verifyPaystackLiveSubscriptionTransaction, verifyPaystackTestSubscriptionTransaction } from "@/app/lib/payments/paystack";
+import { canProcessLiveSubscriptionEvents } from "@/app/lib/subscriptions/feature";
 
 const REFERENCE_PATTERN = /^GS-[A-F0-9]{32}$/;
 
@@ -11,9 +12,16 @@ export async function GET(request: Request) {
   if (!user?.id) return NextResponse.json({ code: "not_signed_in" }, { status: 401 });
   const reference = new URL(request.url).searchParams.get("reference")?.trim() ?? "";
   if (!REFERENCE_PATTERN.test(reference)) return NextResponse.json({ code: "invalid_reference" }, { status: 400 });
+  const paymentDomain = process.env.PAYSTACK_MODE === "live" ? "live" : "test";
+  const statusFunction = paymentDomain === "live"
+    ? "get_own_learning_live_subscription_payment_status"
+    : "get_own_learning_subscription_payment_status";
+  const reconcileFunction = paymentDomain === "live"
+    ? "reconcile_own_learning_live_subscription_payment"
+    : "reconcile_own_learning_test_subscription_payment";
 
   const loadStatus = async () => {
-    const { data, error } = await supabase.rpc("get_own_learning_subscription_payment_status", { p_reference: reference });
+    const { data, error } = await supabase.rpc(statusFunction, { p_reference: reference });
     if (error) {
       console.error("subscription.callback_status_failed", { learnerId: user.id, code: error.code });
       return { status: null, failed: true };
@@ -29,12 +37,15 @@ export async function GET(request: Request) {
   if (!status) return NextResponse.json({ code: "not_found" }, { status: 404 });
 
   let confirmationStatus: "pending" | "failed" | undefined;
-  if (status.access_active !== true && ["created", "payment_pending", "failed"].includes(status.invoice_status ?? "")) {
+  const mayVerifyLive = paymentDomain !== "live" || canProcessLiveSubscriptionEvents();
+  if (mayVerifyLive && status.access_active !== true && ["created", "payment_pending", "failed"].includes(status.invoice_status ?? "")) {
     try {
       // The callback's reference is only a lookup key. Access is granted only
-      // after Paystack's Test Mode API confirms the exact transaction and the
+      // after Paystack's domain-specific API confirms the exact transaction and the
       // service-only RPC matches it to this learner's invoice and metadata.
-      const verified = await verifyPaystackTestSubscriptionTransaction(reference);
+      const verified = paymentDomain === "live"
+        ? await verifyPaystackLiveSubscriptionTransaction(reference)
+        : await verifyPaystackTestSubscriptionTransaction(reference);
       if (verified.status === "success") {
         if (!verified.subscriptionId || !verified.invoiceId
           || verified.amountMinor < verified.requestedAmountMinor) {
@@ -58,7 +69,7 @@ export async function GET(request: Request) {
           };
           const admin = createAdminClient();
           const { data: reconciliation, error: reconciliationError } = await admin.rpc(
-            "reconcile_own_learning_test_subscription_payment",
+            reconcileFunction,
             {
               p_learner_id: user.id,
               p_reference: reference,
