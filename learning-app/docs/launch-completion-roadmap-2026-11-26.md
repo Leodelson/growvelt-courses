@@ -74,13 +74,15 @@ The one-time course purchase is verified. Subscription lifecycle behavior is a s
 
 Payout readiness is not established by the successful learner purchase. Keep transfers disabled until this gate is complete.
 
+**Progress — 26 November 2026:** the payout batch UI is deployed on Learning production and the owner confirmed the UI check. Offline profile, application-boundary, eligibility, identity, approval, submission/OTP, reconciliation, and mocked-provider contract checks pass. The production profile and batch-approval gates are on; transfer submission, OTP, and reconciliation gates are off. No transfer was sent. See [`phase2-instructor-payout-operator-runbook.md`](phase2-instructor-payout-operator-runbook.md). The hosted migration ledger could not be freshly queried from this worktree because it is not linked and no Supabase CLI access token is present. Production refund initiation is currently enabled even though the refund activation runbooks say it should remain off absent separate approval; resolve that mismatch before declaring all financial controls ready.
+
 1. Locate and review the payout-batching implementation and reconcile it with the instructor payout profile, instructor earnings, admin approval, and payment ledger paths.
 2. Verify payee ownership and profile validation, available-balance calculation, fee/refund/chargeback handling, minimums, currency, batch totals, approval permissions, duplicate prevention, retry behavior, transfer status reconciliation, and audit history.
 3. Confirm failed, pending, reversed, and partially completed batches recover safely and cannot pay an instructor twice. Exercise with mocked/provider test mode and database fixtures only.
 4. Verify payout and refund feature gates and production secrets by name. Do not enable a live transfer or send money as a test.
 5. Determine whether the existing provider path and database schema support the requested launch payout flow; record any remaining provider dashboard setup separately from code readiness.
 
-**Exit gate:** payout accounting and authorization evidence is complete, migration dependencies are known, and an explicit operator release procedure plus rollback/reconciliation procedure exists. Any real transfer remains a separately authorized financial action.
+**Exit gate:** payout accounting, authorization, isolated check coverage, and operator/rollback/reconciliation procedures are documented. Before any live transfer gate is enabled, freshly verify the hosted migration ledger, confirm provider transfer/OTP readiness, and resolve the separate refund-gate policy mismatch. Any real transfer remains a separately authorized financial action; do not test with a real transfer.
 
 ### 3. Close Phase 6 launch hardening — headers, boundaries, recovery
 
