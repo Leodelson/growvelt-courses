@@ -38,10 +38,12 @@ for (const changed of [
 }
 
 const adapter = await readFile(new URL("../app/lib/payments/paystack-subscriptions.ts", import.meta.url), "utf8");
-assert.match(adapter, /GROWVELT_LEARNING_SUBSCRIPTIONS_ENABLED !== "true"/);
-assert.match(adapter, /GROWVELT_LEARNING_SUBSCRIPTION_TEST_PLAN_CREATION_ENABLED !== "true"/);
-assert.match(adapter, /getPaystackTestConfig\(false\)/);
-assert.doesNotMatch(adapter, /getPaystackLiveConfig|PAYSTACK_LIVE_SECRET_KEY/);
+const testPlanAdapter = adapter.match(/export async function createPaystackTestSubscriptionPlan[\s\S]*?(?=\nexport async function|\nexport class|$)/)?.[0];
+assert.ok(testPlanAdapter, "the isolated Test Mode plan adapter must exist");
+assert.match(testPlanAdapter, /GROWVELT_LEARNING_SUBSCRIPTIONS_ENABLED !== "true"/);
+assert.match(testPlanAdapter, /GROWVELT_LEARNING_SUBSCRIPTION_TEST_PLAN_CREATION_ENABLED !== "true"/);
+assert.match(testPlanAdapter, /getPaystackTestConfig\(false\)/);
+assert.doesNotMatch(testPlanAdapter, /getPaystackLiveConfig|PAYSTACK_LIVE_SECRET_KEY/);
 
 const action = await readFile(new URL("../app/dashboard/instructor/subscriptions/actions.ts", import.meta.url), "utf8");
 assert.match(action, /canProvisionTestSubscriptionPlans\(\)/);
@@ -56,11 +58,12 @@ assert.ok(action.indexOf("claim_own_learning_subscription_plan_provisioning")
 assert.ok(action.indexOf("createPaystackTestSubscriptionPlan(")
   < action.indexOf("record_own_learning_subscription_plan_provisioning"), "provider result must be recorded only after creation");
 assert.match(action, /outcome === "provider_rejected"/);
-assert.match(action, /Do not retry; an admin must reconcile it first/);
+const testProvisionAction = action.slice(action.indexOf("export async function provisionOwnTestSubscriptionPlan"));
+assert.match(testProvisionAction, /Do not retry; an administrator must review it first/);
 
 const page = await readFile(new URL("../app/dashboard/instructor/subscriptions/page.tsx", import.meta.url), "utf8");
 assert.match(page, /Check setup status/);
-assert.match(page, /Retry Test Mode plan setup/);
-assert.match(page, /canCreateTestPlans && plan\.status === "draft"/);
+assert.match(page, /"Retry preview setup"/);
+assert.match(page, /canCreateTestPlans && !isLivePlan && plan\.status === "draft"/);
 
 console.log("PASS subscription plan request validation, Test Mode response checks, default-off gates, and claim-before-provider instructor action");

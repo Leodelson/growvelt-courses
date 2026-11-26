@@ -118,48 +118,74 @@ $migration$;
 do $migration$
 declare
   function_definition text;
+  normalized_function_definition text;
 begin
   select pg_get_functiondef('public.grant_learning_subscription_invoice_course_access()'::regprocedure)
     into function_definition;
-  if function_definition is null
-    or strpos(function_definition, 'subscription_row.payment_domain <> ''test''') = 0 then
+  if function_definition is null then
     raise exception 'Subscription access trigger changed; review before allowing Live paid periods';
   end if;
-  function_definition := replace(function_definition,
-    'subscription_row.payment_domain <> ''test''',
-    'subscription_row.payment_domain not in (''test'', ''live'') or new.payment_domain is distinct from subscription_row.payment_domain');
-  function_definition := replace(function_definition,
-    'Paid subscription invoice has no matching Test Mode learner subscription',
-    'Paid subscription invoice has no matching learner and payment domain');
-  if strpos(function_definition, 'new.payment_domain is distinct from subscription_row.payment_domain') = 0 then
+
+  normalized_function_definition := regexp_replace(lower(function_definition), '\s+', '', 'g');
+  if strpos(normalized_function_definition,
+      'subscription_row.payment_domainnotin(''test'',''live'')ornew.payment_domainisdistinctfromsubscription_row.payment_domain') > 0 then
+    -- The trigger already has the verified Live-aware guard from the
+    -- subscription invoice earnings migration. Keep that stricter definition.
+    null;
+  elsif strpos(function_definition, 'subscription_row.payment_domain <> ''test''') > 0 then
+    function_definition := replace(function_definition,
+      'subscription_row.payment_domain <> ''test''',
+      'subscription_row.payment_domain not in (''test'', ''live'') or new.payment_domain is distinct from subscription_row.payment_domain');
+    function_definition := replace(function_definition,
+      'Paid subscription invoice has no matching Test Mode learner subscription',
+      'Paid subscription invoice has no matching learner and payment domain');
+    normalized_function_definition := regexp_replace(lower(function_definition), '\s+', '', 'g');
+    if strpos(normalized_function_definition,
+        'subscription_row.payment_domainnotin(''test'',''live'')ornew.payment_domainisdistinctfromsubscription_row.payment_domain') = 0 then
+      raise exception 'Subscription access trigger domain matching could not be verified';
+    end if;
+    execute function_definition;
+  else
     raise exception 'Subscription access trigger domain matching could not be verified';
   end if;
-  execute function_definition;
 end;
 $migration$;
 
 do $migration$
 declare
   function_definition text;
+  normalized_function_definition text;
 begin
   select pg_get_functiondef('public.has_own_learning_course_access(uuid,bigint)'::regprocedure)
     into function_definition;
-  if function_definition is null
-    or strpos(function_definition, 'invoice.payment_domain = ''test''') = 0
-    or strpos(function_definition, 'subscription.payment_domain = ''test''') = 0 then
+  if function_definition is null then
     raise exception 'Subscription access projection changed; review before allowing Live paid periods';
   end if;
-  function_definition := replace(function_definition,
-    'invoice.payment_domain = ''test''',
-    'invoice.payment_domain = subscription.payment_domain and invoice.payment_domain in (''test'', ''live'')');
-  function_definition := replace(function_definition,
-    'subscription.payment_domain = ''test''',
-    'subscription.payment_domain in (''test'', ''live'')');
-  if strpos(function_definition, 'invoice.payment_domain = subscription.payment_domain') = 0
-    or strpos(function_definition, 'subscription.payment_domain in (''test'', ''live'')') = 0 then
+
+  normalized_function_definition := regexp_replace(lower(function_definition), '\s+', '', 'g');
+  if strpos(normalized_function_definition,
+      'invoice.payment_domain=subscription.payment_domainandinvoice.payment_domainin(''test'',''live'')') > 0
+    and strpos(normalized_function_definition, 'subscription.payment_domainin(''test'',''live'')') > 0 then
+    -- The existing projection already checks invoice/subscription domain parity.
+    null;
+  elsif strpos(function_definition, 'invoice.payment_domain = ''test''') > 0
+    and strpos(function_definition, 'subscription.payment_domain = ''test''') > 0 then
+    function_definition := replace(function_definition,
+      'invoice.payment_domain = ''test''',
+      'invoice.payment_domain = subscription.payment_domain and invoice.payment_domain in (''test'', ''live'')');
+    function_definition := replace(function_definition,
+      'subscription.payment_domain = ''test''',
+      'subscription.payment_domain in (''test'', ''live'')');
+    normalized_function_definition := regexp_replace(lower(function_definition), '\s+', '', 'g');
+    if strpos(normalized_function_definition,
+        'invoice.payment_domain=subscription.payment_domainandinvoice.payment_domainin(''test'',''live'')') = 0
+      or strpos(normalized_function_definition, 'subscription.payment_domainin(''test'',''live'')') = 0 then
+      raise exception 'Subscription access projection domain matching could not be verified';
+    end if;
+    execute function_definition;
+  else
     raise exception 'Subscription access projection domain matching could not be verified';
   end if;
-  execute function_definition;
 end;
 $migration$;
 

@@ -21,13 +21,13 @@ const migrationPaths = [
   '../supabase/migrations/20261029000000_allow_allowlisted_private_test_subscription_checkout.sql',
   '../supabase/migrations/20261030000000_reconcile_subscription_test_payment_from_provider_api.sql',
   '../supabase/migrations/20261031000000_list_own_learning_subscriptions.sql',
+  '../supabase/migrations/20261128000000_add_subscription_invoice_earnings_source.sql',
   '../supabase/migrations/20261130000000_scope_subscription_management_to_provider_domain.sql',
   '../supabase/migrations/20261201000000_add_live_subscription_plan_provisioning.sql',
   '../supabase/migrations/20261202000000_allow_learning_subscription_live_domain.sql',
   '../supabase/migrations/20261203000000_add_live_subscription_checkout_reservation.sql',
   '../supabase/migrations/20261204000000_process_live_learning_subscription_events.sql',
   '../supabase/migrations/20261205000000_add_live_subscription_return_reconciliation.sql',
-  '../supabase/migrations/20261206000000_add_subscription_invoice_earnings_source.sql',
 ];
 const migrations = migrationPaths.map((file) => readFileSync(path.resolve(__dirname, file), 'utf8'));
 
