@@ -5,8 +5,9 @@ import sharp from "sharp";
 const assets = [
   ["favicon-16x16.png", 16, true, "rounded"],
   ["favicon-32x32.png", 32, true, "rounded"],
+  ["favicon-48x48.png", 48, true, "rounded"],
   ["favicon-96x96.png", 96, true, "rounded"],
-  ["apple-touch-icon.png", 180, true, "full"],
+  ["apple-touch-icon.png", 180, true, "rounded"],
   ["android-chrome-192x192.png", 192, true, "rounded"],
   ["android-chrome-512x512.png", 512, true, "rounded"],
   ["pwa/icon-any-192x192.png", 192, false, "rounded"],
@@ -57,23 +58,23 @@ assert.equal(manifest.id, "/");
 assert.equal(manifest.start_url, "/");
 assert.equal(manifest.scope, "/");
 for (const size of [192, 512]) {
-  assert.ok(manifest.icons.some(icon => icon.src === `/android-chrome-${size}x${size}.png?v=10`
+  assert.ok(manifest.icons.some(icon => icon.src === `/android-chrome-${size}x${size}.png?v=11`
     && icon.sizes === `${size}x${size}` && icon.type === "image/png" && icon.purpose === "any"));
 }
-assert.ok(manifest.icons.some(icon => icon.src === "/pwa/icon-maskable-512x512.png?v=10"
+assert.ok(manifest.icons.some(icon => icon.src === "/pwa/icon-maskable-512x512.png?v=11"
   && icon.sizes === "512x512" && icon.type === "image/png" && icon.purpose === "maskable"),
   "maskable PWA icon must be declared in the manifest");
 const sw = await readFile(new URL("../public/sw.js", import.meta.url), "utf8");
-assert.match(sw, /CACHE_VERSION\s*=\s*["']v11["']/, "service worker cache must refresh updated icons and offline page");
-for (const path of ["/favicon.ico", "/favicon-16x16.png", "/favicon-32x32.png", "/favicon-96x96.png",
+assert.match(sw, /CACHE_VERSION\s*=\s*["']v12["']/, "service worker cache must refresh updated icons and offline page");
+for (const path of ["/favicon.ico", "/favicon-16x16.png", "/favicon-32x32.png", "/favicon-48x48.png", "/favicon-96x96.png",
   "/android-chrome-192x192.png", "/android-chrome-512x512.png", "/apple-touch-icon.png",
   "/pwa/icon-any-192x192.png", "/pwa/icon-any-512x512.png", "/pwa/icon-maskable-512x512.png"]) {
   assert.ok(sw.includes(path), `${path} must remain in the service worker cache allowlist`);
 }
 
 const offline = await readFile(new URL("../public/offline.html", import.meta.url), "utf8");
-assert.ok(offline.includes('src="/android-chrome-192x192.png?v=10"'), "offline screen must use the Learning icon");
-assert.match(sw, /icon:\s*["']\/pwa\/icon-any-192x192\.png\?v=10["']/, "push notifications must use the Learning icon");
+assert.ok(offline.includes('src="/android-chrome-192x192.png?v=11"'), "offline screen must use the Learning icon");
+assert.match(sw, /icon:\s*["']\/pwa\/icon-any-192x192\.png\?v=11["']/, "push notifications must use the Learning icon");
 
 const legacyManifest = JSON.parse(await readFile(new URL("../../images/site.webmanifest", import.meta.url), "utf8"));
 assert.equal(legacyManifest.name, "Growvelt Learning");
@@ -87,7 +88,7 @@ for (const [size, purpose, file, cornerStyle] of [
   [512, "maskable", "icon-maskable-512x512.png", "full"],
 ]) {
   const path = `/images/${file}`;
-  assert.ok(legacyManifest.icons.some(icon => icon.src === `${path}?v=10` && icon.sizes === `${size}x${size}`
+  assert.ok(legacyManifest.icons.some(icon => icon.src === `${path}?v=11` && icon.sizes === `${size}x${size}`
     && icon.type === "image/png" && icon.purpose === purpose), `${path} must be declared in the legacy Learning manifest`);
   const data = await readFile(new URL(`../../images/${file}`, import.meta.url));
   const metadata = await sharp(data).metadata();

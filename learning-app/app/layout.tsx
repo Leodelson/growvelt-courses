@@ -37,16 +37,17 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/favicon-96x96.png", sizes: "96x96", type: "image/png" },
-      { url: "/favicon.ico?v=10", type: "image/x-icon" },
-      { url: "/favicon-16x16.png?v=10", sizes: "16x16", type: "image/png" },
-      { url: "/favicon-32x32.png?v=10", sizes: "32x32", type: "image/png" },
-      { url: "/android-chrome-192x192.png?v=10", sizes: "192x192", type: "image/png" },
-      { url: "/android-chrome-512x512.png?v=10", sizes: "512x512", type: "image/png" },
+      { url: "/favicon-96x96.png?v=11", sizes: "96x96", type: "image/png" },
+      { url: "/favicon.ico?v=11", type: "image/x-icon" },
+      { url: "/favicon-16x16.png?v=11", sizes: "16x16", type: "image/png" },
+      { url: "/favicon-32x32.png?v=11", sizes: "32x32", type: "image/png" },
+      { url: "/favicon-48x48.png?v=11", sizes: "48x48", type: "image/png" },
+      { url: "/android-chrome-192x192.png?v=11", sizes: "192x192", type: "image/png" },
+      { url: "/android-chrome-512x512.png?v=11", sizes: "512x512", type: "image/png" },
     ],
-    apple: [{ url: "/apple-touch-icon.png?v=10", sizes: "180x180", type: "image/png" }],
+    apple: [{ url: "/apple-touch-icon.png?v=11", sizes: "180x180", type: "image/png" }],
   },
-  manifest: "/site.webmanifest",
+  manifest: "/site.webmanifest?v=11",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
