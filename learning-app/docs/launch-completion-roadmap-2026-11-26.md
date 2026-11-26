@@ -7,6 +7,15 @@
 
 This is the current roadmap and inventory snapshot. It supersedes older roadmap status statements where they conflict with the newer facts below; the older notes remain useful as historical test evidence. This document is a planning artifact only. It does not authorize merging, production changes, live refunds, or money transfers.
 
+## Release update — 26 November 2026
+
+- The gated Live subscription slice was committed as `4f09b356` (`Add gated Live Learning subscriptions`) and pushed to the Cloudflare-connected production branch. Cloudflare built and promoted version `9986957c` to 100% of production traffic. The recurring-subscription flags remain off; no subscription payment was initiated.
+- The one-time course purchase remains verified from the owner's successful ₦100 purchase. Do not charge again as a test.
+- The remote Supabase migration history reports `20261201000000` and `20261202000000` applied, with `20261203000000` through `20261206000000` pending. A read-only CLI dry run cannot proceed because 15 remote migration versions from 14–29 November are missing from this checkout. Do not repair or rewrite that history blindly; reconcile the missing migration files/schema before applying pending SQL.
+- Supabase Studio currently displays a platform-issue banner. The project is `qtcpjcaoptdunuefwvgc` (`Growvelt Courses`, main production).
+- A public production smoke check confirmed the homepage and course detail route load over HTTPS. It also found a published Digital Marketing course record rendering a long, unbroken placeholder description. A presentation-only guard is being prepared to use the existing localized fallback without changing the stored course content.
+- Recurring subscriptions, real refunds, and instructor transfers remain untested and disabled. The payout work, Phase 6 hardening, and remaining accepted local experience changes are still release gates before media work.
+
 ## Progress update — 26 November 2026
 
 - Learning production branch now points at `e047d5c9` (`Stabilize Learning PWA launch splash`). The owner reports that the promoted splash fix is working. This worktree now also contains an unstaged, initial Live subscription provider slice; the pre-existing generated `learning-app/tsconfig.tsbuildinfo` edit and this untracked roadmap remain unstaged.

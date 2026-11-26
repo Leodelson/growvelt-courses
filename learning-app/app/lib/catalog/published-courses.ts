@@ -1,6 +1,7 @@
 import { createClient } from "@/app/lib/supabase/server";
 import { withCourseRatings, type CourseRating } from "./course-ratings";
 import { PublicCatalogQuery, normalizePublicCatalogQuery, publicCatalogHref } from "@/app/lib/catalog/public-catalog-query";
+import { normalizePublicCourseCopy } from "./public-course-copy";
 
 export { normalizePublicCatalogQuery, publicCatalogHref };
 export type { PublicCatalogQuery };
@@ -67,7 +68,7 @@ function mapPublishedCourse(course: PublishedCourseRow): PublishedCourse {
     id: course.course_id,
     slug: course.slug,
     title: course.title,
-    summary: course.summary,
+    summary: normalizePublicCourseCopy(course.summary),
     category: course.category,
     level: course.level,
     isFree: course.is_free,
@@ -253,8 +254,8 @@ export async function getPublishedLearningCourse(slug: string): Promise<Publishe
     id: first.course_id,
     slug: first.slug,
     title: first.course_title,
-    summary: first.summary,
-    description: first.description,
+    summary: normalizePublicCourseCopy(first.summary),
+    description: normalizePublicCourseCopy(first.description),
     category: first.category,
     level: first.level,
     isFree: first.is_free,
