@@ -1,4 +1,4 @@
-const CACHE_VERSION = "v14";
+const CACHE_VERSION = "v15";
 const CACHE_NAME = `growvelt-pwa-${CACHE_VERSION}`;
 
 const ALLOWED_CACHE_PATHS = new Set([

@@ -10,8 +10,10 @@ export default function GrowveltLaunchSplash() {
   useEffect(() => {
     const root = document.documentElement;
     if (root.dataset.growveltLaunchPending !== "true") return;
-    const image = document.querySelector<HTMLImageElement>(".growvelt-launch-mark img");
-    if (image && !image.hasAttribute("src")) image.src = image.dataset.src || ICON_SRC;
+
+    const icon = new Image();
+    icon.src = ICON_SRC;
+    const iconReady = icon.decode().catch(() => undefined);
 
     let released = false;
     let frameOne = 0;
@@ -32,8 +34,9 @@ export default function GrowveltLaunchSplash() {
       }, 160);
     };
 
-    const checkReady = () => {
+    const checkReady = async () => {
       if (document.readyState !== "complete" || !document.querySelector("main")) return;
+      await iconReady;
       frameOne = window.requestAnimationFrame(() => {
         frameTwo = window.requestAnimationFrame(release);
       });
@@ -56,11 +59,7 @@ export default function GrowveltLaunchSplash() {
       role="status"
     >
       <div className="growvelt-launch-lockup">
-        <span className="growvelt-launch-mark" aria-hidden="true">
-          {/* Keep the asset URL unset for ordinary browser visits; launchBootstrap loads it only for a real app launch. */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img data-src={ICON_SRC} alt="" width="88" height="88" />
-        </span>
+        <span className="growvelt-launch-mark" aria-hidden="true" />
         <p className="growvelt-launch-name">Growvelt</p>
       </div>
     </div>

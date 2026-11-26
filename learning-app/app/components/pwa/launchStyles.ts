@@ -1,7 +1,11 @@
 export const launchStyles = `
 .growvelt-launch-splash {
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 100vh;
+  height: 100svh;
   z-index: 2147483000;
   display: none;
   align-items: center;
@@ -42,36 +46,22 @@ html[data-growvelt-launch-closing="true"] .growvelt-launch-splash {
   filter: drop-shadow(0 9px 22px rgba(131, 43, 251, .23));
   isolation: isolate;
 }
-.growvelt-launch-mark img {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-}
-.growvelt-launch-mark::after {
-  position: absolute;
-  inset: -65% -35%;
-  z-index: 1;
-  content: "";
-  pointer-events: none;
-  background: linear-gradient(115deg, transparent 40%, rgba(255,255,255,0) 45%, rgba(255,255,255,.28) 50%, rgba(255,255,255,0) 55%, transparent 60%);
-  transform: translateX(-72%);
-  animation: growvelt-launch-sheen 1100ms ease-in-out 1 180ms both;
+html[data-growvelt-launch-pending="true"] .growvelt-launch-mark {
+  background-image: url("/pwa/icon-any-512x512.png");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
 }
 .growvelt-launch-name {
   margin: 0;
   font: 700 20px/1.3 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   letter-spacing: -.02em;
 }
-@keyframes growvelt-launch-sheen {
-  to { transform: translateX(72%); }
-}
 @keyframes growvelt-launch-failsafe {
   0%, 97.5% { opacity: 1; visibility: visible; }
   100% { opacity: 0; visibility: hidden; pointer-events: none; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .growvelt-launch-mark::after { animation: none; }
   .growvelt-launch-splash { animation-name: growvelt-launch-failsafe-reduced; }
   html[data-growvelt-launch-closing="true"] .growvelt-launch-splash { transition: none; }
 }

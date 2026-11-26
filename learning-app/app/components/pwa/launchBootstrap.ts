@@ -34,6 +34,12 @@ export const launchBootstrap = `(() => {
   if (!standalone || !startedAt || age < 0 || age >= 8000) return;
 
   root.dataset.growveltLaunchPending = "true";
+  const iconPreload = document.createElement("link");
+  iconPreload.rel = "preload";
+  iconPreload.as = "image";
+  iconPreload.href = "/pwa/icon-any-512x512.png";
+  iconPreload.setAttribute("fetchpriority", "high");
+  document.head.append(iconPreload);
   window.setTimeout(() => {
     delete root.dataset.growveltLaunchPending;
     delete root.dataset.growveltLaunchClosing;
