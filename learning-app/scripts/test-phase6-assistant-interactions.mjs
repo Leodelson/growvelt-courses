@@ -44,6 +44,13 @@ const react = {
   },
 };
 const listeners = new Map();
+const cookieConsent = {
+  consent: true,
+  ready: true,
+  activePrompt: null,
+  requestPrompt: () => true,
+  releasePrompt() {},
+};
 const source = readFileSync(new URL("../app/components/learning-help-assistant.tsx", import.meta.url), "utf8");
 const compiled = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true } }).outputText;
 const moduleValue = { exports: {} };
@@ -56,7 +63,7 @@ vm.runInNewContext(compiled, {
     sessionStorage: { getItem: () => "1", setItem() {} },
   },
   fetch: async (_url, options) => { fetches++; assert.equal(options.credentials, "same-origin"); return { status: 401 }; },
-  require: name => name === "react" ? react : name.endsWith(".module.css") ? new Proxy({}, { get: (_target, key) => key }) : name === "next/image" || name.includes("learning-link") ? () => null : name.includes("site-urls") ? { careersAbsoluteUrl: path => "https://jobs.growvelt.com" + path } : require(name),
+  require: name => name === "react" ? react : name.endsWith(".module.css") ? new Proxy({}, { get: (_target, key) => key }) : name === "next/image" || name.includes("learning-link") ? () => null : name.includes("cookie-consent-provider") ? { useCookieConsent: () => cookieConsent } : name.includes("site-urls") ? { careersAbsoluteUrl: path => "https://jobs.growvelt.com" + path } : require(name),
 });
 let nodes = [];
 function render() {

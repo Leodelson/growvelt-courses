@@ -6,7 +6,7 @@ import { readFileSync } from "node:fs";
 import ts from "typescript";
 import { AsyncLocalStorage } from "node:async_hooks";
 import * as compatibility from "../app/lib/careers-compatibility.mjs";
-import { internalLearningPath, getLearningOrigin, getCareersOrigin } from "../app/lib/site-urls.mjs";
+import { internalLearningPath, learningAuthResponseOrigin, getLearningOrigin, getCareersOrigin } from "../app/lib/site-urls.mjs";
 // Standalone Node tests lack Next's usual runtime global initialization.
 globalThis.AsyncLocalStorage ??= AsyncLocalStorage;
 const nextTesting = (await import("next/experimental/testing/server.js")).default;
@@ -88,7 +88,10 @@ function proxyHarness(env, allowNormal = false) {
     if (name === "@/app/lib/careers-compatibility.mjs") return {
       learningWwwSafetyBridgeResponse: req => bridge(req, env), careersCompatibilityResponse: req => careers(req, env),
     };
-    if (name === "@/app/lib/site-urls.mjs") return { internalLearningPath };
+    if (name === "@/app/lib/site-urls.mjs") return {
+      internalLearningPath,
+      learningAuthResponseOrigin: url => learningAuthResponseOrigin(url, env),
+    };
     if (name === "@/app/lib/auth/redirect") return { getSafeNextPath: value => value, getExplicitSafeNextPath: () => null, defaultAuthenticatedPath: "/dashboard" };
     throw new Error("Unexpected proxy dependency: " + name);
   };
