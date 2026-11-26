@@ -449,6 +449,8 @@ export type PaystackTestTransferRecipient = {
   domain: "test";
 };
 
+export type PaystackLiveTransferRecipient = Omit<PaystackTestTransferRecipient, "domain"> & { domain: "live" };
+
 function requirePaystackNubanInput(input: { accountNumber: string; bankCode: string }) {
   if (!/^\d{10}$/.test(input.accountNumber) || !/^[A-Za-z0-9_-]{2,32}$/.test(input.bankCode)) {
     throw new Error("Invalid Nigerian bank account details.");
@@ -508,6 +510,55 @@ export async function createPaystackTestTransferRecipient(input: { accountNumber
   return { recipientCode, providerRecipientId: recipientId, bankCode, bankName, accountName, accountLast4: input.accountNumber.slice(-4), currency: "NGN", domain: "test" };
 }
 
+/** Live recipient setup validates and saves a destination; it does not transfer funds. */
+export async function resolvePaystackLiveAccount(input: { accountNumber: string; bankCode: string }): Promise<PaystackTestResolvedAccount> {
+  requirePaystackNubanInput(input);
+  const { secretKey } = getPaystackLiveConfig(false);
+  const query = new URLSearchParams({ account_number: input.accountNumber, bank_code: input.bankCode });
+  const response = await fetch(`https://api.paystack.co/bank/resolve?${query.toString()}`, {
+    headers: { Authorization: `Bearer ${secretKey}` }, cache: "no-store", signal: AbortSignal.timeout(15000),
+  });
+  const result = await response.json().catch(() => null) as { status?: unknown; data?: Record<string, unknown> } | null;
+  const data = result?.data;
+  const accountName = typeof data?.account_name === "string" ? data.account_name.trim() : "";
+  const returnedAccountNumber = typeof data?.account_number === "string" ? data.account_number.trim() : "";
+  if (!response.ok || result?.status !== true || !accountName || returnedAccountNumber !== input.accountNumber) {
+    throw new Error("Live bank account validation failed.");
+  }
+  return { accountName, accountNumber: input.accountNumber, bankCode: input.bankCode };
+}
+
+export async function createPaystackLiveTransferRecipient(input: { accountNumber: string; bankCode: string; accountName: string }): Promise<PaystackLiveTransferRecipient> {
+  requirePaystackNubanInput(input);
+  if (!input.accountName.trim() || input.accountName.length > 200) throw new Error("Invalid resolved account name.");
+  const { secretKey } = getPaystackLiveConfig(false);
+  const response = await fetch("https://api.paystack.co/transferrecipient", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${secretKey}`, "Content-Type": "application/json" },
+    cache: "no-store",
+    body: JSON.stringify({ type: "nuban", name: input.accountName.trim(), account_number: input.accountNumber,
+      bank_code: input.bankCode, currency: "NGN", metadata: { product: "growvelt_learning", environment: "live" } }),
+    signal: AbortSignal.timeout(15000),
+  });
+  const result = await response.json().catch(() => null) as { status?: unknown; data?: Record<string, unknown> } | null;
+  const data = result?.data;
+  const recipientCode = typeof data?.recipient_code === "string" ? data.recipient_code : "";
+  const recipientId = typeof data?.id === "number" && Number.isSafeInteger(data.id) ? String(data.id)
+    : typeof data?.id === "string" && /^\d+$/.test(data.id) ? data.id : "";
+  const details = data?.details && typeof data.details === "object" ? data.details as Record<string, unknown> : {};
+  const returnedAccountNumber = typeof details.account_number === "string" ? details.account_number : "";
+  const bankCode = typeof details.bank_code === "string" ? details.bank_code : "";
+  const bankName = typeof details.bank_name === "string" ? details.bank_name.trim() : "";
+  const accountName = typeof details.account_name === "string" ? details.account_name.trim() : "";
+  if (!response.ok || result?.status !== true || !/^RCP_[A-Za-z0-9]+$/.test(recipientCode) || !recipientId
+    || data?.domain !== "live" || data?.currency !== "NGN" || returnedAccountNumber !== input.accountNumber
+    || bankCode !== input.bankCode || !bankName || !accountName || accountName !== input.accountName.trim()) {
+    throw new Error("Live transfer recipient validation failed.");
+  }
+  return { recipientCode, providerRecipientId: recipientId, bankCode, bankName, accountName,
+    accountLast4: input.accountNumber.slice(-4), currency: "NGN", domain: "live" };
+}
+
 export type PaystackTestTransfer = { transferId: string; transferCode: string | null; reference: string; status: string; amountMinor: number; currency: "NGN"; domain: "test" };
 
 /** Server-only: the caller supplies only values loaded from the authoritative payout item. */
@@ -541,4 +592,119 @@ export async function verifyPaystackTestTransfer(reference: string): Promise<Pay
   const status = rawStatus === "success" ? "succeeded" : rawStatus === "failed" ? "failed" : rawStatus === "reversed" ? "reversed" : rawStatus === "pending" || rawStatus === "otp" ? "pending" : "";
   if (!response.ok || result?.status !== true || !transferId || data?.reference !== reference || !status || !Number.isSafeInteger(amount) || amount <= 0 || data?.currency !== "NGN" || data?.domain !== "test") throw new Error(typeof result?.message === "string" ? result.message : "Paystack Test transfer verification is inconclusive.");
   return { transferId, transferCode, reference, status, amountMinor: amount, currency: "NGN", domain: "test" };
+}
+
+export class PaystackLiveBalancePreflightError extends Error {
+  constructor() { super("Live payout balance preflight failed."); this.name = "PaystackLiveBalancePreflightError"; }
+}
+
+/** Read-only balance check before a separately gated Live transfer attempt. */
+export async function assertPaystackLiveBalanceCoversPayout(amountMinor: number) {
+  const feeAllowanceMinor = 10000;
+  if (!Number.isSafeInteger(amountMinor) || amountMinor < 100000) throw new PaystackLiveBalancePreflightError();
+  const { secretKey } = getPaystackLiveConfig(false);
+  let response: Response;
+  try {
+    response = await fetch("https://api.paystack.co/balance", {
+      headers: { Authorization: `Bearer ${secretKey}` }, cache: "no-store", signal: AbortSignal.timeout(15000),
+    });
+  } catch { throw new PaystackLiveBalancePreflightError(); }
+  const result = await response.json().catch(() => null) as { status?: unknown; data?: unknown } | null;
+  const balances = Array.isArray(result?.data) ? result.data as Array<Record<string, unknown>> : [];
+  const ngnRows = balances.filter(row => row.currency === "NGN");
+  const balance = ngnRows.length === 1 ? ngnRows[0].balance : null;
+  if (!response.ok || result?.status !== true || !Number.isSafeInteger(balance) || Number(balance) < 0
+    || Number(balance) < amountMinor + feeAllowanceMinor) throw new PaystackLiveBalancePreflightError();
+  return { requiredAmountMinor: amountMinor + feeAllowanceMinor };
+}
+
+export type PaystackLiveTransferSubmission = {
+  transferId: string; transferCode: string; reference: string; status: "otp" | "pending";
+  amountMinor: number; currency: "NGN"; domain: "live";
+};
+const isSupportedLiveInstructorPayoutReference = (reference: string) =>
+  /^lpb-live-batch-[0-9]+-a[0-9]+$/.test(reference);
+
+export async function initiatePaystackLivePayoutBatchTransfer(input: { recipientCode: string; amountMinor: number; reference: string }): Promise<PaystackLiveTransferSubmission> {
+  if (!/^RCP_[A-Za-z0-9]+$/.test(input.recipientCode) || !Number.isSafeInteger(input.amountMinor)
+    || input.amountMinor < 100000 || !/^lpb-live-batch-[0-9]+-a[0-9]+$/.test(input.reference)) {
+    throw new Error("Invalid Live payout batch identity.");
+  }
+  const { secretKey } = getPaystackLiveConfig(false);
+  const response = await fetch("https://api.paystack.co/transfer", {
+    method: "POST", headers: { Authorization: `Bearer ${secretKey}`, "Content-Type": "application/json" }, cache: "no-store",
+    body: JSON.stringify({ source: "balance", amount: input.amountMinor, recipient: input.recipientCode,
+      reference: input.reference, currency: "NGN", reason: "Growvelt instructor earnings" }), signal: AbortSignal.timeout(15000),
+  });
+  const result = await response.json().catch(() => null) as { status?: unknown; data?: Record<string, unknown> } | null;
+  const data = result?.data;
+  const transferId = typeof data?.id === "number" && Number.isSafeInteger(data.id) ? String(data.id)
+    : typeof data?.id === "string" && /^\d+$/.test(data.id) ? data.id : "";
+  const transferCode = typeof data?.transfer_code === "string" && /^TRF_[A-Za-z0-9]+$/.test(data.transfer_code)
+    ? data.transfer_code : "";
+  const amount = typeof data?.amount === "number" ? data.amount
+    : typeof data?.amount === "string" && /^\d+$/.test(data.amount) ? Number(data.amount) : NaN;
+  if (!response.ok || result?.status !== true || !transferId || !transferCode
+    || data?.reference !== input.reference || amount !== input.amountMinor || data?.currency !== "NGN"
+    || data?.domain !== "live" || (data?.status !== "otp" && data?.status !== "pending")) {
+    throw new Error("Live payout batch initiation is inconclusive; verify this exact reference before any retry.");
+  }
+  return { transferId, transferCode, reference: input.reference, status: data.status,
+    amountMinor: amount, currency: "NGN", domain: "live" };
+}
+
+export async function finalizePaystackLiveTransfer(input: { transferCode: string; transferId: string; reference: string; amountMinor: number; otp: string }) {
+  if (!/^TRF_[A-Za-z0-9]+$/.test(input.transferCode) || !/^\d+$/.test(input.transferId)
+    || !isSupportedLiveInstructorPayoutReference(input.reference) || !Number.isSafeInteger(input.amountMinor)
+    || input.amountMinor <= 0 || !/^\d{6}$/.test(input.otp)) throw new Error("Invalid Live transfer finalization input.");
+  const { secretKey } = getPaystackLiveConfig(false);
+  const response = await fetch("https://api.paystack.co/transfer/finalize_transfer", {
+    method: "POST", headers: { Authorization: `Bearer ${secretKey}`, "Content-Type": "application/json" }, cache: "no-store",
+    body: JSON.stringify({ transfer_code: input.transferCode, otp: input.otp }), signal: AbortSignal.timeout(15000),
+  });
+  const result = await response.json().catch(() => null) as { status?: unknown; data?: Record<string, unknown> } | null;
+  const data = result?.data;
+  const transferId = typeof data?.id === "number" && Number.isSafeInteger(data.id) ? String(data.id)
+    : typeof data?.id === "string" && /^\d+$/.test(data.id) ? data.id : "";
+  const amount = typeof data?.amount === "number" ? data.amount
+    : typeof data?.amount === "string" && /^\d+$/.test(data.amount) ? Number(data.amount) : NaN;
+  if (!response.ok || result?.status !== true || transferId !== input.transferId
+    || data?.transfer_code !== input.transferCode || data?.reference !== input.reference
+    || amount !== input.amountMinor || data?.currency !== "NGN" || data?.domain !== "live"
+    || (data?.status !== "pending" && data?.status !== "success")) {
+    throw new Error("Live OTP finalization is inconclusive; verify the transfer reference.");
+  }
+  return { status: data.status as "pending" | "success" };
+}
+
+export type PaystackLiveTransferVerification = {
+  transferId: string; transferCode: string | null; reference: string;
+  status: "succeeded" | "failed" | "reversed" | "pending" | "otp" | "abandoned" | "blocked" | "rejected" | "received";
+  amountMinor: number; currency: "NGN"; domain: "live";
+};
+
+/** Read-only provider lookup; it does not initiate or finalize a transfer. */
+export async function verifyPaystackLiveTransfer(reference: string): Promise<PaystackLiveTransferVerification> {
+  if (!isSupportedLiveInstructorPayoutReference(reference)) throw new Error("Invalid Live transfer reference.");
+  const { secretKey } = getPaystackLiveConfig(false);
+  const response = await fetch(`https://api.paystack.co/transfer/verify/${encodeURIComponent(reference)}`, {
+    headers: { Authorization: `Bearer ${secretKey}` }, cache: "no-store", signal: AbortSignal.timeout(15000),
+  });
+  const result = await response.json().catch(() => null) as { status?: unknown; data?: Record<string, unknown> } | null;
+  const data = result?.data;
+  const transferId = typeof data?.id === "number" && Number.isSafeInteger(data.id) ? String(data.id)
+    : typeof data?.id === "string" && /^\d+$/.test(data.id) ? data.id : "";
+  const transferCode = typeof data?.transfer_code === "string" && /^TRF_[A-Za-z0-9]+$/.test(data.transfer_code)
+    ? data.transfer_code : null;
+  const amount = typeof data?.amount === "number" ? data.amount
+    : typeof data?.amount === "string" && /^\d+$/.test(data.amount) ? Number(data.amount) : NaN;
+  const rawStatus = data?.status;
+  const status = rawStatus === "success" ? "succeeded" : rawStatus;
+  if (!response.ok || result?.status !== true || !transferId || data?.reference !== reference
+    || !Number.isSafeInteger(amount) || amount <= 0 || data?.currency !== "NGN" || data?.domain !== "live"
+    || !["succeeded", "failed", "reversed", "pending", "otp", "abandoned", "blocked", "rejected", "received"].includes(String(status))) {
+    throw new Error("Live transfer verification is inconclusive.");
+  }
+  return { transferId, transferCode, reference, status: status as PaystackLiveTransferVerification["status"],
+    amountMinor: amount, currency: "NGN", domain: "live" };
 }

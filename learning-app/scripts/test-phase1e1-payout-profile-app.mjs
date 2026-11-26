@@ -16,14 +16,18 @@ const [route, paystack, migration, instructorPage, adminPage, navigation] = awai
 
 assert.match(route, /isSameOriginRequest\(request\)/);
 assert.match(route, /is_approved_growvelt_instructor/);
-assert.match(route, /createAdminClient\(\)\.rpc\("create_learning_instructor_paystack_test_payout_profile"/);
+assert.match(route, /createAdminClient\(\)\.rpc\(rpc/);
+assert.match(route, /"create_learning_instructor_paystack_test_payout_profile"/);
 assert.doesNotMatch(route, /PAYSTACK_SECRET|sk_test_|sk_live_/);
 assert.doesNotMatch(route, /console\.(log|error).*accountNumber/);
 assert.match(paystack, /getPaystackTestConfig/);
 assert.match(paystack, /data\?\.domain !== "test"/);
 assert.match(paystack, /account_number: input\.accountNumber/);
 assert.match(paystack, /accountLast4: input\.accountNumber\.slice\(-4\)/);
-assert.doesNotMatch(paystack, /getPaystackLiveConfig.*TransferRecipient/);
+assert.match(route, /LEARNING_LIVE_PAYOUT_PROFILE_SETUP_ENABLED !== "true"/);
+assert.match(route, /"create_learning_instructor_paystack_live_payout_profile"/);
+assert.match(route, /"disable_own_learning_instructor_paystack_live_payout_profile"/);
+assert.match(paystack, /data\?\.domain !== "live"/);
 assert.match(migration, /provider_domain text not null check \(provider_domain in \('test','live'\)\)/);
 assert.match(migration, /create_learning_instructor_paystack_test_payout_profile/);
 assert.match(migration, /provider_domain='test'/);
@@ -32,8 +36,10 @@ assert.match(migration, /grant execute on function public\.get_own_learning_inst
 assert.doesNotMatch(migration, /grant execute on function public\.create_learning_instructor_paystack_test_payout_profile\([^\n]+\) to authenticated/);
 assert.match(migration, /account_last4/);
 assert.doesNotMatch(migration, /account_number text|account_number varchar/);
-assert.match(instructorPage, /Test-mode recipient/);
-assert.match(instructorPage, /does not reserve earnings, start a transfer/);
+assert.match(instructorPage, /Saved Live destination/);
+assert.match(instructorPage, /provider_domain === "live"/);
+assert.match(instructorPage, /liveProfileSetupEnabled/);
+assert.match(instructorPage, /PayoutProfileForm hasActiveProfile=\{Boolean\(activeLive\)\} domain="live"/);
 assert.match(adminPage, /Recipient readiness/);
 assert.match(navigation, /dashboard\/instructor\/payout-profile/);
 
