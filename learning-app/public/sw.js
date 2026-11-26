@@ -1,8 +1,9 @@
-const CACHE_VERSION = "v12";
+const CACHE_VERSION = "v13";
 const CACHE_NAME = `growvelt-pwa-${CACHE_VERSION}`;
 
 const ALLOWED_CACHE_PATHS = new Set([
   "/offline.html",
+  "/pwa/learning-launch.html",
   "/favicon.ico",
   "/favicon-16x16.png",
   "/favicon-32x32.png",
@@ -109,6 +110,12 @@ function isNeverCachePath(pathname) {
 }
 
 async function handleNavigation(request) {
+  const url = new URL(request.url);
+  if (url.pathname === "/pwa/learning-launch.html") {
+    const cachedLaunch = await caches.match(request);
+    if (cachedLaunch) return cachedLaunch;
+  }
+
   try {
     return await fetch(request);
   } catch {

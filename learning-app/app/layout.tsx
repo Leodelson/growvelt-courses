@@ -6,6 +6,8 @@ import { CookieConsentProvider } from "@/app/components/privacy/cookie-consent-p
 import { defaultSocialImage, growveltLearningUrl } from "@/app/lib/seo";
 import { SupportPageAssistant } from "@/app/components/support-page-assistant";
 import LearningPWA from "@/app/components/pwa/LearningPWA";
+import { launchBootstrap } from "@/app/components/pwa/launchBootstrap";
+import { launchStyles } from "@/app/components/pwa/launchStyles";
 
 export const metadata: Metadata = {
   metadataBase: growveltLearningUrl,
@@ -14,7 +16,7 @@ export const metadata: Metadata = {
     template: "%s | Growvelt",
   },
   description: "Build practical skills with Growvelt courses in technology, data, business, and digital marketing. Learn at your pace and earn verifiable certificates.",
-  applicationName: "Growvelt Learning",
+  applicationName: "Growvelt",
   keywords: ["Growvelt", "online courses", "practical skills", "career development", "data analytics courses", "tech learning"],
   alternates: { canonical: "/" },
   openGraph: {
@@ -47,26 +49,23 @@ export const metadata: Metadata = {
     ],
     apple: [{ url: "/apple-touch-icon.png?v=11", sizes: "180x180", type: "image/png" }],
   },
-  manifest: "/site.webmanifest?v=11",
+  manifest: "/site.webmanifest?v=12",
+  appleWebApp: {
+    capable: true,
+    title: "Growvelt",
+    statusBarStyle: "default",
+  },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        <meta id="growvelt-theme-color" name="theme-color" content="#f8fafc" />
+        <style dangerouslySetInnerHTML={{ __html: launchStyles }} />
         <script
           dangerouslySetInnerHTML={{
-            __html: `(() => {
-              try {
-                const stored = localStorage.getItem("growvelt-learning-theme");
-                const theme = stored === "light" || stored === "dark" || stored === "system" ? stored : "light";
-                const resolved = theme === "system"
-                  ? (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")
-                  : theme;
-                document.documentElement.dataset.theme = resolved;
-                document.documentElement.style.colorScheme = resolved;
-              } catch (_) {}
-            })();`,
+            __html: launchBootstrap,
           }}
         />
       </head>

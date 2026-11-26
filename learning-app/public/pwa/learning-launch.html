@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+    <meta name="theme-color" content="#f8fafc">
+    <meta name="color-scheme" content="light dark">
+    <meta http-equiv="refresh" content="8;url=/pwa/open">
+    <title>Growvelt</title>
+    <link rel="preload" href="/pwa/icon-any-512x512.png" as="image" fetchpriority="high">
+    <style>
+      * { box-sizing: border-box; }
+      html, body { width: 100%; min-height: 100%; margin: 0; }
+      html { color-scheme: light; background: #f8fafc; }
+      html[data-theme="dark"] { color-scheme: dark; background: #090d18; }
+      body { min-height: 100svh; display: grid; place-items: center; overflow: hidden; background: inherit; color: #111827; }
+      html[data-theme="dark"] body { color: #f8fafc; }
+      main { display: flex; flex-direction: column; align-items: center; gap: 20px; transform: translateY(-4vh); }
+      .mark { position: relative; width: 88px; height: 88px; overflow: hidden; border-radius: 20px; filter: drop-shadow(0 9px 22px rgba(131,43,251,.23)); isolation: isolate; }
+      .mark img { display: block; width: 100%; height: 100%; object-fit: contain; }
+      .mark::after { position: absolute; inset: -65% -35%; content: ""; pointer-events: none; background: linear-gradient(115deg,transparent 40%,rgba(255,255,255,0) 45%,rgba(255,255,255,.28) 50%,rgba(255,255,255,0) 55%,transparent 60%); transform: translateX(-72%); animation: sheen 1100ms ease-in-out 1 180ms both; }
+      p { margin: 0; font: 600 20px/1.3 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; letter-spacing: -.02em; }
+      @keyframes sheen { to { transform: translateX(72%); } }
+      @media (prefers-reduced-motion: reduce) { .mark::after { animation: none; } }
+    </style>
+    <script>
+      (() => {
+        const root = document.documentElement;
+        let theme = "light";
+        try {
+          const stored = localStorage.getItem("growvelt-learning-theme");
+          theme = stored === "dark" ? "dark" : stored === "system" && matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        } catch (_) {}
+        root.dataset.theme = theme;
+        root.style.colorScheme = theme;
+        const color = document.querySelector('meta[name="theme-color"]');
+        if (color) color.content = theme === "dark" ? "#090d18" : "#f8fafc";
+
+        const standalone = matchMedia("(display-mode: standalone)").matches ||
+          ("standalone" in navigator && navigator.standalone === true);
+        if (!standalone) {
+          location.replace("/");
+          return;
+        }
+
+        const startedAt = Date.now();
+        try { sessionStorage.setItem("growvelt-learning-launch-at", String(startedAt)); } catch (_) {}
+        let navigated = false;
+        const openHome = () => {
+          if (navigated) return;
+          navigated = true;
+          try {
+            if (!sessionStorage.getItem("growvelt-learning-launch-at")) {
+              location.replace("/pwa/open?__gwlaunch=" + startedAt);
+              return;
+            }
+          } catch (_) {
+            location.replace("/pwa/open?__gwlaunch=" + startedAt);
+            return;
+          }
+          location.replace("/pwa/open");
+        };
+
+        window.setTimeout(openHome, 1320);
+        window.setTimeout(openHome, 7900);
+      })();
+    </script>
+  </head>
+  <body>
+    <main aria-label="Opening Growvelt Learning">
+      <span class="mark" aria-hidden="true"><img src="/pwa/icon-any-512x512.png" width="88" height="88" alt=""></span>
+      <p>Growvelt</p>
+    </main>
+  </body>
+</html>

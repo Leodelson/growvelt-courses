@@ -1,8 +1,8 @@
 {
-  "name": "Growvelt Learning",
+  "name": "Growvelt",
   "short_name": "Growvelt",
   "id": "/",
-  "start_url": "/",
+  "start_url": "/pwa/learning-launch.html",
   "scope": "/",
   "icons": [
     {
@@ -24,8 +24,8 @@
       "purpose": "maskable"
     }
   ],
-  "theme_color": "#832bfb",
-  "background_color": "#832bfb",
+  "theme_color": "#f8fafc",
+  "background_color": "#f8fafc",
   "display": "standalone",
   "categories": ["education"]
 }
