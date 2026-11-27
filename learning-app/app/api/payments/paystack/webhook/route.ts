@@ -5,6 +5,7 @@ import { getOrderNotificationContext, paymentOperationsRecipient, sendPaymentNot
 import { recordCompanyPaymentManualReview } from "@/app/lib/company/payment-exceptions";
 import { parsePaystackLiveSubscriptionWebhook, parsePaystackTestSubscriptionWebhook, type PaystackSubscriptionWebhookEvent } from "@/app/lib/payments/paystack-subscription-core";
 import { canProcessLiveSubscriptionEvents, canProcessTestSubscriptionEvents } from "@/app/lib/subscriptions/feature";
+import { JsonBodyError, readBoundedText } from "@/app/lib/security/json-body";
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -265,8 +266,14 @@ async function handleSubscriptionWebhook(event: SubscriptionWebhookEvent, payloa
 
 export async function POST(request: Request) {
   let config; try { config = getPaystackConfig(false); } catch { return NextResponse.json({ code: "not_configured" }, { status: 503 }); }
-  const rawBody = await request.text();
-  if (!rawBody || rawBody.length > 262144) return NextResponse.json({ code: "invalid_payload" }, { status: 400 });
+  let rawBody: string;
+  try {
+    rawBody = await readBoundedText(request, 262144);
+  } catch (error) {
+    const status = error instanceof JsonBodyError ? error.status : 400;
+    return NextResponse.json({ code: "invalid_payload" }, { status, headers: { "Cache-Control": "no-store" } });
+  }
+  if (!rawBody) return NextResponse.json({ code: "invalid_payload" }, { status: 400, headers: { "Cache-Control": "no-store" } });
   if (!verifyPaystackSignature(rawBody, request.headers.get("x-paystack-signature"), config.secretKey)) return NextResponse.json({ code: "invalid_signature" }, { status: 401 });
   let payload: unknown;
   try {

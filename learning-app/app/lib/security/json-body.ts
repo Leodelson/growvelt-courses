@@ -42,3 +42,40 @@ export async function readBoundedJson(request: Request, maxBytes: number): Promi
     reader.releaseLock();
   }
 }
+
+// Provider webhooks need the original body as text for signature verification.
+// Read it incrementally so an absent or forged Content-Length cannot force an
+// unbounded request.text() allocation before the route enforces its limit.
+export async function readBoundedText(request: Request, maxBytes: number): Promise<string> {
+  if (!Number.isSafeInteger(maxBytes) || maxBytes < 1) throw new Error("Invalid text body limit");
+  const length = request.headers.get("content-length");
+  if (length !== null && (!/^\d+$/.test(length) || !Number.isSafeInteger(Number(length)))) throw new JsonBodyError(400);
+  if (length !== null && Number(length) > maxBytes) {
+    void request.body?.cancel().catch(() => undefined);
+    throw new JsonBodyError(413);
+  }
+  if (!request.body) throw new JsonBodyError(400);
+
+  const reader = request.body.getReader();
+  const decoder = new TextDecoder("utf-8");
+  let bytes = 0;
+  let text = "";
+  try {
+    while (true) {
+      const chunk = await reader.read();
+      if (chunk.done) break;
+      bytes += chunk.value.byteLength;
+      if (bytes > maxBytes) throw new JsonBodyError(413);
+      text += decoder.decode(chunk.value, { stream: true });
+    }
+    text += decoder.decode();
+    return text;
+  } catch (error) {
+    // Stop consuming an oversized body immediately instead of waiting for the
+    // sender to finish streaming it.
+    void reader.cancel().catch(() => undefined);
+    throw error instanceof JsonBodyError ? error : new JsonBodyError(400);
+  } finally {
+    reader.releaseLock();
+  }
+}

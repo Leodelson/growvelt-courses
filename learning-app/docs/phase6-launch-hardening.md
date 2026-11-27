@@ -397,3 +397,17 @@ signed-out/non-admin requests rejected before the body is read. No payout,
 provider call, database mutation, or hosted configuration change was used for
 verification. The wider authorization/rate-limit/secret review and the remaining
 Phase 6 exit checks remain open.
+
+## Tenth hardening slice — streamed Paystack webhook body limit, 27 November
+
+The public Paystack webhook now reads the signed UTF-8 body incrementally and
+enforces its 256 KiB limit against actual streamed bytes. Oversized declared
+lengths are rejected before reading; missing or forged-low lengths cannot bypass
+the streamed cap. Rejected streams are canceled and return a private no-store
+413 response. Signature verification still receives the full decoded body text
+for accepted requests, and webhook event processing is unchanged.
+
+Actual-route fixtures cover the exact size boundary, streamed overflow with a
+forged short Content-Length, and declared overflow before consumption. Signature,
+database, payment, and email integrations are mocked; no real webhook or payment
+was sent. Remaining Phase 6 review and launch checks stay open.

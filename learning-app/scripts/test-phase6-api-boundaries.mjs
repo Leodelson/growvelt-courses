@@ -199,6 +199,45 @@ const payoutEnvironment = {
   LEARNING_LIVE_PAYOUT_BATCH_RECONCILIATION_ENABLED: "true",
 };
 const handlers = new Map(routes.map(([path]) => [path, load(path, {}, payoutRoutes.has(path) ? payoutEnvironment : {})]));
+const webhookSignatures = [];
+const paystackWebhook = load("app/api/payments/paystack/webhook/route.ts", {
+  "@/app/lib/payments/paystack": {
+    digestPaystackPayload: () => "synthetic-digest",
+    getPaystackConfig: () => ({ mode: "test", secretKey: "synthetic-secret" }),
+    isPaystackCompanyReversalEvent: () => false,
+    parsePaystackChargeSuccess: () => null,
+    parsePaystackCompanyChargeSuccess: () => null,
+    parsePaystackCompanyReversalNotice: () => null,
+    parsePaystackDisputeEvent: () => null,
+    parsePaystackRefundEvent: () => null,
+    parsePaystackTestTransferEvent: () => null,
+    parsePaystackTransferEvent: () => null,
+    verifyPaystackCompanyTransaction: async () => { throw new Error("Webhook fixture must not call Paystack"); },
+    verifyPaystackLiveSubscriptionTransaction: async () => { throw new Error("Webhook fixture must not call Paystack"); },
+    verifyPaystackSignature: (rawBody, signature, secret) => {
+      webhookSignatures.push({ rawBody, signature, secret });
+      return signature === "fixture-signature" && secret === "synthetic-secret";
+    },
+    verifyPaystackTestSubscriptionTransaction: async () => { throw new Error("Webhook fixture must not call Paystack"); },
+    verifyPaystackTransaction: async () => { throw new Error("Webhook fixture must not call Paystack"); },
+  },
+  "@/app/lib/payments/paystack-subscription-core": {
+    parsePaystackLiveSubscriptionWebhook: () => null,
+    parsePaystackTestSubscriptionWebhook: () => null,
+  },
+  "@/app/lib/subscriptions/feature": {
+    canProcessLiveSubscriptionEvents: () => false,
+    canProcessTestSubscriptionEvents: () => false,
+  },
+  "@/app/lib/email/payment-notifications": {
+    getOrderNotificationContext: async () => null,
+    paymentOperationsRecipient: () => "ops@example.invalid",
+    sendPaymentNotification: async () => { throw new Error("Webhook fixture must not send email"); },
+  },
+  "@/app/lib/company/payment-exceptions": {
+    recordCompanyPaymentManualReview: async () => false,
+  },
+});
 const context = { params: Promise.resolve({ id: noticeId, workspaceId: "1", organizationId: "1", invitationId: "1", memberId: otherId, userId: otherId }) };
 const request = (method, headers = { Origin: hosts[0] }, body = {}) => new Request(hosts[0] + "/api/local-fixture", { method, headers: { "Content-Type": "application/json", ...headers }, body: JSON.stringify(body) });
 
@@ -541,4 +580,51 @@ assert.equal(alertDrains,0);
 assert.equal((await alertCron.GET(new Request(hosts[0]+"/api/internal/admin-submission-alerts",{headers:{authorization:"Bearer local-cron-secret"}}))).status,200);
 assert.equal(alertDrains,1);
 assert.equal(providerCalls.length, 0, "no email, CAPTCHA, activity, or payment provider was called");
+const webhookByteLimit = 262144;
+const exactWebhookPayload = `{"padding":"${"x".repeat(webhookByteLimit - 14)}"}`;
+assert.equal(new TextEncoder().encode(exactWebhookPayload).byteLength, webhookByteLimit);
+let webhookResult = await paystackWebhook.POST(new Request(hosts[0] + "/api/payments/paystack/webhook", {
+  method: "POST",
+  headers: { "Content-Type": "application/json", "Content-Length": String(webhookByteLimit), "x-paystack-signature": "fixture-signature" },
+  body: exactWebhookPayload,
+}));
+assert.equal(webhookResult.status, 204, "the exact 256 KiB webhook boundary is accepted");
+assert.deepEqual(webhookSignatures.at(-1), { rawBody: exactWebhookPayload, signature: "fixture-signature", secret: "synthetic-secret" }, "signature verification receives the complete original UTF-8 body text");
+
+const beforeOversizedSignature = webhookSignatures.length;
+let oversizedStreamCanceled = false;
+const oversizedWebhookStream = new ReadableStream({
+  start(controller) {
+    controller.enqueue(new TextEncoder().encode("x".repeat(webhookByteLimit / 2)));
+    controller.enqueue(new TextEncoder().encode("x".repeat(webhookByteLimit / 2 + 1)));
+  },
+  cancel() { oversizedStreamCanceled = true; },
+});
+webhookResult = await paystackWebhook.POST(new Request(hosts[0] + "/api/payments/paystack/webhook", {
+  method: "POST",
+  headers: { "Content-Type": "application/json", "Content-Length": "1", "x-paystack-signature": "fixture-signature" },
+  body: oversizedWebhookStream,
+  duplex: "half",
+}));
+await new Promise(resolve => setImmediate(resolve));
+assert.equal(webhookResult.status, 413, "streamed body beyond 256 KiB is rejected even when Content-Length is forged low");
+assert.match(webhookResult.headers.get("cache-control"), /no-store/);
+assert.equal(oversizedStreamCanceled, true, "oversized webhook stream is canceled immediately");
+assert.equal(webhookSignatures.length, beforeOversizedSignature, "oversized body is rejected before signature or webhook processing");
+
+let unreadStreamCanceled = false;
+const declaredOversizedStream = new ReadableStream({
+  start(controller) { controller.enqueue(new TextEncoder().encode("{}")); },
+  cancel() { unreadStreamCanceled = true; },
+});
+webhookResult = await paystackWebhook.POST(new Request(hosts[0] + "/api/payments/paystack/webhook", {
+  method: "POST",
+  headers: { "Content-Type": "application/json", "Content-Length": String(webhookByteLimit + 1), "x-paystack-signature": "fixture-signature" },
+  body: declaredOversizedStream,
+  duplex: "half",
+}));
+await new Promise(resolve => setImmediate(resolve));
+assert.equal(webhookResult.status, 413, "oversized declared length is rejected before stream consumption");
+assert.equal(unreadStreamCanceled, true);
+assert.equal(webhookSignatures.length, beforeOversizedSignature);
 console.log("PASS mutation boundaries plus admin-alert scheduling: origin/auth/ownership gates, bounded JSON, role checks, cron-secret denial, exact scheduling and no course mutation. All providers mocked.");
