@@ -359,3 +359,24 @@ The Vite build emitted its existing sourcemap/bundler-timing warnings but
 completed successfully. No migrations, hosted configuration, or outbound email
 were changed. The wider route/authorization audit and remaining Phase 6 checks
 are still open.
+
+## Eighth hardening slice — administrator payment operation request limits, 27 November
+
+The Learning admin refund initiation, payment recovery, refund recovery, and
+dispute recovery POST routes now parse JSON through the shared streamed reader
+after same-origin, session, and admin-role checks. Refund initiation is capped
+at 16 KiB to preserve its bounded operator note; the other three identifiers-only
+requests are capped at 1 KiB. Invalid content types, malformed/non-object JSON,
+and oversized payloads receive private no-store errors before any privileged
+database client or payment provider call.
+
+The actual-handler API fixture covers invalid and oversized inputs, forged
+Content-Length, field-validation compatibility for valid JSON, and denial of
+signed-out/non-admin requests before body reads. `test:phase6:api` and focused
+ESLint pass. The Cloudflare Vite production build completes successfully with
+the existing sourcemap, duplicate CSS output-name, and bundler-timing warnings.
+The standalone TypeScript check still reports only stale generated `.next/types`
+route declarations (`AppRoutes`, `LayoutRoutes`, `ParamMap`, and
+`AppRouteHandlerRoutes`); the production build itself passes. No database,
+provider, email, or hosted configuration was changed. Broader route coverage,
+monitoring/rollback, and the remaining Phase 6 exit checks are still open.

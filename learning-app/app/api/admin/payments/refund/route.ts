@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { isSameOriginRequest } from "@/app/lib/security/request-origin";
+import { JsonBodyError, readBoundedJsonObject } from "@/app/lib/security/json-body";
 import { createClient } from "@/app/lib/supabase/server";
 import { createAdminClient } from "@/app/lib/supabase/admin";
 import { createPaystackLiveFullRefund, createPaystackTestFullRefund, getPaystackConfig, requirePaystackLiveRefundsEnabled, requirePaystackTestRefundsEnabled, verifyPaystackTransaction } from "@/app/lib/payments/paystack";
@@ -20,7 +21,11 @@ export async function POST(request: Request) {
   if (!user) return NextResponse.json({ code: "unauthorized" }, { status: 401 });
   const { data: isAdmin } = await supabase.rpc("is_growvelt_learning_admin");
   if (isAdmin !== true) return NextResponse.json({ code: "forbidden" }, { status: 403 });
-  const body = await request.json().catch(() => null) as { reference?: unknown; confirmation?: unknown; reasonCode?: unknown; note?: unknown; idempotencyKey?: unknown } | null;
+  let body: Record<string, unknown>;
+  try { body = await readBoundedJsonObject(request, 16 * 1024); }
+  catch (error) {
+    return NextResponse.json({ code: "invalid_request" }, { status: error instanceof JsonBodyError ? error.status : 400, headers: { "Cache-Control": "private, no-store" } });
+  }
   const reference = typeof body?.reference === "string" ? body.reference.trim() : "";
   const confirmation = typeof body?.confirmation === "string" ? body.confirmation.trim() : "";
   const reasonCode = typeof body?.reasonCode === "string" ? body.reasonCode.trim() : "";

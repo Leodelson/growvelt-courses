@@ -96,12 +96,15 @@ shared["@/app/lib/email/payment-notifications"] = {
   getOrderNotificationContext: async () => { throw new Error("Unexpected payment notification lookup"); },
   sendPaymentNotification: async () => { throw new Error("Unexpected payment notification"); },
 };
+shared["@/app/lib/payments/refund-initiation-error"] = { PaystackRefundFundingError: class PaystackRefundFundingError extends Error {} };
 shared["@/app/lib/site-urls.mjs"] = { learningAbsoluteUrl: path => new URL(path, "https://www.growvelt.com").href };
 shared["@/app/lib/learning/notification-retention"] = { LOGIN_NOTIFICATION_KIND: "login", LOGIN_NOTIFICATION_RETENTION_MS: 86400000 };
 shared["@/app/lib/auth/login-activity"] = { recordLearningSignIn: async () => providerCalls.push("login-activity") };
 shared["@/app/lib/payments/paystack"] = {
   getPaystackConfig: () => ({ mode: "test", callbackUrl: "https://www.growvelt.com/payments/paystack/callback", checkoutEnabled: true }),
   getPaystackTestConfig: () => ({}),
+  requirePaystackLiveRefundsEnabled: () => {},
+  requirePaystackTestRefundsEnabled: () => {},
   initializePaystackLiveTransaction: async () => { throw new Error("No payments allowed"); },
   initializePaystackTestTransaction: async () => { throw new Error("No payments allowed"); },
   createPaystackTestTransferRecipient: async () => { throw new Error("No transfers allowed"); },
@@ -142,6 +145,10 @@ const routes = [
   ["app/api/learning/admin/emails/route.ts", ["POST"]],
   ["app/api/admin/provider-verifications/[organizationId]/review/route.ts", ["POST"]],
   ["app/api/admin/instructor-applications/[userId]/review/route.ts", ["POST"]],
+  ["app/api/admin/payments/refund/route.ts", ["POST"]],
+  ["app/api/admin/payments/recover/route.ts", ["POST"]],
+  ["app/api/admin/payments/refund/recover/route.ts", ["POST"]],
+  ["app/api/admin/payments/dispute/recover/route.ts", ["POST"]],
   ["app/api/learning/support/route.ts", ["POST"]],
   ["app/api/learning/support/[id]/route.ts", ["POST", "PATCH"]],
   ["app/api/learning/notifications/route.ts", ["PATCH"]],
@@ -183,6 +190,10 @@ const boundedRoutes = [
   ["app/api/learning/email/preferences/route.ts", "POST", 1024],
   ["app/api/admin/provider-verifications/[organizationId]/review/route.ts", "POST", 16384],
   ["app/api/admin/instructor-applications/[userId]/review/route.ts", "POST", 16384],
+  ["app/api/admin/payments/refund/route.ts", "POST", 16384],
+  ["app/api/admin/payments/recover/route.ts", "POST", 1024],
+  ["app/api/admin/payments/refund/recover/route.ts", "POST", 1024],
+  ["app/api/admin/payments/dispute/recover/route.ts", "POST", 1024],
   ["app/api/instructor/application/route.ts", "POST", 65536],
   ["app/api/instructor/organizations/route.ts", "POST", 4096],
   ["app/api/company/workspaces/route.ts", "POST", 4096],
@@ -210,6 +221,16 @@ for (const [path, params, payload, rpc] of [
   const beforeReview = operations.length;
   assert.equal((await handlers.get(path).POST(request("POST", undefined, payload), { params: Promise.resolve(params) })).status, 200, `${path}: authorized admin review remains available`);
   assert.deepEqual(operations.slice(beforeReview).map(operation => operation.rpc), ["is_growvelt_learning_admin", rpc], `${path}: confirm admin before the review mutation`);
+}
+for (const [path, code] of [
+  ["app/api/admin/payments/refund/route.ts", "invalid_request"],
+  ["app/api/admin/payments/recover/route.ts", "invalid_reference"],
+  ["app/api/admin/payments/refund/recover/route.ts", "invalid_request"],
+  ["app/api/admin/payments/dispute/recover/route.ts", "invalid_request"],
+]) {
+  const response = await handlers.get(path).POST(request("POST", undefined, {}), context);
+  assert.equal(response.status, 400, `${path}: valid bounded JSON still reaches field validation`);
+  assert.equal((await response.json()).code, code);
 }
 for (const [path, methods] of routes) {
   for (const method of methods) {
@@ -323,7 +344,7 @@ for (const [route, body] of [[newsletter, newsletterBody], [contact, { kind: "co
 intakeError = null;
 
 actor = null;
-for (const [path, method] of [["app/api/learning/notifications/route.ts", "PATCH"], ["app/api/learning/support/route.ts", "POST"], ["app/api/learning/email/preferences/route.ts", "POST"], ["app/api/auth/login-activity/route.ts", "POST"], ["app/api/instructor/payout-profile/route.ts", "POST"], ["app/api/admin/provider-verifications/[organizationId]/review/route.ts", "POST"], ["app/api/admin/instructor-applications/[userId]/review/route.ts", "POST"]]) {
+for (const [path, method] of [["app/api/learning/notifications/route.ts", "PATCH"], ["app/api/learning/support/route.ts", "POST"], ["app/api/learning/email/preferences/route.ts", "POST"], ["app/api/auth/login-activity/route.ts", "POST"], ["app/api/instructor/payout-profile/route.ts", "POST"], ["app/api/admin/provider-verifications/[organizationId]/review/route.ts", "POST"], ["app/api/admin/instructor-applications/[userId]/review/route.ts", "POST"], ["app/api/admin/payments/refund/route.ts", "POST"], ["app/api/admin/payments/recover/route.ts", "POST"], ["app/api/admin/payments/refund/recover/route.ts", "POST"], ["app/api/admin/payments/dispute/recover/route.ts", "POST"]]) {
   const signedOut = request(method);
   Object.defineProperty(signedOut, "body", { get() { throw new Error("must not parse before authentication"); } });
   assert.equal((await handlers.get(path)[method](signedOut, context)).status, 401, `${path}: signed-out requests are denied before parsing`);
@@ -333,6 +354,12 @@ for (const [path, params] of [["app/api/admin/provider-verifications/[organizati
   const unauthorized = request("POST");
   Object.defineProperty(unauthorized, "body", { get() { throw new Error("must not parse a non-admin review body"); } });
   assert.equal((await handlers.get(path).POST(unauthorized, { params: Promise.resolve(params) })).status, 403, `${path}: deny a non-admin before reading the review body`);
+}
+for (const path of ["app/api/admin/payments/refund/route.ts", "app/api/admin/payments/recover/route.ts", "app/api/admin/payments/refund/recover/route.ts", "app/api/admin/payments/dispute/recover/route.ts"]) {
+  actor = { id: userId, role: "learner" };
+  const unauthorized = request("POST");
+  Object.defineProperty(unauthorized, "body", { get() { throw new Error("must not parse a non-admin payment operation body"); } });
+  assert.equal((await handlers.get(path).POST(unauthorized, context)).status, 403, `${path}: deny a non-admin before reading the payment body`);
 }
 // Session ownership remains authoritative, even when callers submit another
 // user's ID or request an approved/admin role in otherwise valid form JSON.
