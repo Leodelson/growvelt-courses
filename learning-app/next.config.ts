@@ -7,6 +7,11 @@ const nextConfig: NextConfig = {
     : process.env.GROWVELT_DOMAIN_TEST_MODE === "bridge" ? ".next-domain-bridge" : ".next",
   reactStrictMode: true,
   poweredByHeader: false,
+  async redirects() {
+    return [
+      { source: "/catalog", destination: "/learn", permanent: true },
+    ];
+  },
   async headers() {
     return [
       {
