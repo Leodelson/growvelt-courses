@@ -10,5 +10,22 @@ export function normalizePublicCourseCopy(value: string | null | undefined): str
     return null;
   }
 
+  // Reject long, highly repetitive tokens that commonly come from accidental
+  // keyboard input, even when spaces make the overall value look like prose.
+  const words = copy.match(/[\p{L}\p{N}]+/gu) ?? [];
+  for (const word of words) {
+    const characters = Array.from(word.toLowerCase());
+    if (characters.length < 12) continue;
+
+    const frequencies = new Map<string, number>();
+    for (const character of characters) {
+      frequencies.set(character, (frequencies.get(character) ?? 0) + 1);
+    }
+
+    const uniqueRatio = frequencies.size / characters.length;
+    const mostRepeatedRatio = Math.max(...frequencies.values()) / characters.length;
+    if (uniqueRatio <= 0.42 && mostRepeatedRatio >= 0.24) return null;
+  }
+
   return copy;
 }
