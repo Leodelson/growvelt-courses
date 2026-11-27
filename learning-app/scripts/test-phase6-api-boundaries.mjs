@@ -58,7 +58,7 @@ function client() {
   };
 }
 
-function load(path, mocks = {}) {
+function load(path, mocks = {}, env = {}) {
   const sourceUrl = new URL(path, root);
   const requireFromSource = createRequire(sourceUrl);
   const source = readFileSync(sourceUrl, "utf8");
@@ -66,7 +66,7 @@ function load(path, mocks = {}) {
   const moduleValue = { exports: {} };
   vm.runInNewContext(compiled, {
     module: moduleValue, exports: moduleValue.exports, URL, Request, Response, Headers, FormData, AbortSignal, TextDecoder, Buffer, console,
-    process: { env: { TURNSTILE_SECRET_KEY: "local-test-value", CRON_SECRET: "local-cron-secret" } },
+    process: { env: { TURNSTILE_SECRET_KEY: "local-test-value", CRON_SECRET: "local-cron-secret", ...env } },
     fetch: async (...args) => { providerCalls.push(args); throw new Error("Provider access forbidden in this suite"); },
     require: id => id in mocks ? mocks[id] : id in shared ? shared[id] : requireFromSource(id),
   }, { filename: fileURLToPath(sourceUrl) });
@@ -97,10 +97,17 @@ shared["@/app/lib/email/payment-notifications"] = {
   sendPaymentNotification: async () => { throw new Error("Unexpected payment notification"); },
 };
 shared["@/app/lib/payments/refund-initiation-error"] = { PaystackRefundFundingError: class PaystackRefundFundingError extends Error {} };
+shared["@/app/lib/admin/instructor-payout-transfer"] = Object.fromEntries([
+  "approveInstructorLivePayoutBatch", "finalizeInstructorLivePayoutBatchOtp",
+  "recoverInstructorLivePayoutBatch", "submitInstructorLivePayoutBatch",
+  "approveInstructorTestPayout", "recoverInstructorTestPayout",
+  "submitInstructorTestPayout",
+].map(name => [name, async () => { throw new Error("Payout operations are forbidden in this suite"); }]));
 shared["@/app/lib/site-urls.mjs"] = { learningAbsoluteUrl: path => new URL(path, "https://www.growvelt.com").href };
 shared["@/app/lib/learning/notification-retention"] = { LOGIN_NOTIFICATION_KIND: "login", LOGIN_NOTIFICATION_RETENTION_MS: 86400000 };
 shared["@/app/lib/auth/login-activity"] = { recordLearningSignIn: async () => providerCalls.push("login-activity") };
 shared["@/app/lib/payments/paystack"] = {
+  PaystackLiveBalancePreflightError: class PaystackLiveBalancePreflightError extends Error {},
   getPaystackConfig: () => ({ mode: "test", callbackUrl: "https://www.growvelt.com/payments/paystack/callback", checkoutEnabled: true }),
   getPaystackTestConfig: () => ({}),
   requirePaystackLiveRefundsEnabled: () => {},
@@ -149,6 +156,14 @@ const routes = [
   ["app/api/admin/payments/recover/route.ts", ["POST"]],
   ["app/api/admin/payments/refund/recover/route.ts", ["POST"]],
   ["app/api/admin/payments/dispute/recover/route.ts", ["POST"]],
+  ["app/api/admin/commercial/payout-batches/approve/route.ts", ["POST"]],
+  ["app/api/admin/commercial/payout-batches/finalize-live-otp/route.ts", ["POST"]],
+  ["app/api/admin/commercial/payout-batches/recover-live/route.ts", ["POST"]],
+  ["app/api/admin/commercial/payout-batches/submit-live/route.ts", ["POST"]],
+  ["app/api/admin/commercial/payout-items/approve/route.ts", ["POST"]],
+  ["app/api/admin/commercial/payout-items/recover-test/route.ts", ["POST"]],
+  ["app/api/admin/commercial/payout-items/reprocess-event/route.ts", ["POST"]],
+  ["app/api/admin/commercial/payout-items/submit-test/route.ts", ["POST"]],
   ["app/api/learning/support/route.ts", ["POST"]],
   ["app/api/learning/support/[id]/route.ts", ["POST", "PATCH"]],
   ["app/api/learning/notifications/route.ts", ["PATCH"]],
@@ -167,7 +182,23 @@ const routes = [
   ...managementCases.map(({path}) => [path,["POST"]]),
   ...invitationActions.map(({path}) => [path,["POST"]]),
 ];
-const handlers = new Map(routes.map(([path]) => [path, load(path)]));
+const payoutRoutes = new Set([
+  "app/api/admin/commercial/payout-batches/approve/route.ts",
+  "app/api/admin/commercial/payout-batches/finalize-live-otp/route.ts",
+  "app/api/admin/commercial/payout-batches/recover-live/route.ts",
+  "app/api/admin/commercial/payout-batches/submit-live/route.ts",
+  "app/api/admin/commercial/payout-items/approve/route.ts",
+  "app/api/admin/commercial/payout-items/recover-test/route.ts",
+  "app/api/admin/commercial/payout-items/reprocess-event/route.ts",
+  "app/api/admin/commercial/payout-items/submit-test/route.ts",
+]);
+const payoutEnvironment = {
+  LEARNING_LIVE_PAYOUT_BATCH_APPROVAL_ENABLED: "true",
+  LEARNING_LIVE_PAYOUT_BATCH_SUBMISSION_ENABLED: "true",
+  LEARNING_LIVE_PAYOUT_BATCH_OTP_ENABLED: "true",
+  LEARNING_LIVE_PAYOUT_BATCH_RECONCILIATION_ENABLED: "true",
+};
+const handlers = new Map(routes.map(([path]) => [path, load(path, {}, payoutRoutes.has(path) ? payoutEnvironment : {})]));
 const context = { params: Promise.resolve({ id: noticeId, workspaceId: "1", organizationId: "1", invitationId: "1", memberId: otherId, userId: otherId }) };
 const request = (method, headers = { Origin: hosts[0] }, body = {}) => new Request(hosts[0] + "/api/local-fixture", { method, headers: { "Content-Type": "application/json", ...headers }, body: JSON.stringify(body) });
 
@@ -194,6 +225,14 @@ const boundedRoutes = [
   ["app/api/admin/payments/recover/route.ts", "POST", 1024],
   ["app/api/admin/payments/refund/recover/route.ts", "POST", 1024],
   ["app/api/admin/payments/dispute/recover/route.ts", "POST", 1024],
+  ["app/api/admin/commercial/payout-batches/approve/route.ts", "POST", 4096],
+  ["app/api/admin/commercial/payout-batches/finalize-live-otp/route.ts", "POST", 1024],
+  ["app/api/admin/commercial/payout-batches/recover-live/route.ts", "POST", 1024],
+  ["app/api/admin/commercial/payout-batches/submit-live/route.ts", "POST", 1024],
+  ["app/api/admin/commercial/payout-items/approve/route.ts", "POST", 1024],
+  ["app/api/admin/commercial/payout-items/recover-test/route.ts", "POST", 1024],
+  ["app/api/admin/commercial/payout-items/reprocess-event/route.ts", "POST", 1024],
+  ["app/api/admin/commercial/payout-items/submit-test/route.ts", "POST", 1024],
   ["app/api/instructor/application/route.ts", "POST", 65536],
   ["app/api/instructor/organizations/route.ts", "POST", 4096],
   ["app/api/company/workspaces/route.ts", "POST", 4096],
@@ -227,6 +266,14 @@ for (const [path, code] of [
   ["app/api/admin/payments/recover/route.ts", "invalid_reference"],
   ["app/api/admin/payments/refund/recover/route.ts", "invalid_request"],
   ["app/api/admin/payments/dispute/recover/route.ts", "invalid_request"],
+  ["app/api/admin/commercial/payout-batches/approve/route.ts", "invalid_request"],
+  ["app/api/admin/commercial/payout-batches/finalize-live-otp/route.ts", "invalid_request"],
+  ["app/api/admin/commercial/payout-batches/recover-live/route.ts", "invalid_request"],
+  ["app/api/admin/commercial/payout-batches/submit-live/route.ts", "invalid_request"],
+  ["app/api/admin/commercial/payout-items/approve/route.ts", "invalid_request"],
+  ["app/api/admin/commercial/payout-items/recover-test/route.ts", "invalid_request"],
+  ["app/api/admin/commercial/payout-items/reprocess-event/route.ts", "invalid_request"],
+  ["app/api/admin/commercial/payout-items/submit-test/route.ts", "invalid_request"],
 ]) {
   const response = await handlers.get(path).POST(request("POST", undefined, {}), context);
   assert.equal(response.status, 400, `${path}: valid bounded JSON still reaches field validation`);
@@ -344,7 +391,7 @@ for (const [route, body] of [[newsletter, newsletterBody], [contact, { kind: "co
 intakeError = null;
 
 actor = null;
-for (const [path, method] of [["app/api/learning/notifications/route.ts", "PATCH"], ["app/api/learning/support/route.ts", "POST"], ["app/api/learning/email/preferences/route.ts", "POST"], ["app/api/auth/login-activity/route.ts", "POST"], ["app/api/instructor/payout-profile/route.ts", "POST"], ["app/api/admin/provider-verifications/[organizationId]/review/route.ts", "POST"], ["app/api/admin/instructor-applications/[userId]/review/route.ts", "POST"], ["app/api/admin/payments/refund/route.ts", "POST"], ["app/api/admin/payments/recover/route.ts", "POST"], ["app/api/admin/payments/refund/recover/route.ts", "POST"], ["app/api/admin/payments/dispute/recover/route.ts", "POST"]]) {
+for (const [path, method] of [["app/api/learning/notifications/route.ts", "PATCH"], ["app/api/learning/support/route.ts", "POST"], ["app/api/learning/email/preferences/route.ts", "POST"], ["app/api/auth/login-activity/route.ts", "POST"], ["app/api/instructor/payout-profile/route.ts", "POST"], ["app/api/admin/provider-verifications/[organizationId]/review/route.ts", "POST"], ["app/api/admin/instructor-applications/[userId]/review/route.ts", "POST"], ["app/api/admin/payments/refund/route.ts", "POST"], ["app/api/admin/payments/recover/route.ts", "POST"], ["app/api/admin/payments/refund/recover/route.ts", "POST"], ["app/api/admin/payments/dispute/recover/route.ts", "POST"], ...Array.from(payoutRoutes, path => [path, "POST"])]) {
   const signedOut = request(method);
   Object.defineProperty(signedOut, "body", { get() { throw new Error("must not parse before authentication"); } });
   assert.equal((await handlers.get(path)[method](signedOut, context)).status, 401, `${path}: signed-out requests are denied before parsing`);
@@ -360,6 +407,12 @@ for (const path of ["app/api/admin/payments/refund/route.ts", "app/api/admin/pay
   const unauthorized = request("POST");
   Object.defineProperty(unauthorized, "body", { get() { throw new Error("must not parse a non-admin payment operation body"); } });
   assert.equal((await handlers.get(path).POST(unauthorized, context)).status, 403, `${path}: deny a non-admin before reading the payment body`);
+}
+for (const path of payoutRoutes) {
+  actor = { id: userId, role: "learner" };
+  const unauthorized = request("POST");
+  Object.defineProperty(unauthorized, "body", { get() { throw new Error("must not parse a non-admin payout body"); } });
+  assert.equal((await handlers.get(path).POST(unauthorized, context)).status, 403, `${path}: deny a non-admin before reading the payout body`);
 }
 // Session ownership remains authoritative, even when callers submit another
 // user's ID or request an approved/admin role in otherwise valid form JSON.

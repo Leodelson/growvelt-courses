@@ -380,3 +380,20 @@ route declarations (`AppRoutes`, `LayoutRoutes`, `ParamMap`, and
 `AppRouteHandlerRoutes`); the production build itself passes. No database,
 provider, email, or hosted configuration was changed. Broader route coverage,
 monitoring/rollback, and the remaining Phase 6 exit checks are still open.
+
+## Ninth hardening slice — administrative payout request boundaries, 27 November
+
+The four Learning instructor payout-batch handlers and four payout-item handlers
+now confirm same-origin, authenticated Learning Admin access before reading the
+request body. Streamed JSON caps are 4 KiB for the bounded 100-earning approval
+selection and 1 KiB for identifier/OTP actions. Wrong content types, malformed
+or non-object JSON, and oversized bodies return private no-store errors. Existing
+feature gates, approval rules, idempotency, test/live provider behavior, and
+recovery semantics are unchanged.
+
+Actual-handler API fixtures cover wrong content type, malformed/non-object and
+oversized bodies with forged content lengths, valid JSON field validation, and
+signed-out/non-admin requests rejected before the body is read. No payout,
+provider call, database mutation, or hosted configuration change was used for
+verification. The wider authorization/rate-limit/secret review and the remaining
+Phase 6 exit checks remain open.
