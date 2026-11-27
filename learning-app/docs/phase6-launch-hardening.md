@@ -342,3 +342,20 @@ settlement batch, matching bank credit, locked seller release/reservation writer
 and final operational verification. Instructor payouts, company seller outflow,
 and Live subscriptions retain their separate gates. No hosted payment/Auth,
 DNS, database, or Careers changes are part of this slice.
+
+## Seventh hardening slice — administrative review request boundaries, 27 November
+
+The Learning provider-verification and instructor-application review POST routes
+now validate path IDs, authenticate the session, and confirm the Learning Admin
+role before reading request bodies. Both use the shared streamed JSON reader with
+a 16 KiB cap, reject non-JSON/malformed/oversized bodies with private no-store
+responses, and preserve the existing review decisions and notification flow.
+
+Actual-handler API fixtures cover malformed, wrong-content-type, and oversized
+requests; signed-out and non-admin requests are denied before body reads; valid
+authorized reviews still call the existing review RPCs. The focused Phase 6 API
+suite, focused ESLint, TypeScript, and Cloudflare Vite production build passed.
+The Vite build emitted its existing sourcemap/bundler-timing warnings but
+completed successfully. No migrations, hosted configuration, or outbound email
+were changed. The wider route/authorization audit and remaining Phase 6 checks
+are still open.

@@ -140,6 +140,8 @@ const managementCases = [
 ];
 const routes = [
   ["app/api/learning/admin/emails/route.ts", ["POST"]],
+  ["app/api/admin/provider-verifications/[organizationId]/review/route.ts", ["POST"]],
+  ["app/api/admin/instructor-applications/[userId]/review/route.ts", ["POST"]],
   ["app/api/learning/support/route.ts", ["POST"]],
   ["app/api/learning/support/[id]/route.ts", ["POST", "PATCH"]],
   ["app/api/learning/notifications/route.ts", ["PATCH"]],
@@ -159,7 +161,7 @@ const routes = [
   ...invitationActions.map(({path}) => [path,["POST"]]),
 ];
 const handlers = new Map(routes.map(([path]) => [path, load(path)]));
-const context = { params: Promise.resolve({ id: noticeId, workspaceId: "1", organizationId: "1", invitationId: "1", memberId: otherId }) };
+const context = { params: Promise.resolve({ id: noticeId, workspaceId: "1", organizationId: "1", invitationId: "1", memberId: otherId, userId: otherId }) };
 const request = (method, headers = { Origin: hosts[0] }, body = {}) => new Request(hosts[0] + "/api/local-fixture", { method, headers: { "Content-Type": "application/json", ...headers }, body: JSON.stringify(body) });
 
 for (const path of ["app/api/inquiries/route.ts", "app/api/newsletter/subscribe/route.ts", "app/api/auth/verify-turnstile/route.ts"]) {
@@ -179,6 +181,8 @@ const boundedRoutes = [
   ["app/api/learning/support/[id]/route.ts", "POST", 32768],
   ["app/api/learning/notifications/route.ts", "PATCH", 1024],
   ["app/api/learning/email/preferences/route.ts", "POST", 1024],
+  ["app/api/admin/provider-verifications/[organizationId]/review/route.ts", "POST", 16384],
+  ["app/api/admin/instructor-applications/[userId]/review/route.ts", "POST", 16384],
   ["app/api/instructor/application/route.ts", "POST", 65536],
   ["app/api/instructor/organizations/route.ts", "POST", 4096],
   ["app/api/company/workspaces/route.ts", "POST", 4096],
@@ -198,6 +202,14 @@ for (const [path, method, limit] of boundedRoutes) {
     assert.equal(providerCalls.length, beforeProvider);
     assert.ok(operations.slice(beforeOps).every(op => op.rpc === "is_growvelt_learning_admin"), "authentication/role checks may run, but no mutation or content query");
   }
+}
+for (const [path, params, payload, rpc] of [
+  ["app/api/admin/provider-verifications/[organizationId]/review/route.ts", { organizationId: "1" }, { decision: "verified", note: "" }, "review_learning_provider_organization_verification"],
+  ["app/api/admin/instructor-applications/[userId]/review/route.ts", { userId: otherId }, { decision: "rejected", reviewNote: "Please add more teaching details." }, "review_instructor_application"],
+]) {
+  const beforeReview = operations.length;
+  assert.equal((await handlers.get(path).POST(request("POST", undefined, payload), { params: Promise.resolve(params) })).status, 200, `${path}: authorized admin review remains available`);
+  assert.deepEqual(operations.slice(beforeReview).map(operation => operation.rpc), ["is_growvelt_learning_admin", rpc], `${path}: confirm admin before the review mutation`);
 }
 for (const [path, methods] of routes) {
   for (const method of methods) {
@@ -311,10 +323,16 @@ for (const [route, body] of [[newsletter, newsletterBody], [contact, { kind: "co
 intakeError = null;
 
 actor = null;
-for (const [path, method] of [["app/api/learning/notifications/route.ts", "PATCH"], ["app/api/learning/support/route.ts", "POST"], ["app/api/learning/email/preferences/route.ts", "POST"], ["app/api/auth/login-activity/route.ts", "POST"], ["app/api/instructor/payout-profile/route.ts", "POST"]]) {
+for (const [path, method] of [["app/api/learning/notifications/route.ts", "PATCH"], ["app/api/learning/support/route.ts", "POST"], ["app/api/learning/email/preferences/route.ts", "POST"], ["app/api/auth/login-activity/route.ts", "POST"], ["app/api/instructor/payout-profile/route.ts", "POST"], ["app/api/admin/provider-verifications/[organizationId]/review/route.ts", "POST"], ["app/api/admin/instructor-applications/[userId]/review/route.ts", "POST"]]) {
   const signedOut = request(method);
   Object.defineProperty(signedOut, "body", { get() { throw new Error("must not parse before authentication"); } });
   assert.equal((await handlers.get(path)[method](signedOut, context)).status, 401, `${path}: signed-out requests are denied before parsing`);
+}
+for (const [path, params] of [["app/api/admin/provider-verifications/[organizationId]/review/route.ts", { organizationId: "1" }], ["app/api/admin/instructor-applications/[userId]/review/route.ts", { userId: otherId }]]) {
+  actor = { id: userId, role: "learner" };
+  const unauthorized = request("POST");
+  Object.defineProperty(unauthorized, "body", { get() { throw new Error("must not parse a non-admin review body"); } });
+  assert.equal((await handlers.get(path).POST(unauthorized, { params: Promise.resolve(params) })).status, 403, `${path}: deny a non-admin before reading the review body`);
 }
 // Session ownership remains authoritative, even when callers submit another
 // user's ID or request an approved/admin role in otherwise valid form JSON.

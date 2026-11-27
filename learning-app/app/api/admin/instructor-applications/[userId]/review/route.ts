@@ -1,10 +1,9 @@
 import { NextResponse } from "next/server";
 import { sendInstructorApplicationApprovedEmail } from "@/app/lib/email/instructor-notifications";
 import { isSameOriginRequest } from "@/app/lib/security/request-origin";
+import { JsonBodyError, readBoundedJsonObject } from "@/app/lib/security/json-body";
 import { createAdminClient } from "@/app/lib/supabase/admin";
 import { createClient } from "@/app/lib/supabase/server";
-
-type ReviewBody = { decision?: unknown; reviewNote?: unknown };
 
 function reviewErrorCode(error: { code?: string }) {
   if (error.code === "42501") return "admin_access_denied";
@@ -16,14 +15,27 @@ function reviewErrorCode(error: { code?: string }) {
 export async function POST(request: Request, { params }: { params: Promise<{ userId: string }> }) {
   if (!isSameOriginRequest(request)) return NextResponse.json({ code: "invalid_origin" }, { status: 403 });
   const userId = (await params).userId;
-  const body = await request.json().catch(() => null) as ReviewBody | null;
-  const decision = body?.decision === "approved" || body?.decision === "rejected" ? body.decision : null;
-  const reviewNote = typeof body?.reviewNote === "string" ? body.reviewNote.trim() : "";
-  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(userId) || !decision || reviewNote.length > 2000) return NextResponse.json({ code: "invalid_review" }, { status: 400 });
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(userId)) return NextResponse.json({ code: "invalid_review" }, { status: 400 });
 
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ code: "unauthorized" }, { status: 401 });
+  const { data: isAdmin } = await supabase.rpc("is_growvelt_learning_admin");
+  if (isAdmin !== true) return NextResponse.json({ code: "forbidden" }, { status: 403 });
+
+  let body: Record<string, unknown>;
+  try {
+    body = await readBoundedJsonObject(request, 16 * 1024);
+  } catch (error) {
+    return NextResponse.json({ code: "invalid_review" }, {
+      status: error instanceof JsonBodyError ? error.status : 400,
+      headers: { "Cache-Control": "private, no-store" },
+    });
+  }
+  const decision = body?.decision === "approved" || body?.decision === "rejected" ? body.decision : null;
+  const reviewNote = typeof body?.reviewNote === "string" ? body.reviewNote.trim() : "";
+  if (!decision || reviewNote.length > 2000) return NextResponse.json({ code: "invalid_review" }, { status: 400 });
+
   const { data, error } = await supabase.rpc("review_instructor_application", { p_application_user_id: userId, p_decision: decision, p_review_note: reviewNote || null });
   if (error) return NextResponse.json({ code: reviewErrorCode(error) }, { status: error.code === "42501" ? 403 : error.code === "P0002" ? 404 : 409 });
 
