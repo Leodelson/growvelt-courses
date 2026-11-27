@@ -14,19 +14,25 @@ transfer as a test.
 - `LEARNING_LIVE_PAYOUT_BATCH_SUBMISSION_ENABLED`,
   `LEARNING_LIVE_PAYOUT_BATCH_OTP_ENABLED`, and
   `LEARNING_LIVE_PAYOUT_BATCH_RECONCILIATION_ENABLED` are absent/disabled.
+- The Learning production Supabase migrations page was checked on 27 November
+  2026. It shows the payout profile, eligibility, batch identity, approval,
+  submission/OTP, reconciliation, batch listing, refund foundation, and
+  fee-inclusive refund migrations applied.
+- The owner directed that the ready refund gates be live; both
+  `PAYMENTS_REFUNDS_ENABLED` and `PAYMENTS_LIVE_REFUNDS_ENABLED` are enabled.
+  This is flag approval only: it does not submit a refund or authorize using a
+  real refund as a test. Refund initiation remains an active-admin action with
+  same-origin validation, exact order-reference confirmation, and an
+  idempotency claim.
 - `PAYSTACK_LIVE_SECRET_KEY` is a server-only binding; never print, copy into
   logs, or add it to Git.
-- The migration files for payout profile, eligibility, batch identity,
-  approval, submission, reconciliation, and list views are on the production
-  branch. Verify the hosted migration ledger before changing any payout gate.
+- The daily Learning Worker schedules are `0 4 * * *` for earnings release
+  and `10 4 * * *` for admin submission alerts. Earnings release only moves
+  eligible earnings to available status; it does not submit bank transfers.
 - No instructor transfer has been sent by this review.
-
-Refunds are separate from payout batches. The current Worker has
-`PAYMENTS_REFUNDS_ENABLED=true` and `PAYMENTS_LIVE_REFUNDS_ENABLED=true`, while
-the payment activation runbooks say to keep Live refund initiation disabled
-unless separately approved. Do not use these refund settings as a payout
-switch. Resolve that policy mismatch before considering Phase 2 fully signed
-off. No refund has been submitted by this review.
+- No refund has been submitted by this review. Refund flags are not payout
+  switches; keep payout submission, OTP, and reconciliation disabled until
+  their own operator readiness and payout-window checks are complete.
 
 ## Preconditions before enabling a transfer
 

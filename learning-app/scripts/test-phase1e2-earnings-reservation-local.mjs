@@ -28,6 +28,7 @@ const migrations = [
   ["20260903000000_add_commercial_allocation_instructor_earnings_foundation.sql", "select to_regclass('public.learning_commercial_allocations') is not null;"],
   ["20260907000000_add_instructor_payout_profile_recipient_foundation.sql", "select to_regprocedure('public.assert_learning_approved_instructor(uuid)') is not null;"],
   ["20260908000000_add_instructor_earnings_reservation_foundation.sql", "select to_regclass('public.learning_instructor_earning_reservations') is not null;"],
+  ["20261123000000_fix_instructor_reservation_column_ambiguity.sql", "select position('earning.id=earning_row.id' in pg_get_functiondef('public.reserve_learning_instructor_earning(bigint,uuid,text,uuid)'::regprocedure))>0;"],
 ];
 for (const [file, probe] of migrations) {
   const exists = await run(["exec", "-i", name, "psql", "-X", "-A", "-t", "-v", "ON_ERROR_STOP=1", "-U", "postgres", "-d", "postgres"], probe);
@@ -50,7 +51,8 @@ begin
     ('${instructorId}','authenticated','authenticated','${suffix}-instructor@example.test',now(),now());
   insert into public.profiles(id,email,full_name,onboarding_status) values
     ('${adminId}','${suffix}-admin@example.test','Phase 1E2 Concurrency Admin','complete'),
-    ('${instructorId}','${suffix}-instructor@example.test','Phase 1E2 Concurrency Instructor','complete');
+    ('${instructorId}','${suffix}-instructor@example.test','Phase 1E2 Concurrency Instructor','complete')
+  on conflict(id) do update set email=excluded.email,full_name=excluded.full_name,onboarding_status=excluded.onboarding_status;
   insert into public.account_capabilities(user_id,capability,status) values
     ('${adminId}','admin','active'),('${instructorId}','instructor','active');
   insert into public.instructor_profiles(user_id,approval_status) values('${instructorId}','approved');
@@ -73,7 +75,7 @@ join public.learning_commercial_allocations allocation on allocation.id=earning.
 join public.learning_orders learning_order on learning_order.id=allocation.order_id
 join public.learning_courses course on course.id=learning_order.course_id
 where course.slug='${courseSlug}';`;
-const earningId = Number(await run(["exec", "-i", name, "psql", "-X", "-A", "-t", "-v", "ON_ERROR_STOP=1", "-U", "postgres", "-d", "postgres"], setup));
+const earningId = Number(await run(["exec", "-i", name, "psql", "-X", "-A", "-t", "-q", "-v", "ON_ERROR_STOP=1", "-U", "postgres", "-d", "postgres"], setup));
 if (!Number.isInteger(earningId)) throw new Error("Unable to prepare the Phase 1E2 concurrent reservation fixture");
 const idempotencyKey = `phase1e2:concurrent:${suffix}`;
 const reservationQuery = `select reservation_id from public.reserve_learning_instructor_earning(${earningId},'${instructorId}','${idempotencyKey}','${adminId}');`;
