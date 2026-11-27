@@ -1,4 +1,7 @@
 import app from "vinext/server/fetch-handler";
+import { runMaturedInstructorEarningsRelease } from "./app/lib/admin/instructor-earnings-release.ts";
+import { drainAdminSubmissionAlerts } from "./app/lib/email/admin-submission-runtime.ts";
+import { runLearningScheduledJob } from "./cloudflare-scheduled-jobs.mjs";
 
 const heroPath = "/videos/growvelt-learning-reel-v1.mp4";
 
@@ -32,5 +35,11 @@ export default {
     headers.set("Content-Range", `bytes ${start}-${end}/${size}`);
     headers.set("Content-Length", String(end - start + 1));
     return new Response(bytes.slice(start, end + 1), { status: 206, headers });
+  },
+  async scheduled(controller, env) {
+    return runLearningScheduledJob(controller, env, {
+      releaseMaturedEarnings: runMaturedInstructorEarningsRelease,
+      drainAdminSubmissionAlerts,
+    });
   },
 };

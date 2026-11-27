@@ -1,4 +1,4 @@
-import { bindings, defineConfig, defineWorker } from "cf/config";
+import { bindings, defineConfig, defineWorker, triggers } from "cf/config";
 
 const productionTextBindingNames = [
   "ADMIN_FROM_EMAIL",
@@ -51,6 +51,10 @@ export default defineConfig({
     entrypoint: "./cloudflare-worker.mjs",
     compatibilityDate: "2026-11-09",
     compatibilityFlags: ["nodejs_compat"],
+    triggers: [
+      triggers.scheduled({ schedule: "0 4 * * *" }),
+      triggers.scheduled({ schedule: "10 4 * * *" }),
+    ],
     workersDev: true,
     previewUrls: false,
     assets: {

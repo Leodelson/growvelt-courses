@@ -4,8 +4,12 @@ import { createAdminClient } from "@/app/lib/supabase/admin";
 const RELEASE_BATCH_LIMIT = 100;
 export type EarningsReleaseSource = "scheduler" | "admin_recovery";
 
-export async function runMaturedInstructorEarningsRelease(source: EarningsReleaseSource, actorUserId: string | null) {
-  const admin = createAdminClient();
+export async function runMaturedInstructorEarningsRelease(
+  source: EarningsReleaseSource,
+  actorUserId: string | null,
+  env: Record<string, string | undefined> = process.env,
+) {
+  const admin = createAdminClient(env);
   const { data: runId, error: startError } = await admin.rpc("start_learning_instructor_earnings_release_run", {
     p_invocation_source: source,
     p_actor_user_id: actorUserId,

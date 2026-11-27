@@ -114,6 +114,7 @@
     "dev:vinext": "vite dev --port 3001",
     "build:vinext": "vite build",
     "build:worker:production": "node scripts/build-worker-production.mjs",
+    "test:cloudflare:scheduled-jobs": "node scripts/test-cloudflare-scheduled-jobs.mjs",
     "upload:worker:production-candidate": "node scripts/upload-worker-production-candidate.mjs",
     "start:vinext": "vite preview"
   },

@@ -4,13 +4,13 @@ import {createAdminClient} from "../supabase/admin";
 import {readEmailCenterProviderUsage} from "./email-center-provider-usage";
 import {runAdminSubmissionAlerts} from "./admin-submission-worker";
 
-export async function drainAdminSubmissionAlerts(){
-  const enabled=process.env.LEARNING_ADMIN_ALERTS_ENABLED==="enabled";
-  const dailyLimit=Number(process.env.LEARNING_ADMIN_ALERT_DAILY_LIMIT);
+export async function drainAdminSubmissionAlerts(env: Record<string, string | undefined> = process.env){
+  const enabled=env.LEARNING_ADMIN_ALERTS_ENABLED==="enabled";
+  const dailyLimit=Number(env.LEARNING_ADMIN_ALERT_DAILY_LIMIT);
   if(!enabled||![10,20].includes(dailyLimit))return{state:"disabled",accepted:0};
-  const key=process.env.RESEND_API_KEY,usageKey=process.env.RESEND_MARKETING_API_KEY;
-  if(!key||!usageKey||process.env.ADMIN_FROM_EMAIL!=="admin@growvelt.com")return{state:"configuration_pending",accepted:0};
-  return runAdminSubmissionAlerts({database:createAdminClient(),enabled,dailyLimit,
+  const key=env.RESEND_API_KEY,usageKey=env.RESEND_MARKETING_API_KEY;
+  if(!key||!usageKey||env.ADMIN_FROM_EMAIL!=="admin@growvelt.com")return{state:"configuration_pending",accepted:0};
+  return runAdminSubmissionAlerts({database:createAdminClient(env),enabled,dailyLimit,
     usage:()=>readEmailCenterProviderUsage({key:usageKey,request:fetch}),
     send:async({to,subject,html,key:operation})=>{
       const response=await fetch("https://api.resend.com/emails",{method:"POST",redirect:"error",signal:AbortSignal.timeout(15000),headers:{Authorization:`Bearer ${key}`,"Content-Type":"application/json","Idempotency-Key":operation},
